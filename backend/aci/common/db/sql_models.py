@@ -40,18 +40,10 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     email_verified: Mapped[bool] = mapped_column(Boolean, server_default=false(), nullable=False)
-    # TODO: split to first_name and last_name? should it be nullable?
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
-    # TODO: is str type suitable for password hash?
     password_hash: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
     last_login_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
-    )
-    # TODO: what would this be used for?
-    # TODO: if it's for soft deletion, should we add deleted_at column ? and
-    # should Organization also use soft delete?
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, server_default=false(), nullable=False, init=False
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -63,6 +55,9 @@ class User(Base):
         onupdate=func.now(),
         nullable=False,
         init=False,
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, init=False
     )
 
     organization_memberships: Mapped[list[OrganizationMembership]] = relationship(
@@ -79,7 +74,6 @@ class Organization(Base):
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
-    # TODO: should this be unique platform-wide?
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
 
@@ -92,6 +86,9 @@ class Organization(Base):
         onupdate=func.now(),
         nullable=False,
         init=False,
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, init=False
     )
 
     # TODO: consider lazy loading for these relationships if we have a lot of data
@@ -228,3 +225,4 @@ class TeamMembership(Base):
             name="fk_user_org_membership",
             ondelete="CASCADE",  # Org membership removal cascades to team memberships
         ),
+    )
