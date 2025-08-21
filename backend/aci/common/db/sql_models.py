@@ -32,7 +32,9 @@ class Base(MappedAsDataclass, DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(PGUUID, primary_key=True, default_factory=uuid4, init=False)
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
     # TODO: should the same email but from different providers be considered the same user
     # (e.g., google and github)?
     identity_provider: Mapped[UserIdentityProvider] = mapped_column(
@@ -76,7 +78,9 @@ class User(Base):
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id: Mapped[UUID] = mapped_column(PGUUID, primary_key=True, default_factory=uuid4, init=False)
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
     # TODO: should this be unique platform-wide?
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(Text(MAX_TEXT_LENGTH), nullable=True)
@@ -104,12 +108,14 @@ class Organization(Base):
 class OrganizationMembership(Base):
     __tablename__ = "organization_memberships"
 
-    id: Mapped[UUID] = mapped_column(PGUUID, primary_key=True, default_factory=uuid4, init=False)
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
     organization_id: Mapped[UUID] = mapped_column(
-        PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[UUID] = mapped_column(
-        PGUUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[OrganizationRole] = mapped_column(
         SQLEnum(OrganizationRole, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
@@ -137,9 +143,11 @@ class OrganizationMembership(Base):
 class Team(Base):
     __tablename__ = "teams"
 
-    id: Mapped[UUID] = mapped_column(PGUUID, primary_key=True, default_factory=uuid4, init=False)
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
     organization_id: Mapped[UUID] = mapped_column(
-        PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     description: Mapped[str] = mapped_column(Text(MAX_TEXT_LENGTH), nullable=True)
@@ -167,16 +175,18 @@ class Team(Base):
 class TeamMembership(Base):
     __tablename__ = "team_memberships"
 
-    id: Mapped[UUID] = mapped_column(PGUUID, primary_key=True, default_factory=uuid4, init=False)
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
 
     team_id: Mapped[UUID] = mapped_column(
-        PGUUID, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False
     )
     organization_id: Mapped[UUID] = mapped_column(
-        PGUUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[UUID] = mapped_column(
-        PGUUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
     role: Mapped[TeamRole] = mapped_column(
