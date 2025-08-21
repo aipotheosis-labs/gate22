@@ -223,9 +223,8 @@ class TeamMembership(Base):
         ),
         # Foreign key to ensure user is a member of the organization
         ForeignKeyConstraint(
-            ["user_id", "organization_id"],
-            ["organization_memberships.user_id", "organization_memberships.organization_id"],
+            ["organization_id", "user_id"],
+            ["organization_memberships.organization_id", "organization_memberships.user_id"],
             name="fk_user_org_membership",
             ondelete="CASCADE",  # Org membership removal cascades to team memberships
         ),
-    )
