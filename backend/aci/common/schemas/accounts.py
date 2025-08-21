@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from aci.common.enums import UserIdentityProvider
+from aci.common.enums import OrganizationRole, UserIdentityProvider
 
 
 class EmailPwdRegistrationRequest(BaseModel):
@@ -38,5 +38,23 @@ LoginRequest = Annotated[
 ]
 
 
-class LoginResponse(BaseModel):
+class TokenResponse(BaseModel):
     token: str
+
+
+class ExchangeTokensRequest(BaseModel):
+    organization_id: str | None
+    role: OrganizationRole | None
+
+
+class OrganizationMembershipInfo(BaseModel):
+    organization_id: str
+    organization_name: str
+    role: OrganizationRole
+
+
+class UserInfo(BaseModel):
+    user_id: str
+    name: str
+    email: str
+    organizations: list[OrganizationMembershipInfo]

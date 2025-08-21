@@ -160,7 +160,11 @@ class Team(Base):
 
     organization: Mapped[Organization] = relationship(back_populates="teams", init=False)
     memberships: Mapped[list[TeamMembership]] = relationship(
-        back_populates="team", cascade="all, delete-orphan", single_parent=True, init=False
+        back_populates="team",
+        cascade="all, delete-orphan",
+        single_parent=True,
+        foreign_keys="TeamMembership.team_id",
+        init=False,
     )
 
     # TODO: team name should be unique within an organization?
@@ -205,7 +209,9 @@ class TeamMembership(Base):
         init=False,
     )
 
-    team: Mapped[Team] = relationship(back_populates="memberships", init=False)
+    team: Mapped[Team] = relationship(
+        back_populates="memberships", init=False, foreign_keys=[team_id]
+    )
     user: Mapped[User] = relationship(back_populates="team_memberships", init=False)
 
     # TODO: should probably have test coverage for these constraints
