@@ -167,7 +167,12 @@ class Team(Base):
     )
 
     # TODO: team name should be unique within an organization?
-    __table_args__ = (UniqueConstraint("organization_id", "name", name="uc_org_team"),)
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="uc_org_team"),
+        # Add unique constraint for the compound foreign key: to be used in the TeamMembership
+        # table's ForeignKeyConstraint
+        UniqueConstraint("id", "organization_id", name="uc_team_org"),
+    )
 
 
 class TeamMembership(Base):
@@ -180,8 +185,9 @@ class TeamMembership(Base):
     team_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False
     )
+    # NOTE: organization_id is added here for the ForeignKeyConstraint below
     organization_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False
     )
     user_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
@@ -207,17 +213,19 @@ class TeamMembership(Base):
 
     # TODO: should probably have test coverage for these constraints
     __table_args__ = (
-        # Ensure team actually belongs to the organization
+        UniqueConstraint("team_id", "user_id", name="uc_team_user"),
+        # Foreign key to ensure organization_id matches the team's organization
         ForeignKeyConstraint(
             ["team_id", "organization_id"],
             ["teams.id", "teams.organization_id"],
-            ondelete="CASCADE",
+            name="fk_team_org_consistency",
+            ondelete="CASCADE",  # Team deletion cascades to its memberships
         ),
-        # Ensure user is already an organization member
+        # Foreign key to ensure user is a member of the organization
         ForeignKeyConstraint(
-            ["organization_id", "user_id"],
-            ["organization_memberships.organization_id", "organization_memberships.user_id"],
-            ondelete="CASCADE",
+            ["user_id", "organization_id"],
+            ["organization_memberships.user_id", "organization_memberships.organization_id"],
+            name="fk_user_org_membership",
+            ondelete="CASCADE",  # Org membership removal cascades to team memberships
         ),
-        UniqueConstraint("team_id", "user_id", name="uc_team_user"),
     )
