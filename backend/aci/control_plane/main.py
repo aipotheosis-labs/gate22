@@ -13,7 +13,7 @@ from aci.control_plane.middleware.interceptor import (
     InterceptorMiddleware,
     RequestContextFilter,
 )
-from aci.control_plane.routes import accounts, health
+from aci.control_plane.routes import accounts, health, organizations
 
 setup_logging(
     formatter=JsonFormatter(
@@ -72,4 +72,10 @@ app.include_router(
     accounts.router,
     prefix=config.ROUTER_PREFIX_ACCOUNTS,
     tags=[config.ROUTER_PREFIX_ACCOUNTS.split("/")[-1]],
+)
+
+app.include_router(
+    organizations.router,
+    prefix=config.ROUTER_PREFIX_ORGANIZATIONS,
+    tags=[config.ROUTER_PREFIX_ORGANIZATIONS.split("/")[-1]],
 )

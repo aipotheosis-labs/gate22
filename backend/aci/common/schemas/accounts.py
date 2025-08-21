@@ -1,20 +1,38 @@
+import re
 from typing import Annotated, Literal
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 
 
 class EmailPwdRegistrationRequest(BaseModel):
-    auth_flow: Literal[UserIdentityProvider.EMAIL]
-    name: str
-    email: str
-    password: str
+    auth_flow: Literal[UserIdentityProvider.EMAIL] = Field(description="Authentication flow")
+    name: str = Field(min_length=1, max_length=100, description="User name")
+    email: EmailStr = Field(min_length=1, max_length=255, description="User email")
+    password: str = Field(min_length=1, max_length=255, description="User password")
+
+    # TODO: Define password strength requirements
+    @field_validator("password")
+    @classmethod
+    def strong_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain an uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain a lowercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain a digit")
+        if not re.search(r"[@$!%*?&]", v):
+            raise ValueError("Password must contain a special character (@$!%*?&)")
+        return v
 
 
 class GoogleRegistrationRequest(BaseModel):
-    auth_flow: Literal[UserIdentityProvider.GOOGLE]
-    auth_code: str
+    auth_flow: Literal[UserIdentityProvider.GOOGLE] = Field(description="Authentication flow")
+    auth_code: str = Field(description="Authentication code obtained")
 
 
 RegistrationRequest = Annotated[
@@ -23,14 +41,14 @@ RegistrationRequest = Annotated[
 
 
 class EmailPwdLoginRequest(BaseModel):
-    auth_flow: Literal[UserIdentityProvider.EMAIL]
-    email: str
-    password: str
+    auth_flow: Literal[UserIdentityProvider.EMAIL] = Field(description="Authentication flow")
+    email: str = Field(min_length=1, max_length=255, description="User email")
+    password: str = Field(min_length=1, max_length=255, description="User password")
 
 
 class GoogleLoginRequest(BaseModel):
-    auth_flow: Literal[UserIdentityProvider.GOOGLE]
-    auth_code: str
+    auth_flow: Literal[UserIdentityProvider.GOOGLE] = Field(description="Authentication flow")
+    auth_code: str = Field(description="Authentication code obtained")
 
 
 LoginRequest = Annotated[
@@ -42,19 +60,29 @@ class TokenResponse(BaseModel):
     token: str
 
 
-class ExchangeTokensRequest(BaseModel):
-    organization_id: str | None
-    role: OrganizationRole | None
+class RefreshTokenRequest(BaseModel):
+    operation: Literal["refresh"]
 
 
-class OrganizationMembershipInfo(BaseModel):
-    organization_id: str
+class UpdateActAsRequest(BaseModel):
+    operation: Literal["update_act_as"]
+    organization_id: UUID
+    role: OrganizationRole
+
+
+IssueTokenRequest = Annotated[
+    RefreshTokenRequest | UpdateActAsRequest, Field(discriminator="operation")
+]
+
+
+class UserOrganizationInfo(BaseModel):
+    organization_id: UUID
     organization_name: str
     role: OrganizationRole
 
 
 class UserInfo(BaseModel):
-    user_id: str
+    user_id: UUID
     name: str
     email: str
-    organizations: list[OrganizationMembershipInfo]
+    organizations: list[UserOrganizationInfo]

@@ -1,9 +1,10 @@
 import datetime
+import secrets
 from typing import Annotated
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from aci.common.db import crud
 from aci.common.db.sql_models import User
@@ -11,10 +12,10 @@ from aci.common.enums import UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.accounts import (
     LoginRequest,
-    OrganizationMembershipInfo,
     RegistrationRequest,
     TokenResponse,
     UserInfo,
+    UserOrganizationInfo,
 )
 from aci.common.schemas.auth import ActAsInfo, JWTPayload
 from aci.control_plane import config
@@ -55,12 +56,12 @@ async def register(
         context.db_session.commit()
 
         return UserInfo(
-            user_id=str(user.id),
+            user_id=user.id,
             name=user.name,
             email=user.email,
             organizations=[
-                OrganizationMembershipInfo(
-                    organization_id=str(org_membership.organization_id),
+                UserOrganizationInfo(
+                    organization_id=org_membership.organization_id,
                     organization_name=org_membership.organization.name,
                     role=org_membership.role,
                 )
@@ -78,6 +79,7 @@ async def login(
         deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
     ],
     request: LoginRequest,
+    response: Response,
 ) -> TokenResponse | None:
     if request.auth_flow == UserIdentityProvider.EMAIL:
         user = crud.accounts.get_user_by_email(context.db_session, request.email)
@@ -99,7 +101,7 @@ async def login(
         # TODO: We should store the last used organization and role
         act_as = (
             ActAsInfo(
-                organization_id=str(user.organization_memberships[0].organization_id),
+                organization_id=user.organization_memberships[0].organization_id,
                 role=user.organization_memberships[0].role,
             )
             if len(user.organization_memberships) > 0
@@ -108,6 +110,18 @@ async def login(
 
         token = _sign_token(user, act_as)
 
+        # Issue a refresh token, store in secure cookie
+        refresh_token = secrets.token_urlsafe(32)
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 30,
+            path="/auth/refresh",
+        )
+
         return TokenResponse(token=token)
     elif request.auth_flow == UserIdentityProvider.GOOGLE:
         # TODO: Implement Google login
@@ -115,22 +129,50 @@ async def login(
 
 
 def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
-    expired_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        minutes=config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    now = datetime.datetime.now(datetime.UTC)
+    expired_at = now + datetime.timedelta(minutes=config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     jwt_payload = JWTPayload(
         sub=str(user.id),
         exp=int(expired_at.timestamp()),
-        user_id=str(user.id),
+        iat=int(now.timestamp()),
+        user_id=user.id,
         name=user.name,
         email=user.email,
         act_as=act_as,
     )
     # Sign JWT, with the user's acted as organization and role
     token = jwt.encode(
-        jwt_payload.model_dump(), config.JWT_SIGNING_KEY, algorithm=config.JWT_ALGORITHM
+        jwt_payload.model_dump(mode="json"), config.JWT_SIGNING_KEY, algorithm=config.JWT_ALGORITHM
     )
     return token
+
+
+# TODO: Token endpoint
+# @router.post("/token", response_model=TokenResponse | None, status_code=status.HTTP_200_OK)
+# async def issue_token(
+#     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+#     request: IssueTokenRequest,
+#     raw_request: Request
+# ) -> TokenResponse | None:
+
+#     act_as = context.act_as
+
+#     user = crud.accounts.get_user_by_id(context.db_session, context.user_id)
+#     if not user:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+#     refresh_token = raw_request.cookies.get("refresh_token")
+
+
+#     elif request.operation == "update_act_as":
+#         act_as = context.act_as or ActAsInfo(
+#             organization_id=request.organization_id,
+#             role=request.role,
+#         )
+
+#     token = _sign_token(user, act_as)
+
+#     return None
 
 
 @router.post("/profile", response_model=UserInfo | None, status_code=status.HTTP_200_OK)
@@ -144,12 +186,12 @@ async def profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     return UserInfo(
-        user_id=str(user.id),
+        user_id=user.id,
         name=user.name,
         email=user.email,
         organizations=[
-            OrganizationMembershipInfo(
-                organization_id=str(org_membership.organization_id),
+            UserOrganizationInfo(
+                organization_id=org_membership.organization_id,
                 organization_name=org_membership.organization.name,
                 role=org_membership.role,
             )
