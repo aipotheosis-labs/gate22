@@ -9,7 +9,6 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     String,
-    Text,
     UniqueConstraint,
     false,
     func,
@@ -22,7 +21,6 @@ from aci.common.enums import OrganizationRole, TeamRole, UserIdentityProvider
 
 MAX_STRING_LENGTH = 512
 MAX_ENUM_LENGTH = 50
-MAX_TEXT_LENGTH = 1024
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -83,7 +81,7 @@ class Organization(Base):
     )
     # TODO: should this be unique platform-wide?
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
-    description: Mapped[str] = mapped_column(Text(MAX_TEXT_LENGTH), nullable=True)
+    description: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
@@ -150,7 +148,7 @@ class Team(Base):
         PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
-    description: Mapped[str] = mapped_column(Text(MAX_TEXT_LENGTH), nullable=True)
+    description: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
