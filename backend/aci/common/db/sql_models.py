@@ -66,10 +66,10 @@ class User(Base):
     )
 
     organization_memberships: Mapped[list[OrganizationMembership]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", init=False
+        back_populates="user", cascade="all", passive_deletes=True, init=False
     )
     team_memberships: Mapped[list[TeamMembership]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", init=False
+        back_populates="user", cascade="all", passive_deletes=True, init=False
     )
 
 
@@ -96,7 +96,7 @@ class Organization(Base):
 
     # TODO: consider lazy loading for these relationships if we have a lot of data
     memberships: Mapped[list[OrganizationMembership]] = relationship(
-        back_populates="organization", cascade="all, delete-orphan", init=False
+        back_populates="organization", cascade="all, delete-orphan", single_parent=True, init=False
     )
     teams: Mapped[list[Team]] = relationship(
         back_populates="organization", cascade="all, delete-orphan", init=False
@@ -163,7 +163,7 @@ class Team(Base):
 
     organization: Mapped[Organization] = relationship(back_populates="teams", init=False)
     memberships: Mapped[list[TeamMembership]] = relationship(
-        back_populates="team", cascade="all, delete-orphan", init=False
+        back_populates="team", cascade="all, delete-orphan", single_parent=True, init=False
     )
 
     # TODO: team name should be unique within an organization?
