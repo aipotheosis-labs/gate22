@@ -31,6 +31,8 @@ dependencies = [
     "svix>=1.65.0",
     "stripe>=12.1.0",
     "python-gitlab>=6.0.0",
+    "bcrypt>=4.3.0",
+    "pyjwt>=2.10.1",
 ]
 
 [dependency-groups]

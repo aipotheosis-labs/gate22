@@ -63,7 +63,7 @@ services:
       - .env.local
     # Mount the local code into the container so you can run scripts / Alembic
     volumes:
-      - ./aci/control_plane:/workdir/aci/control_plane
+      - ./aci/:/workdir/aci
       - ./alembic.ini:/workdir/alembic.ini
     command: >
       /bin/sh -c "alembic upgrade head && tail -f /dev/null"
@@ -82,7 +82,7 @@ services:
       - CONTROL_PLANE_DB_HOST=test-db
     # Mount the local code into the container so you can run scripts / Alembic
     volumes:
-      - ./aci/control_plane:/workdir/aci/control_plane
+      - ./aci/:/workdir/aci
       - ./alembic.ini:/workdir/alembic.ini
     command: >
       /bin/sh -c "alembic upgrade head && tail -f /dev/null"
