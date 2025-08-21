@@ -115,7 +115,7 @@ async def login(
 
 
 def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
-    expired_at = datetime.datetime.utcnow() + datetime.timedelta(
+    expired_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
         minutes=config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
     )
     jwt_payload = JWTPayload(
@@ -126,7 +126,6 @@ def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
         email=user.email,
         act_as=act_as,
     )
-    logger.info(jwt_payload)
     # Sign JWT, with the user's acted as organization and role
     token = jwt.encode(
         jwt_payload.model_dump(), config.JWT_SIGNING_KEY, algorithm=config.JWT_ALGORITHM
