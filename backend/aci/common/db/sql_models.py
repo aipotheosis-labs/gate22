@@ -43,9 +43,9 @@ class User(Base):
     # TODO: split to first_name and last_name? should it be nullable?
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     # TODO: is str type suitable for password hash?
-    password_hash: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
     last_login_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=True, init=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
     # TODO: what would this be used for?
     # TODO: if it's for soft deletion, should we add deleted_at column ? and
@@ -81,7 +81,7 @@ class Organization(Base):
     )
     # TODO: should this be unique platform-wide?
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
-    description: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
@@ -148,7 +148,7 @@ class Team(Base):
         PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
-    description: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
