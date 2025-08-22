@@ -29,7 +29,7 @@ export default function LoginPage() {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Redirect to dashboard
-    router.push("/apps");
+    router.push("/mcp-servers");
   };
 
   return (

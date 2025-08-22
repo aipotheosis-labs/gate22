@@ -144,6 +144,7 @@ export const handlers = [
       role: "user",
     });
 
+    // For signup, we don't include org data - user will create it in onboarding
     return HttpResponse.json({
       token: "mock-jwt-token-" + Date.now(),
       user: {
@@ -155,13 +156,7 @@ export const handlers = [
         pictureUrl: `https://ui-avatars.com/api/?name=${body.email.split("@")[0]}&background=random`,
         metadata: {},
       },
-      org: {
-        orgId: "org-" + Date.now(),
-        orgName: "Personal Organization",
-        orgMetadata: {},
-        userRole: "Admin",
-        userPermissions: ["admin", "write", "read"],
-      },
+      // No org data on signup - will be created in onboarding
     });
   }),
 

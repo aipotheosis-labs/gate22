@@ -69,7 +69,7 @@ export function VercelMembersTable({
       fetchMembers();
 
       if (userId === user?.userId) {
-        router.push("/apps");
+        router.push("/mcp-servers");
       }
     } catch {
       toast.error("Failed to remove member");

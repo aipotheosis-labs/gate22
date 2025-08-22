@@ -96,8 +96,8 @@ export function OrgMembersTable() {
 
       // If the current user is leaving the organization
       if (userId === user.userId) {
-        // Navigate to the app store
-        router.push("/apps");
+        // Navigate to the MCP servers page
+        router.push("/mcp-servers");
       }
     } catch {
       toast.error("Failed to remove member");

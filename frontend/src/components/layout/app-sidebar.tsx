@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { PiStorefront } from "react-icons/pi";
+import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line, RiLinkUnlinkM } from "react-icons/ri";
 import { AiOutlineRobot } from "react-icons/ai";
 import {} from "lucide-react";
@@ -39,9 +40,9 @@ import { useMetaInfo } from "@/components/context/metainfo";
 // Export sidebar items so they can be used in header
 export const sidebarItems = [
   {
-    title: "App Store",
-    url: `/apps`,
-    icon: PiStorefront,
+    title: "MCP Servers",
+    url: `/mcp-servers`,
+    icon: HiOutlineServerStack,
   },
   {
     title: "App Configurations",
