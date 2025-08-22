@@ -50,7 +50,7 @@ export default function LandingLayout({
                     Login
                   </Button>
                 </Link>
-                <Link href="/apps">
+                <Link href="/mcp-servers">
                   <Button
                     size="default"
                     className="h-9 px-5 text-sm font-medium transition-all duration-200"

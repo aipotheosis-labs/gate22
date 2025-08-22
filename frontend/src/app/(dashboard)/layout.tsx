@@ -49,13 +49,16 @@ export default function DashboardLayout({
           duration={3000}
           toastOptions={{
             style: {
-              background: "var(--background)",
-              color: "var(--foreground)",
-              border: "1px solid var(--border)",
+              background: "hsl(var(--background))",
+              color: "hsl(var(--foreground))",
+              border: "1px solid hsl(var(--border))",
+              backdropFilter: "none",
+              opacity: 1,
             },
             className: "group",
             classNames: {
-              toast: "group-[.toaster]:shadow-lg",
+              toast:
+                "group-[.toaster]:shadow-lg group-[.toaster]:bg-background",
             },
           }}
         />

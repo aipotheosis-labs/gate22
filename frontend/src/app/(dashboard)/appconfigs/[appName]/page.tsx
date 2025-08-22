@@ -246,7 +246,7 @@ export default function AppConfigDetailPage() {
             </div>
           )}
           <div>
-            <Link href={`/apps/${app?.name}`}>
+            <Link href={`/appconfigs/${app?.name}`}>
               <h1 className="text-2xl font-semibold">{app?.display_name}</h1>
             </Link>
             <IdDisplay id={app?.name ?? ""} />

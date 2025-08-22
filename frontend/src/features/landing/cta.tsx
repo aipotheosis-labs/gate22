@@ -76,7 +76,7 @@ export function CTA() {
                 </p>
                 <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                   <CTAButton
-                    href="/apps"
+                    href="/mcp-servers"
                     icon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}
                   >
                     Start on Cloud

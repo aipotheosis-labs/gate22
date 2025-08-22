@@ -47,7 +47,7 @@ export function MembersTable({ refreshKey = 0 }: MembersTableProps) {
 
       // If the current user is leaving the organization
       if (userId === user.userId) {
-        router.push("/apps");
+        router.push("/mcp-servers");
       }
     } catch {
       toast.error("Failed to remove member");

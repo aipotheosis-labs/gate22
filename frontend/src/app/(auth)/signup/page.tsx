@@ -14,26 +14,38 @@ export default function SignupPage() {
     password: string,
     name: string,
   ) => {
-    // Demo mode - bypass auth and accept any signup
-    console.log("Demo signup:", { email, name });
+    try {
+      // Call the signup API
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName: name.split(" ")[0],
+          lastName: name.split(" ").slice(1).join(" ") || "",
+        }),
+      });
 
-    // Create mock user data for demo
-    const mockUser = {
-      id: "demo-user-" + Date.now(),
-      email: email,
-      name: name,
-      role: "user",
-    };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Signup failed");
+      }
 
-    // Store mock token and user data
-    localStorage.setItem("accessToken", "demo-token-" + Date.now());
-    localStorage.setItem("user", JSON.stringify(mockUser));
+      const data = await response.json();
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+      // Store token and user data
+      localStorage.setItem("accessToken", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-    // Redirect to dashboard
-    router.push("/apps");
+      // Redirect to organization creation onboarding
+      router.push("/onboarding/organization");
+    } catch (error) {
+      console.error("Signup error:", error);
+      throw error;
+    }
   };
 
   return (

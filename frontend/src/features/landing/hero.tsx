@@ -104,7 +104,7 @@ export function Hero() {
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:gap-4">
             <CTAButton
-              href="/apps"
+              href="/mcp-servers"
               icon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}
             >
               Start on Cloud
