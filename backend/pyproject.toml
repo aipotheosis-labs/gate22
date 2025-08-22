@@ -33,6 +33,7 @@ dependencies = [
     "python-gitlab>=6.0.0",
     "bcrypt>=4.3.0",
     "pyjwt>=2.10.1",
+    "google-auth-oauthlib>=1.2.2",
 ]
 
 [dependency-groups]
