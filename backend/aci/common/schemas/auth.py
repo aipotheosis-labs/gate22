@@ -33,7 +33,7 @@ class EmailPwdRegistrationRequest(BaseModel):
 class GoogleRegistrationRequest(BaseModel):
     auth_flow: Literal[UserIdentityProvider.GOOGLE] = Field(description="Authentication flow")
     code: str = Field(description="Authentication code obtained")
-    code_verifier: str = Field(description="Code verifier obtained")
+    state: str = Field(description="OAuth2 state")
 
 
 RegistrationRequest = Annotated[
@@ -49,12 +49,17 @@ class EmailPwdLoginRequest(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     auth_flow: Literal[UserIdentityProvider.GOOGLE] = Field(description="Authentication flow")
-    auth_code: str = Field(description="Authentication code obtained")
+    code: str = Field(description="Authentication code obtained")
+    state: str = Field(description="OAuth2 state")
 
 
 LoginRequest = Annotated[
     EmailPwdLoginRequest | GoogleLoginRequest, Field(discriminator="auth_flow")
 ]
+
+
+class OAuth2AuthUrlResponse(BaseModel):
+    auth_url: str
 
 
 class TokenResponse(BaseModel):

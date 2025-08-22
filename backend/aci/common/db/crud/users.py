@@ -10,7 +10,7 @@ def create_user(
     db_session: Session,
     name: str,
     email: str,
-    password_hash: str,
+    password_hash: str | None,
     identity_provider: UserIdentityProvider,
 ) -> User:
     user = User(
