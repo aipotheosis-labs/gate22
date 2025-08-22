@@ -20,7 +20,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { PiStorefront } from "react-icons/pi";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line, RiLinkUnlinkM } from "react-icons/ri";
 import { AiOutlineRobot } from "react-icons/ai";

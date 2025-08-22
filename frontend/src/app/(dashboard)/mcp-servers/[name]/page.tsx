@@ -12,8 +12,8 @@ export default function MCPServerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const serverName = decodeURIComponent(params.name as string);
-  
-  const server = mcpIntegrations.find(mcp => mcp.name === serverName);
+
+  const server = mcpIntegrations.find((mcp) => mcp.name === serverName);
 
   if (!server) {
     return (
@@ -21,7 +21,7 @@ export default function MCPServerDetailPage() {
         <div className="text-center py-12">
           <h2 className="text-2xl font-semibold mb-2">Server Not Found</h2>
           <p className="text-muted-foreground mb-4">
-            The MCP server "{serverName}" could not be found.
+            The MCP server &quot;{serverName}&quot; could not be found.
           </p>
           <Button onClick={() => router.push("/mcp-servers")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -77,9 +77,7 @@ export default function MCPServerDetailPage() {
       </div>
 
       {/* Description */}
-      <p className="text-muted-foreground mb-6">
-        {server.description}
-      </p>
+      <p className="text-muted-foreground mb-6">{server.description}</p>
 
       <Separator className="mb-8" />
 
@@ -110,21 +108,33 @@ export default function MCPServerDetailPage() {
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-2 font-medium text-sm">Name</th>
-                <th className="text-left p-2 font-medium text-sm">Description</th>
-                <th className="text-center p-2 font-medium text-sm w-20">Action</th>
+                <th className="text-left p-2 font-medium text-sm">
+                  Description
+                </th>
+                <th className="text-center p-2 font-medium text-sm w-20">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
               {server.tools.examples.map((tool, index) => (
-                <tr key={index} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                <tr
+                  key={index}
+                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                >
                   <td className="p-2 font-medium text-sm">{tool}</td>
                   <td className="p-2 text-xs text-muted-foreground">
-                    {server.tools.descriptions && server.tools.descriptions[index] 
+                    {server.tools.descriptions &&
+                    server.tools.descriptions[index]
                       ? server.tools.descriptions[index]
                       : "No description available"}
                   </td>
                   <td className="p-2 text-center">
-                    <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2 text-xs"
+                    >
                       Open
                     </Button>
                   </td>
@@ -134,7 +144,6 @@ export default function MCPServerDetailPage() {
           </table>
         </div>
       </div>
-
     </div>
   );
 }
