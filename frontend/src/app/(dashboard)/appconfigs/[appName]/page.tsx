@@ -148,15 +148,18 @@ export default function AppConfigDetailPage() {
               checked={info.getValue()}
               onCheckedChange={async (checked) => {
                 try {
-                  const success = await toggleAccountStatus(account.id, checked);
+                  const success = await toggleAccountStatus(
+                    account.id,
+                    checked,
+                  );
                   if (success) {
                     toast.success(
-                      `Linked account ${account.linked_account_owner_id} ${checked ? "enabled" : "disabled"}`
+                      `Linked account ${account.linked_account_owner_id} ${checked ? "enabled" : "disabled"}`,
                     );
                   } else {
                     toast.error("Failed to update linked account");
                   }
-                } catch (error) {
+                } catch {
                   toast.error("Failed to update linked account");
                 }
               }}

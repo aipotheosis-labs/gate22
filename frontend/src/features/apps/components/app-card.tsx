@@ -23,12 +23,11 @@ interface AppCardProps {
   isConfigured?: boolean;
 }
 
-export function AppCard({ app, isConfigured = false }: AppCardProps) {
+export function AppCard({ app }: AppCardProps) {
   const { data: linkedAccounts = [] } = useAppLinkedAccounts(app.name);
   return (
     <Link href={`/apps/${app.name}`} className="block">
       <Card className="h-[300px] transition-shadow hover:shadow-lg flex flex-col overflow-hidden relative">
-
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between min-w-0">
             <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">

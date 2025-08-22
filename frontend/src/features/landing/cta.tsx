@@ -29,7 +29,7 @@ const CTAButton = ({
   );
 
   const button = (
-    <Button size="lg" variant={variant as any} className={buttonClass}>
+    <Button size="lg" variant={variant} className={buttonClass}>
       {icon && (
         <span className="mr-2" aria-hidden="true">
           {icon}
@@ -53,19 +53,26 @@ export function CTA() {
   return (
     <section className="relative" aria-labelledby="cta-heading">
       {/* Background elements */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]" aria-hidden="true"></div>
-      
+      <div
+        className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
+        aria-hidden="true"
+      ></div>
+
       <div className="relative mx-auto max-w-7xl px-6 py-24 sm:px-8 sm:py-32 lg:px-12 lg:py-40">
         <div className="relative">
           <div className="mx-auto max-w-2xl lg:max-w-3xl">
             <div className="border-primary/50 bg-background/80 rounded-xl border p-8 sm:p-12 backdrop-blur-sm">
               <div className="mx-auto max-w-xl lg:max-w-none">
-                <h2 id="cta-heading" className="text-center text-2xl font-bold sm:text-3xl">
+                <h2
+                  id="cta-heading"
+                  className="text-center text-2xl font-bold sm:text-3xl"
+                >
                   Stop Managing Configs. Start Building.
                 </h2>
                 <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-center text-base leading-relaxed">
-                  Ready to bring centralized control, security, and observability to your team&apos;s AI workflow? 
-                  Get started today.
+                  Ready to bring centralized control, security, and
+                  observability to your team&apos;s AI workflow? Get started
+                  today.
                 </p>
                 <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                   <CTAButton
@@ -74,7 +81,7 @@ export function CTA() {
                   >
                     Start on Cloud
                   </CTAButton>
-                  
+
                   <CTAButton variant="outline">View on GitHub</CTAButton>
                 </div>
                 <p className="text-muted-foreground mt-6 text-center text-sm">

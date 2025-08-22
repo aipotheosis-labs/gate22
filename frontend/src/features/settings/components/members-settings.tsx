@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { UserPlus, Users } from "lucide-react"
-import { VercelMembersTable } from "@/features/members/components/vercel-members-table"
-import { InviteMemberDialog } from "@/features/members/components/invite-member-dialog"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { UserPlus, Users } from "lucide-react";
+import { VercelMembersTable } from "@/features/members/components/vercel-members-table";
+import { InviteMemberDialog } from "@/features/members/components/invite-member-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function MembersSettings() {
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
-  const [activeTab, setActiveTab] = useState("team-members")
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [activeTab, setActiveTab] = useState("team-members");
 
   const handleInviteSuccess = () => {
-    setInviteDialogOpen(false)
-    setRefreshKey(prev => prev + 1)
-  }
+    setInviteDialogOpen(false);
+    setRefreshKey((prev) => prev + 1);
+  };
 
   return (
     <div className="space-y-6">
@@ -47,17 +47,19 @@ export function MembersSettings() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground">No pending invitations</p>
+              <p className="text-sm text-muted-foreground">
+                No pending invitations
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      <InviteMemberDialog 
+      <InviteMemberDialog
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={handleInviteSuccess}
       />
     </div>
-  )
+  );
 }

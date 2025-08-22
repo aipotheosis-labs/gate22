@@ -1,38 +1,38 @@
-"use client"
+"use client";
 
-import { useMetaInfo } from "@/components/context/metainfo"
-import { Button } from "@/components/ui/button"
-import { Plus, Users, UsersRound, Settings, Trash2, Edit } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
-import { listTeams } from "@/features/teams/api/team"
+import { useMetaInfo } from "@/components/context/metainfo";
+import { Button } from "@/components/ui/button";
+import { Plus, Users, UsersRound, Settings, Trash2, Edit } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { listTeams } from "@/features/teams/api/team";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal } from "lucide-react"
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 
 export function TeamsSettings() {
-  const { activeOrg, accessToken } = useMetaInfo()
-  const router = useRouter()
+  const { activeOrg, accessToken } = useMetaInfo();
+  const router = useRouter();
 
   const { data: teams, isLoading } = useQuery({
     queryKey: ["teams", activeOrg.orgId],
     queryFn: () => listTeams(accessToken, activeOrg.orgId),
     enabled: !!accessToken && !!activeOrg.orgId,
-  })
+  });
 
   return (
     <div className="space-y-6">
@@ -87,8 +87,10 @@ export function TeamsSettings() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => router.push(`/settings/teams/${team.id}`)}
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(`/settings/teams/${team.id}`)
+                        }
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Manage Team
@@ -110,10 +112,11 @@ export function TeamsSettings() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Users className="h-4 w-4 mr-1" />
-                    {team.member_count} {team.member_count === 1 ? "member" : "members"}
+                    {team.member_count}{" "}
+                    {team.member_count === 1 ? "member" : "members"}
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => router.push(`/settings/teams/${team.id}`)}
                   >
@@ -129,7 +132,8 @@ export function TeamsSettings() {
               <UsersRound className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
               <p className="text-sm text-muted-foreground mb-4 text-center">
-                Create your first team to organize members and manage permissions
+                Create your first team to organize members and manage
+                permissions
               </p>
               <Button onClick={() => router.push("/settings/teams/new")}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -156,7 +160,9 @@ export function TeamsSettings() {
                   Allow members to create new teams
                 </p>
               </div>
-              <Button variant="outline" size="sm">Configure</Button>
+              <Button variant="outline" size="sm">
+                Configure
+              </Button>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -165,7 +171,9 @@ export function TeamsSettings() {
                   Set default permissions for new team members
                 </p>
               </div>
-              <Button variant="outline" size="sm">Configure</Button>
+              <Button variant="outline" size="sm">
+                Configure
+              </Button>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -180,5 +188,5 @@ export function TeamsSettings() {
         </Card>
       )}
     </div>
-  )
+  );
 }

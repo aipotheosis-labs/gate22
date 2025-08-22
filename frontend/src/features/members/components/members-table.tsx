@@ -70,12 +70,12 @@ export function MembersTable({ refreshKey = 0 }: MembersTableProps) {
     <EnhancedDataTable
       columns={columns}
       data={members}
-      searchBarProps={{ 
+      searchBarProps={{
         placeholder: "Search members by name or email...",
       }}
-      paginationOptions={{ 
-        initialPageIndex: 0, 
-        initialPageSize: 10 
+      paginationOptions={{
+        initialPageIndex: 0,
+        initialPageSize: 10,
       }}
     />
   );

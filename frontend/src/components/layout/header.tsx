@@ -89,7 +89,7 @@ export const Header = () => {
           {/* <Button variant="outline" className="px-2 mx-2">
             <GoBell />
           </Button> */}
-          
+
           <ThemeToggle />
         </div>
       </div>

@@ -5,15 +5,12 @@ export async function getAllLinkedAccounts(
   apiKey: string,
 ): Promise<LinkedAccount[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/linked-accounts`,
-    {
-      method: "GET",
-      headers: {
-        "X-API-KEY": apiKey,
-      },
+  const response = await fetch(`${baseUrl}/v1/linked-accounts`, {
+    method: "GET",
+    headers: {
+      "X-API-KEY": apiKey,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -60,21 +57,18 @@ export async function createAPILinkedAccount(
   apiKey: string,
 ): Promise<LinkedAccount> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/linked-accounts/api-key`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
-      },
-      body: JSON.stringify({
-        app_name: appName,
-        linked_account_owner_id: linkedAccountOwnerId,
-        api_key: linkedAPIKey,
-      }),
+  const response = await fetch(`${baseUrl}/v1/linked-accounts/api-key`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-KEY": apiKey,
     },
-  );
+    body: JSON.stringify({
+      app_name: appName,
+      linked_account_owner_id: linkedAccountOwnerId,
+      api_key: linkedAPIKey,
+    }),
+  });
 
   if (!response.ok) {
     let errorMsg = `Failed to create linked account: ${response.status} ${response.statusText}`;
@@ -99,20 +93,17 @@ export async function createNoAuthLinkedAccount(
   apiKey: string,
 ): Promise<LinkedAccount> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/linked-accounts/no-auth`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
-      },
-      body: JSON.stringify({
-        app_name: appName,
-        linked_account_owner_id: linkedAccountOwnerId,
-      }),
+  const response = await fetch(`${baseUrl}/v1/linked-accounts/no-auth`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-KEY": apiKey,
     },
-  );
+    body: JSON.stringify({
+      app_name: appName,
+      linked_account_owner_id: linkedAccountOwnerId,
+    }),
+  });
 
   if (!response.ok) {
     let errorMsg = `Failed to create no auth linked account: ${response.status} ${response.statusText}`;

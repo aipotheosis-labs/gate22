@@ -23,7 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { PiStorefront } from "react-icons/pi";
 import { RiSettings3Line, RiLinkUnlinkM } from "react-icons/ri";
 import { AiOutlineRobot } from "react-icons/ai";
-import { } from "lucide-react";
+import {} from "lucide-react";
 
 import {
   Tooltip,
@@ -160,7 +160,6 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -175,19 +174,13 @@ export function AppSidebar() {
                       isCollapsed && "justify-center",
                     )}
                   >
-                    <LogOut
-                      className={cn(
-                        "h-5 w-5 shrink-0",
-                      )}
-                    />
+                    <LogOut className={cn("h-5 w-5 shrink-0")} />
                     {!isCollapsed && <span>Logout</span>}
                   </Button>
                 </SidebarMenuButton>
               </TooltipTrigger>
               {isCollapsed && (
-                <TooltipContent side="right">
-                  Logout
-                </TooltipContent>
+                <TooltipContent side="right">Logout</TooltipContent>
               )}
             </Tooltip>
           </SidebarMenuItem>

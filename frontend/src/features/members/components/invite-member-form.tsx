@@ -44,7 +44,7 @@ export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
         accessToken,
         activeOrg.orgId,
         email.trim(),
-        role
+        role,
       );
       toast.success(`Invitation sent to ${email}`);
       setEmail("");

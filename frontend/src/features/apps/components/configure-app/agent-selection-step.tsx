@@ -55,7 +55,6 @@ export function AgentSelectionStep({
       (id) => selectedAgentIds[id],
     );
 
-
     const agentsWithoutCurrentApp = agents.filter((agent: Agent) => {
       if (!agent.allowed_apps || agent.allowed_apps.length === 0) {
         return false;

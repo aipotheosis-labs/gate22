@@ -9,22 +9,19 @@ export async function createAgent(
   custom_instructions: Record<string, string> = {},
 ): Promise<Agent> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/agents`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        name,
-        description,
-        allowed_apps,
-        custom_instructions,
-      }),
+  const response = await fetch(`${baseUrl}/v1/agents`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+    body: JSON.stringify({
+      name,
+      description,
+      allowed_apps,
+      custom_instructions,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to create agent. Status: ${response.status}`);
@@ -52,17 +49,14 @@ export async function updateAgent(
   );
 
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/agents/${agentId}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(body),
+  const response = await fetch(`${baseUrl}/v1/agents/${agentId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+    body: JSON.stringify(body),
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to update agent. Status: ${response.status}`);
@@ -75,15 +69,12 @@ export async function deleteAgent(
   accessToken: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/agents/${agentId}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${baseUrl}/v1/agents/${agentId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to delete agent. Status: ${response.status}`);

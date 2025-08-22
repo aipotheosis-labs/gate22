@@ -8,16 +8,13 @@ import {
   Eye,
   GitBranch,
   Key,
-  MessagesSquare,
   Monitor,
   Shield,
-  Sparkles,
-  TimerReset,
   Users2,
 } from "lucide-react";
 
 // Internal imports
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 
 /**
  * SectionTitle component for consistent headings across sections
@@ -44,7 +41,19 @@ const SectionTitle = ({
 /**
  * FeatureCard component displaying individual feature with icon and description
  */
-const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
+const FeatureCard = ({
+  feature,
+  index,
+}: {
+  feature: {
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    bgColor: string;
+    textColor: string;
+  };
+  index: number;
+}) => {
   return (
     <Card
       key={index}
@@ -54,7 +63,9 @@ const FeatureCard = ({ feature, index }: { feature: any; index: number }) => {
         <CardTitle className="mb-3 text-lg font-semibold">
           {feature.title}
         </CardTitle>
-        <p className="text-muted-foreground text-base leading-relaxed">{feature.description}</p>
+        <p className="text-muted-foreground text-base leading-relaxed">
+          {feature.description}
+        </p>
       </div>
     </Card>
   );
@@ -156,9 +167,11 @@ export function Features() {
                 Enterprise-Grade AI Gateway
               </h3>
               <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-                From scattered individual configurations to a centralized, secure, and observable platform. 
-                MCP Gateway brings enterprise-grade control to your team&apos;s AI agent deployments, ensuring security, 
-                consistency, and visibility across your engineering organization.
+                From scattered individual configurations to a centralized,
+                secure, and observable platform. MCP Gateway brings
+                enterprise-grade control to your team&apos;s AI agent
+                deployments, ensuring security, consistency, and visibility
+                across your engineering organization.
               </p>
 
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -180,7 +193,9 @@ export function Features() {
                   >
                     <BarChart3 className="text-primary h-4 w-4" />
                   </span>
-                  <span className="text-base font-medium">Complete Observability</span>
+                  <span className="text-base font-medium">
+                    Complete Observability
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span

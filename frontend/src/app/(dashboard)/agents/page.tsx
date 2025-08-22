@@ -20,7 +20,11 @@ import { Agent } from "@/features/agents/types/agent.types";
 import { toast } from "sonner";
 import { useAppConfigs } from "@/features/app-configs/hooks/use-app-config";
 import { CreateAgentForm } from "@/features/agents/components/create-agent-form";
-import { useCreateAgent, useDeleteAgent, useAgents } from "@/features/agents/hooks/use-agent";
+import {
+  useCreateAgent,
+  useDeleteAgent,
+  useAgents,
+} from "@/features/agents/hooks/use-agent";
 import { IdDisplay } from "@/features/apps/components/id-display";
 import { Trash2, Text, Calendar, Shield, Hash } from "lucide-react";
 import {
@@ -63,115 +67,120 @@ export default function AgentsPage() {
     [agents, deleteAgentMutation],
   );
 
-  const columns = useMemo<ColumnDef<Agent>[]>(() => [
-    {
-      id: "name",
-      accessorKey: "name",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Agent Name" />
-      ),
-      cell: ({ row }) => <IdDisplay id={row.getValue("name")} dim={false} />,
-      meta: {
-        label: "Agent Name",
-        placeholder: "Search by name...",
-        variant: "text",
-        icon: Text,
+  const columns = useMemo<ColumnDef<Agent>[]>(
+    () => [
+      {
+        id: "name",
+        accessorKey: "name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Agent Name" />
+        ),
+        cell: ({ row }) => <IdDisplay id={row.getValue("name")} dim={false} />,
+        meta: {
+          label: "Agent Name",
+          placeholder: "Search by name...",
+          variant: "text",
+          icon: Text,
+        },
+        enableColumnFilter: true,
+        enableSorting: true,
       },
-      enableColumnFilter: true,
-      enableSorting: true,
-    },
-    {
-      id: "description",
-      accessorKey: "description",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Description" />
-      ),
-      cell: ({ row }) => (
-        <div className="max-w-[500px]">{row.getValue("description")}</div>
-      ),
-      meta: {
-        label: "Description",
-        placeholder: "Search descriptions...",
-        variant: "text",
-        icon: Hash,
+      {
+        id: "description",
+        accessorKey: "description",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Description" />
+        ),
+        cell: ({ row }) => (
+          <div className="max-w-[500px]">{row.getValue("description")}</div>
+        ),
+        meta: {
+          label: "Description",
+          placeholder: "Search descriptions...",
+          variant: "text",
+          icon: Hash,
+        },
+        enableColumnFilter: true,
       },
-      enableColumnFilter: true,
-    },
-    {
-      id: "allowed_apps",
-      accessorKey: "allowed_apps",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Allowed Apps" />
-      ),
-      cell: ({ row }) => {
-        const apps = row.getValue("allowed_apps") as string[] | undefined;
-        return (
-          <div className="max-w-[300px]">
-            {apps && apps.length > 0 ? apps.join(", ") : "All apps"}
-          </div>
-        );
+      {
+        id: "allowed_apps",
+        accessorKey: "allowed_apps",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Allowed Apps" />
+        ),
+        cell: ({ row }) => {
+          const apps = row.getValue("allowed_apps") as string[] | undefined;
+          return (
+            <div className="max-w-[300px]">
+              {apps && apps.length > 0 ? apps.join(", ") : "All apps"}
+            </div>
+          );
+        },
+        meta: {
+          label: "Allowed Apps",
+          variant: "multiSelect",
+          options: appConfigs.map((config) => ({
+            label: config.app_name,
+            value: config.app_name,
+          })),
+          icon: Shield,
+        },
+        enableColumnFilter: true,
       },
-      meta: {
-        label: "Allowed Apps",
-        variant: "multiSelect",
-        options: appConfigs.map(config => ({
-          label: config.app_name,
-          value: config.app_name,
-        })),
-        icon: Shield,
+      {
+        id: "created_at",
+        accessorKey: "created_at",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created" />
+        ),
+        cell: ({ row }) =>
+          new Date(row.getValue("created_at")).toLocaleDateString(),
+        meta: {
+          label: "Created Date",
+          variant: "date",
+          icon: Calendar,
+        },
+        enableColumnFilter: true,
+        enableSorting: true,
       },
-      enableColumnFilter: true,
-    },
-    {
-      id: "created_at",
-      accessorKey: "created_at",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Created" />
-      ),
-      cell: ({ row }) => 
-        new Date(row.getValue("created_at")).toLocaleDateString(),
-      meta: {
-        label: "Created Date",
-        variant: "date",
-        icon: Calendar,
+      {
+        id: "actions",
+        header: () => "Actions",
+        cell: ({ row }) => {
+          const agent = row.original;
+          return (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete the agent &quot;{agent.name}
+                    &quot;? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDeleteAgent(agent.id)}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
       },
-      enableColumnFilter: true,
-      enableSorting: true,
-    },
-    {
-      id: "actions",
-      header: () => "Actions",
-      cell: ({ row }) => {
-        const agent = row.original;
-        return (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Agent</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete the agent &quot;{agent.name}&quot;? 
-                  This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDeleteAgent(agent.id)}>
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ], [appConfigs, handleDeleteAgent]);
+    ],
+    [appConfigs, handleDeleteAgent],
+  );
 
   const { table } = useDataTable({
     data: agents as Agent[],

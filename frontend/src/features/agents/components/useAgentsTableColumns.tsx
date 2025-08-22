@@ -21,7 +21,7 @@ import {
 const columnHelper = createColumnHelper<Agent>();
 
 export const useAgentsTableColumns = (
-  onDelete: (agentId: string) => Promise<void>
+  onDelete: (agentId: string) => Promise<void>,
 ): ColumnDef<Agent>[] => {
   return useMemo(() => {
     const columns = [
@@ -97,7 +97,8 @@ export const useAgentsTableColumns = (
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Agent</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete the agent &quot;{agent.name}&quot;? This action cannot be undone.
+                    Are you sure you want to delete the agent &quot;{agent.name}
+                    &quot;? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -29,15 +29,12 @@ export async function getAppConfig(
 
 export async function getAllAppConfigs(apiKey: string): Promise<AppConfig[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/app-configurations`,
-    {
-      method: "GET",
-      headers: {
-        "X-API-KEY": apiKey,
-      },
+  const response = await fetch(`${baseUrl}/v1/app-configurations`, {
+    method: "GET",
+    headers: {
+      "X-API-KEY": apiKey,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -70,23 +67,20 @@ export async function createAppConfig(
   },
 ): Promise<AppConfig> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/app-configurations`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
-      },
-      body: JSON.stringify({
-        app_name: appName,
-        security_scheme: security_scheme,
-        security_scheme_overrides: security_scheme_overrides ?? {},
-        all_functions_enabled: true,
-        enabled_functions: [],
-      }),
+  const response = await fetch(`${baseUrl}/v1/app-configurations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-KEY": apiKey,
     },
-  );
+    body: JSON.stringify({
+      app_name: appName,
+      security_scheme: security_scheme,
+      security_scheme_overrides: security_scheme_overrides ?? {},
+      all_functions_enabled: true,
+      enabled_functions: [],
+    }),
+  });
 
   if (response.status === 409) {
     throw new AppAlreadyConfiguredError(
@@ -110,19 +104,16 @@ export async function updateAppConfig(
   apiKey: string,
 ): Promise<AppConfig> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/app-configurations/${appName}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
-      },
-      body: JSON.stringify({
-        enabled: enabled,
-      }),
+  const response = await fetch(`${baseUrl}/v1/app-configurations/${appName}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-KEY": apiKey,
     },
-  );
+    body: JSON.stringify({
+      enabled: enabled,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error(
@@ -139,16 +130,13 @@ export async function deleteAppConfig(
   apiKey: string,
 ): Promise<Response> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/app-configurations/${appName}`,
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
-      },
+  const response = await fetch(`${baseUrl}/v1/app-configurations/${appName}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-KEY": apiKey,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(

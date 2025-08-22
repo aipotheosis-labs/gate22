@@ -12,7 +12,10 @@ export interface LoginResponse {
   org: OrgMemberInfoClass;
 }
 
-export async function login({ email, password }: LoginRequest): Promise<LoginResponse> {
+export async function login({
+  email,
+  password,
+}: LoginRequest): Promise<LoginResponse> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/api/auth/login`, {
     method: "POST",
@@ -30,7 +33,9 @@ export async function login({ email, password }: LoginRequest): Promise<LoginRes
   return response.json();
 }
 
-export async function getCurrentUser(accessToken: string): Promise<{ user: UserClass; org: OrgMemberInfoClass }> {
+export async function getCurrentUser(
+  accessToken: string,
+): Promise<{ user: UserClass; org: OrgMemberInfoClass }> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/api/auth/me`, {
     method: "GET",

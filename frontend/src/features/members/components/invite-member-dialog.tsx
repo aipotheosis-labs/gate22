@@ -27,10 +27,10 @@ interface InviteMemberDialogProps {
   onSuccess?: () => void;
 }
 
-export function InviteMemberDialog({ 
-  open, 
-  onOpenChange, 
-  onSuccess 
+export function InviteMemberDialog({
+  open,
+  onOpenChange,
+  onSuccess,
 }: InviteMemberDialogProps) {
   const { accessToken, activeOrg } = useMetaInfo();
   const [inviteEmail, setInviteEmail] = useState("");
@@ -125,23 +125,15 @@ export function InviteMemberDialog({
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={OrganizationRole.Admin}>
-                  Admin
-                </SelectItem>
-                <SelectItem value="Member">
-                  Member
-                </SelectItem>
+                <SelectItem value={OrganizationRole.Admin}>Admin</SelectItem>
+                <SelectItem value="Member">Member</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={inviting}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={inviting}>
             Cancel
           </Button>
           <Button

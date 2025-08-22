@@ -162,9 +162,7 @@ export const useAgentStore = create<AgentState>()(
           const currentSelectedAgent = get().selectedAgent;
           let selectedAgent = currentSelectedAgent;
 
-          if (
-            !agents.find((agent) => agent.id === currentSelectedAgent)
-          ) {
+          if (!agents.find((agent) => agent.id === currentSelectedAgent)) {
             selectedAgent = agents[0].id;
           }
 

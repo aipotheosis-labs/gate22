@@ -12,7 +12,6 @@ import { useState, useMemo } from "react";
 import { App } from "@/features/apps/types/app.types";
 import { useAppConfigs } from "@/features/app-configs/hooks/use-app-config";
 
-
 enum AuthType {
   ALL = "All Auth Types",
   API_KEY = "api_key",
@@ -34,7 +33,9 @@ export function AppGrid({ apps }: AppGridProps) {
 
   const { data: appConfigs = [] } = useAppConfigs();
 
-  const categories = Array.from(new Set(apps.flatMap((app) => app.categories || [])));
+  const categories = Array.from(
+    new Set(apps.flatMap((app) => app.categories || [])),
+  );
 
   const authTypes = Array.from(
     new Set(
@@ -60,7 +61,6 @@ export function AppGrid({ apps }: AppGridProps) {
     };
   }, []);
 
-
   const matchesAuthType = useMemo(() => {
     return (app: App, authType: string): boolean => {
       if (authType === AuthType.ALL) {
@@ -85,7 +85,6 @@ export function AppGrid({ apps }: AppGridProps) {
     };
   }, []);
 
-
   const filteredAndSortedApps = useMemo(() => {
     const filtered = apps.filter((app) => {
       return (
@@ -97,7 +96,9 @@ export function AppGrid({ apps }: AppGridProps) {
 
     // Sort alphabetically by name (A-Z)
     return filtered.sort((a, b) =>
-      (a.display_name || a.name || '').localeCompare(b.display_name || b.name || '')
+      (a.display_name || a.name || "").localeCompare(
+        b.display_name || b.name || "",
+      ),
     );
   }, [
     apps,
@@ -108,7 +109,6 @@ export function AppGrid({ apps }: AppGridProps) {
     matchesCategory,
     matchesAuthType,
   ]);
-
 
   return (
     <div className="space-y-6">
@@ -142,10 +142,13 @@ export function AppGrid({ apps }: AppGridProps) {
             <SelectItem value={AuthType.ALL}>All Auth Types</SelectItem>
             {authTypes.map((authType) => (
               <SelectItem key={authType} value={authType}>
-                {authType === AuthType.API_KEY ? "API Key" : 
-                 authType === AuthType.OAUTH2 ? "OAuth2" : 
-                 authType === AuthType.NO_AUTH ? "No Auth" : 
-                 authType}
+                {authType === AuthType.API_KEY
+                  ? "API Key"
+                  : authType === AuthType.OAUTH2
+                    ? "OAuth2"
+                    : authType === AuthType.NO_AUTH
+                      ? "No Auth"
+                      : authType}
               </SelectItem>
             ))}
           </SelectContent>

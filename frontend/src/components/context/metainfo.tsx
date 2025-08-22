@@ -10,8 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LoginForm } from "@/features/auth/components/login-form";
-import { login, getCurrentUser, logout as apiLogout } from "@/features/auth/api/auth";
+import { getCurrentUser, logout as apiLogout } from "@/features/auth/api/auth";
 
 export interface UserClass {
   userId: string;
@@ -61,33 +60,37 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   useEffect(() => {
     const checkExistingSession = async () => {
       // Check both token formats for compatibility
-      const storedToken = localStorage.getItem('accessToken') || localStorage.getItem('access-token');
-      const storedUser = localStorage.getItem('user');
-      
+      const storedToken =
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("access-token");
+      const storedUser = localStorage.getItem("user");
+
       // Demo mode - if we have a demo token, use stored user data
-      if (storedToken && storedToken.startsWith('demo-token-')) {
+      if (storedToken && storedToken.startsWith("demo-token-")) {
         if (storedUser) {
           try {
             const userData = JSON.parse(storedUser);
             setAccessToken(storedToken);
             setUser({
-              userId: userData.id || 'demo-user-001',
+              userId: userData.id || "demo-user-001",
               email: userData.email,
               firstName: userData.name,
-              lastName: '',
+              lastName: "",
               username: userData.name,
             });
-            setOrgs([{
-              orgId: 'demo-org-001',
-              orgName: 'Demo Organization',
-              userRole: userData.role || 'admin',
-              userPermissions: ['read', 'write', 'admin'],
-            }]);
+            setOrgs([
+              {
+                orgId: "demo-org-001",
+                orgName: "Demo Organization",
+                userRole: userData.role || "admin",
+                userPermissions: ["read", "write", "admin"],
+              },
+            ]);
             setIsAuthenticated(true);
           } catch {
             // Invalid stored data, clear it
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("user");
           }
         }
       } else if (storedToken) {
@@ -100,26 +103,14 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
           setIsAuthenticated(true);
         } catch {
           // Token is invalid, clear it
-          localStorage.removeItem('access-token');
-          localStorage.removeItem('accessToken');
+          localStorage.removeItem("access-token");
+          localStorage.removeItem("accessToken");
         }
       }
       setIsLoading(false);
     };
 
     checkExistingSession();
-  }, []);
-
-  const handleLogin = useCallback(async (email: string, password: string) => {
-    const { token, user, org } = await login({ email, password });
-    
-    // Store token in localStorage for persistence
-    localStorage.setItem('access-token', token);
-    
-    setAccessToken(token);
-    setUser(user);
-    setOrgs([org]);
-    setIsAuthenticated(true);
   }, []);
 
   const handleLogout = useCallback(async () => {
@@ -130,17 +121,17 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         // Continue with logout even if API call fails
       }
     }
-    
+
     // Clear all state and localStorage
-    localStorage.removeItem('access-token');
+    localStorage.removeItem("access-token");
     setAccessToken("");
     setUser(null);
     setOrgs([]);
     setActiveOrg(null);
     setIsAuthenticated(false);
-    
+
     // Redirect to home page after logout
-    router.push('/');
+    router.push("/");
   }, [accessToken, router]);
 
   useEffect(() => {
@@ -148,6 +139,13 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       setActiveOrg(orgs[0]);
     }
   }, [orgs]);
+
+  // Redirect to login page if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Show loading while checking existing session
   if (isLoading) {
@@ -159,18 +157,21 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     );
   }
 
-  // Show authentication screen if not authenticated
+  // Show loading while redirecting to login
   if (!isAuthenticated) {
-    return <LoginForm onLogin={handleLogin} />;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen space-y-3">
+        <h1 className="text-2xl font-semibold">Redirecting to login...</h1>
+        <Skeleton className="h-[125px] w-[250px] rounded-xl" />
+      </div>
+    );
   }
 
   // Show loading while fetching initial data
   if (!user || !activeOrg || !accessToken) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen space-y-3">
-        <h1 className="text-2xl font-semibold">
-          Setting up your workspace...
-        </h1>
+        <h1 className="text-2xl font-semibold">Setting up your workspace...</h1>
         <Skeleton className="h-[125px] w-[250px] rounded-xl" />
         <div className="space-y-2">
           <Skeleton className="h-4 w-[250px]" />
