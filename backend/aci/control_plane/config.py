@@ -11,8 +11,9 @@ ENVIRONMENT = check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT")
 
 # ROUTERS
 ROUTER_PREFIX_HEALTH = "/v1/health"
-ROUTER_PREFIX_ACCOUNTS = "/v1/accounts"
+ROUTER_PREFIX_AUTH = "/v1/auth"
 ROUTER_PREFIX_ORGANIZATIONS = "/v1/organizations"
+ROUTER_PREFIX_USERS = "/v1/users"
 
 # Authentication
 # GOOGLE_CLIENT_ID = check_and_get_env_variable("CONTROL_PLANE_GOOGLE_CLIENT_ID")

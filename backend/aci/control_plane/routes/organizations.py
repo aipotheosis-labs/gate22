@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=OrganizationInfo, status_code=status.HTTP_201_CREATED)
 async def create_organization(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     request: CreateOrganizationRequest,
@@ -53,7 +53,18 @@ async def create_organization(
     )
 
 
-@router.get("/{organization_id}/members", status_code=status.HTTP_200_OK)
+# ------------------------------------------------------------
+#
+# Organization Memberships Management
+#
+# ------------------------------------------------------------
+
+
+@router.get(
+    "/{organization_id}/members",
+    response_model=list[OrganizationMembershipInfo],
+    status_code=status.HTTP_200_OK,
+)
 async def list_organization_members(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,

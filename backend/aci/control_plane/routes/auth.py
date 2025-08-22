@@ -10,14 +10,13 @@ from aci.common.db import crud
 from aci.common.db.sql_models import User
 from aci.common.enums import UserIdentityProvider
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.accounts import (
+from aci.common.schemas.auth import (
+    ActAsInfo,
+    JWTPayload,
     LoginRequest,
     RegistrationRequest,
     TokenResponse,
-    UserInfo,
-    UserOrganizationInfo,
 )
-from aci.common.schemas.auth import ActAsInfo, JWTPayload
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
 
@@ -25,16 +24,17 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     context: Annotated[
         deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
     ],
     request: RegistrationRequest,
-) -> UserInfo | None:
+    response: Response,
+) -> TokenResponse | None:
     if request.auth_flow == UserIdentityProvider.EMAIL:
         # Check if user already exists
-        user = crud.accounts.get_user_by_email(context.db_session, request.email)
+        user = crud.users.get_user_by_email(context.db_session, request.email)
         if user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists"
@@ -45,7 +45,7 @@ async def register(
         hashed = bcrypt.hashpw(request.password.encode(), salt)
 
         # Create user
-        user = crud.accounts.create_user(
+        user = crud.users.create_user(
             db_session=context.db_session,
             name=request.name,
             email=request.email,
@@ -55,25 +55,54 @@ async def register(
 
         context.db_session.commit()
 
-        return UserInfo(
-            user_id=user.id,
-            name=user.name,
-            email=user.email,
-            organizations=[
-                UserOrganizationInfo(
-                    organization_id=org_membership.organization_id,
-                    organization_name=org_membership.organization.name,
-                    role=org_membership.role,
-                )
-                for org_membership in user.organization_memberships
-            ],
-        )
+        # Issue a JWT Token
+        token = _sign_token(user, None)
+
+        # Issue a refresh token, store in secure cookie
+        refresh_token = secrets.token_urlsafe(32)
+        _set_refresh_token(response, refresh_token)
+
+        return TokenResponse(token=token)
+
     elif request.auth_flow == UserIdentityProvider.GOOGLE:
         # TODO: Implement Google registration
+
+        # client_config = {
+        #     "web": {
+        #         "client_id": config.GOOGLE_CLIENT_ID,
+        #         "client_secret": config.GOOGLE_CLIENT_SECRET,
+        #         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        #         "token_uri": "https://oauth2.googleapis.com/token",
+        #     }
+        # }
+
+        # flow = Flow.from_client_config(
+        #     client_config,
+        #     scopes=["openid", "email", "profile"],
+        #     redirect_uri="http://localhost:3000/oauth2/callback",
+        # )
+
+        # flow.fetch_token(code=request.code, code_verifier=request.code_verifier)
+
+        # if not flow.credentials.id_token:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_401_UNAUTHORIZED,
+        #         detail="Error obtaining ID Token from Google",
+        #     )
+
+        # req = requests.Request()
+
+        # claims = id_token.verify_oauth2_token(
+        #     flow.credentials.id_token,
+        #     req,
+        #     audience=config.GOOGLE_CLIENT_ID,
+        # )
+        # logger.info(claims)
+
         return None
 
 
-@router.post("/login", response_model=TokenResponse | None, status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def login(
     context: Annotated[
         deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
@@ -82,10 +111,10 @@ async def login(
     response: Response,
 ) -> TokenResponse | None:
     if request.auth_flow == UserIdentityProvider.EMAIL:
-        user = crud.accounts.get_user_by_email(context.db_session, request.email)
+        user = crud.users.get_user_by_email(context.db_session, request.email)
 
-        # User not found
-        if not user:
+        # User not found or deleted
+        if not user or user.deleted_at:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
             )
@@ -108,24 +137,28 @@ async def login(
             else None
         )
 
+        # Issue a JWT Token
         token = _sign_token(user, act_as)
 
         # Issue a refresh token, store in secure cookie
         refresh_token = secrets.token_urlsafe(32)
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=60 * 60 * 24 * 30,
-            path="/auth/refresh",
-        )
+        _set_refresh_token(response, refresh_token)
 
         return TokenResponse(token=token)
     elif request.auth_flow == UserIdentityProvider.GOOGLE:
-        # TODO: Implement Google login
         return None
+
+
+def _set_refresh_token(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 30,
+        path="/auth/refresh",
+    )
 
 
 def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
@@ -157,7 +190,7 @@ def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
 
 #     act_as = context.act_as
 
-#     user = crud.accounts.get_user_by_id(context.db_session, context.user_id)
+#     user = crud.users.get_user_by_id(context.db_session, context.user_id)
 #     if not user:
 #         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
@@ -173,28 +206,3 @@ def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
 #     token = _sign_token(user, act_as)
 
 #     return None
-
-
-@router.post("/profile", response_model=UserInfo | None, status_code=status.HTTP_200_OK)
-async def profile(
-    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
-) -> UserInfo | None:
-    user = crud.accounts.get_user_by_id(context.db_session, context.user_id)
-
-    # Should never happen as the user_id is validated in the JWT payload
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    return UserInfo(
-        user_id=user.id,
-        name=user.name,
-        email=user.email,
-        organizations=[
-            UserOrganizationInfo(
-                organization_id=org_membership.organization_id,
-                organization_name=org_membership.organization.name,
-                role=org_membership.role,
-            )
-            for org_membership in user.organization_memberships
-        ],
-    )

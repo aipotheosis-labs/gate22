@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Generator
 from typing import Annotated
 from uuid import UUID
@@ -49,7 +48,6 @@ def get_jwt_payload(
         decoded_token = jwt.decode(
             credentials.credentials, config.JWT_SIGNING_KEY, algorithms=[config.JWT_ALGORITHM]
         )
-        logging.info(f"Decoded token: {decoded_token}")
         jwt_payload = JWTPayload(**decoded_token)
         return jwt_payload
     except Exception as e:
