@@ -65,7 +65,7 @@ def get_request_context(
     jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
 ) -> RequestContext:
     """
-    This method validates the user's permission to act as an organization.
+    This method validates whether the user is permitted to act as the desired organization and role.
     Returns a RequestContext object containing the DB session, user_id and act_as information.
     """
     if jwt_payload.act_as:

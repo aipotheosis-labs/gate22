@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from aci.common.enums import OrganizationRole
+from aci.common.enums import OrganizationRole, TeamRole
 
 
 class CreateOrganizationRequest(BaseModel):
@@ -14,7 +14,7 @@ class CreateOrganizationRequest(BaseModel):
 
 
 class OrganizationInfo(BaseModel):
-    organization_id: str
+    organization_id: UUID
     name: str
     description: str | None = None
 
@@ -29,3 +29,25 @@ class OrganizationMembershipInfo(BaseModel):
 
 class UpdateOrganizationMemberRoleRequest(BaseModel):
     role: OrganizationRole
+
+
+class CreateOrganizationTeamRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100, description="Team name")
+    description: str | None = Field(
+        default=None, min_length=1, max_length=255, description="Team description"
+    )
+
+
+class TeamInfo(BaseModel):
+    team_id: UUID
+    name: str
+    description: str | None = None
+    created_at: datetime.datetime
+
+
+class TeamMembershipInfo(BaseModel):
+    user_id: UUID
+    name: str
+    email: str
+    role: TeamRole
+    created_at: datetime.datetime

@@ -6,10 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
+from aci.common.schemas.auth import ActAsInfo
 from aci.common.schemas.organizations import (
     CreateOrganizationRequest,
+    CreateOrganizationTeamRequest,
     OrganizationInfo,
     OrganizationMembershipInfo,
+    TeamInfo,
+    TeamMembershipInfo,
     UpdateOrganizationMemberRoleRequest,
 )
 from aci.control_plane import dependencies as deps
@@ -18,16 +22,29 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
+def _throw_if_not_permitted(
+    act_as: ActAsInfo | None,
+    requested_organization_id: UUID | None = None,
+    required_role: OrganizationRole = OrganizationRole.MEMBER,
+) -> None:
+    """
+    This function throws an HTTPException if the user is not permitted to act as the requested
+    organization and role.
+    """
+    if not act_as:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    if requested_organization_id and act_as.organization_id != requested_organization_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    if required_role == OrganizationRole.ADMIN and act_as.role != OrganizationRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+
 @router.post("/", response_model=OrganizationInfo, status_code=status.HTTP_201_CREATED)
 async def create_organization(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     request: CreateOrganizationRequest,
 ) -> OrganizationInfo:
-    # Check if organization name already used
-    if crud.organizations.get_organization_by_name(context.db_session, request.name):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Organization name already used"
-        )
+    # Every logged in user can create an organization. No permission check.
 
     # Create organization
     organization = crud.organizations.create_organization(
@@ -47,7 +64,7 @@ async def create_organization(
     context.db_session.commit()
 
     return OrganizationInfo(
-        organization_id=str(organization.id),
+        organization_id=organization.id,
         name=organization.name,
         description=organization.description,
     )
@@ -58,8 +75,6 @@ async def create_organization(
 # Organization Memberships Management
 #
 # ------------------------------------------------------------
-
-
 @router.get(
     "/{organization_id}/members",
     response_model=list[OrganizationMembershipInfo],
@@ -69,9 +84,8 @@ async def list_organization_members(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
 ) -> list[OrganizationMembershipInfo]:
-    # Check if user currently acting as the requested organization
-    if context.act_as and context.act_as.organization_id == organization_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    # Check user's role permission
+    _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
 
     # Get organization members
     organization_members = crud.organizations.get_organization_members(
@@ -96,12 +110,14 @@ async def remove_organization_member(
     organization_id: UUID,
     user_id: UUID,
 ) -> None:
-    # Check if user currently acting as the requested organization
-    if context.act_as and context.act_as.organization_id == organization_id:
+    # Check user's role permission
+    _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
+
+    if not context.act_as:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Admin can remove anyone in the organization
-    if context.act_as and context.act_as.role == OrganizationRole.ADMIN:
+    if context.act_as.role == OrganizationRole.ADMIN:
         # Check if user is the last admin in the organization, if so, raise an error
         organization_members = crud.organizations.get_organization_members(
             db_session=context.db_session,
@@ -115,9 +131,8 @@ async def remove_organization_member(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Cannot remove the last admin in the organization",
             )
-
     # Member can only remove themselves
-    elif context.act_as and context.act_as.role == OrganizationRole.MEMBER:
+    elif context.act_as.role == OrganizationRole.MEMBER:
         if context.user_id != str(user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Cannot remove other members"
@@ -140,16 +155,12 @@ async def update_organization_member_role(
     user_id: UUID,
     request: UpdateOrganizationMemberRoleRequest,
 ) -> None:
-    # Check if user currently acting as the requested organization
-    if context.act_as and context.act_as.organization_id != organization_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    # Only admin can update member role
-    if context.act_as and context.act_as.role != OrganizationRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have no permission to update member role",
-        )
+    # Check user's role permission
+    _throw_if_not_permitted(
+        context.act_as,
+        requested_organization_id=organization_id,
+        required_role=OrganizationRole.ADMIN,
+    )
 
     # Check if user is the last admin in the organization, if so, raise an error
     organization_members = crud.organizations.get_organization_members(
@@ -175,3 +186,189 @@ async def update_organization_member_role(
     )
 
     context.db_session.commit()
+
+
+# ------------------------------------------------------------
+#
+# Team Management
+#
+# ------------------------------------------------------------
+@router.post(
+    "/{organization_id}/teams", response_model=TeamInfo, status_code=status.HTTP_201_CREATED
+)
+async def create_team(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
+    request: CreateOrganizationTeamRequest,
+) -> TeamInfo:
+    # Check user's role permission
+    _throw_if_not_permitted(
+        context.act_as,
+        requested_organization_id=organization_id,
+        required_role=OrganizationRole.ADMIN,
+    )
+
+    # Check if team name already exists
+    if crud.teams.get_team_by_organization_id_and_name(
+        context.db_session, organization_id, request.name
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Team name already exists",
+        )
+
+    # Create team
+    team = crud.teams.create_team(
+        db_session=context.db_session,
+        organization_id=organization_id,
+        name=request.name,
+        description=request.description,
+    )
+
+    context.db_session.commit()
+
+    return TeamInfo(
+        team_id=team.id,
+        name=team.name,
+        description=team.description,
+        created_at=team.created_at,
+    )
+
+
+@router.get(
+    "/{organization_id}/teams", response_model=list[TeamInfo], status_code=status.HTTP_200_OK
+)
+async def list_teams(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
+) -> list[TeamInfo]:
+    # Check user's role permission
+    _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
+
+    # Get organization teams
+    teams = crud.teams.get_teams_by_organization_id(
+        db_session=context.db_session,
+        organization_id=organization_id,
+    )
+    return [
+        TeamInfo(
+            team_id=team.id,
+            name=team.name,
+            description=team.description,
+            created_at=team.created_at,
+        )
+        for team in teams
+    ]
+
+
+@router.get(
+    "/{organization_id}/teams/{team_id}/members",
+    response_model=list[TeamMembershipInfo],
+    status_code=status.HTTP_200_OK,
+)
+async def list_team_members(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
+    team_id: UUID,
+) -> list[TeamMembershipInfo]:
+    # Check user's role permission
+    _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
+
+    # Get team members
+    team_members = crud.teams.get_team_members(
+        db_session=context.db_session,
+        team_id=team_id,
+    )
+    return [
+        TeamMembershipInfo(
+            user_id=member.user_id,
+            name=member.user.name,
+            email=member.user.email,
+            role=member.role,
+            created_at=member.created_at,
+        )
+        for member in team_members
+    ]
+
+
+@router.put("/{organization_id}/teams/{team_id}/members/{user_id}", status_code=status.HTTP_200_OK)
+async def add_team_member(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
+    team_id: UUID,
+    user_id: UUID,
+) -> None:
+    # Check user's role permission
+    _throw_if_not_permitted(
+        context.act_as,
+        requested_organization_id=organization_id,
+        required_role=OrganizationRole.ADMIN,
+    )
+
+    # Check if user is a member of the organization
+    if not crud.organizations.is_user_in_organization(context.db_session, organization_id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is not a member of the organization",
+        )
+
+    # Check if targeted user is already a member of the team
+    if crud.teams.get_team_members(context.db_session, team_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User already a member of the team"
+        )
+
+    # Add team member
+    crud.teams.add_team_member(
+        db_session=context.db_session,
+        organization_id=organization_id,
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+    context.db_session.commit()
+
+    return None
+
+
+@router.delete(
+    "/{organization_id}/teams/{team_id}/members/{user_id}", status_code=status.HTTP_200_OK
+)
+async def remove_team_member(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
+    team_id: UUID,
+    user_id: UUID,
+) -> None:
+    # Check user's role permission
+    _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
+
+    # Admin can remove anyone in the team
+    if context.act_as and context.act_as.role == OrganizationRole.ADMIN:
+        # No blocking.
+        pass
+
+    # Member can only remove themselves
+    elif context.act_as and context.act_as.role == OrganizationRole.MEMBER:
+        if context.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Cannot remove other members"
+            )
+
+    # Check if targeted user is a member of the team
+    if not crud.teams.get_team_members(context.db_session, team_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User is not a member of the team"
+        )
+
+    # Remove team member
+    crud.teams.remove_team_member(
+        db_session=context.db_session,
+        organization_id=organization_id,
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+    context.db_session.commit()
+
+    return None
