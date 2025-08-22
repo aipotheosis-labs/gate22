@@ -2,34 +2,11 @@
 
 // External imports
 import Link from "next/link";
-import { ArrowRight, LineChart, TrendingUp, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 // Internal imports
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-/**
- * HeroTitle component displaying the main heading with styled text
- */
-const HeroTitle = () => {
-  return (
-    <div className="relative">
-      <h1 className="inline-block max-w-6xl leading-none font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-        <div className="relative mb-3 pb-2 text-center text-4xl sm:text-5xl md:mb-5 md:text-6xl">
-          <span className="inline-block">TURN INTERACTIONS INTO</span>
-        </div>
-        <div className="mt-1 block text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
-          <span className="bg-primary text-primary-foreground relative inline-block px-4 py-1">
-            REVENUE
-          </span>
-          <span className="text-foreground ml-2 inline-block uppercase">
-            Growth
-          </span>
-        </div>
-      </h1>
-    </div>
-  );
-};
 
 /**
  * BadgeLabel component for displaying feature announcement badges
@@ -66,16 +43,13 @@ const CTAButton = ({
   const buttonClass = cn(
     "h-11 px-6 text-sm font-medium transition-all duration-200",
     variant === "default" && "hover:translate-y-[-1px]",
-    variant === "outline" && "border border-primary/30 hover:bg-white/5 hover:border-primary/50 backdrop-blur-sm",
+    variant === "outline" &&
+      "border border-primary/30 hover:bg-white/5 hover:border-primary/50 backdrop-blur-sm",
   );
 
   const button = (
-    <Button size="lg" variant={variant as any} className={buttonClass}>
-      {icon && (
-        <span className="mr-2">
-          {icon}
-        </span>
-      )}
+    <Button size="lg" variant={variant} className={buttonClass}>
+      {icon && <span className="mr-2">{icon}</span>}
       {children}
     </Button>
   );
@@ -113,9 +87,7 @@ export function Hero() {
                 <span className="inline-block">The Control Plane for Your</span>
               </div>
               <div className="text-4xl sm:text-5xl md:text-6xl leading-none">
-                <span className="text-primary font-bold">
-                  Enterprise MCP
-                </span>
+                <span className="text-primary font-bold">Enterprise MCP</span>
                 <span className="text-foreground ml-3 inline-block">
                   Server
                 </span>
@@ -124,8 +96,10 @@ export function Hero() {
           </div>
 
           <p className="text-muted-foreground/80 mt-8 max-w-3xl text-center text-base leading-relaxed">
-            Centrally manage, share, and secure MCP connections for your entire engineering organization. 
-            Stop wrestling with configs in agentic IDEs like Cursor and Claude, and start accelerating development with a unified gateway.
+            Centrally manage, share, and secure MCP connections for your entire
+            engineering organization. Stop wrestling with configs in agentic
+            IDEs like Cursor and Claude, and start accelerating development with
+            a unified gateway.
           </p>
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:gap-4">

@@ -93,7 +93,10 @@ export function CreateAgentForm({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -149,7 +152,8 @@ export function CreateAgentForm({
                     </MultiSelect>
                   </FormControl>
                   <FormDescription>
-                    Choose which apps this agent can access. Leave empty to allow all apps.
+                    Choose which apps this agent can access. Leave empty to
+                    allow all apps.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

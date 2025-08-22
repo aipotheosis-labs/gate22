@@ -14,7 +14,7 @@ export default function MembersPage() {
 
   const handleInviteSuccess = () => {
     setInviteDialogOpen(false);
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -22,10 +22,7 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-semibold">Members</h1>
-        <Button
-          onClick={() => setInviteDialogOpen(true)}
-          className="gap-2"
-        >
+        <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
           <UserPlus className="h-4 w-4" />
           Invite Member
         </Button>
@@ -53,7 +50,7 @@ export default function MembersPage() {
       </Tabs>
 
       {/* Invite Member Dialog */}
-      <InviteMemberDialog 
+      <InviteMemberDialog
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={handleInviteSuccess}

@@ -44,7 +44,7 @@ export function InviteTeamMemberDialog({
       await inviteTeamMember(accessToken, activeOrg.orgId, teamId, {
         email: email.trim(),
       });
-      
+
       toast.success("Invitation sent successfully");
       setEmail("");
       onSuccess?.();
@@ -65,7 +65,7 @@ export function InviteTeamMemberDialog({
             Send an invitation to add a new member to this team
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div>
             <Label htmlFor="email">Email Address</Label>

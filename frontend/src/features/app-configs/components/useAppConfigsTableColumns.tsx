@@ -8,7 +8,10 @@ import { GoTrash } from "react-icons/go";
 import { App } from "@/features/apps/types/app.types";
 import Image from "next/image";
 import { IdDisplay } from "@/features/apps/components/id-display";
-import { useUpdateAppConfig, useDeleteAppConfig } from "@/features/app-configs/hooks/use-app-config";
+import {
+  useUpdateAppConfig,
+  useDeleteAppConfig,
+} from "@/features/app-configs/hooks/use-app-config";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,7 +136,7 @@ export const useAppConfigsTableColumns = ({
                     enabled: checked,
                   });
                   toast.success(
-                    `${config.app_name} configurations ${checked ? "enabled" : "disabled"}`
+                    `${config.app_name} configurations ${checked ? "enabled" : "disabled"}`,
                   );
                 } catch (error) {
                   console.error("Failed to update app config:", error);

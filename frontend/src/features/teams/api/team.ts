@@ -1,4 +1,9 @@
-import { Team, TeamMember, CreateTeamRequest, InviteTeamMemberRequest } from "../types/team.types";
+import {
+  Team,
+  TeamMember,
+  CreateTeamRequest,
+  InviteTeamMemberRequest,
+} from "../types/team.types";
 import { getApiBaseUrl } from "@/lib/api-client";
 
 export async function listTeams(
@@ -6,15 +11,12 @@ export async function listTeams(
   orgId: string,
 ): Promise<Team[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/teams`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
-      },
+  const response = await fetch(`${baseUrl}/v1/teams`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-ACI-ORG-ID": orgId,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch teams");
@@ -29,15 +31,12 @@ export async function getTeam(
   teamId: string,
 ): Promise<Team> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/teams/${teamId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
-      },
+  const response = await fetch(`${baseUrl}/v1/teams/${teamId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-ACI-ORG-ID": orgId,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch team");
@@ -52,18 +51,15 @@ export async function createTeam(
   data: CreateTeamRequest,
 ): Promise<Team> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/teams`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+  const response = await fetch(`${baseUrl}/v1/teams`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-ACI-ORG-ID": orgId,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to create team");
@@ -78,16 +74,13 @@ export async function deleteTeam(
   teamId: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/teams/${teamId}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
-      },
+  const response = await fetch(`${baseUrl}/v1/teams/${teamId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-ACI-ORG-ID": orgId,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error("Failed to delete team");
@@ -100,15 +93,12 @@ export async function listTeamMembers(
   teamId: string,
 ): Promise<TeamMember[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/teams/${teamId}/members`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
-      },
+  const response = await fetch(`${baseUrl}/v1/teams/${teamId}/members`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-ACI-ORG-ID": orgId,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error("Failed to fetch team members");
@@ -124,18 +114,15 @@ export async function inviteTeamMember(
   data: InviteTeamMemberRequest,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/teams/${teamId}/invite`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+  const response = await fetch(`${baseUrl}/v1/teams/${teamId}/invite`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "X-ACI-ORG-ID": orgId,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to invite team member");

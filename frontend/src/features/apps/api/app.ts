@@ -30,15 +30,12 @@ export async function getApps(
   });
 
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}/v1/apps?${params.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        "X-API-KEY": apiKey,
-      },
+  const response = await fetch(`${baseUrl}/v1/apps?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      "X-API-KEY": apiKey,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to fetch app`);

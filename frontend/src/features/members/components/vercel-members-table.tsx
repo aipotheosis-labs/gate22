@@ -32,7 +32,9 @@ interface VercelMembersTableProps {
   refreshKey?: number;
 }
 
-export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) {
+export function VercelMembersTable({
+  refreshKey = 0,
+}: VercelMembersTableProps) {
   const { accessToken, activeOrg, user } = useMetaInfo();
   const router = useRouter();
   const [members, setMembers] = useState<OrganizationUser[]>([]);
@@ -53,7 +55,7 @@ export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) 
         setLoading(false);
       }
     },
-    [accessToken, activeOrg.orgId]
+    [accessToken, activeOrg.orgId],
   );
 
   useEffect(() => {
@@ -77,7 +79,8 @@ export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
       if (!member) return false;
-      const fullName = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+      const fullName =
+        `${member.first_name || ""} ${member.last_name || ""}`.trim();
       const matchesSearch =
         fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -103,7 +106,11 @@ export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) 
     }
   };
 
-  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
+  const getInitials = (
+    firstName?: string,
+    lastName?: string,
+    email?: string,
+  ) => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
@@ -183,10 +190,11 @@ export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) 
         <div className="divide-y">
           {filteredMembers.map((member, index) => {
             if (!member) return null;
-            const displayName = member.first_name && member.last_name 
-              ? `${member.first_name} ${member.last_name}`
-              : member.first_name || member.user_id;
-            
+            const displayName =
+              member.first_name && member.last_name
+                ? `${member.first_name} ${member.last_name}`
+                : member.first_name || member.user_id;
+
             return (
               <div
                 key={member.user_id || `member-${index}`}
@@ -203,13 +211,15 @@ export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) 
                     <AvatarFallback
                       className={`${getAvatarColor(member.user_id)} text-white`}
                     >
-                      {getInitials(member.first_name, member.last_name, member.email)}
+                      {getInitials(
+                        member.first_name,
+                        member.last_name,
+                        member.email,
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">
-                      {displayName}
-                    </div>
+                    <div className="font-medium">{displayName}</div>
                     <div className="text-sm text-muted-foreground">
                       {member.email}
                     </div>
@@ -217,7 +227,9 @@ export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) 
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">{member.role}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {member.role}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"

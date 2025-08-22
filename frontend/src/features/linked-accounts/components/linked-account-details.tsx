@@ -100,13 +100,17 @@ export function LinkedAccountDetails({
                                   );
                                   if (success) {
                                     toast.success(
-                                      `Linked account ${account.linked_account_owner_id} ${checked ? "enabled" : "disabled"}`
+                                      `Linked account ${account.linked_account_owner_id} ${checked ? "enabled" : "disabled"}`,
                                     );
                                   } else {
-                                    toast.error("Failed to update linked account status");
+                                    toast.error(
+                                      "Failed to update linked account status",
+                                    );
                                   }
-                                } catch (error) {
-                                  toast.error("Failed to update linked account status");
+                                } catch {
+                                  toast.error(
+                                    "Failed to update linked account status",
+                                  );
                                 }
                               }
                             }}

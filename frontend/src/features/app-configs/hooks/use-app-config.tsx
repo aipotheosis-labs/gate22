@@ -68,10 +68,10 @@ export const useCreateAppConfig = () => {
         params.security_scheme_overrides,
       ),
     onSuccess: (newConfig) => {
-      queryClient.setQueryData<AppConfig[]>(
-        appConfigKeys.all(),
-        (old = []) => [...old, newConfig],
-      );
+      queryClient.setQueryData<AppConfig[]>(appConfigKeys.all(), (old = []) => [
+        ...old,
+        newConfig,
+      ]);
       queryClient.invalidateQueries({
         queryKey: appConfigKeys.all(),
       });

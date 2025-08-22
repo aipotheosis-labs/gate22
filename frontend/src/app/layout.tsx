@@ -18,7 +18,8 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "MCP Gateway - Enterprise Control Plane for MCP Servers",
-  description: "Centrally manage, share, and secure MCP connections for your entire engineering organization with MCP Gateway.",
+  description:
+    "Centrally manage, share, and secure MCP connections for your entire engineering organization with MCP Gateway.",
 };
 
 export default function RootLayout({
@@ -74,9 +75,7 @@ export default function RootLayout({
                 enableSystem
                 disableTransitionOnChange
               >
-                <div className="h-full">
-                  {children}
-                </div>
+                <div className="h-full">{children}</div>
                 <Analytics />
               </ThemeProvider>
             </NuqsAdapter>

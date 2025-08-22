@@ -16,8 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Mail, Lock, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, Loader2, Mail, Lock } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -135,9 +134,9 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             </Alert>
           )}
 
-          <Button 
-            type="submit" 
-            className="w-full h-11 transition-all duration-200" 
+          <Button
+            type="submit"
+            className="w-full h-11 transition-all duration-200"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -155,11 +154,18 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               <div className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
-          <Button variant="outline" type="button" disabled={isLoading} className="w-full h-11 transition-all duration-200 hover:bg-accent/50">
+          <Button
+            variant="outline"
+            type="button"
+            disabled={isLoading}
+            className="w-full h-11 transition-all duration-200 hover:bg-accent/50"
+          >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

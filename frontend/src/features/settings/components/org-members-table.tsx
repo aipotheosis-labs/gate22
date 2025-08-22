@@ -1,7 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { useOrgMembersTableColumns } from "@/features/members/hooks/use-org-members-table-columns";
-import { OrganizationUser, OrganizationRole } from "@/features/settings/types/organization.types";
+import {
+  OrganizationUser,
+  OrganizationRole,
+} from "@/features/settings/types/organization.types";
 import {
   listOrganizationUsers,
   inviteToOrganization,

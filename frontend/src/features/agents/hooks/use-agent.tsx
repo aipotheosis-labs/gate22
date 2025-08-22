@@ -20,15 +20,10 @@ export const agentKeys = {
 
 export const useAgents = () => {
   const { accessToken } = useMetaInfo();
-  
-  return useApiQuery<Agent[]>(
-    agentKeys.all,
-    '/v1/agents',
-    accessToken,
-    {
-      enabled: !!accessToken,
-    }
-  );
+
+  return useApiQuery<Agent[]>(agentKeys.all, "/v1/agents", accessToken, {
+    enabled: !!accessToken,
+  });
 };
 
 export const useCreateAgent = () => {
@@ -38,7 +33,7 @@ export const useCreateAgent = () => {
   return useMutation<Agent, Error, CreateAgentParams>({
     mutationFn: async (params) => {
       const api = createAuthenticatedRequest(accessToken);
-      return api.post<Agent>('/v1/agents', params);
+      return api.post<Agent>("/v1/agents", params);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.all });

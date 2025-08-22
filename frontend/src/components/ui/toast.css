@@ -44,7 +44,9 @@
 
 [data-sonner-toaster] [data-sonner-toast]:hover {
   transform: translateX(-4px);
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-icon] {
@@ -74,5 +76,8 @@
 }
 
 [data-sonner-toaster] {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }

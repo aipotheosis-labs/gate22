@@ -37,9 +37,7 @@ export default function DashboardLayout({
             <AppSidebar />
             <SidebarInset className="flex flex-col h-full overflow-hidden">
               <Header />
-              <main className="flex-1 overflow-y-auto">
-                {children}
-              </main>
+              <main className="flex-1 overflow-y-auto">{children}</main>
             </SidebarInset>
           </SidebarProvider>
         </MetaInfoProvider>
@@ -51,13 +49,13 @@ export default function DashboardLayout({
           duration={3000}
           toastOptions={{
             style: {
-              background: 'var(--background)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
+              background: "var(--background)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
             },
-            className: 'group',
+            className: "group",
             classNames: {
-              toast: 'group-[.toaster]:shadow-lg',
+              toast: "group-[.toaster]:shadow-lg",
             },
           }}
         />

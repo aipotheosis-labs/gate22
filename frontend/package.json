@@ -82,7 +82,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@faker-js/faker": "^9.9.0",
     "@mswjs/data": "^0.16.2",
     "@tailwindcss/postcss": "^4.1.11",
     "@tanstack/react-query-devtools": "^5.74.6",
