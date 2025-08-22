@@ -5,9 +5,6 @@ from typing import Annotated
 import bcrypt
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from google.auth.transport.requests import Request
-from google.oauth2 import id_token
-from pydantic import BaseModel
 
 from aci.common.db import crud
 from aci.common.db.sql_models import User
@@ -23,99 +20,15 @@ from aci.common.schemas.auth import (
 )
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
-from aci.control_plane.exceptions import OAuth2Error
-from aci.control_plane.oauth2_manager import OAuth2Manager
+from aci.control_plane.google_login_utils import exchange_google_userinfo, generate_google_auth_url
 
 logger = get_logger(__name__)
 router = APIRouter()
 
-# Singleton OAuth2Manager
-google_oauth2_manager = OAuth2Manager(
-    app_name="ACI.dev",  # Not in used in this flow.
-    client_id=config.GOOGLE_CLIENT_ID,
-    client_secret=config.GOOGLE_CLIENT_SECRET,
-    scope="openid email profile",
-    authorize_url="https://accounts.google.com/o/oauth2/auth",
-    access_token_url="https://oauth2.googleapis.com/token",
-    refresh_token_url="https://oauth2.googleapis.com/token",
-    token_endpoint_auth_method="client_secret_basic",
-)
-
-
-class OAuth2StateJWT(BaseModel):
-    code_verifier: str
-    redirect_uri: str
-    client_id: str
-
-
-class GoogleUserInfo(BaseModel):
-    name: str
-    email: str
-
-
-async def _get_google_user_info(code: str, state: str) -> GoogleUserInfo:
-    """
-    This function is used to get the user info from Google.
-    It exchanges the code for the access token and then verifies the token.
-    Then it returns the user info.
-    """
-
-    # Parse the state JWT
-    state_jwt = jwt.decode(state, config.JWT_SIGNING_KEY, algorithms=[config.JWT_ALGORITHM])
-    logger.error(state_jwt)
-    oauth_info = OAuth2StateJWT(**state_jwt)
-
-    # Verify the info
-    if (
-        oauth_info.client_id != config.GOOGLE_CLIENT_ID
-        or oauth_info.redirect_uri != config.GOOGLE_OAUTH_REDIRECT_URI
-    ):
-        raise OAuth2Error(message="Error during OAuth2 flow")
-
-    # Fetch the access token
-    token_payload = await google_oauth2_manager.fetch_token(
-        redirect_uri=oauth_info.redirect_uri,
-        code=code,
-        code_verifier=oauth_info.code_verifier,
-    )
-    logger.error(f"token_payload: {token_payload}")
-
-    # Create request object for token verification
-    request: Request = Request()  # type: ignore[no-untyped-call]
-    claims = id_token.verify_oauth2_token(  # type: ignore[no-untyped-call]
-        token_payload["id_token"],
-        request,
-        audience=config.GOOGLE_CLIENT_ID,
-    )
-
-    return GoogleUserInfo(
-        name=claims["name"],
-        email=claims["email"],
-    )
-
 
 @router.get("/oauth2/google/auth-url")
 async def get_google_auth_url() -> OAuth2AuthUrlResponse:
-    # State is a JWT that contains the code verifier, redirect URI, and client ID.
-    # After the user authorizes the app, the frontend should pass the state back to the backend.
-    # Then we should verify the JWT and decode the state & code verifier and fetch the access token.
-    code_verifier = google_oauth2_manager.generate_code_verifier()
-    oauth2_state_jwt = jwt.encode(
-        OAuth2StateJWT(
-            code_verifier=code_verifier,
-            redirect_uri=config.GOOGLE_OAUTH_REDIRECT_URI,
-            client_id=config.GOOGLE_CLIENT_ID,
-        ).model_dump(mode="json"),
-        algorithm=config.JWT_ALGORITHM,
-        key=config.JWT_SIGNING_KEY,
-    )
-
-    auth_url = await google_oauth2_manager.create_authorization_url(
-        redirect_uri=config.GOOGLE_OAUTH_REDIRECT_URI,
-        state=oauth2_state_jwt,
-        code_verifier=code_verifier,
-    )
-
+    auth_url = await generate_google_auth_url()
     return OAuth2AuthUrlResponse(auth_url=auth_url)
 
 
@@ -149,10 +62,10 @@ async def register(
         )
 
     elif request.auth_flow == UserIdentityProvider.GOOGLE:
-        google_user_info = await _get_google_user_info(request.code, request.state)
+        google_userinfo = await exchange_google_userinfo(request.code, request.state)
 
         # Check if email already been used
-        user = crud.users.get_user_by_email(context.db_session, google_user_info.email)
+        user = crud.users.get_user_by_email(context.db_session, google_userinfo.email)
 
         if user:
             raise HTTPException(
@@ -162,8 +75,8 @@ async def register(
         # Create user
         user = crud.users.create_user(
             db_session=context.db_session,
-            name=google_user_info.name,
-            email=google_user_info.email,
+            name=google_userinfo.name,
+            email=google_userinfo.email,
             password_hash=None,
             identity_provider=UserIdentityProvider.GOOGLE,
         )
@@ -206,9 +119,9 @@ async def login(
             )
 
     elif request.auth_flow == UserIdentityProvider.GOOGLE:
-        google_user_info = await _get_google_user_info(request.code, request.state)
+        google_userinfo = await exchange_google_userinfo(request.code, request.state)
 
-        user = crud.users.get_user_by_email(context.db_session, google_user_info.email)
+        user = crud.users.get_user_by_email(context.db_session, google_userinfo.email)
 
         # User not found or deleted
         if not user or user.deleted_at:
