@@ -147,7 +147,7 @@ async def register(
     ],
     request: EmailRegistrationRequest,
     response: Response,
-) -> TokenResponse:
+) -> None:
     # Check if user already exists
     user = crud.users.get_user_by_email(context.db_session, request.email)
     if user:
@@ -173,11 +173,6 @@ async def register(
     # Issue a refresh token, store in secure cookie
     _issue_refresh_token(context.db_session, user.id, response)
 
-    # Issue a JWT token without act_as
-    token = _sign_token(user, None)
-
-    return TokenResponse(token=token)
-
 
 @router.post(
     "/login/email",
@@ -194,7 +189,7 @@ async def login(
     ],
     request: EmailLoginRequest,
     response: Response,
-) -> TokenResponse:
+) -> None:
     user = crud.users.get_user_by_email(context.db_session, request.email)
 
     # User not found or deleted
@@ -217,20 +212,6 @@ async def login(
 
     # Issue a refresh token, store in secure cookie
     _issue_refresh_token(context.db_session, user.id, response)
-
-    act_as = (
-        ActAsInfo(
-            organization_id=user.organization_memberships[0].organization_id,
-            role=user.organization_memberships[0].role,
-        )
-        if len(user.organization_memberships) > 0
-        else None
-    )
-
-    # Issue a JWT token with default act_as
-    token = _sign_token(user, act_as)
-
-    return TokenResponse(token=token)
 
 
 @router.post(
