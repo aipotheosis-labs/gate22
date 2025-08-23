@@ -238,8 +238,8 @@ async def login(
     response_model=TokenResponse | None,
     status_code=status.HTTP_200_OK,
     description="""
-    Issue a JWT token for the user. It will get refresh token from secure cookies.
-    It should be called when user is registered, logged in,
+    Issue a JWT token for the user. It will get refresh token from secure cookies. Pass act_as
+    whenever possible to make sure user is acting as a specific organization and role.
     """,
 )
 async def issue_token(
