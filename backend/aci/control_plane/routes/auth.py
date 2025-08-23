@@ -1,72 +1,107 @@
 import datetime
+import hashlib
+import hmac
 import secrets
 from typing import Annotated
+from uuid import UUID
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from pydantic import ValidationError
+from sqlalchemy.orm import Session
+from starlette.responses import RedirectResponse
 
 from aci.common.db import crud
 from aci.common.db.sql_models import User
-from aci.common.enums import UserIdentityProvider
+from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import (
     ActAsInfo,
+    AuthOperation,
+    EmailLoginRequest,
+    EmailRegistrationRequest,
+    IssueTokenRequest,
     JWTPayload,
-    LoginRequest,
-    OAuth2AuthUrlResponse,
-    RegistrationRequest,
+    OAuth2State,
     TokenResponse,
 )
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
-from aci.control_plane.google_login_utils import exchange_google_userinfo, generate_google_auth_url
+from aci.control_plane.exceptions import OAuth2Error
+from aci.control_plane.google_login_utils import (
+    exchange_google_userinfo,
+    generate_google_auth_url,
+)
 
 logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.get("/oauth2/google/auth-url")
-async def get_google_auth_url() -> OAuth2AuthUrlResponse:
-    auth_url = await generate_google_auth_url()
-    return OAuth2AuthUrlResponse(auth_url=auth_url)
+@router.get(
+    "/{operation}/google/authorize",
+    response_model=str,
+    status_code=status.HTTP_200_OK,
+    description="""
+    This endpoint is expected to be directly access by browser instead of API call.
+    It responds with a 302 redirect to Google OAuth2 authorization page.
+    """,
+)
+async def get_google_oauth2_url(
+    operation: AuthOperation,
+    redirect_uri: str = Query(
+        default=config.FRONTEND_URL,
+        description="The redirect URI to redirect to after the OAuth2 flow (e.g. `/dashboard`)",
+    ),
+) -> RedirectResponse:
+    return RedirectResponse(
+        url=await generate_google_auth_url(
+            AuthOperation(operation), post_oauth_redirect_uri=redirect_uri
+        ),
+        status_code=status.HTTP_302_FOUND,
+    )
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(
+@router.get(
+    "/{operation}/google/callback",
+    status_code=status.HTTP_200_OK,
+    description="""
+    This endpoint is expected to be used in oauth flow as redirect URI.
+    It listens to the code and state parameters from Google OAuth2 authorization page.
+    It will redirect to the "redirect_uri" that is passed when calling the "authorize" endpoint.
+    """,
+)
+async def google_callback(
     context: Annotated[
         deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
     ],
-    request: RegistrationRequest,
+    operation: AuthOperation,
     response: Response,
-) -> TokenResponse | None:
-    if request.auth_flow == UserIdentityProvider.EMAIL:
-        # Check if user already exists
-        user = crud.users.get_user_by_email(context.db_session, request.email)
-        if user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
-            )
+    error: str | None = None,
+    code: str | None = None,
+    state: str | None = None,
+) -> RedirectResponse:
+    # Check if error
+    if error:
+        raise OAuth2Error(message="Error during OAuth2 flow")
 
-        # Hash password
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(request.password.encode(), salt)
+    if not code:
+        raise OAuth2Error(message="Missing code parameter during OAuth2 flow")
+    if not state:
+        raise OAuth2Error(message="Missing state parameter during OAuth2 flow")
 
-        # Create user
-        user = crud.users.create_user(
-            db_session=context.db_session,
-            name=request.name,
-            email=request.email,
-            password_hash=hashed.decode(),
-            identity_provider=UserIdentityProvider.EMAIL,
-        )
+    # Parse the state JWT
+    state_jwt = jwt.decode(state, config.JWT_SIGNING_KEY, algorithms=[config.JWT_ALGORITHM])
+    try:
+        oauth_info = OAuth2State(**state_jwt)
+    except ValidationError as e:
+        raise OAuth2Error(message="Invalid state parameter during OAuth2 flow") from e
 
-    elif request.auth_flow == UserIdentityProvider.GOOGLE:
-        google_userinfo = await exchange_google_userinfo(request.code, request.state)
+    google_userinfo = await exchange_google_userinfo(operation, code, oauth_info)
 
+    if operation == AuthOperation.REGISTER:
         # Check if email already been used
         user = crud.users.get_user_by_email(context.db_session, google_userinfo.email)
-
         if user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
@@ -81,58 +116,108 @@ async def register(
             identity_provider=UserIdentityProvider.GOOGLE,
         )
 
-    context.db_session.commit()
-
-    # Issue a JWT Token
-    token = _sign_token(user, None)
-
-    # Issue a refresh token, store in secure cookie
-    refresh_token = secrets.token_urlsafe(32)
-    _set_refresh_token(response, refresh_token)
-
-    return TokenResponse(token=token)
-
-
-@router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
-async def login(
-    context: Annotated[
-        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
-    ],
-    request: LoginRequest,
-    response: Response,
-) -> TokenResponse | None:
-    if request.auth_flow == UserIdentityProvider.EMAIL:
-        user = crud.users.get_user_by_email(context.db_session, request.email)
-
-        # User not found or deleted
-        if not user or user.deleted_at:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
-            )
-
-        # Password not set or doesn't match
-        if not user.password_hash or not bcrypt.checkpw(
-            request.password.encode(), user.password_hash.encode()
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
-            )
-
-    elif request.auth_flow == UserIdentityProvider.GOOGLE:
-        google_userinfo = await exchange_google_userinfo(request.code, request.state)
-
+    elif operation == AuthOperation.LOGIN:
         user = crud.users.get_user_by_email(context.db_session, google_userinfo.email)
 
         # User not found or deleted
         if not user or user.deleted_at:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not exists")
 
+    else:
+        raise OAuth2Error(message="Invalid operation parameter during OAuth2 flow")
+
+    # Issue a refresh token, store in secure cookie
+    _issue_refresh_token(context.db_session, user.id, response)
+
+    return RedirectResponse(oauth_info.post_oauth_redirect_uri, status_code=status.HTTP_302_FOUND)
+
+
+@router.post(
+    "/register/email",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    description="""
+    Register a new user using email flow. On success, it will set a refresh
+    token in the response cookie. Call /token endpoint to get a JWT token.
+    """,
+)
+async def register(
+    context: Annotated[
+        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
+    ],
+    request: EmailRegistrationRequest,
+    response: Response,
+) -> TokenResponse:
+    # Check if user already exists
+    user = crud.users.get_user_by_email(context.db_session, request.email)
+    if user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
+        )
+
+    # Hash password
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(request.password.encode(), salt)
+
+    # Create user
+    user = crud.users.create_user(
+        db_session=context.db_session,
+        name=request.name,
+        email=request.email,
+        password_hash=hashed.decode(),
+        identity_provider=UserIdentityProvider.EMAIL,
+    )
+
+    context.db_session.commit()
+
+    # Issue a refresh token, store in secure cookie
+    _issue_refresh_token(context.db_session, user.id, response)
+
+    # Issue a JWT token without act_as
+    token = _sign_token(user, None)
+
+    return TokenResponse(token=token)
+
+
+@router.post(
+    "/login/email",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    description="""
+    Login a user using email flow. On success, it will set a refresh token in the response cookie.
+    Call /token endpoint to get a JWT token.
+    """,
+)
+async def login(
+    context: Annotated[
+        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
+    ],
+    request: EmailLoginRequest,
+    response: Response,
+) -> TokenResponse:
+    user = crud.users.get_user_by_email(context.db_session, request.email)
+
+    # User not found or deleted
+    if not user or user.deleted_at:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
+        )
+
+    # Password not set or doesn't match
+    if not user.password_hash or not bcrypt.checkpw(
+        request.password.encode(), user.password_hash.encode()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
+        )
+
     # Update the last login time
     user.last_login_at = datetime.datetime.now(datetime.UTC)
     context.db_session.commit()
 
-    # Issue a JWT Token
-    # TODO: We should store the last used organization and role
+    # Issue a refresh token, store in secure cookie
+    _issue_refresh_token(context.db_session, user.id, response)
+
     act_as = (
         ActAsInfo(
             organization_id=user.organization_memberships[0].organization_id,
@@ -141,16 +226,132 @@ async def login(
         if len(user.organization_memberships) > 0
         else None
     )
-    token = _sign_token(user, act_as)
 
-    # Issue a refresh token, store in secure cookie
-    refresh_token = secrets.token_urlsafe(32)
-    _set_refresh_token(response, refresh_token)
+    # Issue a JWT token with default act_as
+    token = _sign_token(user, act_as)
 
     return TokenResponse(token=token)
 
 
-def _set_refresh_token(response: Response, refresh_token: str) -> None:
+@router.post(
+    "/token",
+    response_model=TokenResponse | None,
+    status_code=status.HTTP_200_OK,
+    description="""
+    Issue a JWT token for the user. It will get refresh token from secure cookies.
+    It should be called when user is registered, logged in,
+    """,
+)
+async def issue_token(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context_without_auth)],
+    request: Request,
+    input: IssueTokenRequest,
+) -> TokenResponse:
+    # Get the refresh token from the request cookie
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token"
+        )
+    logger.info(f"Refresh token: {refresh_token}")
+
+    # Check if refresh token is valid
+    refresh_token_hash = _hash_refresh_token(refresh_token)
+    refresh_token_obj = crud.users.get_refresh_token(context.db_session, refresh_token_hash)
+    if not refresh_token_obj:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+        )
+
+    # Get the user from the database
+    user = crud.users.get_user_by_id(context.db_session, refresh_token_obj.user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    if input.act_as:
+        # Check if user is a member of the requested organization
+        membership = crud.organizations.get_organization_membership(
+            context.db_session, input.act_as.organization_id, user.id
+        )
+        if not membership:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+        # TODO: make a global function for role comparisons
+        # If user is acting as admin, make sure the user is an admin in the organization
+        if (
+            input.act_as.role == OrganizationRole.ADMIN
+            and membership.role != OrganizationRole.ADMIN
+        ):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    else:
+        # If no act_as is provided, use anyone organization and role
+        # TODO: We should store the last used organization and role
+        act_as = (
+            ActAsInfo(
+                organization_id=user.organization_memberships[0].organization_id,
+                role=user.organization_memberships[0].role,
+            )
+            if len(user.organization_memberships) > 0
+            else None
+        )
+
+    # Issue a JWT Token
+    token = _sign_token(user, act_as)
+
+    return TokenResponse(token=token)
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="""
+    Logout a user. It will clear the refresh token in the response cookie.
+    """,
+)
+async def logout(
+    context: Annotated[
+        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
+    ],
+    request: Request,
+) -> None:
+    # Get the refresh token from the request cookie
+    refresh_token = request.cookies.get("refresh_token")
+
+    # Delete the refresh token in database
+    if refresh_token:
+        token_hash = _hash_refresh_token(refresh_token)
+        crud.users.delete_refresh_token(context.db_session, token_hash)
+
+
+def _hash_refresh_token(refresh_token: str) -> bytes:
+    """
+    Hash a refresh token. Using HMAC-SHA-256 is good enough for hashing refresh token.
+    """
+    return hmac.new(
+        config.REFRESH_TOKEN_KEY.encode(), refresh_token.encode(), hashlib.sha256
+    ).digest()
+
+
+def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response) -> None:
+    """
+    Generate a refresh token, store it in the database and set it in response cookie.
+    """
+
+    # Generate a refresh token
+    refresh_token = secrets.token_urlsafe(32)
+
+    # Hash refresh token
+    token_hash = _hash_refresh_token(refresh_token)
+
+    # Set the refresh token expiration time
+    expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
+
+    # Create refresh token in database
+    crud.users.create_refresh_token(db_session, user_id, token_hash, expires_at)
+
+    db_session.commit()
+
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
@@ -158,11 +359,13 @@ def _set_refresh_token(response: Response, refresh_token: str) -> None:
         secure=True,
         samesite="lax",
         max_age=60 * 60 * 24 * 30,
-        path="/auth/refresh",
     )
 
 
 def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
+    """
+    Sign a JWT token for the user. It should include act_as information.
+    """
     now = datetime.datetime.now(datetime.UTC)
     expired_at = now + datetime.timedelta(minutes=config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     jwt_payload = JWTPayload(
@@ -179,31 +382,3 @@ def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
         jwt_payload.model_dump(mode="json"), config.JWT_SIGNING_KEY, algorithm=config.JWT_ALGORITHM
     )
     return token
-
-
-# TODO: Token endpoint
-# @router.post("/token", response_model=TokenResponse | None, status_code=status.HTTP_200_OK)
-# async def issue_token(
-#     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
-#     request: IssueTokenRequest,
-#     raw_request: Request
-# ) -> TokenResponse | None:
-
-#     act_as = context.act_as
-
-#     user = crud.users.get_user_by_id(context.db_session, context.user_id)
-#     if not user:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-#     refresh_token = raw_request.cookies.get("refresh_token")
-
-
-#     elif request.operation == "update_act_as":
-#         act_as = context.act_as or ActAsInfo(
-#             organization_id=request.organization_id,
-#             role=request.role,
-#         )
-
-#     token = _sign_token(user, act_as)
-
-#     return None
