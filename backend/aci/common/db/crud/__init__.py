@@ -1,3 +1,3 @@
-from . import organizations, teams, users
+from . import mcp_servers, organizations, teams, users
 
-__all__ = ["organizations", "teams", "users"]
+__all__ = ["mcp_servers", "organizations", "teams", "users"]

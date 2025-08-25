@@ -64,6 +64,7 @@ services:
     # Mount the local code into the container so you can run scripts / Alembic
     volumes:
       - ./aci/:/workdir/aci
+      - ./mcp_servers/:/workdir/mcp_servers
       - ./alembic.ini:/workdir/alembic.ini
     command: >
       /bin/sh -c "alembic upgrade head && tail -f /dev/null"

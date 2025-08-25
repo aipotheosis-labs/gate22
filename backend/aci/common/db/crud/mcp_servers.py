@@ -1,0 +1,48 @@
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from aci.common.db.sql_models import MCPServer
+from aci.common.logging_setup import get_logger
+from aci.common.schemas.mcp.server import MCPServerUpsert
+
+logger = get_logger(__name__)
+
+
+def get_mcp_server_by_name(db_session: Session, name: str) -> MCPServer | None:
+    statement = select(MCPServer).where(MCPServer.name == name)
+
+    mcp_server = db_session.execute(statement).scalar_one_or_none()
+    return mcp_server
+
+
+def create_mcp_server(
+    db_session: Session, mcp_server_upsert: MCPServerUpsert, embedding: list[float]
+) -> MCPServer:
+    mcp_server_data = mcp_server_upsert.model_dump(mode="json", exclude_none=True)
+    mcp_server = MCPServer(
+        **mcp_server_data,
+        embedding=embedding,
+    )
+    db_session.add(mcp_server)
+    db_session.flush()
+    db_session.refresh(mcp_server)
+    return mcp_server
+
+
+def update_mcp_server(
+    db_session: Session,
+    mcp_server: MCPServer,
+    mcp_server_upsert: MCPServerUpsert,
+    embedding: list[float] | None = None,
+) -> MCPServer:
+    new_mcp_server_data = mcp_server_upsert.model_dump(mode="json", exclude_none=True)
+
+    for field, value in new_mcp_server_data.items():
+        setattr(mcp_server, field, value)
+
+    if embedding:
+        mcp_server.embedding = embedding
+
+    db_session.flush()
+    db_session.refresh(mcp_server)
+    return mcp_server

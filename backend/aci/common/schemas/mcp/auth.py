@@ -109,27 +109,3 @@ AuthCredentials = Annotated[
     NoAuthCredentials | APIKeyCredentials | OAuth2Credentials,
     Field(discriminator="type"),
 ]
-
-
-# NOTE: using a generic metadata schema for now before the schema is finalized
-class MCPServerMetadata(BaseModel):
-    need_session: bool = Field(
-        ...,
-        description="""Whether a session is required to use the mcp server,
-        i.e the mcp-session-id header is required""",
-    )
-
-
-class MCPToolMetadata(BaseModel):
-    canonical_tool_name: str = Field(
-        ...,
-        description="The canonical name of the tool of the mcp server",
-    )
-    canonical_tool_description_hash: str = Field(
-        ...,
-        description="The description of the tool of the mcp server in html format",
-    )
-    canonical_tool_input_schema_hash: str = Field(
-        ...,
-        description="The input schema of the tool of the mcp server in json schema format",
-    )
