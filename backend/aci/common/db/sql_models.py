@@ -23,7 +23,6 @@ from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 
 from aci.common.enums import OrganizationRole, TeamRole, UserIdentityProvider
-from aci.common.schemas.mcp import AuthConfig, AuthCredentials, MCPServerMetadata, MCPToolMetadata
 
 EMBEDDING_DIMENSION = 1024
 MAX_STRING_LENGTH = 512
@@ -277,15 +276,15 @@ class MCPServer(Base):
     # TODO: consider adding a category table
     categories: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
     # NOTE: a mcp server might support multiple auth types, e.g., both oauth2 and api key
-    auth_configs: Mapped[list[AuthConfig]] = mapped_column(ARRAY(JSONB), nullable=False)
-    server_metadata: Mapped[MCPServerMetadata] = mapped_column(JSONB, nullable=False)
+    auth_configs: Mapped[list[dict]] = mapped_column(ARRAY(JSONB), nullable=False)
+    server_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSION), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
@@ -315,14 +314,14 @@ class MCPTools(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     input_schema: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
-    tool_metadata: Mapped[MCPToolMetadata] = mapped_column(JSONB, nullable=False)
+    tool_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSION), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
@@ -346,7 +345,7 @@ class MCPServerConfiguration(Base):
     organization_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    auth_config: Mapped[AuthConfig] = mapped_column(JSONB, nullable=False)
+    auth_config: Mapped[dict] = mapped_column(JSONB, nullable=False)
     # TODO: add whitelabel overrides?
     all_tools_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
     # A list of tool ids
@@ -357,10 +356,10 @@ class MCPServerConfiguration(Base):
     allowed_teams: Mapped[list[UUID]] = mapped_column(ARRAY(PGUUID(as_uuid=True)), nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
@@ -389,13 +388,13 @@ class ConnectedAccount(Base):
         ForeignKey("mcp_server_configurations.id", ondelete="CASCADE"),
         nullable=False,
     )
-    auth_credentials: Mapped[AuthCredentials] = mapped_column(JSONB, nullable=False)
+    auth_credentials: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
@@ -432,10 +431,10 @@ class MCPServerBundle(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
