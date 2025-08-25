@@ -79,15 +79,6 @@ def parse_mcp_server_name_from_mcp_tool_name(mcp_tool_name: str) -> str:
     return mcp_tool_name.split("__")[0]
 
 
-def snake_to_camel(string: str) -> str:
-    """
-    Convert a snake case string to a camel case string.
-    e.g., "snake_case_string" -> "SnakeCaseString"
-    """
-    parts = string.split("_")
-    return parts[0] + "".join(word.capitalize() for word in parts[1:])
-
-
 def is_uuid(value: str | UUID) -> bool:
     if isinstance(value, UUID):
         return True
