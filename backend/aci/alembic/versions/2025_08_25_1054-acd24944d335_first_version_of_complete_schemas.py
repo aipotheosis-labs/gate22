@@ -75,7 +75,7 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('mcp_server_id', sa.UUID(), nullable=False),
     sa.Column('organization_id', sa.UUID(), nullable=False),
-    sa.Column('auth_config', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('auth_type', sa.Enum('NO_AUTH', 'API_KEY', 'OAUTH2', name='authtype', native_enum=False, length=50), nullable=False),
     sa.Column('all_tools_enabled', sa.Boolean(), nullable=False),
     sa.Column('enabled_tools', sa.ARRAY(sa.UUID()), nullable=False),
     sa.Column('allowed_teams', sa.ARRAY(sa.UUID()), nullable=False),

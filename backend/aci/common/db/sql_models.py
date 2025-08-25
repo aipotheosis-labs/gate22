@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 
-from aci.common.enums import OrganizationRole, TeamRole, UserIdentityProvider
+from aci.common.enums import AuthType, OrganizationRole, TeamRole, UserIdentityProvider
 
 EMBEDDING_DIMENSION = 1024
 MAX_STRING_LENGTH = 512
@@ -345,7 +345,9 @@ class MCPServerConfiguration(Base):
     organization_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    auth_config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    auth_type: Mapped[AuthType] = mapped_column(
+        SQLEnum(AuthType, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
+    )
     # TODO: add whitelabel overrides?
     all_tools_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
     # A list of tool ids

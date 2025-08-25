@@ -15,6 +15,7 @@ ROUTER_PREFIX_AUTH = "/v1/auth"
 ROUTER_PREFIX_ORGANIZATIONS = "/v1/organizations"
 ROUTER_PREFIX_USERS = "/v1/users"
 ROUTER_PREFIX_MCP_SERVERS = "/v1/mcp-servers"
+ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/v1/mcp-server-configurations"
 
 # Frontend
 FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")
