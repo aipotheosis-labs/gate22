@@ -90,7 +90,7 @@ def upgrade() -> None:
     sa.Column('mcp_server_id', sa.UUID(), nullable=False),
     sa.Column('name', sa.String(length=512), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
-    sa.Column('input_schema', sa.Text(), nullable=False),
+    sa.Column('input_schema', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('tags', sa.ARRAY(sa.String()), nullable=False),
     sa.Column('tool_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('embedding', Vector(dim=1024), nullable=False),

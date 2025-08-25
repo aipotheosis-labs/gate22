@@ -12,6 +12,7 @@ def cli() -> None:
 
 
 cli.add_command(mcp.upsert_mcp_server, name="upsert-mcp-server")
+cli.add_command(mcp.upsert_mcp_tools, name="upsert-mcp-tools")
 
 
 if __name__ == "__main__":

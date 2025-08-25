@@ -71,7 +71,7 @@ def upsert_mcp_server_helper(
 
     mcp_server_upsert = MCPServerUpsert.model_validate(json.loads(rendered_content))
     existing_mcp_server = crud.mcp_servers.get_mcp_server_by_name(
-        db_session, mcp_server_upsert.name
+        db_session, mcp_server_upsert.name, throw_error_if_not_found=False
     )
     if existing_mcp_server is None:
         return create_mcp_server_helper(db_session, mcp_server_upsert, skip_dry_run)

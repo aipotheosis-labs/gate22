@@ -1,4 +1,7 @@
-from pydantic import BaseModel, Field
+import re
+
+import jsonschema
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class MCPToolMetadata(BaseModel):
@@ -14,3 +17,49 @@ class MCPToolMetadata(BaseModel):
         ...,
         description="The input schema of the tool of the mcp server in json schema format",
     )
+
+
+class MCPToolUpsert(BaseModel, extra="forbid"):
+    """
+    Schema for upserting a mcp tool in the database.
+    """
+
+    name: str
+    description: str
+    input_schema: dict
+    tags: list[str]
+    tool_metadata: MCPToolMetadata
+
+    @field_validator("name")
+    def validate_name(cls, v: str) -> str:
+        # Check valid characters
+        if not re.match(r"^[A-Z0-9_]+$", v):
+            raise ValueError(
+                "Name must be uppercase, contain only letters, numbers, and underscores"
+            )
+        # Check exactly one occurrence of '__'
+        if v.count("__") != 1:
+            raise ValueError("Name must have exactly one occurrence of '__'")
+        # Check no triple or more underscores
+        if "___" in v:
+            raise ValueError("Name must not have triple or more underscores")
+        return v
+
+    @model_validator(mode="after")
+    def validate_parameters(self) -> "MCPToolUpsert":
+        # Validate that parameters schema itself is a valid JSON Schema
+        jsonschema.validate(
+            instance=self.input_schema, schema=jsonschema.Draft7Validator.META_SCHEMA
+        )
+
+        return self
+
+
+class MCPToolEmbeddingFields(BaseModel):
+    """
+    Fields used for generating the embeddings for semantic search.
+    """
+
+    name: str
+    description: str
+    input_schema: dict

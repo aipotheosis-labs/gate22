@@ -1,3 +1,5 @@
+from typing import Literal, overload
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,11 +10,30 @@ from aci.common.schemas.mcp.server import MCPServerUpsert
 logger = get_logger(__name__)
 
 
-def get_mcp_server_by_name(db_session: Session, name: str) -> MCPServer | None:
+@overload
+def get_mcp_server_by_name(
+    db_session: Session, name: str, throw_error_if_not_found: Literal[True]
+) -> MCPServer: ...
+
+
+@overload
+def get_mcp_server_by_name(
+    db_session: Session, name: str, throw_error_if_not_found: Literal[False]
+) -> MCPServer | None: ...
+
+
+def get_mcp_server_by_name(
+    db_session: Session, name: str, throw_error_if_not_found: bool
+) -> MCPServer | None:
     statement = select(MCPServer).where(MCPServer.name == name)
 
-    mcp_server = db_session.execute(statement).scalar_one_or_none()
-    return mcp_server
+    mcp_server: MCPServer | None = None
+    if throw_error_if_not_found:
+        mcp_server = db_session.execute(statement).scalar_one()
+        return mcp_server
+    else:
+        mcp_server = db_session.execute(statement).scalar_one_or_none()
+        return mcp_server
 
 
 def create_mcp_server(

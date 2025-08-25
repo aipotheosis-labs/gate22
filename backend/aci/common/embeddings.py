@@ -2,6 +2,7 @@ from openai import OpenAI
 
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp.server import MCPServerEmbeddingFields
+from aci.common.schemas.mcp.tool import MCPToolEmbeddingFields
 
 logger = get_logger(__name__)
 
@@ -19,39 +20,29 @@ def generate_mcp_server_embedding(
     return generate_embedding(openai_client, text_for_embedding)
 
 
-# # TODO: batch generate function embeddings
-# # TODO: update mcp_server embedding to include function embeddings whenever functions are
+# TODO: batch generate mcp tool embeddings
+# TODO: update mcp_server embedding to include mcp tool embeddings whenever mcp tools are
 # added/updated?
-# def generate_function_embeddings(
-#     functions: list[FunctionEmbeddingFields],
-#     openai_client: OpenAI,
-#     embedding_model: str,
-#     embedding_dimension: int,
-# ) -> list[list[float]]:
-#     logger.debug(f"Generating embeddings for {len(functions)} functions...")
-#     function_embeddings: list[list[float]] = []
-#     for function in functions:
-#         function_embeddings.append(
-#             generate_function_embedding(
-#                 function, openai_client, embedding_model, embedding_dimension
-#             )
-#         )
+def generate_mcp_tool_embeddings(
+    openai_client: OpenAI,
+    mcp_tools: list[MCPToolEmbeddingFields],
+) -> list[list[float]]:
+    logger.debug(f"Generating embeddings for {len(mcp_tools)} mcp tools...")
+    mcp_tool_embeddings: list[list[float]] = []
+    for mcp_tool in mcp_tools:
+        mcp_tool_embeddings.append(generate_mcp_tool_embedding(openai_client, mcp_tool))
 
-#     return function_embeddings
+    return mcp_tool_embeddings
 
 
-# def generate_function_embedding(
-#     function: FunctionEmbeddingFields,
-#     openai_client: OpenAI,
-#     embedding_model: str,
-#     embedding_dimension: int,
-# ) -> list[float]:
-#     logger.debug(f"Generating embedding for function: {function.name}...")
-#     text_for_embedding = function.model_dump_json()
-#     logger.debug(f"Text for function embedding: {text_for_embedding}")
-#     return generate_embedding(
-#         openai_client, embedding_model, embedding_dimension, text_for_embedding
-#     )
+def generate_mcp_tool_embedding(
+    openai_client: OpenAI,
+    mcp_tool: MCPToolEmbeddingFields,
+) -> list[float]:
+    logger.debug(f"Generating embedding for mcp tool: {mcp_tool.name}...")
+    text_for_embedding = mcp_tool.model_dump_json()
+    logger.debug(f"Text for mcp tool embedding: {text_for_embedding}")
+    return generate_embedding(openai_client, text_for_embedding)
 
 
 # TODO: allow different inference providers

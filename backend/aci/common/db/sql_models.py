@@ -291,12 +291,12 @@ class MCPServer(Base):
         init=False,
     )
 
-    tools: Mapped[list[MCPTools]] = relationship(
+    tools: Mapped[list[MCPTool]] = relationship(
         back_populates="mcp_server", cascade="all, delete-orphan", init=False
     )
 
 
-class MCPTools(Base):
+class MCPTool(Base):
     __tablename__ = "mcp_tools"
 
     id: Mapped[UUID] = mapped_column(
@@ -312,7 +312,7 @@ class MCPTools(Base):
     # NOTE: the description might not be the exact same as the canonical tool description from the
     # mcp server, as some of them might be too long (e.g., openai require < 1024 characters)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    input_schema: Mapped[str] = mapped_column(Text, nullable=False)
+    input_schema: Mapped[dict] = mapped_column(JSONB, nullable=False)
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
     tool_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSION), nullable=False)
