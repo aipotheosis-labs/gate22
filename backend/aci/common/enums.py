@@ -15,3 +15,17 @@ class TeamRole(StrEnum):
     # NOTE: currently we don't really need to differentiate between team members
     # keeping the enum structure for future use
     MEMBER = "member"
+
+
+class AuthType(StrEnum):
+    NO_AUTH = "no_auth"
+    API_KEY = "api_key"
+    OAUTH2 = "oauth2"
+
+
+class HttpLocation(StrEnum):
+    PATH = "path"
+    QUERY = "query"
+    HEADER = "header"
+    COOKIE = "cookie"
+    BODY = "body"

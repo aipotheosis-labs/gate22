@@ -3,23 +3,29 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    ARRAY,
     Boolean,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     LargeBinary,
     String,
+    Text,
     UniqueConstraint,
     false,
     func,
 )
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 
 from aci.common.enums import OrganizationRole, TeamRole, UserIdentityProvider
+from aci.common.schemas.mcp import AuthConfig, AuthCredentials, MCPServerMetadata, MCPToolMetadata
 
+EMBEDDING_DIMENSION = 1024
 MAX_STRING_LENGTH = 512
 MAX_ENUM_LENGTH = 50
 
@@ -255,3 +261,186 @@ class TeamMembership(Base):
             ondelete="CASCADE",  # Org membership removal cascades to team memberships
         ),
     )
+
+
+class MCPServer(Base):
+    __tablename__ = "mcp_servers"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
+    # e.g., https://example.com/mcp
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    logo: Mapped[str] = mapped_column(Text, nullable=False)
+    # TODO: consider adding a category table
+    categories: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+    # NOTE: a mcp server might support multiple auth types, e.g., both oauth2 and api key
+    auth_configs: Mapped[list[AuthConfig]] = mapped_column(ARRAY(JSONB), nullable=False)
+    server_metadata: Mapped[MCPServerMetadata] = mapped_column(JSONB, nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSION), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    tools: Mapped[list[MCPTools]] = relationship(
+        back_populates="mcp_server", cascade="all, delete-orphan", init=False
+    )
+
+
+class MCPTools(Base):
+    __tablename__ = "mcp_tools"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    mcp_server_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("mcp_servers.id", ondelete="CASCADE"), nullable=False
+    )
+    # NOTE: the name of the tool is not the same as the canonical tool name from the mcp server.
+    # e.g., the canonical tool name is "create-pull-request" and the name of the tool
+    # can be "GITHUB__CREATE_PULL_REQUEST"
+    name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False, unique=True)
+    # NOTE: the description might not be the exact same as the canonical tool description from the
+    # mcp server, as some of them might be too long (e.g., openai require < 1024 characters)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    input_schema: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+    tool_metadata: Mapped[MCPToolMetadata] = mapped_column(JSONB, nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIMENSION), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    mcp_server: Mapped[MCPServer] = relationship(back_populates="tools", init=False)
+
+
+# NOTE:
+# - each org can configure the same mcp server multiple times
+class MCPServerConfiguration(Base):
+    __tablename__ = "mcp_server_configurations"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    mcp_server_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("mcp_servers.id", ondelete="CASCADE"), nullable=False
+    )
+    organization_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    auth_config: Mapped[AuthConfig] = mapped_column(JSONB, nullable=False)
+    # TODO: add whitelabel overrides?
+    all_tools_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # A list of tool ids
+    enabled_tools: Mapped[list[UUID]] = mapped_column(ARRAY(PGUUID(as_uuid=True)), nullable=False)
+
+    # TODO: need to check teams actually belongs to the org on app layer
+    # whitelisted teams that can use this mcp server configuration
+    allowed_teams: Mapped[list[UUID]] = mapped_column(ARRAY(PGUUID(as_uuid=True)), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    # one way relationship to the mcp server
+    mcp_server: Mapped[MCPServer] = relationship("MCPServer", init=False)
+
+
+# TODO:
+# - for now, connected account is tied to mcp server configuration, not mcp server
+# - for simplicity, we only support one connected account per user per mcp server configuration
+# - we might need to support multiple connected accounts per user per mcp server (configuration)
+class ConnectedAccount(Base):
+    __tablename__ = "connected_accounts"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    mcp_server_configuration_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("mcp_server_configurations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    auth_credentials: Mapped[AuthCredentials] = mapped_column(JSONB, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    # TODO: consider composite key instead
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "mcp_server_configuration_id",
+            name="uc_connected_accounts_one_per_user_per_mcp_server_config",
+        ),
+    )
+
+
+class MCPServerBundle(Base):
+    __tablename__ = "mcp_server_bundles"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # user who created the mcp server bundle
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    # a list of mcp server configuration ids the bundle contains
+    # TODO: should only allow mcp server configurations of the same mcp server once
+    # TODO: should probably only allow mcp server configurations that the user has connected to
+    mcp_server_configurations: Mapped[list[UUID]] = mapped_column(
+        ARRAY(PGUUID(as_uuid=True)), nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+
+# TODO: sessions table for mcp server that require sessions
