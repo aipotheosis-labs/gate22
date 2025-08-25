@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+from uuid import UUID
 
 import jsonschema
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -63,3 +65,14 @@ class MCPToolEmbeddingFields(BaseModel):
     name: str
     description: str
     input_schema: dict
+
+
+class MCPToolPublic(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    input_schema: dict
+    tags: list[str]
+
+    created_at: datetime
+    updated_at: datetime

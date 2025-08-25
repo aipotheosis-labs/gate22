@@ -1,8 +1,12 @@
 import re
+from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from aci.common.enums import AuthType
 from aci.common.schemas.mcp.auth import AuthConfig
+from aci.common.schemas.mcp.tool import MCPToolPublic
 
 
 # NOTE: using a generic metadata schema for now before the schema is finalized
@@ -42,3 +46,18 @@ class MCPServerEmbeddingFields(BaseModel):
     url: str
     description: str
     categories: list[str]
+
+
+class MCPServerPublic(BaseModel):
+    id: UUID
+    name: str
+    url: str
+    description: str
+    logo: str
+    categories: list[str]
+    supported_auth_types: list[AuthType]
+
+    tools: list[MCPToolPublic]
+
+    created_at: datetime
+    updated_at: datetime
