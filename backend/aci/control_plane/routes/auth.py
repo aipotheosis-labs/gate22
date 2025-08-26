@@ -156,15 +156,14 @@ async def register(
         )
 
     # Hash password
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(request.password.encode(), salt)
+    hashed = _hash_user_password(request.password)
 
     # Create user
     user = crud.users.create_user(
         db_session=context.db_session,
         name=request.name,
         email=request.email,
-        password_hash=hashed.decode(),
+        password_hash=hashed,
         identity_provider=UserIdentityProvider.EMAIL,
     )
 
@@ -341,6 +340,12 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
         samesite="lax",
         max_age=60 * 60 * 24 * 30,
     )
+
+
+def _hash_user_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode(), salt)
+    return hashed.decode()
 
 
 def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
