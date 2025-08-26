@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +9,7 @@ import { AlertCircle } from "lucide-react";
 import { issueToken, getProfile } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
-export default function CallbackPage() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -100,5 +101,32 @@ export default function CallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen relative">
+          <div
+            className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
+            aria-hidden="true"
+          />
+          <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
+            <div className="flex flex-col items-center justify-center space-y-3">
+              <h1 className="text-2xl font-semibold">Completing sign in...</h1>
+              <Skeleton className="h-[125px] w-[250px] rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <CallbackContent />
+    </Suspense>
   );
 }
