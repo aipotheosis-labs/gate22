@@ -15,6 +15,7 @@ from aci.control_plane.middleware.interceptor import (
 )
 from aci.control_plane.routes import (
     auth,
+    connected_accounts,
     health,
     mcp_server_configurations,
     mcp_servers,
@@ -103,4 +104,10 @@ app.include_router(
     mcp_server_configurations.router,
     prefix=config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS,
     tags=[config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS.split("/")[-1]],
+)
+
+app.include_router(
+    connected_accounts.router,
+    prefix=config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
+    tags=[config.ROUTER_PREFIX_CONNECTED_ACCOUNTS.split("/")[-1]],
 )

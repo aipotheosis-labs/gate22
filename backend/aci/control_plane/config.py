@@ -8,6 +8,7 @@ APP_OPENAPI_URL = "/v1/control-plane-openapi.json"
 
 
 ENVIRONMENT = check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT")
+REDIRECT_URI_BASE = check_and_get_env_variable("CONTROL_PLANE_REDIRECT_URI_BASE")
 
 # ROUTERS
 ROUTER_PREFIX_HEALTH = "/v1/health"
@@ -16,6 +17,7 @@ ROUTER_PREFIX_ORGANIZATIONS = "/v1/organizations"
 ROUTER_PREFIX_USERS = "/v1/users"
 ROUTER_PREFIX_MCP_SERVERS = "/v1/mcp-servers"
 ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/v1/mcp-server-configurations"
+ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/v1/connected-accounts"
 
 # Frontend
 FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")

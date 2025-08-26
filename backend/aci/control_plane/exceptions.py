@@ -42,3 +42,29 @@ class OAuth2Error(ControlPlaneException):
             message=message,
             error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+class NoImplementationFound(ControlPlaneException):
+    """
+    Exception raised when a feature or function is not implemented
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="No implementation found",
+            message=message,
+            error_code=status.HTTP_501_NOT_IMPLEMENTED,
+        )
+
+
+class MCPServerConfigurationNotFound(ControlPlaneException):
+    """
+    Exception raised when an mcp server configuration is not found
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="MCP server configuration not found",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )

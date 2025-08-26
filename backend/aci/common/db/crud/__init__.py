@@ -1,6 +1,15 @@
-from . import mcp_server_configurations, mcp_servers, mcp_tools, organizations, teams, users
+from . import (
+    connected_accounts,
+    mcp_server_configurations,
+    mcp_servers,
+    mcp_tools,
+    organizations,
+    teams,
+    users,
+)
 
 __all__ = [
+    "connected_accounts",
     "mcp_server_configurations",
     "mcp_servers",
     "mcp_tools",

@@ -1,11 +1,12 @@
 import random
 import string
+import time
 from typing import Any, cast
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
-# from aci.common.exceptions import OAuth2Error
 from aci.common.logging_setup import get_logger
+from aci.common.schemas.mcp.auth import OAuth2Credentials
 from aci.control_plane.exceptions import OAuth2Error
 
 UNICODE_ASCII_CHARACTER_SET = string.ascii_letters + string.digits
@@ -17,11 +18,11 @@ class OAuth2Manager:
         self,
         app_name: str,
         client_id: str,
-        client_secret: str,
         scope: str,
         authorize_url: str,
         access_token_url: str,
         refresh_token_url: str,
+        client_secret: str | None = None,
         token_endpoint_auth_method: str | None = None,
     ):
         """
@@ -87,15 +88,15 @@ class OAuth2Manager:
         """
 
         # TODO: some oauth2 apps may have unconventional params, temporarily handle them here
-        app_specific_params = {}
-        if self.app_name == "REDDIT":
-            app_specific_params = {
-                "duration": "permanent",
-            }
-            logger.info(
-                f"Adding app specific params, app_name={self.app_name}, "
-                f"params={app_specific_params}"
-            )
+        # app_specific_params = {}
+        # if self.app_name == "REDDIT":
+        #     app_specific_params = {
+        #         "duration": "permanent",
+        #     }
+        #     logger.info(
+        #         f"Adding app specific params, app_name={self.app_name}, "
+        #         f"params={app_specific_params}"
+        #     )
         # NOTE:
         # - "scope" can be specified here
         # - "response_type" can be specified here (default is "code")
@@ -108,7 +109,7 @@ class OAuth2Manager:
             access_type=access_type,
             prompt=prompt,
             scope=self.scope,
-            **app_specific_params,
+            # **app_specific_params,
         )
 
         return str(authorization_url)
@@ -163,49 +164,46 @@ class OAuth2Manager:
             logger.error(f"Failed to refresh access token, app_name={self.app_name}, error={e}")
             raise OAuth2Error("Failed to refresh access token") from e
 
-    # def parse_fetch_token_response(self, token: dict) -> OAuth2SchemeCredentials:
-    #     """
-    #     Parse OAuth2SchemeCredentials from token response with app-specific handling.
+    def parse_fetch_token_response(self, token: dict) -> OAuth2Credentials:
+        """
+        Parse OAuth2Credentials from token response with app-specific handling.
 
-    #     Args:
-    #         token: OAuth2 token response from provider
+        Args:
+            token: OAuth2 token response from provider
 
-    #     Returns:
-    #         OAuth2SchemeCredentials with appropriate fields set
-    #     """
-    #     data = token
+        Returns:
+            OAuth2SchemeCredentials with appropriate fields set
+        """
+        data = token
 
-    #     # handle Slack's special case
-    #     if self.app_name == "SLACK":
-    #         if "authed_user" in data:
-    #             data = cast(dict, data["authed_user"])
-    #         else:
-    #             logger.error(f"Missing authed_user in Slack OAuth response, app={self.app_name}")
-    #             raise OAuth2Error("Missing access_token in Slack OAuth response")
+        # # handle Slack's special case
+        # TODO: still relevant for mcp server?
+        # if self.app_name == "SLACK":
+        #     if "authed_user" in data:
+        #         data = cast(dict, data["authed_user"])
+        #     else:
+        #         logger.error(f"Missing authed_user in Slack OAuth response, app={self.app_name}")
+        #         raise OAuth2Error("Missing access_token in Slack OAuth response")
 
-    #     if "access_token" not in data:
-    #         logger.error(f"Missing access_token in OAuth response, app={self.app_name}")
-    #         raise OAuth2Error("Missing access_token in OAuth response")
+        if "access_token" not in data:
+            logger.error(f"Missing access_token in OAuth response, app={self.app_name}")
+            raise OAuth2Error("Missing access_token in OAuth response")
 
-    #     # some apps have long live access token so expiration time may not be present
-    #     expires_at: int | None = None
-    #     if "expires_at" in data:
-    #         expires_at = int(data["expires_at"])
-    #     elif "expires_in" in data:
-    #         expires_at = int(time.time()) + int(data["expires_in"])
+        # some apps have long live access token so expiration time may not be present
+        expires_at: int | None = None
+        if "expires_at" in data:
+            expires_at = int(data["expires_at"])
+        elif "expires_in" in data:
+            expires_at = int(time.time()) + int(data["expires_in"])
 
-    #     # TODO: if scope is present, check if it matches the scope in the App Configuration
+        # TODO: if scope is present, check if it matches the scope in the App Configuration
 
-    #     return OAuth2SchemeCredentials(
-    #         client_id=self.client_id,
-    #         client_secret=self.client_secret,
-    #         scope=self.scope,
-    #         access_token=data["access_token"],
-    #         token_type=data.get("token_type"),
-    #         expires_at=expires_at,
-    #         refresh_token=data.get("refresh_token"),
-    #         raw_token_response=token,
-    #     )
+        return OAuth2Credentials(
+            access_token=data["access_token"],
+            token_type=data.get("token_type"),
+            expires_at=expires_at,
+            refresh_token=data.get("refresh_token"),
+        )
 
     @staticmethod
     def generate_code_verifier(length: int = 48) -> str:

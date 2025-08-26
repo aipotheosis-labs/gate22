@@ -97,6 +97,8 @@ class APIKeyCredentials(BaseModel):
     )
 
 
+# TODO: reconsider client id, client secret, scope, etc should be stored together
+# with the credentials
 class OAuth2Credentials(BaseModel):
     type: Literal[AuthType.OAUTH2] = AuthType.OAUTH2
     access_token: str

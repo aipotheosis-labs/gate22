@@ -1,5 +1,7 @@
+from typing import Literal, overload
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerConfiguration
@@ -24,3 +26,37 @@ def create_mcp_server_configuration(
     db_session.refresh(db_mcp_server_configuration)
 
     return db_mcp_server_configuration
+
+
+@overload
+def get_mcp_server_configuration_by_id(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+    throw_error_if_not_found: Literal[True],
+) -> MCPServerConfiguration: ...
+
+
+@overload
+def get_mcp_server_configuration_by_id(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+    throw_error_if_not_found: Literal[False],
+) -> MCPServerConfiguration | None: ...
+
+
+def get_mcp_server_configuration_by_id(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+    throw_error_if_not_found: bool,
+) -> MCPServerConfiguration | None:
+    statement = select(MCPServerConfiguration).where(
+        MCPServerConfiguration.id == mcp_server_configuration_id
+    )
+
+    mcp_server_configuration: MCPServerConfiguration | None = None
+    if throw_error_if_not_found:
+        mcp_server_configuration = db_session.execute(statement).scalar_one()
+        return mcp_server_configuration
+    else:
+        mcp_server_configuration = db_session.execute(statement).scalar_one_or_none()
+        return mcp_server_configuration
