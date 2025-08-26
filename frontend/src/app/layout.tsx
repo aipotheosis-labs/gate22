@@ -3,7 +3,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { MockProvider } from "@/providers/mock-provider";
 import { QueryProvider } from "@/providers/query-provider";
 
 const geistSans = Geist({
@@ -66,21 +65,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
       >
-        <MockProvider>
-          <QueryProvider>
-            <NuqsAdapter>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <div className="h-full">{children}</div>
-                <Analytics />
-              </ThemeProvider>
-            </NuqsAdapter>
-          </QueryProvider>
-        </MockProvider>
+        <QueryProvider>
+          <NuqsAdapter>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <div className="h-full">{children}</div>
+              <Analytics />
+            </ThemeProvider>
+          </NuqsAdapter>
+        </QueryProvider>
       </body>
     </html>
   );

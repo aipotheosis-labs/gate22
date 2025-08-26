@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:mock": "cross-env NEXT_PUBLIC_USE_MOCK=true NEXT_PUBLIC_API_URL=http://localhost:3000/api/mock next dev",
     "build": "next build",
-    "build:mock": "cross-env NEXT_PUBLIC_USE_MOCK=true NEXT_PUBLIC_API_URL=http://localhost:3000/api/mock next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
@@ -60,7 +58,6 @@
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.473.0",
     "motion": "^12.7.3",
-    "msw": "^2.10.5",
     "nanoid": "^5.1.5",
     "next": "15.1.5",
     "next-themes": "^0.4.6",
@@ -82,7 +79,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@mswjs/data": "^0.16.2",
     "@tailwindcss/postcss": "^4.1.11",
     "@tanstack/react-query-devtools": "^5.74.6",
     "@testing-library/dom": "^10.4.0",
@@ -94,7 +90,6 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^3.0.7",
-    "cross-env": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.5",
     "jsdom": "^26.0.0",
@@ -108,10 +103,5 @@
   "overrides": {
     "react-is": "^19.0.0-rc-69d4b800-20241021"
   },
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
-  }
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }

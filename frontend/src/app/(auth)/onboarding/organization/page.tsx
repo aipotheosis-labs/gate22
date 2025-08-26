@@ -3,37 +3,54 @@
 import { useRouter } from "next/navigation";
 import { CreateOrganizationForm } from "@/features/auth/components/create-organization-form";
 import { useEffect, useState } from "react";
+import { tokenManager } from "@/lib/token-manager";
+import { getProfile } from "@/features/auth/api/auth";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
   const [userName, setUserName] = useState<string>("");
 
   useEffect(() => {
-    // Get user info from localStorage
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setUserName(user.name || user.email || "");
-      } catch (e) {
-        console.error("Failed to parse user data:", e);
+    const loadUserInfo = async () => {
+      // Check if user is authenticated
+      const token = tokenManager.getAccessToken();
+      if (!token) {
+        // Try to refresh token
+        const refreshedToken = await tokenManager.refreshAccessToken();
+        if (!refreshedToken) {
+          router.push("/signup");
+          return;
+        }
       }
-    }
-
-    // Check if user is authenticated
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      router.push("/signup");
-    }
+      
+      // Get user profile
+      try {
+        const currentToken = tokenManager.getAccessToken();
+        if (currentToken) {
+          const userProfile = await getProfile(currentToken);
+          setUserName(userProfile.name || userProfile.email || "");
+        }
+      } catch (e) {
+        console.error("Failed to load user data:", e);
+      }
+    };
+    
+    loadUserInfo();
   }, [router]);
 
   const handleCreateOrganization = async (name: string) => {
     try {
-      const response = await fetch("/api/v1/organizations", {
+      const token = await tokenManager.ensureValidToken();
+      if (!token) {
+        throw new Error("No authentication token available");
+      }
+      
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${baseUrl}/v1/organizations`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name,
@@ -44,11 +61,11 @@ export default function CreateOrganizationPage() {
         throw new Error("Failed to create organization");
       }
 
-      const organization = await response.json();
+      await response.json();
 
-      // Store organization data
-      localStorage.setItem("organization", JSON.stringify(organization));
-
+      // Organization created successfully
+      // The MetaInfoProvider will refresh user data on navigation
+      
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 500));
 

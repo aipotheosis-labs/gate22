@@ -10,7 +10,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCurrentUser, logout as apiLogout } from "@/features/auth/api/auth";
+import { getProfile, logout as apiLogout } from "@/features/auth/api/auth";
+import { tokenManager } from "@/lib/token-manager";
 
 export interface UserClass {
   userId: string;
@@ -59,71 +60,71 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   // Check for existing session on mount
   useEffect(() => {
     const checkExistingSession = async () => {
-      // Check both token formats for compatibility
-      const storedToken =
-        localStorage.getItem("accessToken") ||
-        localStorage.getItem("access-token");
-      const storedUser = localStorage.getItem("user");
-
-      // Demo mode - if we have a demo token, use stored user data
-      if (storedToken && storedToken.startsWith("demo-token-")) {
-        if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            setAccessToken(storedToken);
-            setUser({
-              userId: userData.id || "demo-user-001",
-              email: userData.email,
-              firstName: userData.name,
-              lastName: "",
-              username: userData.name,
-            });
-            setOrgs([
-              {
-                orgId: "demo-org-001",
-                orgName: "Demo Organization",
-                userRole: userData.role || "admin",
-                userPermissions: ["read", "write", "admin"],
-              },
-            ]);
-            setIsAuthenticated(true);
-          } catch {
-            // Invalid stored data, clear it
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("user");
-          }
+      try {
+        // First check if we have an existing valid token
+        let token = tokenManager.getAccessToken();
+        
+        // If no token in memory, try to get a fresh token from the backend using the refresh token cookie
+        if (!token) {
+          token = await tokenManager.refreshAccessToken();
         }
-      } else if (storedToken) {
-        // Real token - try to get user from API
-        try {
-          const { user, org } = await getCurrentUser(storedToken);
-          setAccessToken(storedToken);
+        
+        if (token) {
+          // Get user profile with the new token
+          const userProfile = await getProfile(token);
+          
+          // Transform the profile to match the expected format
+          const user: UserClass = {
+            userId: userProfile.user_id,
+            email: userProfile.email,
+            firstName: userProfile.name.split(' ')[0],
+            lastName: userProfile.name.split(' ').slice(1).join(' '),
+            username: userProfile.email.split('@')[0],
+            pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
+          };
+          
+          const org: OrgMemberInfoClass = userProfile.organizations && userProfile.organizations.length > 0 
+            ? {
+                orgId: userProfile.organizations[0].organization_id,
+                orgName: userProfile.organizations[0].organization_name,
+                userRole: userProfile.organizations[0].role,
+                userPermissions: [], // TODO: Get permissions from backend
+              }
+            : {
+                orgId: '',
+                orgName: '',
+                userRole: '',
+                userPermissions: [],
+              };
+          
+          setAccessToken(token);
           setUser(user);
           setOrgs([org]);
           setIsAuthenticated(true);
-        } catch {
-          // Token is invalid, clear it
-          localStorage.removeItem("access-token");
-          localStorage.removeItem("accessToken");
+        } else {
+          // No valid session - this is expected for non-authenticated users
         }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkExistingSession();
   }, []);
 
   const handleLogout = useCallback(async () => {
-    if (accessToken) {
-      try {
-        await apiLogout(accessToken);
-      } catch {
-        // Continue with logout even if API call fails
-      }
+    try {
+      await apiLogout();
+    } catch {
+      // Continue with logout even if API call fails
     }
 
-    // Clear all state and localStorage
-    localStorage.removeItem("access-token");
+    // Clear token from memory
+    tokenManager.clearToken();
+    
+    // Clear all state
     setAccessToken("");
     setUser(null);
     setOrgs([]);
@@ -132,7 +133,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Redirect to home page after logout
     router.push("/");
-  }, [accessToken, router]);
+  }, [router]);
 
   useEffect(() => {
     if (orgs.length > 0) {
