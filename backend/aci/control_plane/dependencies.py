@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Annotated, Literal, overload
+from typing import Annotated
 from uuid import UUID
 
 import jwt
@@ -11,10 +11,13 @@ from sqlalchemy.orm import Session
 from aci.common import utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
+from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo, JWTPayload
 from aci.control_plane import config
 
 http_bearer = HTTPBearer(auto_error=True, description="login to receive a JWT token")
+
+logger = get_logger(__name__)
 
 
 class RequestContextWithoutActAs(BaseModel):
@@ -51,27 +54,25 @@ def get_jwt_payload(
         raise HTTPException(status_code=401, detail="Token invalid") from e
 
 
-@overload
+def get_request_context_no_orgs(
+    db_session: Annotated[Session, Depends(yield_db_session)],
+    jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
+) -> RequestContextWithoutActAs:
+    """
+    This dependency is used in endpoints that requires user to be authenticated but expect user to
+    not act as any organization and role.
+    For example: POST /organizations
+    """
+    return RequestContextWithoutActAs(
+        db_session=db_session,
+        user_id=jwt_payload.user_id,
+    )
+
+
 def get_request_context(
     db_session: Annotated[Session, Depends(yield_db_session)],
     jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
-    is_act_as_required: Literal[False],
-) -> RequestContextWithoutActAs: ...
-
-
-@overload
-def get_request_context(
-    db_session: Annotated[Session, Depends(yield_db_session)],
-    jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
-    is_act_as_required: Literal[True],
-) -> RequestContext: ...
-
-
-def get_request_context(
-    db_session: Annotated[Session, Depends(yield_db_session)],
-    jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
-    is_act_as_required: bool = True,
-) -> RequestContext | RequestContextWithoutActAs:
+) -> RequestContext:
     """
     This method validates whether the user is permitted to act as the desired organization and role.
     Returns a RequestContext object containing the DB session, user_id and act_as information.
@@ -83,6 +84,11 @@ def get_request_context(
                 db_session, jwt_payload.act_as.organization_id
             )
             if not organization:
+                logger.error(
+                    f"Failed to act as organization {jwt_payload.act_as.organization_id}"
+                    f"(role: {jwt_payload.act_as.role}). "
+                    f"Organization does not exist"
+                )
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
         # Check if user is a member of the organization
@@ -90,20 +96,25 @@ def get_request_context(
             db_session, jwt_payload.act_as.organization_id, jwt_payload.user_id
         )
         if not membership:
+            logger.error(
+                f"Failed to act as organization {jwt_payload.act_as.organization_id}"
+                f"(role: {jwt_payload.act_as.role}). "
+                f"User {jwt_payload.user_id} is not a member of the organization"
+            )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
         # Check if user has the required role in the organization
         if not is_role_valid(jwt_payload.act_as.role, membership.role):
+            logger.error(
+                f"Failed to act as organization {jwt_payload.act_as.organization_id}"
+                f"(role: {jwt_payload.act_as.role}). "
+                f"Role not allowed"
+            )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     else:
-        if is_act_as_required:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        else:
-            return RequestContextWithoutActAs(
-                db_session=db_session,
-                user_id=jwt_payload.user_id,
-            )
+        logger.error("The JWT payload is missing act_as information")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     return RequestContext(
         db_session=db_session,

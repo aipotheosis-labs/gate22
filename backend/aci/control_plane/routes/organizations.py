@@ -1,4 +1,3 @@
-from functools import partial
 from typing import Annotated
 from uuid import UUID
 
@@ -40,10 +39,7 @@ def _throw_if_not_permitted(
 
 @router.post("/", response_model=OrganizationInfo, status_code=status.HTTP_201_CREATED)
 async def create_organization(
-    context: Annotated[
-        deps.RequestContextWithoutActAs,
-        Depends(partial(deps.get_request_context, is_act_as_required=False)),
-    ],
+    context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
     request: CreateOrganizationRequest,
 ) -> OrganizationInfo:
     # Every logged in user can create an organization. No permission check.
