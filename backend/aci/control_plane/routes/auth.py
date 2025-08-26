@@ -76,7 +76,6 @@ async def google_callback(
         deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
     ],
     operation: AuthOperation,
-    response: Response,
     error: str | None = None,
     code: str | None = None,
     state: str | None = None,
@@ -127,9 +126,12 @@ async def google_callback(
         raise OAuth2Error(message="Invalid operation parameter during OAuth2 flow")
 
     # Issue a refresh token, store in secure cookie
+    response = RedirectResponse(
+        oauth_info.post_oauth_redirect_uri, status_code=status.HTTP_302_FOUND
+    )
     _issue_refresh_token(context.db_session, user.id, response)
 
-    return RedirectResponse(oauth_info.post_oauth_redirect_uri, status_code=status.HTTP_302_FOUND)
+    return response
 
 
 @router.post(
