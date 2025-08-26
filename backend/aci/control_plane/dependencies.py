@@ -1,11 +1,11 @@
 from collections.abc import Generator
+from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from aci.common import utils
@@ -20,14 +20,14 @@ http_bearer = HTTPBearer(auto_error=True, description="login to receive a JWT to
 logger = get_logger(__name__)
 
 
-class RequestContextWithoutActAs(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+@dataclass
+class RequestContextWithoutActAs:
     db_session: Session
     user_id: UUID
 
 
-class RequestContext(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+@dataclass
+class RequestContext:
     db_session: Session
     user_id: UUID
     act_as: ActAsInfo
