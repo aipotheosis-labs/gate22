@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.get("/me/profile", response_model=UserInfo, status_code=status.HTTP_200_OK)
 async def profile(
-    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context_no_orgs)],
 ) -> UserInfo:
     user = crud.users.get_user_by_id(context.db_session, context.user_id)
 
