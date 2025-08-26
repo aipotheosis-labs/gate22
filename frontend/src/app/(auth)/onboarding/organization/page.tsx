@@ -12,26 +12,40 @@ export default function CreateOrganizationPage() {
 
   useEffect(() => {
     const loadUserInfo = async () => {
-      // Check if user is authenticated
-      const token = tokenManager.getAccessToken();
-      if (!token) {
-        // Try to refresh token
-        const refreshedToken = await tokenManager.refreshAccessToken();
-        if (!refreshedToken) {
-          router.push("/signup");
-          return;
-        }
-      }
-      
-      // Get user profile
       try {
-        const currentToken = tokenManager.getAccessToken();
-        if (currentToken) {
-          const userProfile = await getProfile(currentToken);
-          setUserName(userProfile.name || userProfile.email || "");
+        // Check if user is authenticated
+        let token = tokenManager.getAccessToken();
+        
+        if (!token) {
+          // Wait a bit for cookies to be available after OAuth redirect
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Try to refresh token
+          token = await tokenManager.refreshAccessToken();
+          
+          if (!token) {
+            // Only redirect to signup if we truly can't get a token
+            console.error("No token available, redirecting to signup");
+            router.push("/signup");
+            return;
+          }
         }
-      } catch (e) {
-        console.error("Failed to load user data:", e);
+        
+        // Get user profile
+        const userProfile = await getProfile(token);
+        setUserName(userProfile.name || userProfile.email || "");
+        
+        // Check if user already has organizations (shouldn't happen but good to check)
+        if (userProfile.organizations && userProfile.organizations.length > 0) {
+          // User already has an organization, redirect to dashboard
+          router.push("/mcp-servers");
+        }
+      } catch (error) {
+        console.error("Failed to load user data:", error);
+        // Only redirect on authentication errors
+        if (error instanceof Error && error.message.includes("401")) {
+          router.push("/signup");
+        }
       }
     };
     

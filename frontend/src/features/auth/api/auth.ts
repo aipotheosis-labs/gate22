@@ -2,7 +2,6 @@ import { getApiBaseUrl } from "@/lib/api-client";
 
 // Request/Response types
 export interface EmailLoginRequest {
-  auth_flow: "email";
   email: string;
   password: string;
 }
@@ -62,7 +61,6 @@ export async function login(email: string, password: string): Promise<void> {
     },
     credentials: "include", // Include cookies
     body: JSON.stringify({
-      auth_flow: "email",
       email,
       password,
     } as EmailLoginRequest),
@@ -121,20 +119,17 @@ export async function getProfile(token: string): Promise<UserInfo> {
   return response.json();
 }
 
-export async function getGoogleAuthUrl(operation: "register" | "login", redirect_uri?: string): Promise<string> {
+// Google OAuth helper functions
+export function getGoogleLoginUrl(): string {
   const baseUrl = getApiBaseUrl();
-  const params = redirect_uri ? `?redirect_uri=${encodeURIComponent(redirect_uri)}` : "";
-  const response = await fetch(`${baseUrl}/v1/auth/${operation}/google/authorize${params}`, {
-    redirect: "manual",
-  });
+  const callbackUrl = `${window.location.origin}/callback?provider=google`;
+  const redirectUri = encodeURIComponent(callbackUrl);
+  return `${baseUrl}/v1/auth/login/google/authorize?redirect_uri=${redirectUri}`;
+}
 
-  if (response.type === "opaqueredirect" || response.status === 302) {
-    const location = response.headers.get("location");
-    if (location) {
-      return location;
-    }
-  }
-
-  const text = await response.text();
-  return text;
+export function getGoogleRegisterUrl(): string {
+  const baseUrl = getApiBaseUrl();
+  const callbackUrl = `${window.location.origin}/callback?provider=google`;
+  const redirectUri = encodeURIComponent(callbackUrl);
+  return `${baseUrl}/v1/auth/register/google/authorize?redirect_uri=${redirectUri}`;
 }

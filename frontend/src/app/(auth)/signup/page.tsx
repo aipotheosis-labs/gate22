@@ -6,7 +6,7 @@ import { SignupForm } from "@/features/auth/components/signup-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { register, issueToken, getProfile } from "@/features/auth/api/auth";
+import { register, issueToken, getProfile, getGoogleRegisterUrl } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
 export default function SignupPage() {
@@ -48,11 +48,10 @@ export default function SignupPage() {
     // Clear any existing tokens before Google signup to prevent stale token usage
     tokenManager.clearToken();
     
-    // Directly redirect to the backend OAuth endpoint
+    // Redirect to the backend OAuth endpoint
     // The backend will handle the redirect to Google
-    const redirectUri = encodeURIComponent(window.location.origin + "/onboarding/organization");
-    const authUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/v1/auth/register/google/authorize?redirect_uri=${redirectUri}`;
-    window.location.href = authUrl;
+    // Use callback page which will redirect to onboarding for new users
+    window.location.href = getGoogleRegisterUrl();
   };
 
   return (
