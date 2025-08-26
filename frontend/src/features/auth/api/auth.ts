@@ -104,10 +104,9 @@ export async function logout(): Promise<void> {
 export async function getProfile(token: string): Promise<UserInfo> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/users/me/profile`, {
-    method: "POST",
+    method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
     },
   });
 
