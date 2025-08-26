@@ -15,6 +15,7 @@ from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo, JWTPayload
 from aci.control_plane import config
 
+logger = get_logger(__name__)
 http_bearer = HTTPBearer(auto_error=True, description="login to receive a JWT token")
 
 logger = get_logger(__name__)
@@ -51,6 +52,7 @@ def get_jwt_payload(
         jwt_payload = JWTPayload(**decoded_token)
         return jwt_payload
     except Exception as e:
+        logger.error(f"Error decoding JWT token: {e}")
         raise HTTPException(status_code=401, detail="Token invalid") from e
 
 
@@ -78,6 +80,7 @@ def get_request_context(
     Returns a RequestContext object containing the DB session, user_id and act_as information.
     """
     if jwt_payload.act_as:
+        logger.info(f"JWT payload: {jwt_payload}")
         # Check if organization exists
         if jwt_payload.act_as.organization_id:
             organization = crud.organizations.get_organization_by_id(

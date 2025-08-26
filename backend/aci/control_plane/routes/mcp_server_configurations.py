@@ -26,18 +26,25 @@ async def create_mcp_server_configuration(
     # TODO: check allowed_teams are actually in the org
     # TODO: check enabled_tools are actually in the mcp server
     if context.act_as is None or context.act_as.role != OrganizationRole.ADMIN:
+        logger.error("User does not have admin role")
         raise HTTPException(status_code=403, detail="Forbidden")
 
     mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         context.db_session, body.mcp_server_id, throw_error_if_not_found=False
     )
     if mcp_server is None:
+        logger.error(
+            f"MCP server not found for mcp server configuration {body.mcp_server_id}",
+        )
         raise HTTPException(status_code=404, detail="MCP server not found")
 
     # auth_type must be one of the supported auth types
     type_adapter = TypeAdapter(list[AuthConfig])
     auth_configs = type_adapter.validate_python(mcp_server.auth_configs)
     if body.auth_type not in [auth_config.type for auth_config in auth_configs]:
+        logger.error(
+            f"Invalid auth type {body.auth_type} for mcp server configuration {body.mcp_server_id}",
+        )
         raise HTTPException(status_code=400, detail="Invalid auth type")
 
     mcp_server_configuration = crud.mcp_server_configurations.create_mcp_server_configuration(
