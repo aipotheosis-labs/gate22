@@ -18,24 +18,27 @@ export default function CallbackPage() {
     const handleOAuthCallback = async () => {
       try {
         const provider = searchParams.get("provider");
-        
+
         if (provider === "google") {
           setLoadingMessage("Completing Google sign in...");
         }
-        
+
         // Wait a moment to ensure cookies are set
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         // The backend has already processed the OAuth callback and set the refresh token cookie
         // Now we just need to issue an access token using the cookie
         const tokenResponse = await issueToken();
         const token = tokenResponse.token;
-        
+
         tokenManager.setAccessToken(token);
-        
+
         const userProfile = await getProfile(token);
-        
-        if (!userProfile.organizations || userProfile.organizations.length === 0) {
+
+        if (
+          !userProfile.organizations ||
+          userProfile.organizations.length === 0
+        ) {
           router.push("/onboarding/organization");
         } else {
           router.push("/mcp-servers");
@@ -43,9 +46,9 @@ export default function CallbackPage() {
       } catch (error) {
         console.error("OAuth callback error:", error);
         setError(
-          "Failed to complete sign in. Please try again or contact support if the issue persists."
+          "Failed to complete sign in. Please try again or contact support if the issue persists.",
         );
-        
+
         setTimeout(() => {
           router.push("/login");
         }, 5000);
@@ -71,16 +74,18 @@ export default function CallbackPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
               <div className="mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Common causes:
-                </p>
+                <p className="text-sm text-muted-foreground">Common causes:</p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside mt-2">
                   <li>Cookies are disabled in your browser</li>
                   <li>Running on HTTP instead of HTTPS</li>
-                  <li>Browser security settings blocking third-party cookies</li>
+                  <li>
+                    Browser security settings blocking third-party cookies
+                  </li>
                 </ul>
               </div>
-              <p className="text-sm text-muted-foreground mt-4">Redirecting to login...</p>
+              <p className="text-sm text-muted-foreground mt-4">
+                Redirecting to login...
+              </p>
             </>
           ) : (
             <>

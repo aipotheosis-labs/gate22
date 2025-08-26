@@ -16,23 +16,23 @@ export default function LoginPage() {
   const handleLogin = async (email: string, password: string) => {
     // Call the real login API (sets refresh token in cookie)
     await login(email, password);
-    
+
     // Issue access token after successful login
     const tokenResponse = await issueToken();
-    
+
     // Store token in memory using token manager
     tokenManager.setAccessToken(tokenResponse.token);
-    
+
     // Redirect to dashboard (MetaInfo provider will handle loading user profile)
     router.push("/mcp-servers");
   };
 
   const handleGoogleLogin = () => {
     setIsLoadingGoogle(true);
-    
+
     // Clear any existing tokens before Google login to prevent stale token usage
     tokenManager.clearToken();
-    
+
     // Redirect to the backend OAuth endpoint
     // The backend will handle the entire OAuth flow and redirect back to /callback
     window.location.href = getGoogleLoginUrl();

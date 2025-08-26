@@ -15,14 +15,14 @@ export default function CreateOrganizationPage() {
       try {
         // Check if user is authenticated
         let token = tokenManager.getAccessToken();
-        
+
         if (!token) {
           // Wait a bit for cookies to be available after OAuth redirect
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
+          await new Promise((resolve) => setTimeout(resolve, 200));
+
           // Try to refresh token
           token = await tokenManager.refreshAccessToken();
-          
+
           if (!token) {
             // Only redirect to signup if we truly can't get a token
             console.error("No token available, redirecting to signup");
@@ -30,11 +30,11 @@ export default function CreateOrganizationPage() {
             return;
           }
         }
-        
+
         // Get user profile
         const userProfile = await getProfile(token);
         setUserName(userProfile.name || userProfile.email || "");
-        
+
         // Check if user already has organizations (shouldn't happen but good to check)
         if (userProfile.organizations && userProfile.organizations.length > 0) {
           // User already has an organization, redirect to dashboard
@@ -48,7 +48,7 @@ export default function CreateOrganizationPage() {
         }
       }
     };
-    
+
     loadUserInfo();
   }, [router]);
 
@@ -58,9 +58,10 @@ export default function CreateOrganizationPage() {
       if (!token) {
         throw new Error("No authentication token available");
       }
-      
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const response = await fetch(`${baseUrl}/v1/organizations`, {
+
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${baseUrl}/v1/organizations/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -72,14 +73,18 @@ export default function CreateOrganizationPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create organization");
+        const errorData = await response.text();
+        console.error("API Error:", response.status, errorData);
+        throw new Error(
+          `Failed to create organization: ${response.statusText}`,
+        );
       }
 
       await response.json();
 
       // Organization created successfully
       // The MetaInfoProvider will refresh user data on navigation
-      
+
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 500));
 

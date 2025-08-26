@@ -6,7 +6,12 @@ import { SignupForm } from "@/features/auth/components/signup-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { register, issueToken, getProfile, getGoogleRegisterUrl } from "@/features/auth/api/auth";
+import {
+  register,
+  issueToken,
+  getProfile,
+  getGoogleRegisterUrl,
+} from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
 export default function SignupPage() {
@@ -24,16 +29,16 @@ export default function SignupPage() {
       email,
       password,
     });
-    
+
     // Issue access token after successful registration
     const tokenResponse = await issueToken();
-    
+
     // Store token in memory using token manager
     tokenManager.setAccessToken(tokenResponse.token);
-    
+
     // Get user profile to check if organization exists
     const userProfile = await getProfile(tokenResponse.token);
-    
+
     // Redirect to organization creation onboarding if no org, otherwise dashboard
     if (!userProfile.organizations || userProfile.organizations.length === 0) {
       router.push("/onboarding/organization");
@@ -44,10 +49,10 @@ export default function SignupPage() {
 
   const handleGoogleSignup = () => {
     setIsLoadingGoogle(true);
-    
+
     // Clear any existing tokens before Google signup to prevent stale token usage
     tokenManager.clearToken();
-    
+
     // Redirect to the backend OAuth endpoint
     // The backend will handle the redirect to Google
     // Use callback page which will redirect to onboarding for new users
@@ -90,7 +95,7 @@ export default function SignupPage() {
             </div>
 
             <SignupForm onSignup={handleSignup} />
-            
+
             <div className="relative mt-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t" />

@@ -63,40 +63,41 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       try {
         // First check if we have an existing valid token
         let token = tokenManager.getAccessToken();
-        
+
         // If no token in memory, try to get a fresh token from the backend using the refresh token cookie
         if (!token) {
           token = await tokenManager.refreshAccessToken();
         }
-        
+
         if (token) {
           // Get user profile with the new token
           const userProfile = await getProfile(token);
-          
+
           // Transform the profile to match the expected format
           const user: UserClass = {
             userId: userProfile.user_id,
             email: userProfile.email,
-            firstName: userProfile.name.split(' ')[0],
-            lastName: userProfile.name.split(' ').slice(1).join(' '),
-            username: userProfile.email.split('@')[0],
+            firstName: userProfile.name.split(" ")[0],
+            lastName: userProfile.name.split(" ").slice(1).join(" "),
+            username: userProfile.email.split("@")[0],
             pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
           };
-          
-          const org: OrgMemberInfoClass = userProfile.organizations && userProfile.organizations.length > 0 
-            ? {
-                orgId: userProfile.organizations[0].organization_id,
-                orgName: userProfile.organizations[0].organization_name,
-                userRole: userProfile.organizations[0].role,
-                userPermissions: [], // TODO: Get permissions from backend
-              }
-            : {
-                orgId: '',
-                orgName: '',
-                userRole: '',
-                userPermissions: [],
-              };
-          
+
+          const org: OrgMemberInfoClass =
+            userProfile.organizations && userProfile.organizations.length > 0
+              ? {
+                  orgId: userProfile.organizations[0].organization_id,
+                  orgName: userProfile.organizations[0].organization_name,
+                  userRole: userProfile.organizations[0].role,
+                  userPermissions: [], // TODO: Get permissions from backend
+                }
+              : {
+                  orgId: "",
+                  orgName: "",
+                  userRole: "",
+                  userPermissions: [],
+                };
+
           setAccessToken(token);
           setUser(user);
           setOrgs([org]);
@@ -123,7 +124,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Clear token from memory
     tokenManager.clearToken();
-    
+
     // Clear all state
     setAccessToken("");
     setUser(null);
