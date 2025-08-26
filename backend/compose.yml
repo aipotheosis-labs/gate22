@@ -1,3 +1,4 @@
+name: mcp-gateway
 services:
   db:
     # Note: we need to use the pgvector/pgvector:pg17 image to use the pgvector extension, instead of the official postgres image
