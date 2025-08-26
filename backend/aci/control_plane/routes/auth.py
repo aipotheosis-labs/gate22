@@ -329,7 +329,7 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
     expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
 
     # Create refresh token in database
-    crud.users.create_refresh_token(db_session, user_id, token_hash, expires_at)
+    crud.users.create_refresh_token(db_session, user_id, token_hash.decode(), expires_at)
 
     db_session.commit()
 

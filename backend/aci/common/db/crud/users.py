@@ -38,7 +38,7 @@ def get_user_by_id(db_session: Session, user_id: UUID) -> User | None:
 def create_refresh_token(
     db_session: Session,
     user_id: UUID,
-    token_hash: bytes,
+    token_hash: str,
     expires_at: datetime.datetime,
 ) -> UserRefreshToken:
     refresh_token = UserRefreshToken(
