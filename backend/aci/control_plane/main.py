@@ -17,6 +17,7 @@ from aci.control_plane.routes import (
     auth,
     connected_accounts,
     health,
+    mcp_server_bundles,
     mcp_server_configurations,
     mcp_servers,
     organizations,
@@ -110,4 +111,10 @@ app.include_router(
     connected_accounts.router,
     prefix=config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
     tags=[config.ROUTER_PREFIX_CONNECTED_ACCOUNTS.split("/")[-1]],
+)
+
+app.include_router(
+    mcp_server_bundles.router,
+    prefix=config.ROUTER_PREFIX_MCP_SERVER_BUNDLES,
+    tags=[config.ROUTER_PREFIX_MCP_SERVER_BUNDLES.split("/")[-1]],
 )

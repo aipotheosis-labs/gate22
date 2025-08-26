@@ -434,7 +434,7 @@ class MCPServerBundle(Base):
     # a list of mcp server configuration ids the bundle contains
     # TODO: should only allow mcp server configurations of the same mcp server once
     # TODO: should probably only allow mcp server configurations that the user has connected to
-    mcp_server_configurations: Mapped[list[UUID]] = mapped_column(
+    mcp_server_configuration_ids: Mapped[list[UUID]] = mapped_column(
         ARRAY(PGUUID(as_uuid=True)), nullable=False
     )
 

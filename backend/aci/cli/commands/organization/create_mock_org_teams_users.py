@@ -7,6 +7,7 @@ from aci.cli import config
 from aci.common import utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole, UserIdentityProvider
+from aci.common.schemas.auth import ActAsInfo
 from aci.control_plane.routes import auth
 
 console = Console()
@@ -91,9 +92,27 @@ def create_mock_org_teams_users(
         crud.teams.add_team_member(db_session, organization.id, team2.id, user2.id)
 
         # Create JWTs
-        jwt_admin = auth._sign_token(admin, None)
-        jwt_user1 = auth._sign_token(user1, None)
-        jwt_user2 = auth._sign_token(user2, None)
+        jwt_admin = auth._sign_token(
+            admin,
+            ActAsInfo(
+                organization_id=organization.id,
+                role=OrganizationRole.ADMIN,
+            ),
+        )
+        jwt_user1 = auth._sign_token(
+            user1,
+            ActAsInfo(
+                organization_id=organization.id,
+                role=OrganizationRole.MEMBER,
+            ),
+        )
+        jwt_user2 = auth._sign_token(
+            user2,
+            ActAsInfo(
+                organization_id=organization.id,
+                role=OrganizationRole.MEMBER,
+            ),
+        )
 
         if not skip_dry_run:
             console.rule(
