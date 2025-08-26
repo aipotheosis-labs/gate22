@@ -5,8 +5,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from aci.common.enums import AuthType
-from aci.common.schemas.mcp.auth import AuthConfig
-from aci.common.schemas.mcp.tool import MCPToolPublic
+from aci.common.schemas.mcp_auth import AuthConfig
+from aci.common.schemas.mcp_tool import MCPToolPublic
 
 
 # NOTE: using a generic metadata schema for now before the schema is finalized

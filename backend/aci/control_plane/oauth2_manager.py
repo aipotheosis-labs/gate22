@@ -6,7 +6,7 @@ from typing import Any, cast
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp.auth import OAuth2Credentials
+from aci.common.schemas.mcp_auth import OAuth2Credentials
 from aci.control_plane.exceptions import OAuth2Error
 
 UNICODE_ASCII_CHARACTER_SET = string.ascii_letters + string.digits

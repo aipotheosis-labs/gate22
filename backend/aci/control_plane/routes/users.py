@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.users import UserInfo, UserOrganizationInfo
+from aci.common.schemas.user import UserInfo, UserOrganizationInfo
 from aci.control_plane import dependencies as deps
 
 logger = get_logger(__name__)

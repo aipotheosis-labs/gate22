@@ -6,8 +6,8 @@ from pydantic import TypeAdapter
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp.auth import AuthConfig
-from aci.common.schemas.mcp.configuration import (
+from aci.common.schemas.mcp_auth import AuthConfig
+from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationCreate,
     MCPServerConfigurationPublic,
 )

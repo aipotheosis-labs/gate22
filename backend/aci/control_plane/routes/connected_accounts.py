@@ -9,7 +9,7 @@ from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerConfiguration
 from aci.common.enums import AuthType
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.connected_accounts import (
+from aci.common.schemas.connected_account import (
     ConnectedAccountCreate,
     ConnectedAccountOAuth2CreateState,
     ConnectedAccountPublic,

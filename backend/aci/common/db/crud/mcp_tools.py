@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from aci.common import utils
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPTool
-from aci.common.schemas.mcp.tool import MCPToolUpsert
+from aci.common.schemas.mcp_tool import MCPToolUpsert
 
 
 @overload

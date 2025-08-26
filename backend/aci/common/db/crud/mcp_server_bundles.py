@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerBundle
-from aci.common.schemas.mcp_server_bundles import MCPServerBundleCreate
+from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 
 
 def create_mcp_server_bundle(
