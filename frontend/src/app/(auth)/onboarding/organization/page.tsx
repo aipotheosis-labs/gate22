@@ -13,22 +13,17 @@ export default function CreateOrganizationPage() {
   useEffect(() => {
     const loadUserInfo = async () => {
       try {
-        // Check if user is authenticated
-        let token = tokenManager.getAccessToken();
+        // Wait a bit for cookies to be available after OAuth redirect
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // Get token (will automatically refresh if needed)
+        const token = await tokenManager.getAccessToken();
 
         if (!token) {
-          // Wait a bit for cookies to be available after OAuth redirect
-          await new Promise((resolve) => setTimeout(resolve, 200));
-
-          // Try to refresh token
-          token = await tokenManager.refreshAccessToken();
-
-          if (!token) {
-            // Only redirect to signup if we truly can't get a token
-            console.error("No token available, redirecting to signup");
-            router.push("/signup");
-            return;
-          }
+          // Only redirect to signup if we truly can't get a token
+          console.error("No token available, redirecting to signup");
+          router.push("/signup");
+          return;
         }
 
         // Get user profile
@@ -54,7 +49,7 @@ export default function CreateOrganizationPage() {
 
   const handleCreateOrganization = async (name: string) => {
     try {
-      const token = await tokenManager.ensureValidToken();
+      const token = await tokenManager.getAccessToken();
       if (!token) {
         throw new Error("No authentication token available");
       }

@@ -47,7 +47,7 @@ export async function fetcher<T = unknown>(
   const headersRecord = options?.headers as Record<string, string> | undefined;
   if (response.status === 401 && !headersRecord?.["Authorization"]) {
     try {
-      const token = await tokenManager.refreshAccessToken();
+      const token = await tokenManager.getAccessToken();
       if (token) {
         response = await makeRequest(token);
       }
@@ -75,9 +75,9 @@ export function fetcherWithAuth<T = unknown>(token?: string) {
     endpoint: string,
     options?: RequestInit & { params?: Record<string, string> },
   ): Promise<T> => {
-    // Get valid token (refresh if needed)
-    const validToken = token || (await tokenManager.ensureValidToken());
-
+    // Use provided token or get from token manager (which handles refresh automatically)
+    const validToken = token || (await tokenManager.getAccessToken());
+    
     if (!validToken) {
       throw new Error("No valid authentication token");
     }
@@ -104,21 +104,13 @@ export function fetcherWithAuth<T = unknown>(token?: string) {
 
     let response = await makeRequest(validToken);
 
-    // If unauthorized, try to refresh token and retry once
+    // If unauthorized, the token might have expired between getting it and using it
+    // Try once more with a fresh token
     if (response.status === 401) {
-      try {
-        const newToken = await tokenManager.refreshAccessToken();
-        if (newToken) {
-          response = await makeRequest(newToken);
-        } else {
-          // No valid token after refresh
-          const errorText = await response.text();
-          throw new Error(errorText || "Unauthorized");
-        }
-      } catch {
-        // Token refresh failed, throw original error
-        const errorText = await response.text();
-        throw new Error(errorText || "Unauthorized");
+      tokenManager.clearToken(); // Clear the stale token
+      const freshToken = await tokenManager.getAccessToken();
+      if (freshToken) {
+        response = await makeRequest(freshToken);
       }
     }
 

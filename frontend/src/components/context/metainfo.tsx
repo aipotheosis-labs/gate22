@@ -61,13 +61,8 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // First check if we have an existing valid token
-        let token = tokenManager.getAccessToken();
-
-        // If no token in memory, try to get a fresh token from the backend using the refresh token cookie
-        if (!token) {
-          token = await tokenManager.refreshAccessToken();
-        }
+        // Get token (will automatically refresh if needed)
+        const token = await tokenManager.getAccessToken();
 
         if (token) {
           // Get user profile with the new token
