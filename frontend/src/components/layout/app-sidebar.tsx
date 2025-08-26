@@ -9,7 +9,6 @@ import React from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -31,10 +30,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
-import { toast } from "sonner";
-import { useMetaInfo } from "@/components/context/metainfo";
 
 // Export sidebar items so they can be used in header
 export const sidebarItems = [
@@ -77,17 +72,6 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
-  const { logout } = useMetaInfo();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success("Logged out successfully");
-    } catch (error) {
-      console.error("Logout failed:", error);
-      toast.error("Failed to logout");
-    }
-  };
 
   return (
     <Sidebar collapsible="icon" className="flex flex-col">
@@ -159,33 +143,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <SidebarMenuButton asChild>
-                  <Button
-                    variant="ghost"
-                    onClick={handleLogout}
-                    className={cn(
-                      "flex items-center gap-3 p-4 transition-colors w-full justify-start font-normal hover:bg-destructive/10 hover:text-destructive",
-                      isCollapsed && "justify-center",
-                    )}
-                  >
-                    <LogOut className={cn("h-5 w-5 shrink-0")} />
-                    {!isCollapsed && <span>Logout</span>}
-                  </Button>
-                </SidebarMenuButton>
-              </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right">Logout</TooltipContent>
-              )}
-            </Tooltip>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

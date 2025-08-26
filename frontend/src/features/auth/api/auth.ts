@@ -73,7 +73,7 @@ export async function login(email: string, password: string): Promise<void> {
 }
 
 export async function issueToken(
-  act_as?: IssueTokenRequest["act_as"]
+  act_as?: IssueTokenRequest["act_as"],
 ): Promise<TokenResponse> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/auth/token`, {
@@ -106,7 +106,7 @@ export async function getProfile(token: string): Promise<UserInfo> {
   const response = await fetch(`${baseUrl}/v1/users/me/profile`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
