@@ -29,8 +29,10 @@ async def create_mcp_server_configuration(
         raise HTTPException(status_code=403, detail="Forbidden")
 
     mcp_server = crud.mcp_servers.get_mcp_server_by_id(
-        context.db_session, body.mcp_server_id, throw_error_if_not_found=True
+        context.db_session, body.mcp_server_id, throw_error_if_not_found=False
     )
+    if mcp_server is None:
+        raise HTTPException(status_code=404, detail="MCP server not found")
 
     # auth_type must be one of the supported auth types
     type_adapter = TypeAdapter(list[AuthConfig])

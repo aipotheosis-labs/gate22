@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 # TODO: support both query by mcp server id and name
-@router.get("/{mcp_server_id}", response_model_exclude_none=True)
+@router.get("/{mcp_server_id}", response_model=MCPServerPublic, response_model_exclude_none=True)
 async def get_mcp_server(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     mcp_server_id: UUID,
