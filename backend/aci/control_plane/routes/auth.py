@@ -134,7 +134,6 @@ async def google_callback(
 
 @router.post(
     "/register/email",
-    response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
     description="""
     Register a new user using email flow. On success, it will set a refresh
@@ -176,7 +175,6 @@ async def register(
 
 @router.post(
     "/login/email",
-    response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     description="""
     Login a user using email flow. On success, it will set a refresh token in the response cookie.
@@ -216,7 +214,7 @@ async def login(
 
 @router.post(
     "/token",
-    response_model=TokenResponse | None,
+    response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     description="""
     Issue a JWT token for the user. It will get refresh token from secure cookies. Pass act_as
@@ -295,6 +293,7 @@ async def logout(
         deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
     ],
     request: Request,
+    response: Response,
 ) -> None:
     # Get the refresh token from the request cookie
     refresh_token = request.cookies.get("refresh_token")
@@ -304,14 +303,17 @@ async def logout(
         token_hash = _hash_refresh_token(refresh_token)
         crud.users.delete_refresh_token(context.db_session, token_hash)
 
+    # Delete the refresh token in cookie
+    response.delete_cookie("refresh_token")
 
-def _hash_refresh_token(refresh_token: str) -> bytes:
+
+def _hash_refresh_token(refresh_token: str) -> str:
     """
     Hash a refresh token. Using HMAC-SHA-256 is good enough for hashing refresh token.
     """
     return hmac.new(
         config.REFRESH_TOKEN_KEY.encode(), refresh_token.encode(), hashlib.sha256
-    ).digest()
+    ).hexdigest()
 
 
 def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response) -> None:
@@ -329,7 +331,7 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
     expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
 
     # Create refresh token in database
-    crud.users.create_refresh_token(db_session, user_id, token_hash.decode(), expires_at)
+    crud.users.create_refresh_token(db_session, user_id, token_hash, expires_at)
 
     db_session.commit()
 

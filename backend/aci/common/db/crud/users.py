@@ -52,7 +52,7 @@ def create_refresh_token(
     return refresh_token
 
 
-def get_refresh_token(db_session: Session, token_hash: bytes) -> UserRefreshToken | None:
+def get_refresh_token(db_session: Session, token_hash: str) -> UserRefreshToken | None:
     return (
         db_session.query(UserRefreshToken)
         .filter(UserRefreshToken.token_hash == token_hash)
@@ -62,7 +62,7 @@ def get_refresh_token(db_session: Session, token_hash: bytes) -> UserRefreshToke
     )
 
 
-def delete_refresh_token(db_session: Session, token_hash: bytes) -> None:
+def delete_refresh_token(db_session: Session, token_hash: str) -> None:
     db_session.query(UserRefreshToken).filter(UserRefreshToken.token_hash == token_hash).filter(
         UserRefreshToken.deleted_at.is_(None)
     ).update({UserRefreshToken.deleted_at: datetime.datetime.now(datetime.UTC)})
