@@ -1,11 +1,10 @@
 import re
 from enum import Enum
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from aci.common.enums import OrganizationRole, UserIdentityProvider
+from aci.common.enums import OrganizationRole
 
 
 class ActAsInfo(BaseModel):
@@ -58,7 +57,6 @@ class EmailRegistrationRequest(BaseModel):
 
 
 class EmailLoginRequest(BaseModel):
-    auth_flow: Literal[UserIdentityProvider.EMAIL] = Field(description="Authentication flow")
     email: str = Field(min_length=1, max_length=255, description="User email")
     password: str = Field(min_length=1, max_length=255, description="User password")
 
