@@ -6,7 +6,7 @@ import { LoginForm } from "@/features/auth/components/login-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { login, issueToken } from "@/features/auth/api/auth";
+import { login, issueToken, getGoogleLoginUrl } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
 export default function LoginPage() {
@@ -33,11 +33,9 @@ export default function LoginPage() {
     // Clear any existing tokens before Google login to prevent stale token usage
     tokenManager.clearToken();
     
-    // Directly redirect to the backend OAuth endpoint
-    // The backend will handle the redirect to Google
-    const redirectUri = encodeURIComponent(window.location.origin + "/mcp-servers");
-    const authUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/v1/auth/login/google/authorize?redirect_uri=${redirectUri}`;
-    window.location.href = authUrl;
+    // Redirect to the backend OAuth endpoint
+    // The backend will handle the entire OAuth flow and redirect back to /callback
+    window.location.href = getGoogleLoginUrl();
   };
 
   return (
