@@ -21,7 +21,7 @@ export const agentKeys = {
 export const useAgents = () => {
   const { accessToken } = useMetaInfo();
 
-  return useApiQuery<Agent[]>(agentKeys.all, "/v1/agents", accessToken, {
+  return useApiQuery<Agent[]>([...agentKeys.all], "/v1/agents", accessToken, {
     enabled: !!accessToken,
   });
 };
