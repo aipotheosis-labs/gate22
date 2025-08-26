@@ -46,6 +46,13 @@ async def create_organization(
 ) -> OrganizationInfo:
     # Every logged in user can create an organization. No permission check.
 
+    # Check if user already has an organization
+    if crud.organizations.get_organization_by_name(context.db_session, request.name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Organization name already in use",
+        )
+
     # Create organization
     organization = crud.organizations.create_organization(
         db_session=context.db_session,
