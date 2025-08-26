@@ -72,9 +72,7 @@ async def get_google_oauth2_url(
     """,
 )
 async def google_callback(
-    context: Annotated[
-        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
-    ],
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
     operation: AuthOperation,
     error: str | None = None,
     code: str | None = None,
@@ -100,7 +98,7 @@ async def google_callback(
 
     if operation == AuthOperation.REGISTER:
         # Check if email already been used
-        user = crud.users.get_user_by_email(context.db_session, google_userinfo.email)
+        user = crud.users.get_user_by_email(db_session, google_userinfo.email)
         if user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
@@ -108,7 +106,7 @@ async def google_callback(
 
         # Create user
         user = crud.users.create_user(
-            db_session=context.db_session,
+            db_session=db_session,
             name=google_userinfo.name,
             email=google_userinfo.email,
             password_hash=None,
@@ -116,7 +114,7 @@ async def google_callback(
         )
 
     elif operation == AuthOperation.LOGIN:
-        user = crud.users.get_user_by_email(context.db_session, google_userinfo.email)
+        user = crud.users.get_user_by_email(db_session, google_userinfo.email)
 
         # User not found or deleted
         if not user or user.deleted_at:
@@ -129,7 +127,7 @@ async def google_callback(
     response = RedirectResponse(
         oauth_info.post_oauth_redirect_uri, status_code=status.HTTP_302_FOUND
     )
-    _issue_refresh_token(context.db_session, user.id, response)
+    _issue_refresh_token(db_session, user.id, response)
 
     return response
 
@@ -143,14 +141,12 @@ async def google_callback(
     """,
 )
 async def register(
-    context: Annotated[
-        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
-    ],
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
     request: EmailRegistrationRequest,
     response: Response,
 ) -> None:
     # Check if user already exists
-    user = crud.users.get_user_by_email(context.db_session, request.email)
+    user = crud.users.get_user_by_email(db_session, request.email)
     if user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
@@ -161,17 +157,17 @@ async def register(
 
     # Create user
     user = crud.users.create_user(
-        db_session=context.db_session,
+        db_session=db_session,
         name=request.name,
         email=request.email,
         password_hash=hashed,
         identity_provider=UserIdentityProvider.EMAIL,
     )
 
-    context.db_session.commit()
+    db_session.commit()
 
     # Issue a refresh token, store in secure cookie
-    _issue_refresh_token(context.db_session, user.id, response)
+    _issue_refresh_token(db_session, user.id, response)
 
 
 @router.post(
@@ -183,13 +179,11 @@ async def register(
     """,
 )
 async def login(
-    context: Annotated[
-        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
-    ],
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
     request: EmailLoginRequest,
     response: Response,
 ) -> None:
-    user = crud.users.get_user_by_email(context.db_session, request.email)
+    user = crud.users.get_user_by_email(db_session, request.email)
 
     # User not found or deleted
     if not user or user.deleted_at:
@@ -207,10 +201,10 @@ async def login(
 
     # Update the last login time
     user.last_login_at = datetime.datetime.now(datetime.UTC)
-    context.db_session.commit()
+    db_session.commit()
 
     # Issue a refresh token, store in secure cookie
-    _issue_refresh_token(context.db_session, user.id, response)
+    _issue_refresh_token(db_session, user.id, response)
 
 
 @router.post(
@@ -223,7 +217,7 @@ async def login(
     """,
 )
 async def issue_token(
-    context: Annotated[deps.RequestContext, Depends(deps.get_request_context_without_auth)],
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
     request: Request,
     input: IssueTokenRequest,
 ) -> TokenResponse:
@@ -237,21 +231,21 @@ async def issue_token(
 
     # Check if refresh token is valid
     refresh_token_hash = _hash_refresh_token(refresh_token)
-    refresh_token_obj = crud.users.get_refresh_token(context.db_session, refresh_token_hash)
+    refresh_token_obj = crud.users.get_refresh_token(db_session, refresh_token_hash)
     if not refresh_token_obj:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
         )
 
     # Get the user from the database
-    user = crud.users.get_user_by_id(context.db_session, refresh_token_obj.user_id)
+    user = crud.users.get_user_by_id(db_session, refresh_token_obj.user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     if input.act_as:
         # Check if user is a member of the requested organization
         membership = crud.organizations.get_organization_membership(
-            context.db_session, input.act_as.organization_id, user.id
+            db_session, input.act_as.organization_id, user.id
         )
         if not membership:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
@@ -290,9 +284,7 @@ async def issue_token(
     """,
 )
 async def logout(
-    context: Annotated[
-        deps.RequestContextWithoutAuth, Depends(deps.get_request_context_without_auth)
-    ],
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
     request: Request,
     response: Response,
 ) -> None:
@@ -302,7 +294,7 @@ async def logout(
     # Delete the refresh token in database
     if refresh_token:
         token_hash = _hash_refresh_token(refresh_token)
-        crud.users.delete_refresh_token(context.db_session, token_hash)
+        crud.users.delete_refresh_token(db_session, token_hash)
 
     # Delete the refresh token in cookie
     response.delete_cookie("refresh_token")

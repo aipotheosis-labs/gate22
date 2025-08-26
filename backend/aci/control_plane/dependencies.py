@@ -1,10 +1,11 @@
 from collections.abc import Generator
-from typing import Annotated
+from typing import Annotated, Literal, overload
 from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from aci.common import utils
@@ -16,21 +17,17 @@ from aci.control_plane import config
 http_bearer = HTTPBearer(auto_error=True, description="login to receive a JWT token")
 
 
-class RequestContextWithoutAuth:
-    def __init__(self, db_session: Session):
-        self.db_session = db_session
+class RequestContextWithoutActAs(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    db_session: Session
+    user_id: UUID
 
 
-class RequestContext:
-    def __init__(
-        self,
-        db_session: Session,
-        user_id: UUID,
-        act_as: ActAsInfo | None,
-    ):
-        self.db_session = db_session
-        self.user_id = user_id
-        self.act_as = act_as
+class RequestContext(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    db_session: Session
+    user_id: UUID
+    act_as: ActAsInfo
 
 
 def yield_db_session() -> Generator[Session, None, None]:
@@ -54,16 +51,27 @@ def get_jwt_payload(
         raise HTTPException(status_code=401, detail="Token invalid") from e
 
 
-def get_request_context_without_auth(
+@overload
+def get_request_context(
     db_session: Annotated[Session, Depends(yield_db_session)],
-) -> RequestContextWithoutAuth:
-    return RequestContextWithoutAuth(db_session=db_session)
+    jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
+    is_act_as_required: Literal[False],
+) -> RequestContextWithoutActAs: ...
+
+
+@overload
+def get_request_context(
+    db_session: Annotated[Session, Depends(yield_db_session)],
+    jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
+    is_act_as_required: Literal[True],
+) -> RequestContext: ...
 
 
 def get_request_context(
     db_session: Annotated[Session, Depends(yield_db_session)],
     jwt_payload: Annotated[JWTPayload, Depends(get_jwt_payload)],
-) -> RequestContext:
+    is_act_as_required: bool = True,
+) -> RequestContext | RequestContextWithoutActAs:
     """
     This method validates whether the user is permitted to act as the desired organization and role.
     Returns a RequestContext object containing the DB session, user_id and act_as information.
@@ -87,6 +95,15 @@ def get_request_context(
         # Check if user has the required role in the organization
         if not is_role_valid(jwt_payload.act_as.role, membership.role):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    else:
+        if is_act_as_required:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        else:
+            return RequestContextWithoutActAs(
+                db_session=db_session,
+                user_id=jwt_payload.user_id,
+            )
 
     return RequestContext(
         db_session=db_session,

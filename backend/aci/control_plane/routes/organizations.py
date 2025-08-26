@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Annotated
 from uuid import UUID
 
@@ -23,7 +24,7 @@ router = APIRouter()
 
 
 def _throw_if_not_permitted(
-    act_as: ActAsInfo | None,
+    act_as: ActAsInfo,
     requested_organization_id: UUID | None = None,
     required_role: OrganizationRole = OrganizationRole.MEMBER,
 ) -> None:
@@ -31,8 +32,6 @@ def _throw_if_not_permitted(
     This function throws an HTTPException if the user is not permitted to act as the requested
     organization and role.
     """
-    if not act_as:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     if requested_organization_id and act_as.organization_id != requested_organization_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     if required_role == OrganizationRole.ADMIN and act_as.role != OrganizationRole.ADMIN:
@@ -41,7 +40,10 @@ def _throw_if_not_permitted(
 
 @router.post("/", response_model=OrganizationInfo, status_code=status.HTTP_201_CREATED)
 async def create_organization(
-    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    context: Annotated[
+        deps.RequestContextWithoutActAs,
+        Depends(partial(deps.get_request_context, is_act_as_required=False)),
+    ],
     request: CreateOrganizationRequest,
 ) -> OrganizationInfo:
     # Every logged in user can create an organization. No permission check.
@@ -119,9 +121,6 @@ async def remove_organization_member(
 ) -> None:
     # Check user's role permission
     _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
-
-    if not context.act_as:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Admin can remove anyone in the organization
     if context.act_as.role == OrganizationRole.ADMIN:
@@ -351,16 +350,18 @@ async def remove_team_member(
     _throw_if_not_permitted(context.act_as, requested_organization_id=organization_id)
 
     # Admin can remove anyone in the team
-    if context.act_as and context.act_as.role == OrganizationRole.ADMIN:
+    if context.act_as.role == OrganizationRole.ADMIN:
         # No blocking.
         pass
 
     # Member can only remove themselves
-    elif context.act_as and context.act_as.role == OrganizationRole.MEMBER:
+    elif context.act_as.role == OrganizationRole.MEMBER:
         if context.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Cannot remove other members"
             )
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Check if targeted user is a member of the team
     if not crud.teams.get_team_members(context.db_session, team_id):
