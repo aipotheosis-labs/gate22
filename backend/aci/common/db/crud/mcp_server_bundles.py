@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerBundle
@@ -22,3 +23,11 @@ def create_mcp_server_bundle(
     db_session.refresh(mcp_server_bundle)
 
     return mcp_server_bundle
+
+
+def get_mcp_server_bundle_by_id(
+    db_session: Session,
+    mcp_server_bundle_id: UUID,
+) -> MCPServerBundle | None:
+    statement = select(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
+    return db_session.execute(statement).scalar_one_or_none()

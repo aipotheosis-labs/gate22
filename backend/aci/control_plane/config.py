@@ -19,6 +19,7 @@ ROUTER_PREFIX_MCP_SERVERS = "/v1/mcp-servers"
 ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/v1/mcp-server-configurations"
 ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/v1/connected-accounts"
 ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/v1/mcp-server-bundles"
+ROUTER_PREFIX_MCP = "/v1/mcp"
 
 # Frontend
 FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")
