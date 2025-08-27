@@ -257,7 +257,7 @@ async def issue_token(
             and membership.role != OrganizationRole.ADMIN
         ):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        
+
         # Assign the act_as variable when it's provided
         act_as = input.act_as
 
