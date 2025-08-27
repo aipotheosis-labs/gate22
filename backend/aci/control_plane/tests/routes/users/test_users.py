@@ -1,29 +1,46 @@
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import User
-from aci.common.enums import OrganizationRole
+from aci.common.schemas.users import UserInfo
 
 
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+    ],
+)
 def test_get_profile(
-    test_client: TestClient, dummy_admin: User, dummy_access_token_no_orgs: str
+    request: pytest.FixtureRequest,
+    test_client: TestClient,
+    dummy_user: User,
+    access_token_fixture: str,
 ) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
     response = test_client.get(
-        "/v1/users/me/profile", headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"}
+        "/v1/users/me/profile", headers={"Authorization": f"Bearer {access_token}"}
     )
     assert response.status_code == 200
-    assert response.json() == {
-        "user_id": str(dummy_admin.id),
-        "name": dummy_admin.name,
-        "email": dummy_admin.email,
-        "organizations": [
-            {
-                "organization_id": str(dummy_admin.organization_memberships[0].organization_id),
-                "organization_name": dummy_admin.organization_memberships[0].organization.name,
-                "role": OrganizationRole.ADMIN,
-            }
-        ],
-    }
+    userinfo = UserInfo.model_validate(response.json())
+    assert userinfo.user_id == dummy_user.id
+    assert userinfo.name == dummy_user.name
+    assert userinfo.email == dummy_user.email
+
+    if access_token_fixture in ["dummy_access_token_no_orgs"]:
+        assert len(userinfo.organizations) == 0
+    else:
+        assert len(userinfo.organizations) == 1
+        organization_membership = dummy_user.organization_memberships[0]
+        assert userinfo.organizations[0].organization_id == organization_membership.organization_id
+        assert (
+            userinfo.organizations[0].organization_name == organization_membership.organization.name
+        )
+        assert userinfo.organizations[0].role == organization_membership.role
 
 
 def test_get_profile_non_existence_user(
