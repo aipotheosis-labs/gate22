@@ -16,11 +16,21 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { Settings, LogOut, User, Sun, Moon, Monitor, Shield, Users } from "lucide-react";
+import {
+  Settings,
+  LogOut,
+  User,
+  Sun,
+  Moon,
+  Monitor,
+  Shield,
+  Users,
+} from "lucide-react";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 export function UserProfileDropdown() {
-  const { user, logout, activeOrg, toggleActiveRole, isActingAsRole } = useMetaInfo();
+  const { user, logout, activeOrg, toggleActiveRole, isActingAsRole } =
+    useMetaInfo();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;

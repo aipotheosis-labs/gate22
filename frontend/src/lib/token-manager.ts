@@ -34,7 +34,7 @@ class TokenManager {
   ): Promise<string | null> {
     // Determine act_as based on RoleManager
     let act_as: IssueTokenRequest["act_as"] | undefined;
-    
+
     if (organizationId && userActualRole === OrganizationRole.Admin) {
       const activeRole = roleManager.getActiveRole(organizationId);
       if (activeRole && activeRole.role === OrganizationRole.Member) {
@@ -46,15 +46,16 @@ class TokenManager {
       }
       // If activeRole is null or admin, don't pass act_as (use default)
     }
-    
+
     // Check if we need to refresh due to role change
-    const actAsChanged = JSON.stringify(act_as) !== JSON.stringify(this.currentActAs);
-    
+    const actAsChanged =
+      JSON.stringify(act_as) !== JSON.stringify(this.currentActAs);
+
     // If we have a token and act_as hasn't changed, return it
     if (this.accessToken && !actAsChanged) {
       return this.accessToken;
     }
-    
+
     // If act_as changed, clear the token to force refresh
     if (actAsChanged) {
       this.clearToken();
@@ -113,13 +114,13 @@ class TokenManager {
       if (!response.ok) {
         const errorText = await response.text();
         console.log(`Token refresh failed (${response.status}): ${errorText}`);
-        
+
         // Clear token on auth failure
         if (response.status === 401) {
           this.clearToken();
           return null;
         }
-        
+
         throw new Error(`Failed to refresh token: ${response.status}`);
       }
 

@@ -90,13 +90,13 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
           // Check for stored organization preference
           const storedOrg = organizationManager.getActiveOrganization();
           let org: OrgMemberInfoClass;
-          
+
           if (storedOrg && userProfile.organizations) {
             // Try to find the stored org in user's organizations
             const matchingOrg = userProfile.organizations.find(
-              o => o.organization_id === storedOrg.orgId
+              (o) => o.organization_id === storedOrg.orgId,
             );
-            
+
             if (matchingOrg) {
               org = {
                 orgId: matchingOrg.organization_id,
@@ -106,7 +106,25 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
               };
             } else {
               // Stored org not found, use first org
-              org = userProfile.organizations.length > 0
+              org =
+                userProfile.organizations.length > 0
+                  ? {
+                      orgId: userProfile.organizations[0].organization_id,
+                      orgName: userProfile.organizations[0].organization_name,
+                      userRole: userProfile.organizations[0].role,
+                      userPermissions: [],
+                    }
+                  : {
+                      orgId: "",
+                      orgName: "",
+                      userRole: "",
+                      userPermissions: [],
+                    };
+            }
+          } else {
+            // No stored preference, use first org
+            org =
+              userProfile.organizations && userProfile.organizations.length > 0
                 ? {
                     orgId: userProfile.organizations[0].organization_id,
                     orgName: userProfile.organizations[0].organization_name,
@@ -119,34 +137,22 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
                     userRole: "",
                     userPermissions: [],
                   };
-            }
-          } else {
-            // No stored preference, use first org
-            org = userProfile.organizations && userProfile.organizations.length > 0
-              ? {
-                  orgId: userProfile.organizations[0].organization_id,
-                  orgName: userProfile.organizations[0].organization_name,
-                  userRole: userProfile.organizations[0].role,
-                  userPermissions: [],
-                }
-              : {
-                  orgId: "",
-                  orgName: "",
-                  userRole: "",
-                  userPermissions: [],
-                };
           }
 
           setAccessToken(token);
           setUser(user);
           setOrgs([org]);
           setIsAuthenticated(true);
-          
+
           // Save the active org to localStorage if it wasn't already stored
           if (org.orgId && !storedOrg) {
-            organizationManager.setActiveOrganization(org.orgId, org.orgName, org.userRole);
+            organizationManager.setActiveOrganization(
+              org.orgId,
+              org.orgName,
+              org.userRole,
+            );
           }
-          
+
           // Check if admin is acting as member
           if (org.userRole === OrganizationRole.Admin && org.orgId) {
             const storedRole = roleManager.getActiveRole(org.orgId);
@@ -197,22 +203,29 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
   const switchOrganization = useCallback(async (org: OrgMemberInfoClass) => {
     // Save to localStorage
-    organizationManager.setActiveOrganization(org.orgId, org.orgName, org.userRole);
-    
+    organizationManager.setActiveOrganization(
+      org.orgId,
+      org.orgName,
+      org.userRole,
+    );
+
     // Clear any role switching when changing organizations
     roleManager.clearActiveRole();
     setActiveRole(null);
     setIsActingAsRole(false);
-    
+
     // Update state
     setActiveOrg(org);
-    
+
     // Clear token to force refresh with new organization context
     tokenManager.clearToken();
-    
+
     // Get new token for the new organization
-    const newToken = await tokenManager.getAccessToken(org.orgId, org.userRole as OrganizationRole);
-    
+    const newToken = await tokenManager.getAccessToken(
+      org.orgId,
+      org.userRole as OrganizationRole,
+    );
+
     if (newToken) {
       setAccessToken(newToken);
     }
@@ -237,13 +250,13 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Clear token to force refresh with new role
     tokenManager.clearToken();
-    
+
     // Get new token with updated role
     const newToken = await tokenManager.getAccessToken(
       activeOrg.orgId,
-      activeOrg.userRole as OrganizationRole
+      activeOrg.userRole as OrganizationRole,
     );
-    
+
     if (newToken) {
       setAccessToken(newToken);
     }
@@ -258,7 +271,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       organizationManager.setActiveOrganization(
         orgToSet.orgId,
         orgToSet.orgName,
-        orgToSet.userRole
+        orgToSet.userRole,
       );
     }
   }, [orgs, activeOrg]);

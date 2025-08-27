@@ -15,14 +15,10 @@ import {
 
 interface TeamsTableToolbarProps<TData> {
   table: Table<TData>;
-  onBulkDelete?: () => void;
-  onExport?: () => void;
 }
 
 export function TeamsTableToolbar<TData>({
   table,
-  onBulkDelete,
-  onExport,
 }: TeamsTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -66,7 +62,7 @@ export function TeamsTableToolbar<TData>({
             .getAllColumns()
             .filter(
               (column) =>
-                typeof column.accessorFn !== "undefined" && column.getCanHide()
+                typeof column.accessorFn !== "undefined" && column.getCanHide(),
             )
             .map((column) => {
               return (

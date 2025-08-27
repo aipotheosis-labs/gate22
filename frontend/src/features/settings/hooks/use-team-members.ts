@@ -9,17 +9,17 @@ export function useTeamMembers(teamId: string) {
   const queryClient = useQueryClient();
 
   const membersQuery = useQuery({
-    queryKey: QUERY_KEYS.TEAM_MEMBERS(activeOrg?.orgId || '', teamId),
+    queryKey: QUERY_KEYS.TEAM_MEMBERS(activeOrg?.orgId || "", teamId),
     queryFn: () => listTeamMembers(accessToken, activeOrg.orgId, teamId),
     enabled: !!accessToken && !!activeOrg?.orgId && !!teamId,
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: (userId: string) => 
+    mutationFn: (userId: string) =>
       removeTeamMember(accessToken, activeOrg.orgId, teamId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: QUERY_KEYS.TEAM_MEMBERS(activeOrg?.orgId || '', teamId) 
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.TEAM_MEMBERS(activeOrg?.orgId || "", teamId),
       });
       toast.success(UI_TEXT.TEAM.REMOVE_MEMBER_SUCCESS);
     },

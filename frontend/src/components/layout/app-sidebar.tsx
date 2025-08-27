@@ -105,7 +105,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {sidebarItems.map((item) => {
                 const isActive =
-                  item.title === "Settings" 
+                  item.title === "Settings"
                     ? pathname.startsWith("/settings")
                     : pathname === item.url || pathname.startsWith(item.url);
                 return (

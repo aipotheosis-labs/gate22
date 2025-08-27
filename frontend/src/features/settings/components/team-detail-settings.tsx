@@ -4,18 +4,17 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listTeamMembers, removeTeamMember, getTeam } from "@/features/teams/api/team";
+import {
+  listTeamMembers,
+  removeTeamMember,
+  getTeam,
+} from "@/features/teams/api/team";
 import { AddTeamMemberDialog } from "@/features/teams/components/add-team-member-dialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft,
-  UserMinus,
-  UserPlus,
-  MoreHorizontal,
-} from "lucide-react";
+import { ArrowLeft, UserMinus, UserPlus, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,10 +50,12 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: (userId: string) => 
+    mutationFn: (userId: string) =>
       removeTeamMember(accessToken, activeOrg!.orgId, teamId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", activeOrg?.orgId, teamId] });
+      queryClient.invalidateQueries({
+        queryKey: ["team-members", activeOrg?.orgId, teamId],
+      });
       toast.success("Member removed successfully");
       setRemovingMemberId(null);
     },
@@ -65,20 +66,22 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
     },
   });
 
-  const getInitials = useMemo(() => (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  }, []);
+  const getInitials = useMemo(
+    () => (name: string) => {
+      return name
+        .split(" ")
+        .map((word) => word[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    },
+    [],
+  );
 
   const handleRemoveMember = (userId: string) => {
     setRemovingMemberId(userId);
     removeMemberMutation.mutate(userId);
   };
-
 
   const renderLoadingState = () => (
     <div className="container max-w-6xl py-8">
@@ -94,7 +97,10 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+            <div
+              key={i}
+              className="flex items-center justify-between p-4 border rounded-lg"
+            >
               <div className="flex items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div>
@@ -113,13 +119,15 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
     </div>
   );
 
-
   if (teamLoading || membersLoading) {
     return renderLoadingState();
   }
 
   const renderMemberCard = (member: TeamMember) => (
-    <div key={member.user_id} className="flex items-center justify-between p-4 border rounded-lg">
+    <div
+      key={member.user_id}
+      className="flex items-center justify-between p-4 border rounded-lg"
+    >
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
           <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
@@ -133,11 +141,7 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
         <Badge variant="secondary">{member.role}</Badge>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8">
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -192,15 +196,13 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
         <div>
           <h2 className="text-lg font-semibold">Team Members</h2>
           <p className="text-sm text-muted-foreground">
-            {members?.length || 0} {members?.length === 1 ? "member" : "members"} in
-            this team
+            {members?.length || 0}{" "}
+            {members?.length === 1 ? "member" : "members"} in this team
           </p>
         </div>
-        
+
         {members && members.length > 0 ? (
-          <div className="space-y-4">
-            {members.map(renderMemberCard)}
-          </div>
+          <div className="space-y-4">{members.map(renderMemberCard)}</div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <UserPlus className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -217,7 +219,9 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
         open={showAddMemberDialog}
         onOpenChange={setShowAddMemberDialog}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["team-members", activeOrg?.orgId, teamId] });
+          queryClient.invalidateQueries({
+            queryKey: ["team-members", activeOrg?.orgId, teamId],
+          });
         }}
       />
     </div>

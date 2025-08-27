@@ -70,7 +70,7 @@ export function AddTeamMemberDialog({
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-        }
+        },
       );
       if (!response.ok) {
         throw new Error("Failed to fetch organization members");
@@ -91,7 +91,7 @@ export function AddTeamMemberDialog({
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-        }
+        },
       );
       if (!response.ok) {
         throw new Error("Failed to fetch team members");
@@ -105,7 +105,9 @@ export function AddTeamMemberDialog({
     mutationFn: (userId: string) =>
       addTeamMember(accessToken, activeOrg.orgId, teamId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", activeOrg.orgId, teamId] });
+      queryClient.invalidateQueries({
+        queryKey: ["team-members", activeOrg.orgId, teamId],
+      });
       toast.success("Member added successfully");
       setSelectedUserId("");
       onSuccess?.();
@@ -135,12 +137,17 @@ export function AddTeamMemberDialog({
   };
 
   // Filter out team members
-  const availableMembers = orgMembers?.filter((member) => {
-    const isNotInTeam = !teamMembers?.some((tm) => tm.user_id === member.user_id);
-    return isNotInTeam;
-  }) || [];
+  const availableMembers =
+    orgMembers?.filter((member) => {
+      const isNotInTeam = !teamMembers?.some(
+        (tm) => tm.user_id === member.user_id,
+      );
+      return isNotInTeam;
+    }) || [];
 
-  const selectedMember = availableMembers.find((m) => m.user_id === selectedUserId);
+  const selectedMember = availableMembers.find(
+    (m) => m.user_id === selectedUserId,
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,7 +155,8 @@ export function AddTeamMemberDialog({
         <DialogHeader>
           <DialogTitle>Add Team Member</DialogTitle>
           <DialogDescription>
-            Search and select a member from your organization to add to this team
+            Search and select a member from your organization to add to this
+            team
           </DialogDescription>
         </DialogHeader>
 
@@ -179,7 +187,9 @@ export function AddTeamMemberDialog({
                     </div>
                   ) : (
                     <span className="text-muted-foreground">
-                      {isLoading ? "Loading members..." : "Choose a member to add..."}
+                      {isLoading
+                        ? "Loading members..."
+                        : "Choose a member to add..."}
                     </span>
                   )}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -187,8 +197,8 @@ export function AddTeamMemberDialog({
               </PopoverTrigger>
               <PopoverContent className="w-[400px] p-0" align="start">
                 <Command>
-                  <CommandInput 
-                    placeholder="Search by name or email..." 
+                  <CommandInput
+                    placeholder="Search by name or email..."
                     className="h-9"
                   />
                   <CommandList>
@@ -196,7 +206,9 @@ export function AddTeamMemberDialog({
                       <CommandEmpty>
                         <div className="flex flex-col items-center py-4">
                           <Users className="h-8 w-8 mb-2 text-muted-foreground/50" />
-                          <p className="text-sm text-muted-foreground">No available members to add</p>
+                          <p className="text-sm text-muted-foreground">
+                            No available members to add
+                          </p>
                         </div>
                       </CommandEmpty>
                     ) : (
@@ -209,7 +221,11 @@ export function AddTeamMemberDialog({
                               value={member.user_id}
                               keywords={[member.name, member.email]}
                               onSelect={(currentValue) => {
-                                setSelectedUserId(currentValue === selectedUserId ? "" : currentValue);
+                                setSelectedUserId(
+                                  currentValue === selectedUserId
+                                    ? ""
+                                    : currentValue,
+                                );
                                 setComboboxOpen(false);
                               }}
                               className="cursor-pointer"
@@ -234,7 +250,7 @@ export function AddTeamMemberDialog({
                                   "ml-auto h-4 w-4",
                                   selectedUserId === member.user_id
                                     ? "opacity-100"
-                                    : "opacity-0"
+                                    : "opacity-0",
                                 )}
                               />
                             </CommandItem>
@@ -252,8 +268,12 @@ export function AddTeamMemberDialog({
             <div className="flex items-center gap-3 p-3 bg-secondary rounded-md">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
               <div className="flex-1">
-                <p className="text-sm font-medium">Ready to add: {selectedMember.name}</p>
-                <p className="text-xs text-muted-foreground">{selectedMember.email}</p>
+                <p className="text-sm font-medium">
+                  Ready to add: {selectedMember.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedMember.email}
+                </p>
               </div>
             </div>
           )}

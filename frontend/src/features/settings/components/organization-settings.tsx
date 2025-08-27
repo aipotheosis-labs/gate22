@@ -37,8 +37,10 @@ export function OrganizationSettings() {
       <Card className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold mb-4">Organization Information</h3>
-            
+            <h3 className="text-lg font-semibold mb-4">
+              Organization Information
+            </h3>
+
             <div className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="org-id">Organization ID</Label>
@@ -74,7 +76,6 @@ export function OrganizationSettings() {
               </div>
             </div>
           </div>
-
         </div>
       </Card>
     </div>

@@ -22,15 +22,17 @@ export function useCreateTeam() {
       return createTeam(accessToken, activeOrg.orgId, data);
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ 
-        queryKey: QUERY_KEYS.TEAMS(activeOrg?.orgId || '') 
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.TEAMS(activeOrg?.orgId || ""),
       });
       toast.success(UI_TEXT.TEAM.CREATE_SUCCESS(variables.name));
       router.push(SETTINGS_ROUTES.TEAM_DETAIL(data.team_id));
     },
     onError: (error) => {
       console.error("Error creating team:", error);
-      toast.error(error instanceof Error ? error.message : UI_TEXT.TEAM.CREATE_ERROR);
+      toast.error(
+        error instanceof Error ? error.message : UI_TEXT.TEAM.CREATE_ERROR,
+      );
     },
   });
 

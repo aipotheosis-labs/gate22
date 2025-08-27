@@ -18,14 +18,14 @@ export async function listOrganizationUsers(
   }
 
   const data = await response.json();
-  
+
   // Transform backend data to match frontend expectations
   return data.map((member: OrganizationUser) => {
     // Parse name into first and last name
-    const nameParts = member.name?.split(' ') || [];
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-    
+    const nameParts = member.name?.split(" ") || [];
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     return {
       user_id: member.user_id,
       email: member.email,
@@ -66,13 +66,16 @@ export async function removeUser(
   userId: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/members/${userId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "X-ACI-ORG-ID": orgId,
+  const response = await fetch(
+    `${baseUrl}/v1/organizations/${orgId}/members/${userId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-ACI-ORG-ID": orgId,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to remove user from organization");

@@ -4,13 +4,12 @@ import { useEffect, useState, useMemo } from "react";
 import { OrganizationUser } from "@/features/settings/types/organization.types";
 import {
   listOrganizationUsers,
-  removeUser,
+  // removeUser, // Kept for potential future use
 } from "@/features/settings/api/organization";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation"; // Kept for potential future use with handleRemove
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,8 +27,8 @@ interface VercelMembersTableProps {
 export function VercelMembersTable({
   refreshKey = 0,
 }: VercelMembersTableProps) {
-  const { accessToken, activeOrg, user } = useMetaInfo();
-  const router = useRouter();
+  const { accessToken, activeOrg } = useMetaInfo();
+  // const router = useRouter(); // Kept for potential future use with handleRemove
   const [members, setMembers] = useState<OrganizationUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,32 +53,40 @@ export function VercelMembersTable({
     fetchMembers();
   }, [fetchMembers, refreshKey]);
 
-  const handleRemove = async (userId: string) => {
-    try {
-      await removeUser(accessToken, activeOrg.orgId, userId);
-      toast.success("Member removed successfully");
-      fetchMembers();
+  // Note: handleRemove is kept for potential future use
+  // const handleRemove = async (userId: string) => {
+  //   try {
+  //     await removeUser(accessToken, activeOrg.orgId, userId);
+  //     toast.success("Member removed successfully");
+  //     fetchMembers();
 
-      if (userId === user?.userId) {
-        router.push("/mcp-servers");
-      }
-    } catch {
-      toast.error("Failed to remove member");
-    }
-  };
+  //     if (userId === user?.userId) {
+  //       router.push("/mcp-servers");
+  //     }
+  //   } catch {
+  //     toast.error("Failed to remove member");
+  //   }
+  // };
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
       if (!member) return false;
       const fullName =
-        `${member.first_name || ""} ${member.last_name || ""}`.trim() || member.name || "";
+        `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
+        member.name ||
+        "";
       const matchesSearch =
         fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.user_id?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       // Map backend roles to frontend display
-      const displayRole = member.role === "admin" ? "Admin" : member.role === "member" ? "Member" : member.role;
+      const displayRole =
+        member.role === "admin"
+          ? "Admin"
+          : member.role === "member"
+            ? "Member"
+            : member.role;
       const matchesRole = roleFilter === "all" || displayRole === roleFilter;
       return matchesSearch && matchesRole;
     });
@@ -185,7 +192,11 @@ export function VercelMembersTable({
 
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-muted-foreground">
-                    {member.role === "admin" ? "Admin" : member.role === "member" ? "Member" : member.role}
+                    {member.role === "admin"
+                      ? "Admin"
+                      : member.role === "member"
+                        ? "Member"
+                        : member.role}
                   </span>
                 </div>
               </div>

@@ -82,8 +82,13 @@ export function fetcherWithAuth<T = unknown>(
   ): Promise<T> => {
     // Use provided token or get from token manager (which handles refresh automatically)
     // Pass organization context for role-aware token generation
-    const validToken = token || (await tokenManager.getAccessToken(organizationId, userRole as OrganizationRole));
-    
+    const validToken =
+      token ||
+      (await tokenManager.getAccessToken(
+        organizationId,
+        userRole as OrganizationRole,
+      ));
+
     if (!validToken) {
       throw new Error("No valid authentication token");
     }
@@ -114,7 +119,10 @@ export function fetcherWithAuth<T = unknown>(
     // Try once more with a fresh token
     if (response.status === 401) {
       tokenManager.clearToken(); // Clear the stale token
-      const freshToken = await tokenManager.getAccessToken(organizationId, userRole as OrganizationRole);
+      const freshToken = await tokenManager.getAccessToken(
+        organizationId,
+        userRole as OrganizationRole,
+      );
       if (freshToken) {
         response = await makeRequest(freshToken);
       }
@@ -177,26 +185,46 @@ export const createAuthenticatedRequest = (
   userRole?: string,
 ) => ({
   get: <T = unknown>(endpoint: string, params?: Record<string, string>) =>
-    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, { method: "GET", params }),
+    fetcherWithAuth<T>(
+      token,
+      organizationId,
+      userRole,
+    )(endpoint, { method: "GET", params }),
 
   post: <T = unknown>(endpoint: string, data?: unknown) =>
-    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, {
+    fetcherWithAuth<T>(
+      token,
+      organizationId,
+      userRole,
+    )(endpoint, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   patch: <T = unknown>(endpoint: string, data?: unknown) =>
-    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, {
+    fetcherWithAuth<T>(
+      token,
+      organizationId,
+      userRole,
+    )(endpoint, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   put: <T = unknown>(endpoint: string, data?: unknown) =>
-    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, {
+    fetcherWithAuth<T>(
+      token,
+      organizationId,
+      userRole,
+    )(endpoint, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   delete: <T = unknown>(endpoint: string) =>
-    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, { method: "DELETE" }),
+    fetcherWithAuth<T>(
+      token,
+      organizationId,
+      userRole,
+    )(endpoint, { method: "DELETE" }),
 });

@@ -39,7 +39,7 @@ export function InviteTeamDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error("Team name is required");
       return;
@@ -49,20 +49,22 @@ export function InviteTeamDialog({
     try {
       const newTeam = await createTeam(accessToken, activeOrg.orgId, formData);
       toast.success(`Team "${formData.name}" created successfully`);
-      
+
       // Reset form
       setFormData({
         name: "",
         description: "",
       });
-      
+
       onOpenChange(false);
       onSuccess?.();
-      
+
       // Navigate to the new team page
       router.push(`/settings/teams/${newTeam.id}`);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create team");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create team";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -85,10 +87,11 @@ export function InviteTeamDialog({
           <DialogHeader>
             <DialogTitle>Create New Team</DialogTitle>
             <DialogDescription>
-              Create a new team to organize members and manage access to resources.
+              Create a new team to organize members and manage access to
+              resources.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">
@@ -98,25 +101,29 @@ export function InviteTeamDialog({
                 id="name"
                 placeholder="Engineering, Marketing, Design..."
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 disabled={isLoading}
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 placeholder="Describe the purpose of this team..."
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 disabled={isLoading}
                 rows={3}
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button
               type="button"

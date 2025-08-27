@@ -142,9 +142,7 @@ export function OrgMembersTable() {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={OrganizationRole.Admin}>
-                    Admin
-                  </SelectItem>
+                  <SelectItem value={OrganizationRole.Admin}>Admin</SelectItem>
                   <SelectItem value={OrganizationRole.Member}>
                     Member
                   </SelectItem>

@@ -19,26 +19,30 @@ class OrganizationManager {
 
   getActiveOrganization(): StoredOrganization | null {
     if (typeof window === "undefined") return null;
-    
+
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (!stored) return null;
-      
+
       return JSON.parse(stored) as StoredOrganization;
     } catch {
       return null;
     }
   }
 
-  setActiveOrganization(orgId: string, orgName: string, userRole: string): void {
+  setActiveOrganization(
+    orgId: string,
+    orgName: string,
+    userRole: string,
+  ): void {
     if (typeof window === "undefined") return;
-    
+
     const orgData: StoredOrganization = {
       orgId,
       orgName,
       userRole,
     };
-    
+
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(orgData));
   }
 

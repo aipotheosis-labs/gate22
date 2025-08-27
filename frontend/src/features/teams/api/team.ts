@@ -1,8 +1,4 @@
-import {
-  Team,
-  TeamMember,
-  CreateTeamRequest,
-} from "../types/team.types";
+import { Team, TeamMember, CreateTeamRequest } from "../types/team.types";
 import { getApiBaseUrl } from "@/lib/api-client";
 
 export async function listTeams(
@@ -29,11 +25,14 @@ export async function getTeam(
   teamId: string,
 ): Promise<Team> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/teams/${teamId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const response = await fetch(
+    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch team");
@@ -70,12 +69,15 @@ export async function deleteTeam(
   teamId: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/teams/${teamId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const response = await fetch(
+    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to delete team");
@@ -88,11 +90,14 @@ export async function listTeamMembers(
   teamId: string,
 ): Promise<TeamMember[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const response = await fetch(
+    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch team members");
@@ -108,12 +113,15 @@ export async function addTeamMember(
   userId: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members/${userId}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const response = await fetch(
+    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members/${userId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error("Failed to add team member");

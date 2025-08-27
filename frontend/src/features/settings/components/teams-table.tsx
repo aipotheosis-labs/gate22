@@ -15,9 +15,7 @@ interface TeamsTableProps {
   refreshKey?: number;
 }
 
-export function TeamsTable({
-  refreshKey = 0,
-}: TeamsTableProps) {
+export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
   const { accessToken, activeOrg } = useMetaInfo();
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
@@ -49,17 +47,16 @@ export function TeamsTable({
 
   const filteredTeams = useMemo(() => {
     return teams.filter((team) => {
-      const matchesSearch = 
+      const matchesSearch =
         team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         team.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       return matchesSearch;
     });
   }, [teams, searchQuery]);
 
-
   const getInitials = (name: string) => {
-    const words = name.split(' ');
+    const words = name.split(" ");
     if (words.length >= 2) {
       return `${words[0][0]}${words[1][0]}`.toUpperCase();
     }

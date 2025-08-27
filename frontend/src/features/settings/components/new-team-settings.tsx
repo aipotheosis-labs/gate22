@@ -86,8 +86,8 @@ export function NewTeamSettings() {
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleCreateTeam} 
+          <Button
+            onClick={handleCreateTeam}
             disabled={!teamName.trim() || isCreating}
           >
             {isCreating ? "Creating..." : "Create Team"}

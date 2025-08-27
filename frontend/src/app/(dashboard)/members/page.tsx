@@ -27,10 +27,7 @@ export default function MembersPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-semibold">Members</h1>
-        <Button 
-          onClick={handleInviteClick} 
-          className="gap-2"
-        >
+        <Button onClick={handleInviteClick} className="gap-2">
           <UserPlus className="h-4 w-4" />
           Invite Member
         </Button>
