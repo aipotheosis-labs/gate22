@@ -371,13 +371,15 @@ async def remove_team_member(
     elif context.act_as.role == OrganizationRole.MEMBER:
         if context.user_id != user_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Cannot remove other members"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Non-admin cannot remove other members from team",
             )
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     # Check if targeted user is a member of the team
-    if not crud.teams.get_team_members(context.db_session, team_id):
+    team_members = crud.teams.get_team_members(context.db_session, team_id)
+    if not any(member.user_id == user_id for member in team_members):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="User is not a member of the team"
         )

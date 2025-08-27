@@ -137,28 +137,29 @@ def test_list_team_members(
     access_token_fixture: str,
     dummy_organization: Organization,
     dummy_user: User,
+    dummy_team: Team,
     is_self_team: bool,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
-    # Add a team with a random teammate, then optionally add current user as a team member
-    new_team = crud.teams.create_team(
-        db_session, dummy_organization.id, "Test Team", "Test Description"
-    )
+    # Create a team with a random teammate, then optionally add current user as a team member
     teammate = crud.users.create_user(
         db_session, "Teammate", "teammate@example.com", None, UserIdentityProvider.EMAIL
     )
     crud.organizations.add_user_to_organization(
         db_session, dummy_organization.id, teammate.id, OrganizationRole.MEMBER
     )
-    crud.teams.add_team_member(db_session, dummy_organization.id, new_team.id, teammate.id)
+    crud.teams.add_team_member(db_session, dummy_organization.id, dummy_team.id, teammate.id)
 
-    if is_self_team:
-        crud.teams.add_team_member(db_session, dummy_organization.id, new_team.id, dummy_user.id)
+    if not is_self_team:
+        # dummy_user should already be in the team. So we need to remove it if is_self_team is False
+        crud.teams.remove_team_member(
+            db_session, dummy_organization.id, dummy_team.id, dummy_user.id
+        )
     db_session.commit()
 
     response = test_client.get(
-        f"/v1/organizations/{dummy_organization.id}/teams/{new_team.id}/members",
+        f"/v1/organizations/{dummy_organization.id}/teams/{dummy_team.id}/members",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -244,3 +245,88 @@ def test_add_team_member(
     else:
         assert response.status_code == 400
         assert response.json()["detail"] == "User is not a member of the organization"
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+        "dummy_access_token_non_member",
+    ],
+)
+@pytest.mark.parametrize("remove_self", [True, False])
+@pytest.mark.parametrize("is_user_in_team", [True, False])
+def test_remove_team_member(
+    request: pytest.FixtureRequest,
+    db_session: Session,
+    test_client: TestClient,
+    access_token_fixture: str,
+    dummy_organization: Organization,
+    dummy_team: Team,
+    dummy_user: User,
+    remove_self: bool,
+    is_user_in_team: bool,
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    # Create a new user and add it to the organization
+    new_user = crud.users.create_user(
+        db_session, "Target User", "target_user@example.com", None, UserIdentityProvider.EMAIL
+    )
+    crud.organizations.add_user_to_organization(
+        db_session, dummy_organization.id, new_user.id, OrganizationRole.MEMBER
+    )
+
+    if is_user_in_team:
+        if remove_self:
+            target_user = dummy_user
+        else:
+            crud.teams.add_team_member(
+                db_session, dummy_organization.id, dummy_team.id, new_user.id
+            )
+            target_user = new_user
+    else:
+        if remove_self:
+            # dummy_user should already be in the team. So we need to remove it if is_self_team
+            # is False
+            crud.teams.remove_team_member(
+                db_session, dummy_organization.id, dummy_team.id, dummy_user.id
+            )
+            target_user = dummy_user
+        else:
+            target_user = new_user
+
+    db_session.commit()
+
+    response = test_client.delete(
+        f"/v1/organizations/{dummy_organization.id}/teams/{dummy_team.id}/members/{target_user.id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+        assert response.status_code == 403
+        return
+
+    if access_token_fixture in [
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+    ]:
+        # Non-admin cannot remove other members from the team
+        if not remove_self:
+            assert response.status_code == 403
+            assert response.json()["detail"] == "Non-admin cannot remove other members from team"
+            return
+
+    if not is_user_in_team:
+        assert response.status_code == 400
+        assert response.json()["detail"] == "User is not a member of the team"
+        return
+
+    assert response.status_code == 200
+
+    # Check if the user is removed from the team
+    team_members = crud.teams.get_team_members(db_session, dummy_team.id)
+    assert target_user.id not in [member.user_id for member in team_members]
