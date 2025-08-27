@@ -18,6 +18,7 @@ def test_get_profile(
     request: pytest.FixtureRequest,
     test_client: TestClient,
     dummy_user: User,
+    dummy_user_without_org: User,
     access_token_fixture: str,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
@@ -27,13 +28,17 @@ def test_get_profile(
     )
     assert response.status_code == 200
     userinfo = UserInfo.model_validate(response.json())
-    assert userinfo.user_id == dummy_user.id
-    assert userinfo.name == dummy_user.name
-    assert userinfo.email == dummy_user.email
 
     if access_token_fixture in ["dummy_access_token_no_orgs"]:
         assert len(userinfo.organizations) == 0
+        assert userinfo.user_id == dummy_user_without_org.id
+        assert userinfo.name == dummy_user_without_org.name
+        assert userinfo.email == dummy_user_without_org.email
     else:
+        assert userinfo.user_id == dummy_user.id
+        assert userinfo.name == dummy_user.name
+        assert userinfo.email == dummy_user.email
+
         assert len(userinfo.organizations) == 1
         organization_membership = dummy_user.organization_memberships[0]
         assert userinfo.organizations[0].organization_id == organization_membership.organization_id
@@ -46,11 +51,11 @@ def test_get_profile(
 def test_get_profile_non_existence_user(
     test_client: TestClient,
     db_session: Session,
-    dummy_admin: User,
+    dummy_user_without_org: User,
     dummy_access_token_no_orgs: str,
 ) -> None:
     # Remove the user
-    db_session.query(User).filter(User.id == dummy_admin.id).delete()
+    db_session.query(User).filter(User.id == dummy_user_without_org.id).delete()
     db_session.commit()
 
     response = test_client.get(

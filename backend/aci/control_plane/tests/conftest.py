@@ -73,11 +73,11 @@ def dummy_access_token_member(dummy_member: User) -> str:
 
 
 @pytest.fixture(scope="function")
-def dummy_access_token_no_orgs(dummy_user: User) -> str:
+def dummy_access_token_no_orgs(dummy_user_without_org: User) -> str:
     """
-    Access token of `dummy_user` without any organization
+    Access token of a user without any organization
     """
-    return _sign_token(dummy_user, None)
+    return _sign_token(dummy_user_without_org, None)
 
 
 @pytest.fixture(scope="function")
@@ -116,69 +116,31 @@ def dummy_access_token_non_member(db_session: Session) -> str:
 
 # ------------------------------------------------------------
 # Dummy organization and user
-# - dummy_organization
 # - dummy_user
+# - dummy_organization (with dummy_user as org admin, and a dummy team with dummy_user inside)
 # - dummy_admin (added to the dummy_organization as admin)
 # - dummy_member (added to the dummy_organization as member)
 # ------------------------------------------------------------
-
-
 @pytest.fixture(scope="function")
-def dummy_organization(db_session: Session) -> Organization:
+def dummy_organization(db_session: Session, database_setup_and_cleanup: None) -> Organization:
     dummy_organization = crud.organizations.create_organization(
         db_session=db_session,
         name="Dummy Organization",
         description="Dummy Organization Description",
     )
-    db_session.commit()
-    return dummy_organization
-
-
-@pytest.fixture(scope="function")
-def dummy_user(db_session: Session, database_setup_and_cleanup: None) -> User:
     dummy_user = crud.users.create_user(
         db_session=db_session,
         name="Dummy User",
-        email="dummy1@example.com",
+        email="dummy@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
     )
-    db_session.commit()
-    return dummy_user
-
-
-@pytest.fixture(scope="function")
-def dummy_admin(db_session: Session, dummy_user: User, dummy_organization: Organization) -> User:
-    """
-    `dummy_user` with `admin` role in `dummy_organization`
-    """
     crud.organizations.add_user_to_organization(
         db_session=db_session,
         organization_id=dummy_organization.id,
         user_id=dummy_user.id,
         role=OrganizationRole.ADMIN,
     )
-    db_session.commit()
-    return dummy_user
-
-
-@pytest.fixture(scope="function")
-def dummy_member(db_session: Session, dummy_user: User, dummy_organization: Organization) -> User:
-    """
-    `dummy_user` with `member` role in `dummy_organization`
-    """
-    crud.organizations.add_user_to_organization(
-        db_session=db_session,
-        organization_id=dummy_organization.id,
-        user_id=dummy_user.id,
-        role=OrganizationRole.MEMBER,
-    )
-    db_session.commit()
-    return dummy_user
-
-
-@pytest.fixture(scope="function")
-def dummy_team(db_session: Session, dummy_organization: Organization, dummy_admin: User) -> Team:
     dummy_team = crud.teams.create_team(
         db_session=db_session,
         organization_id=dummy_organization.id,
@@ -189,10 +151,55 @@ def dummy_team(db_session: Session, dummy_organization: Organization, dummy_admi
         db_session=db_session,
         organization_id=dummy_organization.id,
         team_id=dummy_team.id,
-        user_id=dummy_admin.id,
+        user_id=dummy_user.id,
     )
     db_session.commit()
-    return dummy_team
+    return dummy_organization
+
+
+@pytest.fixture(scope="function")
+def dummy_user(dummy_organization: Organization) -> User:
+    """
+    `dummy_user` with in `dummy_organization`
+    """
+    dummy_user = dummy_organization.memberships[0].user
+    return dummy_user
+
+
+@pytest.fixture(scope="function")
+def dummy_admin(dummy_organization: Organization) -> User:
+    """
+    `dummy_user` with `admin` role in `dummy_organization`
+    """
+    return dummy_organization.memberships[0].user
+
+
+@pytest.fixture(scope="function")
+def dummy_member(db_session: Session, dummy_organization: Organization) -> User:
+    """
+    `dummy_user` with `member` role in `dummy_organization`
+    """
+    membership = dummy_organization.memberships[0]
+    membership.role = OrganizationRole.MEMBER
+    db_session.commit()
+    return membership.user
+
+
+@pytest.fixture(scope="function")
+def dummy_team(dummy_organization: Organization) -> Team:
+    return dummy_organization.teams[0]
+
+
+@pytest.fixture(scope="function")
+def dummy_user_without_org(db_session: Session) -> User:
+    user = crud.users.create_user(
+        db_session=db_session,
+        name="Dummy User Without Org",
+        email="dummy_without_org@example.com",
+        password_hash=None,
+        identity_provider=UserIdentityProvider.EMAIL,
+    )
+    return user
 
 
 # ------------------------------------------------------------

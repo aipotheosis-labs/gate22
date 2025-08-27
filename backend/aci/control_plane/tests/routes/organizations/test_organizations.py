@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 def test_create_organization(
     db_session: Session,
     test_client: TestClient,
-    dummy_user: User,
+    dummy_user_without_org: User,
     dummy_access_token_no_orgs: str,
 ) -> None:
     test_input = CreateOrganizationRequest(
@@ -45,10 +45,10 @@ def test_create_organization(
 
     # Check if user is added to organization as admin
     organization_membership = crud.organizations.get_organization_membership(
-        db_session, organization.organization_id, dummy_user.id
+        db_session, organization.organization_id, dummy_user_without_org.id
     )
     assert organization_membership is not None
-    assert organization_membership.user_id == dummy_user.id
+    assert organization_membership.user_id == dummy_user_without_org.id
     assert organization_membership.role == OrganizationRole.ADMIN
 
 
@@ -103,40 +103,41 @@ def test_list_organization_members(
 
     if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
         assert response.status_code == 403
-    else:
-        assert response.status_code == 200
+        return
 
-        organization_members = [
-            OrganizationMembershipInfo.model_validate(member) for member in response.json()
-        ]
+    assert response.status_code == 200
 
-        # Only the current user is in the organization
-        assert len(organization_members) == 1
-        assert organization_members[0].user_id == dummy_user.id
+    organization_members = [
+        OrganizationMembershipInfo.model_validate(member) for member in response.json()
+    ]
 
-        # Add a new member to the organization
-        new_member = crud.users.create_user(
-            db_session,
-            name="New Member",
-            email="new_member@example.com",
-            password_hash=None,
-            identity_provider=UserIdentityProvider.EMAIL,
-        )
-        crud.organizations.add_user_to_organization(
-            db_session, dummy_organization.id, new_member.id, OrganizationRole.MEMBER
-        )
-        db_session.commit()
+    # Only the current user is in the organization
+    assert len(organization_members) == 1
+    assert organization_members[0].user_id == dummy_user.id
 
-        response = test_client.get(
-            f"/v1/organizations/{dummy_organization.id}/members",
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-        organization_members = [
-            OrganizationMembershipInfo.model_validate(member) for member in response.json()
-        ]
+    # Add a new member to the organization
+    new_member = crud.users.create_user(
+        db_session,
+        name="New Member",
+        email="new_member@example.com",
+        password_hash=None,
+        identity_provider=UserIdentityProvider.EMAIL,
+    )
+    crud.organizations.add_user_to_organization(
+        db_session, dummy_organization.id, new_member.id, OrganizationRole.MEMBER
+    )
+    db_session.commit()
 
-        # Now there should be two members
-        assert len(organization_members) == 2
+    response = test_client.get(
+        f"/v1/organizations/{dummy_organization.id}/members",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    organization_members = [
+        OrganizationMembershipInfo.model_validate(member) for member in response.json()
+    ]
+
+    # Now there should be two members
+    assert len(organization_members) == 2
 
 
 @pytest.mark.parametrize(
@@ -189,20 +190,23 @@ def test_remove_organization_member(
     if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
         # Non-member cannot leave the organization
         assert response.status_code == 403
-    elif access_token_fixture in [
+        return
+
+    if access_token_fixture in [
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
         # Non-admin cannot remove other members
         assert response.status_code == 403
-    else:
-        assert response.status_code == 200
+        return
 
-        # Check if the new member is removed from the organization
-        organization_membership = crud.organizations.get_organization_membership(
-            db_session, dummy_organization.id, new_member.id
-        )
-        assert organization_membership is None
+    assert response.status_code == 200
+
+    # Check if the new member is removed from the organization
+    organization_membership = crud.organizations.get_organization_membership(
+        db_session, dummy_organization.id, new_member.id
+    )
+    assert organization_membership is None
 
 
 @pytest.mark.parametrize(
@@ -254,19 +258,21 @@ def test_leave_organization(
     if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
         # Non-member cannot leave the organization
         assert response.status_code == 403
-    else:
-        if access_token_fixture in ["dummy_access_token_admin"] and initial_admin_count == 1:
-            # Last admin cannot leave the organization
-            assert response.status_code == 403
-            assert response.json()["detail"] == "Cannot remove the last admin in the organization"
-        else:
-            assert response.status_code == 200
+        return
 
-            # Check if the user is removed from the organization
-            organization_membership = crud.organizations.get_organization_membership(
-                db_session, dummy_organization.id, dummy_user.id
-            )
-            assert organization_membership is None
+    if access_token_fixture in ["dummy_access_token_admin"] and initial_admin_count == 1:
+        # Last admin cannot leave the organization
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Cannot remove the last admin in the organization"
+        return
+
+    assert response.status_code == 200
+
+    # Check if the user is removed from the organization
+    organization_membership = crud.organizations.get_organization_membership(
+        db_session, dummy_organization.id, dummy_user.id
+    )
+    assert organization_membership is None
 
 
 @pytest.mark.parametrize(
@@ -308,6 +314,20 @@ def test_update_organization_member_role(
         )
     db_session.commit()
 
+    # Test updating the role of the target user
+    input_body = UpdateOrganizationMemberRoleRequest(role=target_role)
+
+    response = test_client.patch(
+        f"/v1/organizations/{dummy_organization.id}/members/{target_user.id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json=input_body.model_dump(mode="json"),
+    )
+
+    # only admin can update the role
+    if access_token_fixture not in ["dummy_access_token_admin"]:
+        assert response.status_code == 403
+        return
+
     # Get the target memberships
     target_membership = crud.organizations.get_organization_membership(
         db_session, dummy_organization.id, target_user.id
@@ -317,37 +337,16 @@ def test_update_organization_member_role(
     memberships = crud.organizations.get_organization_members(db_session, dummy_organization.id)
     admin_count = len([member for member in memberships if member.role == OrganizationRole.ADMIN])
 
-    # Test updating the role of the target user
-    input_body = UpdateOrganizationMemberRoleRequest(
-        role=target_role,
-    )
-    response = test_client.patch(
-        f"/v1/organizations/{dummy_organization.id}/members/{target_user.id}",
-        headers={"Authorization": f"Bearer {access_token}"},
-        json=input_body.model_dump(mode="json"),
-    )
+    # If target user is the only admin, it cannot be downgraded to member
+    if (
+        admin_count == 1
+        and target_membership.role == OrganizationRole.ADMIN
+        and target_role == OrganizationRole.MEMBER
+    ):
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Cannot downgrade the last admin in the organization"
+        return
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
-        # Non-member cannot update the role of other members
-        assert response.status_code == 403
-    elif access_token_fixture in [
-        "dummy_access_token_member",
-        "dummy_access_token_admin_act_as_member",
-    ]:
-        # Non-admin cannot update the role of other members
-        assert response.status_code == 403
-    else:
-        # If target user is the only admin, it cannot be downgraded to member
-        if (
-            admin_count == 1
-            and target_membership.role == OrganizationRole.ADMIN
-            and target_role == OrganizationRole.MEMBER
-        ):
-            assert response.status_code == 403
-            assert (
-                response.json()["detail"] == "Cannot downgrade the last admin in the organization"
-            )
-        else:
-            # Check if the role of the target user is updated
-            assert response.status_code == 200
-            assert target_membership.role == target_role
+    # Check if the role of the target user is updated
+    assert response.status_code == 200
+    assert target_membership.role == target_role
