@@ -196,8 +196,12 @@ def test_remove_organization_member(
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
-        # Non-admin cannot remove other members
+        # Non-admin cannot remove other members from the organization
         assert response.status_code == 403
+        assert (
+            response.json()["detail"]
+            == "Non-admin cannot remove other members from the organization"
+        )
         return
 
     assert response.status_code == 200
