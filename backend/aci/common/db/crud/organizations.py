@@ -68,22 +68,6 @@ def get_organization_members(
     )
 
 
-def is_user_in_organization(
-    db_session: Session,
-    organization_id: UUID,
-    user_id: UUID,
-) -> bool:
-    return (
-        db_session.query(OrganizationMembership)
-        .filter(
-            OrganizationMembership.organization_id == organization_id,
-            OrganizationMembership.user_id == user_id,
-        )
-        .first()
-        is not None
-    )
-
-
 def get_organization_membership(
     db_session: Session,
     organization_id: UUID,

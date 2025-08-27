@@ -136,7 +136,7 @@ async def remove_organization_member(
             )
     # Member can only remove themselves
     elif context.act_as.role == OrganizationRole.MEMBER:
-        if context.user_id != str(user_id):
+        if context.user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Cannot remove other members"
             )
@@ -309,7 +309,9 @@ async def add_team_member(
     )
 
     # Check if user is a member of the organization
-    if not crud.organizations.is_user_in_organization(context.db_session, organization_id, user_id):
+    if not crud.organizations.get_organization_membership(
+        context.db_session, organization_id, user_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User is not a member of the organization",

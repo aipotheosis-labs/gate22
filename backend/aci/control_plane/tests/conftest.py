@@ -9,16 +9,19 @@ from sqlalchemy.orm import Session
 from aci.common.db import crud
 from aci.common.db.sql_models import Base, Organization, User
 from aci.common.enums import OrganizationRole, UserIdentityProvider
+from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
 from aci.common.test_utils import clear_database, create_test_db_session
 from aci.control_plane import dependencies as deps
 from aci.control_plane.main import app as fastapi_app
 from aci.control_plane.routes.auth import _sign_token
 
+logger = get_logger(__name__)
+
 
 @pytest.fixture(scope="function")
 def test_client(db_session: Session) -> Generator[TestClient, None, None]:
-    fastapi_app.dependency_overrides[deps.get_request_context] = lambda: db_session
+    fastapi_app.dependency_overrides[deps.yield_db_session] = lambda: db_session
     # disable following redirects for testing login
     # NOTE: need to set base_url to http://localhost because we set TrustedHostMiddleware in main.py
     with TestClient(fastapi_app, base_url="http://localhost", follow_redirects=False) as c:
@@ -31,9 +34,13 @@ def test_client(db_session: Session) -> Generator[TestClient, None, None]:
 # - dummy_access_token_admin_act_as_member
 # - dummy_access_token_member
 # - dummy_access_token_no_orgs (without act as)
+# - dummy_access_token_non_member (act as other organization)
 # ------------------------------------------------------------
 @pytest.fixture(scope="function")
 def dummy_access_token_admin(dummy_admin: User) -> str:
+    """
+    Access token of `dummy_user` with `admin` role in `dummy_organization`
+    """
     org_membership = dummy_admin.organization_memberships[0]
     return _sign_token(
         dummy_admin,
@@ -43,6 +50,9 @@ def dummy_access_token_admin(dummy_admin: User) -> str:
 
 @pytest.fixture(scope="function")
 def dummy_access_token_admin_act_as_member(dummy_admin: User) -> str:
+    """
+    Access token of `dummy_user` with `admin` role in `dummy_organization`, but act as `member` role
+    """
     org_membership = dummy_admin.organization_memberships[0]
     return _sign_token(
         dummy_admin,
@@ -52,6 +62,9 @@ def dummy_access_token_admin_act_as_member(dummy_admin: User) -> str:
 
 @pytest.fixture(scope="function")
 def dummy_access_token_member(dummy_member: User) -> str:
+    """
+    Access token of `dummy_user` with `member` role in `dummy_organization`
+    """
     org_membership = dummy_member.organization_memberships[0]
     return _sign_token(
         dummy_member,
@@ -61,7 +74,44 @@ def dummy_access_token_member(dummy_member: User) -> str:
 
 @pytest.fixture(scope="function")
 def dummy_access_token_no_orgs(dummy_user: User) -> str:
+    """
+    Access token of `dummy_user` without any organization
+    """
     return _sign_token(dummy_user, None)
+
+
+@pytest.fixture(scope="function")
+def dummy_access_token_non_member(db_session: Session) -> str:
+    """
+    Access token of a user acted as other organization. This user has no membership in
+    `dummy_organization`.
+    """
+    dummy_other_user = crud.users.create_user(
+        db_session=db_session,
+        name="Dummy Other User",
+        email="dummy_other@example.com",
+        password_hash=None,
+        identity_provider=UserIdentityProvider.EMAIL,
+    )
+
+    dummy_other_organization = crud.organizations.create_organization(
+        db_session=db_session,
+        name="Dummy Other Organization",
+        description="Dummy Other Organization Description",
+    )
+
+    crud.organizations.add_user_to_organization(
+        db_session=db_session,
+        organization_id=dummy_other_organization.id,
+        user_id=dummy_other_user.id,
+        role=OrganizationRole.ADMIN,
+    )
+    db_session.commit()
+
+    return _sign_token(
+        dummy_other_user,
+        ActAsInfo(organization_id=dummy_other_organization.id, role=OrganizationRole.ADMIN),
+    )
 
 
 # ------------------------------------------------------------
@@ -99,6 +149,9 @@ def dummy_user(db_session: Session, database_setup_and_cleanup: None) -> User:
 
 @pytest.fixture(scope="function")
 def dummy_admin(db_session: Session, dummy_user: User, dummy_organization: Organization) -> User:
+    """
+    `dummy_user` with `admin` role in `dummy_organization`
+    """
     crud.organizations.add_user_to_organization(
         db_session=db_session,
         organization_id=dummy_organization.id,
@@ -111,6 +164,9 @@ def dummy_admin(db_session: Session, dummy_user: User, dummy_organization: Organ
 
 @pytest.fixture(scope="function")
 def dummy_member(db_session: Session, dummy_user: User, dummy_organization: Organization) -> User:
+    """
+    `dummy_user` with `member` role in `dummy_organization`
+    """
     crud.organizations.add_user_to_organization(
         db_session=db_session,
         organization_id=dummy_organization.id,
