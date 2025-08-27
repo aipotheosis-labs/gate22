@@ -7,7 +7,7 @@ from sqlalchemy import Inspector, inspect
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import Base, Organization, User
+from aci.common.db.sql_models import Base, Organization, Team, User
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
@@ -175,6 +175,24 @@ def dummy_member(db_session: Session, dummy_user: User, dummy_organization: Orga
     )
     db_session.commit()
     return dummy_user
+
+
+@pytest.fixture(scope="function")
+def dummy_team(db_session: Session, dummy_organization: Organization, dummy_admin: User) -> Team:
+    dummy_team = crud.teams.create_team(
+        db_session=db_session,
+        organization_id=dummy_organization.id,
+        name="Dummy Team",
+        description="Dummy Team Description",
+    )
+    crud.teams.add_team_member(
+        db_session=db_session,
+        organization_id=dummy_organization.id,
+        team_id=dummy_team.id,
+        user_id=dummy_admin.id,
+    )
+    db_session.commit()
+    return dummy_team
 
 
 # ------------------------------------------------------------
