@@ -71,7 +71,7 @@ export function TeamsSettings() {
           </>
         ) : teams && teams.length > 0 ? (
           teams.map((team) => (
-            <Card key={team.id} className="hover:shadow-md transition-shadow">
+            <Card key={team.team_id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -89,7 +89,7 @@ export function TeamsSettings() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() =>
-                          router.push(`/settings/teams/${team.id}`)
+                          router.push(`/settings/teams/${team.team_id}`)
                         }
                       >
                         <Settings className="h-4 w-4 mr-2" />
@@ -112,13 +112,12 @@ export function TeamsSettings() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Users className="h-4 w-4 mr-1" />
-                    {team.member_count}{" "}
-                    {team.member_count === 1 ? "member" : "members"}
+                    Team Members
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => router.push(`/settings/teams/${team.id}`)}
+                    onClick={() => router.push(`/settings/teams/${team.team_id}`)}
                   >
                     View Members
                   </Button>

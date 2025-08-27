@@ -55,7 +55,7 @@ export const sidebarItems = [
   },
   {
     title: "Settings",
-    url: "/settings",
+    url: "/settings/organization",
     icon: RiSettings3Line,
   },
 ];
@@ -63,7 +63,7 @@ export const sidebarItems = [
 // Add settings routes to be accessible in header
 export const settingsItem = {
   title: "Settings",
-  url: "/settings",
+  url: "/settings/organization",
   icon: RiSettings3Line,
 };
 
@@ -105,7 +105,9 @@ export function AppSidebar() {
             <SidebarMenu>
               {sidebarItems.map((item) => {
                 const isActive =
-                  pathname === item.url || pathname.startsWith(item.url);
+                  item.title === "Settings" 
+                    ? pathname.startsWith("/settings")
+                    : pathname === item.url || pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <Tooltip>

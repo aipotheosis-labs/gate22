@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { OrganizationRole } from "@/features/settings/types/organization.types";
 import { inviteToOrganization } from "@/features/settings/api/organization";
 import { useMetaInfo } from "@/components/context/metainfo";
 
@@ -34,9 +33,7 @@ export function InviteMemberDialog({
 }: InviteMemberDialogProps) {
   const { accessToken, activeOrg } = useMetaInfo();
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<OrganizationRole>(
-    OrganizationRole.Admin,
-  );
+  const [inviteRole, setInviteRole] = useState<string>("admin");
   const [inviting, setInviting] = useState(false);
 
   const handleInvite = async () => {
@@ -62,7 +59,7 @@ export function InviteMemberDialog({
       );
       toast.success(`Invitation sent to ${inviteEmail}`);
       setInviteEmail("");
-      setInviteRole(OrganizationRole.Admin);
+      setInviteRole("admin");
       onSuccess?.();
     } catch (error) {
       console.error("Failed to invite user:", error);
@@ -75,7 +72,7 @@ export function InviteMemberDialog({
   const handleClose = () => {
     if (!inviting) {
       setInviteEmail("");
-      setInviteRole(OrganizationRole.Admin);
+      setInviteRole("admin");
       onOpenChange(false);
     }
   };
@@ -118,15 +115,15 @@ export function InviteMemberDialog({
             </Label>
             <Select
               value={inviteRole}
-              onValueChange={(v) => setInviteRole(v as OrganizationRole)}
+              onValueChange={setInviteRole}
               disabled={inviting}
             >
               <SelectTrigger id="role" className="col-span-3">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={OrganizationRole.Admin}>Admin</SelectItem>
-                <SelectItem value="Member">Member</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
               </SelectContent>
             </Select>
           </div>

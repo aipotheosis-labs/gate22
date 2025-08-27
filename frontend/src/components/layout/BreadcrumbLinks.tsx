@@ -31,7 +31,7 @@ export const BreadcrumbLinks = ({ pathname }: BreadcrumbLinksProps) => {
       }
     }
 
-    return { label: segment.toUpperCase(), href: cumulativePath };
+    return { label: segment.charAt(0).toUpperCase() + segment.slice(1), href: cumulativePath };
   });
 
   const breadcrumbsList = [];

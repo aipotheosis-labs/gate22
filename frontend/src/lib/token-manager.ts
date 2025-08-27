@@ -1,4 +1,6 @@
 import { getApiBaseUrl } from "./api-client";
+import { roleManager } from "./role-manager";
+import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 interface TokenResponse {
   token: string;
@@ -15,6 +17,7 @@ class TokenManager {
   private static instance: TokenManager;
   private accessToken: string | null = null;
   private refreshPromise: Promise<string | null> | null = null;
+  private currentActAs: IssueTokenRequest["act_as"] | undefined = undefined;
 
   private constructor() {}
 
@@ -26,11 +29,36 @@ class TokenManager {
   }
 
   async getAccessToken(
-    act_as?: IssueTokenRequest["act_as"],
+    organizationId?: string,
+    userActualRole?: OrganizationRole,
   ): Promise<string | null> {
-    // If we have a token in memory, return it
-    if (this.accessToken) {
+    // Determine act_as based on RoleManager
+    let act_as: IssueTokenRequest["act_as"] | undefined;
+    
+    if (organizationId && userActualRole === OrganizationRole.Admin) {
+      const activeRole = roleManager.getActiveRole(organizationId);
+      if (activeRole && activeRole.role === OrganizationRole.Member) {
+        // Admin is acting as member
+        act_as = {
+          organization_id: organizationId,
+          role: OrganizationRole.Member,
+        };
+      }
+      // If activeRole is null or admin, don't pass act_as (use default)
+    }
+    
+    // Check if we need to refresh due to role change
+    const actAsChanged = JSON.stringify(act_as) !== JSON.stringify(this.currentActAs);
+    
+    // If we have a token and act_as hasn't changed, return it
+    if (this.accessToken && !actAsChanged) {
       return this.accessToken;
+    }
+    
+    // If act_as changed, clear the token to force refresh
+    if (actAsChanged) {
+      this.clearToken();
+      this.currentActAs = act_as;
     }
 
     // If already refreshing, wait for the existing promise
@@ -49,6 +77,7 @@ class TokenManager {
   clearToken(): void {
     this.accessToken = null;
     this.refreshPromise = null;
+    this.currentActAs = undefined;
   }
 
   private async refreshAccessToken(

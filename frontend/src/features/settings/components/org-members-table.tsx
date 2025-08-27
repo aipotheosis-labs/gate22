@@ -143,7 +143,10 @@ export function OrgMembersTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={OrganizationRole.Admin}>
-                    {OrganizationRole.Admin}
+                    Admin
+                  </SelectItem>
+                  <SelectItem value={OrganizationRole.Member}>
+                    Member
                   </SelectItem>
                 </SelectContent>
               </Select>

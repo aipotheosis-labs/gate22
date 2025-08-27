@@ -16,12 +16,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { Settings, LogOut, User, Sun, Moon, Monitor } from "lucide-react";
+import { Settings, LogOut, User, Sun, Moon, Monitor, Shield, Users } from "lucide-react";
+import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 export function UserProfileDropdown() {
-  const { user, logout } = useMetaInfo();
+  const { user, logout, activeOrg, toggleActiveRole, isActingAsRole } = useMetaInfo();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
 
   const handleLogout = async () => {
     try {
@@ -93,6 +95,53 @@ export function UserProfileDropdown() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
+        {/* Role Switcher - Only visible for admins */}
+        {isAdmin && (
+          <>
+            <div className="px-2 py-2 mr-2">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                View as
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={!isActingAsRole ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={async () => {
+                    if (isActingAsRole) {
+                      await toggleActiveRole();
+                      toast.success("Switched to Admin view");
+                    }
+                  }}
+                  className="flex-1 h-8 px-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  <span className="text-xs">Admin</span>
+                </Button>
+                <Button
+                  variant={isActingAsRole ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={async () => {
+                    if (!isActingAsRole) {
+                      await toggleActiveRole();
+                      toast.success("Switched to Member view");
+                    }
+                  }}
+                  className="flex-1 h-8 px-2"
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="text-xs">Member</span>
+                </Button>
+              </div>
+              {isActingAsRole && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Viewing as member
+                </p>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+          </>
+        )}
 
         {/* Theme Selector */}
         <div className="px-2 py-2 mr-2">

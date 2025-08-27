@@ -80,12 +80,15 @@ export function VercelMembersTable({
     return members.filter((member) => {
       if (!member) return false;
       const fullName =
-        `${member.first_name || ""} ${member.last_name || ""}`.trim();
+        `${member.first_name || ""} ${member.last_name || ""}`.trim() || member.name || "";
       const matchesSearch =
         fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.user_id?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRole = roleFilter === "all" || member.role === roleFilter;
+      
+      // Map backend roles to frontend display
+      const displayRole = member.role === "admin" ? "Admin" : member.role === "member" ? "Member" : member.role;
+      const matchesRole = roleFilter === "all" || displayRole === roleFilter;
       return matchesSearch && matchesRole;
     });
   }, [members, searchQuery, roleFilter]);
@@ -166,7 +169,6 @@ export function VercelMembersTable({
             <SelectItem value="all">All Team Roles</SelectItem>
             <SelectItem value="Admin">Admin</SelectItem>
             <SelectItem value="Member">Member</SelectItem>
-            <SelectItem value="Owner">Owner</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -193,7 +195,7 @@ export function VercelMembersTable({
             const displayName =
               member.first_name && member.last_name
                 ? `${member.first_name} ${member.last_name}`
-                : member.first_name || member.user_id;
+                : member.name || member.first_name || member.user_id;
 
             return (
               <div
@@ -228,13 +230,12 @@ export function VercelMembersTable({
 
                 <div className="flex items-center gap-4">
                   <span className="text-sm text-muted-foreground">
-                    {member.role}
+                    {member.role === "admin" ? "Admin" : member.role === "member" ? "Member" : member.role}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-muted-foreground hover:text-foreground"
-                    disabled={member.role === "Owner"}
                   >
                     Manage Access
                   </Button>
@@ -248,7 +249,6 @@ export function VercelMembersTable({
                       <DropdownMenuItem
                         onClick={() => handleRemove(member.user_id)}
                         className="text-destructive"
-                        disabled={member.role === "Owner"}
                       >
                         {member.user_id === user?.userId
                           ? "Leave Organization"

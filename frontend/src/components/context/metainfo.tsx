@@ -12,6 +12,9 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProfile, logout as apiLogout } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
+import { roleManager } from "@/lib/role-manager";
+import { organizationManager } from "@/lib/organization-manager";
+import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 export interface UserClass {
   userId: string;
@@ -36,8 +39,12 @@ interface MetaInfoContextType {
   orgs: OrgMemberInfoClass[];
   activeOrg: OrgMemberInfoClass;
   setActiveOrg: (org: OrgMemberInfoClass) => void;
+  switchOrganization: (org: OrgMemberInfoClass) => Promise<void>;
   accessToken: string;
   logout: () => Promise<void>;
+  activeRole: OrganizationRole | null;
+  toggleActiveRole: () => Promise<void>;
+  isActingAsRole: boolean;
 }
 
 const MetaInfoContext = createContext<MetaInfoContextType | undefined>(
@@ -56,12 +63,14 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   const [accessToken, setAccessToken] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeRole, setActiveRole] = useState<OrganizationRole | null>(null);
+  const [isActingAsRole, setIsActingAsRole] = useState(false);
 
   // Check for existing session on mount
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Get token (will automatically refresh if needed)
+        // Get initial token without role context (will use defaults from backend)
         const token = await tokenManager.getAccessToken();
 
         if (token) {
@@ -78,13 +87,47 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
           };
 
-          const org: OrgMemberInfoClass =
-            userProfile.organizations && userProfile.organizations.length > 0
+          // Check for stored organization preference
+          const storedOrg = organizationManager.getActiveOrganization();
+          let org: OrgMemberInfoClass;
+          
+          if (storedOrg && userProfile.organizations) {
+            // Try to find the stored org in user's organizations
+            const matchingOrg = userProfile.organizations.find(
+              o => o.organization_id === storedOrg.orgId
+            );
+            
+            if (matchingOrg) {
+              org = {
+                orgId: matchingOrg.organization_id,
+                orgName: matchingOrg.organization_name,
+                userRole: matchingOrg.role,
+                userPermissions: [],
+              };
+            } else {
+              // Stored org not found, use first org
+              org = userProfile.organizations.length > 0
+                ? {
+                    orgId: userProfile.organizations[0].organization_id,
+                    orgName: userProfile.organizations[0].organization_name,
+                    userRole: userProfile.organizations[0].role,
+                    userPermissions: [],
+                  }
+                : {
+                    orgId: "",
+                    orgName: "",
+                    userRole: "",
+                    userPermissions: [],
+                  };
+            }
+          } else {
+            // No stored preference, use first org
+            org = userProfile.organizations && userProfile.organizations.length > 0
               ? {
                   orgId: userProfile.organizations[0].organization_id,
                   orgName: userProfile.organizations[0].organization_name,
                   userRole: userProfile.organizations[0].role,
-                  userPermissions: [], // TODO: Get permissions from backend
+                  userPermissions: [],
                 }
               : {
                   orgId: "",
@@ -92,11 +135,26 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
                   userRole: "",
                   userPermissions: [],
                 };
+          }
 
           setAccessToken(token);
           setUser(user);
           setOrgs([org]);
           setIsAuthenticated(true);
+          
+          // Save the active org to localStorage if it wasn't already stored
+          if (org.orgId && !storedOrg) {
+            organizationManager.setActiveOrganization(org.orgId, org.orgName, org.userRole);
+          }
+          
+          // Check if admin is acting as member
+          if (org.userRole === OrganizationRole.Admin && org.orgId) {
+            const storedRole = roleManager.getActiveRole(org.orgId);
+            if (storedRole) {
+              setActiveRole(storedRole.role);
+              setIsActingAsRole(true);
+            }
+          }
         } else {
           // No valid session - this is expected for non-authenticated users
         }
@@ -119,6 +177,10 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Clear token from memory
     tokenManager.clearToken();
+    // Clear role preference
+    roleManager.clearActiveRole();
+    // Clear organization preference
+    organizationManager.clearActiveOrganization();
 
     // Clear all state
     setAccessToken("");
@@ -126,16 +188,80 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     setOrgs([]);
     setActiveOrg(null);
     setIsAuthenticated(false);
+    setActiveRole(null);
+    setIsActingAsRole(false);
 
     // Redirect to home page after logout
     router.push("/");
   }, [router]);
 
-  useEffect(() => {
-    if (orgs.length > 0) {
-      setActiveOrg(orgs[0]);
+  const switchOrganization = useCallback(async (org: OrgMemberInfoClass) => {
+    // Save to localStorage
+    organizationManager.setActiveOrganization(org.orgId, org.orgName, org.userRole);
+    
+    // Clear any role switching when changing organizations
+    roleManager.clearActiveRole();
+    setActiveRole(null);
+    setIsActingAsRole(false);
+    
+    // Update state
+    setActiveOrg(org);
+    
+    // Clear token to force refresh with new organization context
+    tokenManager.clearToken();
+    
+    // Get new token for the new organization
+    const newToken = await tokenManager.getAccessToken(org.orgId, org.userRole as OrganizationRole);
+    
+    if (newToken) {
+      setAccessToken(newToken);
     }
-  }, [orgs]);
+  }, []);
+
+  const toggleActiveRole = useCallback(async () => {
+    if (!activeOrg || activeOrg.userRole !== OrganizationRole.Admin) {
+      return; // Only admins can toggle role
+    }
+
+    if (isActingAsRole) {
+      // Switch back to admin
+      roleManager.clearActiveRole();
+      setActiveRole(null);
+      setIsActingAsRole(false);
+    } else {
+      // Switch to member
+      roleManager.setActiveRole(activeOrg.orgId, OrganizationRole.Member);
+      setActiveRole(OrganizationRole.Member);
+      setIsActingAsRole(true);
+    }
+
+    // Clear token to force refresh with new role
+    tokenManager.clearToken();
+    
+    // Get new token with updated role
+    const newToken = await tokenManager.getAccessToken(
+      activeOrg.orgId,
+      activeOrg.userRole as OrganizationRole
+    );
+    
+    if (newToken) {
+      setAccessToken(newToken);
+    }
+  }, [activeOrg, isActingAsRole]);
+
+  useEffect(() => {
+    if (orgs.length > 0 && !activeOrg) {
+      // Set the first org as active if none is set
+      const orgToSet = orgs[0];
+      setActiveOrg(orgToSet);
+      // Save to localStorage
+      organizationManager.setActiveOrganization(
+        orgToSet.orgId,
+        orgToSet.orgName,
+        orgToSet.userRole
+      );
+    }
+  }, [orgs, activeOrg]);
 
   // Redirect to login page if not authenticated
   useEffect(() => {
@@ -185,8 +311,12 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         orgs,
         activeOrg,
         setActiveOrg,
+        switchOrganization,
         accessToken,
         logout: handleLogout,
+        activeRole,
+        toggleActiveRole,
+        isActingAsRole,
       }}
     >
       {children}

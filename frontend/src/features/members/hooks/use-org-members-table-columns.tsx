@@ -20,11 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 const columnHelper = createColumnHelper<OrganizationUser>();
 
@@ -63,18 +58,10 @@ export function useOrgMembersTableColumns({
           cell: (info) => {
             const member = info.row.original;
             const isCurrentUser = member.user_id === user.userId;
-            const isOwner = member.role === "Owner";
-            const isLastOwner =
-              isOwner &&
-              info.table
-                .getCoreRowModel()
-                .rows.filter((row) => row.original.role === "Owner").length ===
-                1;
 
             const menuItem = (
               <DropdownMenuItem
                 className="text-red-600 focus:text-red-600"
-                disabled={isLastOwner}
                 onSelect={() => {
                   setDialogState({
                     memberId: member.user_id,
@@ -97,18 +84,7 @@ export function useOrgMembersTableColumns({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {isLastOwner ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>{menuItem}</div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Cannot remove the last owner</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      menuItem
-                    )}
+                    {menuItem}
                   </DropdownMenuContent>
                 </DropdownMenu>
 

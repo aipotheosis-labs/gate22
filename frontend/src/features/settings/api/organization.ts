@@ -6,7 +6,7 @@ export async function listOrganizationUsers(
   orgId: string,
 ): Promise<OrganizationUser[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/users`, {
+  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/members`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "X-ACI-ORG-ID": orgId,
@@ -17,7 +17,25 @@ export async function listOrganizationUsers(
     throw new Error("Failed to fetch organization users");
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // Transform backend data to match frontend expectations
+  return data.map((member: OrganizationUser) => {
+    // Parse name into first and last name
+    const nameParts = member.name?.split(' ') || [];
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    return {
+      user_id: member.user_id,
+      email: member.email,
+      role: member.role,
+      name: member.name,
+      created_at: member.created_at,
+      first_name: firstName,
+      last_name: lastName,
+    };
+  });
 }
 
 export async function inviteToOrganization(
@@ -27,7 +45,7 @@ export async function inviteToOrganization(
   role: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/invite-user`, {
+  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/invite`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -48,7 +66,7 @@ export async function removeUser(
   userId: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/users/${userId}`, {
+  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/members/${userId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${accessToken}`,

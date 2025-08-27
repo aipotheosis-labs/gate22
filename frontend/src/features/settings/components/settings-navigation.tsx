@@ -11,8 +11,8 @@ interface SettingsNavItem {
 
 const settingsNavItems: SettingsNavItem[] = [
   {
-    title: "Account",
-    href: "/settings",
+    title: "Organization",
+    href: "/settings/organization",
   },
   {
     title: "Teams",

@@ -5,6 +5,7 @@ import {
   UseMutationOptions,
 } from "@tanstack/react-query";
 import { tokenManager } from "./token-manager";
+import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 // Get API base URL from environment
 export const getApiBaseUrl = () => {
@@ -70,13 +71,18 @@ export async function fetcher<T = unknown>(
 }
 
 // Fetcher with authentication and automatic token refresh
-export function fetcherWithAuth<T = unknown>(token?: string) {
+export function fetcherWithAuth<T = unknown>(
+  token?: string,
+  organizationId?: string,
+  userRole?: string,
+) {
   return async (
     endpoint: string,
     options?: RequestInit & { params?: Record<string, string> },
   ): Promise<T> => {
     // Use provided token or get from token manager (which handles refresh automatically)
-    const validToken = token || (await tokenManager.getAccessToken());
+    // Pass organization context for role-aware token generation
+    const validToken = token || (await tokenManager.getAccessToken(organizationId, userRole as OrganizationRole));
     
     if (!validToken) {
       throw new Error("No valid authentication token");
@@ -108,7 +114,7 @@ export function fetcherWithAuth<T = unknown>(token?: string) {
     // Try once more with a fresh token
     if (response.status === 401) {
       tokenManager.clearToken(); // Clear the stale token
-      const freshToken = await tokenManager.getAccessToken();
+      const freshToken = await tokenManager.getAccessToken(organizationId, userRole as OrganizationRole);
       if (freshToken) {
         response = await makeRequest(freshToken);
       }
@@ -133,19 +139,23 @@ export function useApiQuery<T = unknown>(
   key: string | string[],
   endpoint: string,
   token?: string,
-  options?: Omit<UseQueryOptions<T>, "queryKey" | "queryFn">,
+  options?: Omit<UseQueryOptions<T>, "queryKey" | "queryFn"> & {
+    organizationId?: string;
+    userRole?: string;
+  },
 ) {
   const queryKey = Array.isArray(key) ? key : [key];
+  const { organizationId, userRole, ...queryOptions } = options || {};
 
   return useQuery<T>({
     queryKey,
     queryFn: () => {
       if (token) {
-        return fetcherWithAuth<T>(token)(endpoint);
+        return fetcherWithAuth<T>(token, organizationId, userRole)(endpoint);
       }
       return fetcher<T>(endpoint);
     },
-    ...options,
+    ...queryOptions,
   });
 }
 
@@ -161,28 +171,32 @@ export function useApiMutation<TData = unknown, TVariables = unknown>(
 }
 
 // Helper to create authenticated API calls
-export const createAuthenticatedRequest = (token?: string) => ({
+export const createAuthenticatedRequest = (
+  token?: string,
+  organizationId?: string,
+  userRole?: string,
+) => ({
   get: <T = unknown>(endpoint: string, params?: Record<string, string>) =>
-    fetcherWithAuth<T>(token)(endpoint, { method: "GET", params }),
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, { method: "GET", params }),
 
   post: <T = unknown>(endpoint: string, data?: unknown) =>
-    fetcherWithAuth<T>(token)(endpoint, {
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   patch: <T = unknown>(endpoint: string, data?: unknown) =>
-    fetcherWithAuth<T>(token)(endpoint, {
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   put: <T = unknown>(endpoint: string, data?: unknown) =>
-    fetcherWithAuth<T>(token)(endpoint, {
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     }),
 
   delete: <T = unknown>(endpoint: string) =>
-    fetcherWithAuth<T>(token)(endpoint, { method: "DELETE" }),
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, { method: "DELETE" }),
 });
