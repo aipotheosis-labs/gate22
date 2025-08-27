@@ -133,11 +133,6 @@ export function UserProfileDropdown() {
                   <span className="text-xs">Member</span>
                 </Button>
               </div>
-              {isActingAsRole && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Viewing as member
-                </p>
-              )}
             </div>
             <DropdownMenuSeparator />
           </>

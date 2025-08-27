@@ -10,6 +10,8 @@ export interface Team {
   team_id: string;
   name: string;
   description?: string;
+  member_count?: number;
+  status?: "active" | "inactive";
   created_at: string;
 }
 

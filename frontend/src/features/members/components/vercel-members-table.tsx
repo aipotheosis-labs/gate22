@@ -19,14 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Search } from "lucide-react";
 
 interface VercelMembersTableProps {
   refreshKey?: number;
@@ -41,7 +34,6 @@ export function VercelMembersTable({
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   const fetchMembers = useMemo(
     () => async () => {
@@ -92,22 +84,6 @@ export function VercelMembersTable({
       return matchesSearch && matchesRole;
     });
   }, [members, searchQuery, roleFilter]);
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedMembers(filteredMembers.map((m) => m.user_id));
-    } else {
-      setSelectedMembers([]);
-    }
-  };
-
-  const handleSelectMember = (userId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedMembers([...selectedMembers, userId]);
-    } else {
-      setSelectedMembers(selectedMembers.filter((id) => id !== userId));
-    }
-  };
 
   const getInitials = (
     firstName?: string,
@@ -174,21 +150,6 @@ export function VercelMembersTable({
       </div>
 
       <div className="border rounded-lg">
-        <div className="p-4 border-b bg-muted/50">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={
-                selectedMembers.length === filteredMembers.length &&
-                filteredMembers.length > 0
-              }
-              onCheckedChange={handleSelectAll}
-            />
-            <span className="text-sm text-muted-foreground">
-              Select all ({filteredMembers.length})
-            </span>
-          </div>
-        </div>
-
         <div className="divide-y">
           {filteredMembers.map((member, index) => {
             if (!member) return null;
@@ -203,12 +164,6 @@ export function VercelMembersTable({
                 className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <Checkbox
-                    checked={selectedMembers.includes(member.user_id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectMember(member.user_id, checked as boolean)
-                    }
-                  />
                   <Avatar className="h-10 w-10">
                     <AvatarFallback
                       className={`${getAvatarColor(member.user_id)} text-white`}
@@ -232,30 +187,6 @@ export function VercelMembersTable({
                   <span className="text-sm text-muted-foreground">
                     {member.role === "admin" ? "Admin" : member.role === "member" ? "Member" : member.role}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Manage Access
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleRemove(member.user_id)}
-                        className="text-destructive"
-                      >
-                        {member.user_id === user?.userId
-                          ? "Leave Organization"
-                          : "Remove Member"}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </div>
             );

@@ -14,18 +14,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Check, Search, UserPlus } from "lucide-react";
+import { Check, ChevronDown, UserPlus, Users } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 interface AddTeamMemberDialogProps {
   teamId: string;
@@ -50,8 +56,8 @@ export function AddTeamMemberDialog({
 }: AddTeamMemberDialogProps) {
   const { accessToken, activeOrg } = useMetaInfo();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [comboboxOpen, setComboboxOpen] = useState(false);
 
   // Fetch organization members
   const { data: orgMembers, isLoading } = useQuery({
@@ -101,8 +107,7 @@ export function AddTeamMemberDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team-members", activeOrg.orgId, teamId] });
       toast.success("Member added successfully");
-      setSelectedUserId(null);
-      setSearchQuery("");
+      setSelectedUserId("");
       onSuccess?.();
       onOpenChange(false);
     },
@@ -129,13 +134,10 @@ export function AddTeamMemberDialog({
       .slice(0, 2);
   };
 
-  // Filter out team members and apply search
+  // Filter out team members
   const availableMembers = orgMembers?.filter((member) => {
     const isNotInTeam = !teamMembers?.some((tm) => tm.user_id === member.user_id);
-    const matchesSearch = 
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchQuery.toLowerCase());
-    return isNotInTeam && matchesSearch;
+    return isNotInTeam;
   }) || [];
 
   const selectedMember = availableMembers.find((m) => m.user_id === selectedUserId);
@@ -146,79 +148,111 @@ export function AddTeamMemberDialog({
         <DialogHeader>
           <DialogTitle>Add Team Member</DialogTitle>
           <DialogDescription>
-            Select a member from your organization to add to this team
+            Search and select a member from your organization to add to this team
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Search Organization Members</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="py-4 text-center text-sm text-muted-foreground">
-              Loading organization members...
-            </div>
-          ) : (
-            <div className="border rounded-md max-h-60 overflow-y-auto">
-              <Command>
-                <CommandList>
-                  {availableMembers.length === 0 ? (
-                    <CommandEmpty>
-                      {searchQuery
-                        ? "No members found matching your search"
-                        : "No available members to add"}
-                    </CommandEmpty>
+            <Label htmlFor="member-select">Select Member</Label>
+            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="member-select"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className="w-full justify-between font-normal"
+                  disabled={isLoading || availableMembers.length === 0}
+                >
+                  {selectedMember ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(selectedMember.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{selectedMember.name}</span>
+                      <span className="text-muted-foreground text-sm">
+                        ({selectedMember.email})
+                      </span>
+                    </div>
                   ) : (
-                    <CommandGroup>
-                      {availableMembers.map((member) => (
-                        <CommandItem
-                          key={member.user_id}
-                          value={member.user_id}
-                          onSelect={() => setSelectedUserId(member.user_id)}
-                          className="flex items-center justify-between cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">
-                                {getInitials(member.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">
-                                {member.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {member.email}
-                              </span>
-                            </div>
-                          </div>
-                          {selectedUserId === member.user_id && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
+                    <span className="text-muted-foreground">
+                      {isLoading ? "Loading members..." : "Choose a member to add..."}
+                    </span>
                   )}
-                </CommandList>
-              </Command>
-            </div>
-          )}
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0" align="start">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search by name or email..." 
+                    className="h-9"
+                  />
+                  <CommandList>
+                    {availableMembers.length === 0 ? (
+                      <CommandEmpty>
+                        <div className="flex flex-col items-center py-4">
+                          <Users className="h-8 w-8 mb-2 text-muted-foreground/50" />
+                          <p className="text-sm text-muted-foreground">No available members to add</p>
+                        </div>
+                      </CommandEmpty>
+                    ) : (
+                      <>
+                        <CommandEmpty>No member found.</CommandEmpty>
+                        <CommandGroup>
+                          {availableMembers.map((member) => (
+                            <CommandItem
+                              key={member.user_id}
+                              value={member.user_id}
+                              keywords={[member.name, member.email]}
+                              onSelect={(currentValue) => {
+                                setSelectedUserId(currentValue === selectedUserId ? "" : currentValue);
+                                setComboboxOpen(false);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                <Avatar className="h-7 w-7">
+                                  <AvatarFallback className="text-xs">
+                                    {getInitials(member.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">
+                                    {member.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {member.email}
+                                  </span>
+                                </div>
+                              </div>
+                              <Check
+                                className={cn(
+                                  "ml-auto h-4 w-4",
+                                  selectedUserId === member.user_id
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
 
           {selectedMember && (
             <div className="flex items-center gap-3 p-3 bg-secondary rounded-md">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
               <div className="flex-1">
-                <p className="text-sm font-medium">Selected: {selectedMember.name}</p>
+                <p className="text-sm font-medium">Ready to add: {selectedMember.name}</p>
                 <p className="text-xs text-muted-foreground">{selectedMember.email}</p>
               </div>
             </div>
@@ -229,8 +263,7 @@ export function AddTeamMemberDialog({
           <Button
             variant="outline"
             onClick={() => {
-              setSelectedUserId(null);
-              setSearchQuery("");
+              setSelectedUserId("");
               onOpenChange(false);
             }}
             disabled={addMemberMutation.isPending}
