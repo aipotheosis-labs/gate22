@@ -5,8 +5,12 @@ from aci.common.db.sql_models import User
 from aci.common.enums import OrganizationRole
 
 
-def test_get_profile(test_client: TestClient, dummy_admin: User) -> None:
-    response = test_client.get("/v1/users/me/profile")
+def test_get_profile(
+    test_client: TestClient, dummy_admin: User, dummy_access_token_no_orgs: str
+) -> None:
+    response = test_client.get(
+        "/v1/users/me/profile", headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"}
+    )
     assert response.status_code == 200
     assert response.json() == {
         "user_id": str(dummy_admin.id),
@@ -23,12 +27,18 @@ def test_get_profile(test_client: TestClient, dummy_admin: User) -> None:
 
 
 def test_get_profile_non_existence_user(
-    db_session: Session, test_client: TestClient, dummy_admin: User
+    test_client: TestClient,
+    db_session: Session,
+    dummy_admin: User,
+    dummy_access_token_no_orgs: str,
 ) -> None:
     # Remove the user
     db_session.query(User).filter(User.id == dummy_admin.id).delete()
     db_session.commit()
 
-    response = test_client.get("/v1/users/me/profile")
+    response = test_client.get(
+        "/v1/users/me/profile", headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"}
+    )
+    print(response.json())
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}

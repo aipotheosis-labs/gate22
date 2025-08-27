@@ -37,7 +37,7 @@ def _throw_if_not_permitted(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
-@router.post("/", response_model=OrganizationInfo, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=OrganizationInfo, status_code=status.HTTP_201_CREATED)
 async def create_organization(
     context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
     request: CreateOrganizationRequest,
@@ -46,6 +46,7 @@ async def create_organization(
 
     # Check if organization name already been used
     if crud.organizations.get_organization_by_name(context.db_session, request.name):
+        logger.error(f"Organization name {request.name} already been used")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Organization name already been used",
