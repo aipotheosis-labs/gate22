@@ -242,6 +242,7 @@ async def issue_token(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
+    act_as: ActAsInfo | None
     if input.act_as:
         # Check if user is a member of the requested organization
         membership = crud.organizations.get_organization_membership(
