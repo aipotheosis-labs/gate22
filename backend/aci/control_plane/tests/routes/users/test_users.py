@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import User
-from aci.common.schemas.users import UserInfo
+from aci.common.schemas.user import UserInfo
 
 
 @pytest.mark.parametrize(

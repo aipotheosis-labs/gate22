@@ -6,7 +6,7 @@ from aci.common.db import crud
 from aci.common.db.sql_models import Organization, User
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.organizations import (
+from aci.common.schemas.organization import (
     CreateOrganizationRequest,
     OrganizationInfo,
     OrganizationMembershipInfo,
