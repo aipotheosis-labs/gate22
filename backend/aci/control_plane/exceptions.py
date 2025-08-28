@@ -68,3 +68,16 @@ class MCPServerConfigurationNotFound(ControlPlaneException):
             message=message,
             error_code=status.HTTP_404_NOT_FOUND,
         )
+
+
+class NotPermittedError(ControlPlaneException):
+    """
+    Exception raised when a user is not permitted to act as the requested organization and role.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Not permitted",
+            message=message,
+            error_code=status.HTTP_403_FORBIDDEN,
+        )
