@@ -101,10 +101,12 @@ def list_mcp_servers(
     offset: int | None = None,
     limit: int | None = None,
 ) -> list[MCPServer]:
-    query = db_session.query(MCPServer).order_by(MCPServer.name.asc())
+    statement = select(MCPServer).order_by(MCPServer.name.asc())
+
     if offset is not None:
-        query = query.offset(offset)
+        statement = statement.offset(offset)
     if limit is not None:
-        query = query.limit(limit)
-    servers = query.all()
+        statement = statement.limit(limit)
+
+    servers = list(db_session.execute(statement).scalars().all())
     return servers

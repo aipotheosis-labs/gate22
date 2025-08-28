@@ -51,7 +51,7 @@ def test_list_mcp_server_configurations(
         params=params,
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
+    if access_token_fixture == "dummy_access_token_no_orgs":
         assert response.status_code == 403
         return
 

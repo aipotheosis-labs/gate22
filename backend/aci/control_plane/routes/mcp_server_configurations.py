@@ -152,7 +152,7 @@ async def get_mcp_server_configuration(
     )
 
 
-@router.delete("/{mcp_server_configuration_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{mcp_server_configuration_id}", status_code=status.HTTP_200_OK)
 async def delete_mcp_server_configuration(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     mcp_server_configuration_id: UUID,

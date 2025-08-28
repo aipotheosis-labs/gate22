@@ -86,6 +86,7 @@ def get_mcp_server_configurations(
             MCPServerConfiguration.allowed_teams.overlap([team.id for team in org_teams]),
         )
 
+    statement = statement.order_by(MCPServerConfiguration.created_at.desc())
     if offset is not None:
         statement = statement.offset(offset)
     if limit is not None:
