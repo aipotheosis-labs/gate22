@@ -22,7 +22,7 @@ logger = get_logger(__name__)
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("duplicate_name", [True, False])
@@ -78,7 +78,7 @@ def test_create_team(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("has_team", [True, False])
@@ -104,7 +104,7 @@ def test_list_teams(
     )
 
     # Everyone in the org can list team
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         assert response.status_code == 403
         return
 
@@ -126,7 +126,7 @@ def test_list_teams(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("is_self_team", [True, False])
@@ -163,7 +163,7 @@ def test_list_team_members(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         assert response.status_code == 403
         return
 
@@ -185,7 +185,7 @@ def test_list_team_members(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("is_user_in_org", [True, False])
@@ -222,7 +222,7 @@ def test_add_team_member(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         assert response.status_code == 403
         return
 
@@ -254,7 +254,7 @@ def test_add_team_member(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("remove_self", [True, False])
@@ -306,7 +306,7 @@ def test_remove_team_member(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         assert response.status_code == 403
         return
 

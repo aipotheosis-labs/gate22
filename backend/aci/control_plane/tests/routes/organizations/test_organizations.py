@@ -83,7 +83,7 @@ def test_create_organization_with_existing_name(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 def test_list_organization_members(
@@ -101,7 +101,7 @@ def test_list_organization_members(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         assert response.status_code == 403
         return
 
@@ -147,7 +147,7 @@ def test_list_organization_members(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("remove_member_role", [OrganizationRole.MEMBER, OrganizationRole.ADMIN])
@@ -187,7 +187,7 @@ def test_remove_organization_member(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         # Non-member cannot leave the organization
         assert response.status_code == 403
         return
@@ -220,7 +220,7 @@ def test_remove_organization_member(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("initial_admin_count", [1, 2])
@@ -259,7 +259,7 @@ def test_leave_organization(
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
-    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_non_member"]:
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
         # Non-member cannot leave the organization
         assert response.status_code == 403
         return
@@ -286,7 +286,7 @@ def test_leave_organization(
         "dummy_access_token_admin",
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_non_member",
+        "dummy_access_token_another_org",
     ],
 )
 @pytest.mark.parametrize("change_self", [True, False])

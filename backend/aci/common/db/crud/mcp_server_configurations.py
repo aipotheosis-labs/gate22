@@ -92,3 +92,12 @@ def get_mcp_server_configurations(
         statement = statement.limit(limit)
 
     return list(db_session.execute(statement).scalars().all())
+
+
+def delete_mcp_server_configuration(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+) -> None:
+    db_session.query(MCPServerConfiguration).filter(
+        MCPServerConfiguration.id == mcp_server_configuration_id
+    ).delete()

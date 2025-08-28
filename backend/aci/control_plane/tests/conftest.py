@@ -49,7 +49,7 @@ def test_client(db_session: Session) -> Generator[TestClient, None, None]:
 # - dummy_access_token_admin_act_as_member
 # - dummy_access_token_member
 # - dummy_access_token_no_orgs (without act as)
-# - dummy_access_token_non_member (act as other organization)
+# - dummy_access_token_another_org (act as other organization)
 # ------------------------------------------------------------
 @pytest.fixture(scope="function")
 def dummy_access_token_admin(dummy_admin: User) -> str:
@@ -96,7 +96,7 @@ def dummy_access_token_no_orgs(dummy_user_without_org: User) -> str:
 
 
 @pytest.fixture(scope="function")
-def dummy_access_token_non_member(db_session: Session) -> str:
+def dummy_access_token_another_org(db_session: Session) -> str:
     """
     Access token of a user acted as other organization. This user has no membership in
     `dummy_organization`.

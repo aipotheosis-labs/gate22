@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import TypeAdapter
 
 from aci.common.db import crud
@@ -15,6 +15,7 @@ from aci.common.schemas.mcp_server_configuration import (
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
+from aci.control_plane import rbac
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -25,12 +26,14 @@ async def create_mcp_server_configuration(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: MCPServerConfigurationCreate,
 ) -> MCPServerConfigurationPublic:
-    # TODO: is the acl logic correct? can we abstract this to a acl module for reuse?
     # TODO: check allowed_teams are actually in the org
     # TODO: check enabled_tools are actually in the mcp server
-    if context.act_as is None or context.act_as.role != OrganizationRole.ADMIN:
-        logger.error("User does not have admin role")
-        raise HTTPException(status_code=403, detail="Forbidden")
+    rbac.check_permission(
+        context.act_as,
+        requested_organization_id=context.act_as.organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
 
     mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         context.db_session, body.mcp_server_id, throw_error_if_not_found=False
@@ -102,3 +105,79 @@ async def list_mcp_server_configurations(
         ],
         offset=pagination_params.offset,
     )
+
+
+@router.get("/{mcp_server_configuration_id}", response_model=MCPServerConfigurationPublic)
+async def get_mcp_server_configuration(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_configuration_id: UUID,
+) -> MCPServerConfigurationPublic:
+    mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
+        context.db_session, mcp_server_configuration_id, throw_error_if_not_found=False
+    )
+    if mcp_server_configuration is None:
+        raise HTTPException(status_code=404, detail="MCP server configuration not found")
+
+    # Check if the MCP server configuration is under the user's org
+    if mcp_server_configuration.organization_id != context.act_as.organization_id:
+        logger.info(
+            f"MCP server configuration {mcp_server_configuration_id} is not under the user's org"
+        )
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    elif context.act_as.role == OrganizationRole.MEMBER:
+        # If user is member, check if the MCP server configuration's allowed teams contains the
+        # user's team
+        user_teams = crud.teams.get_teams_by_user_id(
+            db_session=context.db_session,
+            organization_id=context.act_as.organization_id,
+            user_id=context.user_id,
+        )
+        user_team_ids = [team.id for team in user_teams]
+
+        # Check if any of the user's team is allowed by the MCP server configuration
+        if not any(team_id in user_team_ids for team_id in mcp_server_configuration.allowed_teams):
+            logger.info(
+                f"None of the user's team is allowed in MCP Server"
+                f"Configuration {mcp_server_configuration_id}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail=f"None of the user's team is allowed in MCP "
+                f"Server Configuration {mcp_server_configuration_id}",
+            )
+
+    return MCPServerConfigurationPublic.model_validate(
+        mcp_server_configuration, from_attributes=True
+    )
+
+
+@router.delete("/{mcp_server_configuration_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_mcp_server_configuration(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_configuration_id: UUID,
+) -> None:
+    mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
+        context.db_session, mcp_server_configuration_id, throw_error_if_not_found=True
+    )
+
+    if mcp_server_configuration is not None:
+        # Check if the user is an admin and is acted as the organization_id of the MCP server
+        # configuration
+        rbac.check_permission(
+            context.act_as,
+            requested_organization_id=mcp_server_configuration.organization_id,
+            required_role=OrganizationRole.ADMIN,
+            throw_error_if_not_permitted=True,
+        )
+
+        crud.mcp_server_configurations.delete_mcp_server_configuration(
+            context.db_session, mcp_server_configuration_id
+        )
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail=f"MCP Server Configuration {mcp_server_configuration_id} not found",
+        )
+
+    context.db_session.commit()
