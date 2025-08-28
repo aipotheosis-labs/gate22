@@ -63,7 +63,7 @@ class MCPServerPublic(BaseModel):
     updated_at: datetime
 
 
-class MCPServerBasic(BaseModel):
+class MCPServerPublicBasic(BaseModel):
     id: UUID
     name: str
     url: str

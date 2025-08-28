@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from aci.common.enums import AuthType
+from aci.common.schemas.mcp_server import MCPServerPublicBasic
 
 
 class MCPServerConfigurationCreate(BaseModel):
@@ -43,3 +44,9 @@ class MCPServerConfigurationPublic(BaseModel):
     updated_at: datetime
 
     # TODO: scrub sensitive data from whitelabeling overrides if support in the future
+
+
+class MCPServerConfigurationPublicBasic(BaseModel):
+    id: UUID
+    mcp_server_id: UUID
+    mcp_server: MCPServerPublicBasic

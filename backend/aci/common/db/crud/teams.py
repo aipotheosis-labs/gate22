@@ -88,3 +88,19 @@ def get_team_members(
         .order_by(TeamMembership.created_at.desc())
         .all()
     )
+
+
+def get_teams_by_user_id(
+    db_session: Session,
+    organization_id: UUID,
+    user_id: UUID,
+) -> list[Team]:
+    return (
+        db_session.query(Team)
+        .filter(
+            Team.organization_id == organization_id,
+            Team.memberships.any(TeamMembership.user_id == user_id),
+        )
+        .order_by(Team.created_at.desc())
+        .all()
+    )

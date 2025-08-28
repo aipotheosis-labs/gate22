@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
-from aci.common.schemas.mcp_server import MCPServerBasic, MCPServerPublic
+from aci.common.schemas.mcp_server import MCPServerPublic, MCPServerPublicBasic
 from aci.common.schemas.mcp_tool import MCPToolPublic
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
@@ -50,11 +50,11 @@ async def get_mcp_server(
     return mcp_server_public
 
 
-@router.get("")
+@router.get("", response_model=PaginationResponse[MCPServerPublicBasic])
 async def list_mcp_servers(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     pagination_params: Annotated[PaginationParams, Depends()],
-) -> PaginationResponse[MCPServerBasic]:
+) -> PaginationResponse[MCPServerPublicBasic]:
     # TODO: support search by keywords / categories (currently filtering is done in Frontend)
 
     mcp_servers = crud.mcp_servers.list_mcp_servers(
@@ -62,7 +62,7 @@ async def list_mcp_servers(
     )
     return PaginationResponse(
         data=[
-            MCPServerBasic.model_validate(mcp_server, from_attributes=True)
+            MCPServerPublicBasic.model_validate(mcp_server, from_attributes=True)
             for mcp_server in mcp_servers
         ],
         offset=pagination_params.offset,

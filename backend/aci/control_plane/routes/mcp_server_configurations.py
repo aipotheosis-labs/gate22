@@ -11,6 +11,7 @@ from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationCreate,
     MCPServerConfigurationPublic,
 )
+from aci.common.schemas.pagination import PaginationParams
 from aci.control_plane import dependencies as deps
 
 logger = get_logger(__name__)
@@ -58,3 +59,33 @@ async def create_mcp_server_configuration(
     return MCPServerConfigurationPublic.model_validate(
         mcp_server_configuration, from_attributes=True
     )
+
+
+@router.get("", response_model=list[MCPServerConfigurationPublic])
+async def list_mcp_server_configurations(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    pagination_params: Annotated[PaginationParams, Depends()],
+) -> list[MCPServerConfigurationPublic]:
+    # Admin can see all MCP server configurations under the org.
+    if context.act_as.role == OrganizationRole.ADMIN:
+        # Admin can see all MCP server configurations under the org
+        mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
+            context.db_session,
+            context.act_as.organization_id,
+        )
+    elif context.act_as.role == OrganizationRole.MEMBER:
+        # Member can see MCP server configured for the teams that the member belongs to.
+        org_teams = crud.teams.get_teams_by_user_id(
+            db_session=context.db_session,
+            organization_id=context.act_as.organization_id,
+            user_id=context.user_id,
+        )
+        mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
+            context.db_session,
+            context.act_as.organization_id,
+            team_ids=[team.id for team in org_teams],
+        )
+    return [
+        MCPServerConfigurationPublic.model_validate(mcp_server_configuration, from_attributes=True)
+        for mcp_server_configuration in mcp_server_configurations
+    ]

@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from aci.common.db.sql_models import MCPServerConfiguration
+from aci.common.db.sql_models import MCPServerConfiguration, Team
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 
 
@@ -60,3 +60,34 @@ def get_mcp_server_configuration_by_id(
     else:
         mcp_server_configuration = db_session.execute(statement).scalar_one_or_none()
         return mcp_server_configuration
+
+
+def get_mcp_server_configurations(
+    db_session: Session,
+    organization_id: UUID,
+    team_ids: list[UUID] | None = None,
+    offset: int | None = None,
+    limit: int | None = None,
+) -> list[MCPServerConfiguration]:
+    statement = select(MCPServerConfiguration).where(
+        MCPServerConfiguration.organization_id == organization_id,
+    )
+
+    if team_ids is not None:
+        # Verify the team ids are in the org
+        select_team_statement = select(Team).where(
+            Team.id.in_(team_ids), Team.organization_id == organization_id
+        )
+        org_team_ids = list(db_session.execute(select_team_statement).scalars().all())
+
+        # overlap() is not type hinted but is available.
+        statement = statement.where(
+            MCPServerConfiguration.allowed_teams.overlap(org_team_ids),
+        )
+
+    if offset is not None:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
+
+    return list(db_session.execute(statement).scalars().all())
