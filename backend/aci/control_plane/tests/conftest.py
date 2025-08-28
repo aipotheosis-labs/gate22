@@ -15,8 +15,14 @@ from aci.common.test_utils import clear_database, create_test_db_session
 from aci.control_plane import dependencies as deps
 from aci.control_plane.main import app as fastapi_app
 from aci.control_plane.routes.auth import _sign_token
+from aci.control_plane.tests import helper
 
 logger = get_logger(__name__)
+
+
+# call this one time for entire tests because it's slow and costs money (negligible) as it needs
+# to generate embeddings using OpenAI for each app and function
+dummy_apps_and_functions_to_be_inserted_into_db = helper.prepare_dummy_apps_and_functions()
 
 
 @pytest.fixture(scope="function")

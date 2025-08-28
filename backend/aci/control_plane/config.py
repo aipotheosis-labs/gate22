@@ -45,3 +45,6 @@ DB_HOST = check_and_get_env_variable("CONTROL_PLANE_DB_HOST")
 DB_PORT = check_and_get_env_variable("CONTROL_PLANE_DB_PORT")
 DB_NAME = check_and_get_env_variable("CONTROL_PLANE_DB_NAME")
 DB_FULL_URL = construct_db_url(DB_SCHEME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
+
+# LLM
+OPENAI_API_KEY = check_and_get_env_variable("CONTROL_PLANE_OPENAI_API_KEY")
