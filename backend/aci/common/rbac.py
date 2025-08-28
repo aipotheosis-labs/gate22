@@ -34,8 +34,6 @@ def check_permission(
         logger.error(f"NotPermittedError: {e.message}")
         if throw_error_if_not_permitted:
             raise e
-        else:
-            logger.error(f"NotPermittedError: {e.message}")
         return False
 
     return True
