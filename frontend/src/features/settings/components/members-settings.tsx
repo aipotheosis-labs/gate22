@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UserPlus, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { VercelMembersTable } from "@/features/members/components/vercel-members-table";
 import { InviteMemberDialog } from "@/features/members/components/invite-member-dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,17 +19,11 @@ export function MembersSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Members</h2>
-          <p className="text-muted-foreground">
-            Manage organization members and invitations
-          </p>
-        </div>
-        <Button onClick={() => setInviteDialogOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Invite Member
-        </Button>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Members</h2>
+        <p className="text-muted-foreground">
+          Manage organization members and invitations
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

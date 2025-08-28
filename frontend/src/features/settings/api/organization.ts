@@ -8,8 +8,7 @@ export async function listOrganizationUsers(
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/members`, {
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "X-ACI-ORG-ID": orgId,
+      Authorization: `Bearer ${accessToken}`    
     },
   });
 

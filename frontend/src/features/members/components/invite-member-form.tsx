@@ -11,8 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
-import { inviteToOrganization } from "@/features/settings/api/organization";
-import { useMetaInfo } from "@/components/context/metainfo";
+import { useOrganizationMembers } from "@/features/members/hooks/use-organization-members";
 import { toast } from "sonner";
 import { Plus, Link2 } from "lucide-react";
 
@@ -21,10 +20,9 @@ interface InviteMemberFormProps {
 }
 
 export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
-  const { accessToken, activeOrg } = useMetaInfo();
+  const { inviteMemberAsync, isInviting } = useOrganizationMembers();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrganizationRole>(OrganizationRole.Admin);
-  const [isInviting, setIsInviting] = useState(false);
 
   const handleInvite = async () => {
     if (!email.trim()) {
@@ -38,23 +36,16 @@ export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
       return;
     }
 
-    setIsInviting(true);
     try {
-      await inviteToOrganization(
-        accessToken,
-        activeOrg.orgId,
-        email.trim(),
-        role,
-      );
-      toast.success(`Invitation sent to ${email}`);
+      await inviteMemberAsync({
+        email: email.trim(),
+        role: role,
+      });
       setEmail("");
       setRole(OrganizationRole.Admin);
       onSuccess?.();
-    } catch (error) {
-      console.error("Failed to invite user:", error);
-      toast.error("Failed to send invitation. Please try again.");
-    } finally {
-      setIsInviting(false);
+    } catch {
+      // Error handling is done in the hook
     }
   };
 

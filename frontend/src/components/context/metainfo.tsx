@@ -142,6 +142,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
           setAccessToken(token);
           setUser(user);
           setOrgs([org]);
+          setActiveOrg(org);
           setIsAuthenticated(true);
 
           // Save the active org to localStorage if it wasn't already stored

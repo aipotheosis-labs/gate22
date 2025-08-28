@@ -18,17 +18,17 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createTeam } from "@/features/teams/api/team";
 
-interface InviteTeamDialogProps {
+interface CreateTeamDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function InviteTeamDialog({
+export function CreateTeamDialog({
   open,
   onOpenChange,
   onSuccess,
-}: InviteTeamDialogProps) {
+}: CreateTeamDialogProps) {
   const { accessToken, activeOrg } = useMetaInfo();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +60,7 @@ export function InviteTeamDialog({
       onSuccess?.();
 
       // Navigate to the new team page
-      router.push(`/settings/teams/${newTeam.id}`);
+      router.push(`/settings/teams/${newTeam.team_id}`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to create team";

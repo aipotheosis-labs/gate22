@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { TeamsTable } from "./teams-table";
-import { InviteTeamDialog } from "./invite-team-dialog";
+import { CreateTeamDialog } from "./create-team-dialog";
 
 export function TeamsSettings() {
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleInviteSuccess = () => {
-    setInviteDialogOpen(false);
+  const handleCreateSuccess = () => {
+    setCreateDialogOpen(false);
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -24,7 +24,7 @@ export function TeamsSettings() {
             Manage organization teams and team memberships
           </p>
         </div>
-        <Button onClick={() => setInviteDialogOpen(true)}>
+        <Button onClick={() => setCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Team
         </Button>
@@ -32,10 +32,10 @@ export function TeamsSettings() {
 
       <TeamsTable refreshKey={refreshKey} />
 
-      <InviteTeamDialog
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        onSuccess={handleInviteSuccess}
+      <CreateTeamDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={handleCreateSuccess}
       />
     </div>
   );

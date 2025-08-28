@@ -41,7 +41,7 @@ export function OrganizationSettings() {
               Organization Information
             </h3>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="grid gap-2">
                 <Label htmlFor="org-id">Organization ID</Label>
                 <Input
@@ -60,9 +60,6 @@ export function OrganizationSettings() {
                   disabled
                   className="bg-muted"
                 />
-                <p className="text-sm text-muted-foreground">
-                  Organization name cannot be changed after creation
-                </p>
               </div>
 
               <div className="grid gap-2">

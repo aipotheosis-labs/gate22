@@ -26,7 +26,7 @@ export function useCreateTeam() {
         queryKey: QUERY_KEYS.TEAMS(activeOrg?.orgId || ""),
       });
       toast.success(UI_TEXT.TEAM.CREATE_SUCCESS(variables.name));
-      router.push(SETTINGS_ROUTES.TEAM_DETAIL(data.team_id));
+      router.push(SETTINGS_ROUTES.TEAMS);
     },
     onError: (error) => {
       console.error("Error creating team:", error);

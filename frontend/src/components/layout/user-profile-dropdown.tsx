@@ -19,7 +19,6 @@ import { useMetaInfo } from "@/components/context/metainfo";
 import {
   Settings,
   LogOut,
-  User,
   Sun,
   Moon,
   Monitor,
@@ -187,13 +186,6 @@ export function UserProfileDropdown() {
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={() => handleNavigation("/settings/profile")}
-            className="cursor-pointer hover:bg-accent transition-colors duration-150"
-          >
-            <User className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Profile</span>
-          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => handleNavigation("/settings")}
             className="cursor-pointer hover:bg-accent transition-colors duration-150"

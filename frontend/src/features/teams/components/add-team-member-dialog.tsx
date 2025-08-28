@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -46,6 +47,10 @@ interface OrganizationMember {
   email: string;
   role: string;
   created_at: string;
+}
+
+interface MemberWithStatus extends OrganizationMember {
+  isInTeam: boolean;
 }
 
 export function AddTeamMemberDialog({
@@ -136,14 +141,17 @@ export function AddTeamMemberDialog({
       .slice(0, 2);
   };
 
-  // Filter out team members
-  const availableMembers =
-    orgMembers?.filter((member) => {
-      const isNotInTeam = !teamMembers?.some(
-        (tm) => tm.user_id === member.user_id,
-      );
-      return isNotInTeam;
-    }) || [];
+  // Create a map of team member IDs for quick lookup
+  const teamMemberIds = new Set(teamMembers?.map((tm) => tm.user_id) || []);
+
+  // Don't filter out team members, but mark them as already in team
+  const membersWithStatus: MemberWithStatus[] = orgMembers?.map((member) => ({
+    ...member,
+    isInTeam: teamMemberIds.has(member.user_id),
+  })) || [];
+
+  // Only show members not in team for selection
+  const availableMembers = membersWithStatus.filter((m) => !m.isInTeam);
 
   const selectedMember = availableMembers.find(
     (m) => m.user_id === selectedUserId,
@@ -171,7 +179,7 @@ export function AddTeamMemberDialog({
                   role="combobox"
                   aria-expanded={comboboxOpen}
                   className="w-full justify-between font-normal"
-                  disabled={isLoading || availableMembers.length === 0}
+                  disabled={isLoading || membersWithStatus.length === 0}
                 >
                   {selectedMember ? (
                     <div className="flex items-center gap-2">
@@ -189,6 +197,8 @@ export function AddTeamMemberDialog({
                     <span className="text-muted-foreground">
                       {isLoading
                         ? "Loading members..."
+                        : availableMembers.length === 0
+                        ? "All members are already in team"
                         : "Choose a member to add..."}
                     </span>
                   )}
@@ -202,12 +212,12 @@ export function AddTeamMemberDialog({
                     className="h-9"
                   />
                   <CommandList>
-                    {availableMembers.length === 0 ? (
+                    {membersWithStatus.length === 0 ? (
                       <CommandEmpty>
                         <div className="flex flex-col items-center py-4">
                           <Users className="h-8 w-8 mb-2 text-muted-foreground/50" />
                           <p className="text-sm text-muted-foreground">
-                            No available members to add
+                            No members in organization
                           </p>
                         </div>
                       </CommandEmpty>
@@ -215,20 +225,27 @@ export function AddTeamMemberDialog({
                       <>
                         <CommandEmpty>No member found.</CommandEmpty>
                         <CommandGroup>
-                          {availableMembers.map((member) => (
+                          {membersWithStatus.map((member) => (
                             <CommandItem
                               key={member.user_id}
                               value={member.user_id}
                               keywords={[member.name, member.email]}
                               onSelect={(currentValue) => {
-                                setSelectedUserId(
-                                  currentValue === selectedUserId
-                                    ? ""
-                                    : currentValue,
-                                );
-                                setComboboxOpen(false);
+                                // Only allow selection if member is not already in team
+                                if (!member.isInTeam) {
+                                  setSelectedUserId(
+                                    currentValue === selectedUserId
+                                      ? ""
+                                      : currentValue,
+                                  );
+                                  setComboboxOpen(false);
+                                }
                               }}
-                              className="cursor-pointer"
+                              className={cn(
+                                "cursor-pointer",
+                                member.isInTeam && "opacity-50 cursor-not-allowed"
+                              )}
+                              disabled={member.isInTeam}
                             >
                               <div className="flex items-center gap-3 flex-1">
                                 <Avatar className="h-7 w-7">
@@ -237,22 +254,31 @@ export function AddTeamMemberDialog({
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-medium">
-                                    {member.name}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium">
+                                      {member.name}
+                                    </span>
+                                    {member.isInTeam && (
+                                      <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                        Already in team
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <span className="text-xs text-muted-foreground">
                                     {member.email}
                                   </span>
                                 </div>
                               </div>
-                              <Check
-                                className={cn(
-                                  "ml-auto h-4 w-4",
-                                  selectedUserId === member.user_id
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
+                              {!member.isInTeam && (
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    selectedUserId === member.user_id
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                              )}
                             </CommandItem>
                           ))}
                         </CommandGroup>

@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { OrganizationUser } from "@/features/settings/types/organization.types";
-import {
-  listOrganizationUsers,
-  // removeUser, // Kept for potential future use
-} from "@/features/settings/api/organization";
-import { useMetaInfo } from "@/components/context/metainfo";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
+import { useOrganizationMembers } from "@/features/members/hooks/use-organization-members";
 // import { useRouter } from "next/navigation"; // Kept for potential future use with handleRemove
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -27,31 +21,16 @@ interface VercelMembersTableProps {
 export function VercelMembersTable({
   refreshKey = 0,
 }: VercelMembersTableProps) {
-  const { accessToken, activeOrg } = useMetaInfo();
+  const { members = [], isLoading, refetch } = useOrganizationMembers();
   // const router = useRouter(); // Kept for potential future use with handleRemove
-  const [members, setMembers] = useState<OrganizationUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
-  const fetchMembers = useMemo(
-    () => async () => {
-      setLoading(true);
-      try {
-        const data = await listOrganizationUsers(accessToken, activeOrg.orgId);
-        setMembers(data);
-      } catch {
-        toast.error("Failed to load organization members");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accessToken, activeOrg.orgId],
-  );
-
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers, refreshKey]);
+    if (refreshKey > 0) {
+      refetch();
+    }
+  }, [refreshKey, refetch]);
 
   // Note: handleRemove is kept for potential future use
   // const handleRemove = async (userId: string) => {
@@ -124,7 +103,7 @@ export function VercelMembersTable({
     return colors[index];
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Loading members...</div>

@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UserPlus } from "lucide-react";
 import { VercelMembersTable } from "@/features/members/components/vercel-members-table";
 import { InviteMemberDialog } from "@/features/members/components/invite-member-dialog";
-import { toast } from "sonner";
 
 export default function MembersPage() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -18,19 +15,11 @@ export default function MembersPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
-  const handleInviteClick = () => {
-    toast.error("Member invitations are not supported yet");
-  };
-
   return (
     <div className="container mx-auto max-w-7xl px-6 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2">
         <h1 className="text-3xl font-semibold">Members</h1>
-        <Button onClick={handleInviteClick} className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Invite Member
-        </Button>
       </div>
       <p className="text-muted-foreground mb-8">
         Manage team members and invitations

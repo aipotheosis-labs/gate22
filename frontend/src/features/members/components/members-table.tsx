@@ -1,64 +1,30 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect } from "react";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { useOrgMembersTableColumns } from "@/features/members/hooks/use-org-members-table-columns";
-import { OrganizationUser } from "@/features/settings/types/organization.types";
-import {
-  listOrganizationUsers,
-  removeUser,
-} from "@/features/settings/api/organization";
-import { useMetaInfo } from "@/components/context/metainfo";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useOrganizationMembers } from "@/features/members/hooks/use-organization-members";
 
 interface MembersTableProps {
   refreshKey?: number;
 }
 
 export function MembersTable({ refreshKey = 0 }: MembersTableProps) {
-  const { accessToken, activeOrg, user } = useMetaInfo();
-  const router = useRouter();
-  const [members, setMembers] = useState<OrganizationUser[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchMembers = useMemo(
-    () => async () => {
-      setLoading(true);
-      try {
-        const data = await listOrganizationUsers(accessToken, activeOrg.orgId);
-        setMembers(data);
-      } catch {
-        toast.error("Failed to load organization members");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [accessToken, activeOrg.orgId],
-  );
+  const { members = [], isLoading, removeMember, refetch } = useOrganizationMembers();
 
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers, refreshKey]);
+    if (refreshKey > 0) {
+      refetch();
+    }
+  }, [refreshKey, refetch]);
 
   const handleRemove = async (userId: string) => {
-    try {
-      await removeUser(accessToken, activeOrg.orgId, userId);
-      toast.success("Member removed successfully");
-      fetchMembers();
-
-      // If the current user is leaving the organization
-      if (userId === user.userId) {
-        router.push("/mcp-servers");
-      }
-    } catch {
-      toast.error("Failed to remove member");
-    }
+    removeMember(userId);
   };
 
   const columns = useOrgMembersTableColumns({
     onRemove: handleRemove,
   });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-muted-foreground">Loading members...</div>
