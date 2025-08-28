@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
-from aci.common.rbac import check_permission
 from aci.common.schemas.organization import (
     CreateOrganizationRequest,
     CreateOrganizationTeamRequest,
@@ -17,6 +16,7 @@ from aci.common.schemas.organization import (
     UpdateOrganizationMemberRoleRequest,
 )
 from aci.control_plane import dependencies as deps
+from aci.control_plane.rbac import check_permission
 
 logger = get_logger(__name__)
 router = APIRouter()
