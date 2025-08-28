@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerConfiguration
-from aci.common.schemas.mcp.configuration import MCPServerConfigurationCreate
+from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 
 
 def create_mcp_server_configuration(

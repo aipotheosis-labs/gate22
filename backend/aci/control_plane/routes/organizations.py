@@ -7,7 +7,7 @@ from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
-from aci.common.schemas.organizations import (
+from aci.common.schemas.organization import (
     CreateOrganizationRequest,
     CreateOrganizationTeamRequest,
     OrganizationInfo,

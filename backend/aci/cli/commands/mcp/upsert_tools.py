@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from aci.cli import config
 from aci.common import embeddings, utils
 from aci.common.db import crud
-from aci.common.schemas.mcp.tool import MCPToolEmbeddingFields, MCPToolUpsert
+from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
 
 console = Console()
 

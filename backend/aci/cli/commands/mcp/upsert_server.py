@@ -13,7 +13,7 @@ from aci.cli import config
 from aci.common import embeddings, utils
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer
-from aci.common.schemas.mcp.server import MCPServerEmbeddingFields, MCPServerUpsert
+from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, MCPServerUpsert
 
 console = Console()
 

@@ -6,9 +6,9 @@ from pydantic import TypeAdapter
 
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp.auth import AuthConfig
-from aci.common.schemas.mcp.server import MCPServerPublic
-from aci.common.schemas.mcp.tool import MCPToolPublic
+from aci.common.schemas.mcp_auth import AuthConfig
+from aci.common.schemas.mcp_server import MCPServerPublic
+from aci.common.schemas.mcp_tool import MCPToolPublic
 from aci.control_plane import dependencies as deps
 
 logger = get_logger(__name__)

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServer
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp.server import MCPServerUpsert
+from aci.common.schemas.mcp_server import MCPServerUpsert
 
 logger = get_logger(__name__)
 

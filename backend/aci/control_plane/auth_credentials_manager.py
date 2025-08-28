@@ -10,7 +10,7 @@ from aci.common.db.sql_models import (
 )
 from aci.common.enums import AuthType
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp.auth import AuthConfig, OAuth2Config
+from aci.common.schemas.mcp_auth import AuthConfig, OAuth2Config
 from aci.control_plane.exceptions import NoImplementationFound
 
 logger = get_logger(__name__)
