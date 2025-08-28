@@ -65,7 +65,7 @@ def get_mcp_server_configuration_by_id(
 def get_mcp_server_configurations(
     db_session: Session,
     organization_id: UUID,
-    team_ids: list[UUID] | None = None,
+    team_ids: list[UUID] | None = None,  # None means no filter
     offset: int | None = None,
     limit: int | None = None,
 ) -> list[MCPServerConfiguration]:
@@ -78,11 +78,12 @@ def get_mcp_server_configurations(
         select_team_statement = select(Team).where(
             Team.id.in_(team_ids), Team.organization_id == organization_id
         )
-        org_team_ids = list(db_session.execute(select_team_statement).scalars().all())
+        org_teams = list(db_session.execute(select_team_statement).scalars().all())
 
         # overlap() is not type hinted but is available.
+        # Make sure the field is Column of PostgreSQL array (import sqlalchemy.dialects.postgresql)
         statement = statement.where(
-            MCPServerConfiguration.allowed_teams.overlap(org_team_ids),
+            MCPServerConfiguration.allowed_teams.overlap([team.id for team in org_teams]),
         )
 
     if offset is not None:

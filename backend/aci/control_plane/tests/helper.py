@@ -14,7 +14,7 @@ openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 DUMMY_MCP_SERVERS_DIR = Path(__file__).parent / "dummy_mcp_servers"
 
 
-def prepare_dummy_apps_and_functions() -> list[
+def prepare_mcp_servers() -> list[
     tuple[MCPServerUpsert, list[MCPToolUpsert], list[float], list[list[float]]]
 ]:
     """

@@ -1,0 +1,36 @@
+import pytest
+from fastapi.testclient import TestClient
+
+from aci.common.logging_setup import get_logger
+from aci.common.schemas.mcp_server import MCPServerPublicBasic
+from aci.common.schemas.pagination import PaginationResponse
+
+logger = get_logger(__name__)
+
+
+@pytest.mark.parametrize("offset", [None, 0, 10])
+def test_list_mcp_servers(
+    test_client: TestClient,
+    offset: int,
+    dummy_access_token_no_orgs: str,
+    dummy_mcp_servers: list[MCPServerPublicBasic],
+) -> None:
+    params = {}
+    if offset is not None:
+        params["offset"] = offset
+
+    response = test_client.get(
+        "/v1/mcp-servers",
+        params=params,
+        headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"},
+    )
+    paginated_response = PaginationResponse[MCPServerPublicBasic].model_validate(response.json())
+
+    assert response.status_code == 200
+    assert paginated_response.offset == (offset if offset is not None else 0)
+
+    if offset is None or offset == 0:
+        assert len(paginated_response.data) == len(dummy_mcp_servers)
+        assert paginated_response.data[0].name == dummy_mcp_servers[0].name
+    else:
+        assert len(paginated_response.data) == 0

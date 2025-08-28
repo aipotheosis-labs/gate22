@@ -50,7 +50,7 @@ async def get_mcp_server(
     return mcp_server_public
 
 
-@router.get("", response_model=PaginationResponse[MCPServerPublicBasic])
+@router.get("")
 async def list_mcp_servers(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     pagination_params: Annotated[PaginationParams, Depends()],

@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import TypeAdapter
@@ -10,8 +11,9 @@ from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationCreate,
     MCPServerConfigurationPublic,
+    MCPServerConfigurationPublicBasic,
 )
-from aci.common.schemas.pagination import PaginationParams
+from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
 
 logger = get_logger(__name__)
@@ -61,18 +63,16 @@ async def create_mcp_server_configuration(
     )
 
 
-@router.get("", response_model=list[MCPServerConfigurationPublic])
+@router.get("")
 async def list_mcp_server_configurations(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
-) -> list[MCPServerConfigurationPublic]:
-    # Admin can see all MCP server configurations under the org.
+) -> PaginationResponse[MCPServerConfigurationPublicBasic]:
+    team_ids: list[UUID] | None
+
     if context.act_as.role == OrganizationRole.ADMIN:
-        # Admin can see all MCP server configurations under the org
-        mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
-            context.db_session,
-            context.act_as.organization_id,
-        )
+        # Admin can see all MCP server configurations under the org.
+        team_ids = None  # Not to filter for admin
     elif context.act_as.role == OrganizationRole.MEMBER:
         # Member can see MCP server configured for the teams that the member belongs to.
         org_teams = crud.teams.get_teams_by_user_id(
@@ -80,12 +80,25 @@ async def list_mcp_server_configurations(
             organization_id=context.act_as.organization_id,
             user_id=context.user_id,
         )
-        mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
-            context.db_session,
-            context.act_as.organization_id,
-            team_ids=[team.id for team in org_teams],
-        )
-    return [
-        MCPServerConfigurationPublic.model_validate(mcp_server_configuration, from_attributes=True)
-        for mcp_server_configuration in mcp_server_configurations
-    ]
+        team_ids = [team.id for team in org_teams]
+
+    # Admin can see all MCP server configurations under the org
+    mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
+        context.db_session,
+        context.act_as.organization_id,
+        offset=pagination_params.offset,
+        limit=pagination_params.limit,
+        team_ids=team_ids,
+    )
+
+    logger.info(f"mcp_server_configurations: {mcp_server_configurations}")
+
+    return PaginationResponse[MCPServerConfigurationPublicBasic](
+        data=[
+            MCPServerConfigurationPublicBasic.model_validate(
+                mcp_server_configuration, from_attributes=True
+            )
+            for mcp_server_configuration in mcp_server_configurations
+        ],
+        offset=pagination_params.offset,
+    )
