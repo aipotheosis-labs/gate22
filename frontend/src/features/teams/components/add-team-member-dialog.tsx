@@ -145,10 +145,11 @@ export function AddTeamMemberDialog({
   const teamMemberIds = new Set(teamMembers?.map((tm) => tm.user_id) || []);
 
   // Don't filter out team members, but mark them as already in team
-  const membersWithStatus: MemberWithStatus[] = orgMembers?.map((member) => ({
-    ...member,
-    isInTeam: teamMemberIds.has(member.user_id),
-  })) || [];
+  const membersWithStatus: MemberWithStatus[] =
+    orgMembers?.map((member) => ({
+      ...member,
+      isInTeam: teamMemberIds.has(member.user_id),
+    })) || [];
 
   // Only show members not in team for selection
   const availableMembers = membersWithStatus.filter((m) => !m.isInTeam);
@@ -198,8 +199,8 @@ export function AddTeamMemberDialog({
                       {isLoading
                         ? "Loading members..."
                         : availableMembers.length === 0
-                        ? "All members are already in team"
-                        : "Choose a member to add..."}
+                          ? "All members are already in team"
+                          : "Choose a member to add..."}
                     </span>
                   )}
                   <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -243,7 +244,8 @@ export function AddTeamMemberDialog({
                               }}
                               className={cn(
                                 "cursor-pointer",
-                                member.isInTeam && "opacity-50 cursor-not-allowed"
+                                member.isInTeam &&
+                                  "opacity-50 cursor-not-allowed",
                               )}
                               disabled={member.isInTeam}
                             >
@@ -259,7 +261,10 @@ export function AddTeamMemberDialog({
                                       {member.name}
                                     </span>
                                     {member.isInTeam && (
-                                      <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs px-1.5 py-0"
+                                      >
                                         Already in team
                                       </Badge>
                                     )}

@@ -82,7 +82,7 @@ export function NewTeamSettings() {
           <Button
             variant="outline"
             onClick={() => router.push(SETTINGS_ROUTES.TEAMS)}
-            disabled={createTeamMutation.isPending}
+            disabled={isCreating}
           >
             Cancel
           </Button>

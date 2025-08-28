@@ -8,7 +8,12 @@ interface MembersTableProps {
 }
 
 export function MembersTable({ refreshKey = 0 }: MembersTableProps) {
-  const { members = [], isLoading, removeMember, refetch } = useOrganizationMembers();
+  const {
+    members = [],
+    isLoading,
+    removeMember,
+    refetch,
+  } = useOrganizationMembers();
 
   useEffect(() => {
     if (refreshKey > 0) {

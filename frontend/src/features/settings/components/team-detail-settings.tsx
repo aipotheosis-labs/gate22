@@ -223,7 +223,6 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
             queryKey: ["team-members", activeOrg?.orgId, teamId],
           });
         }}
-        
       />
     </div>
   );

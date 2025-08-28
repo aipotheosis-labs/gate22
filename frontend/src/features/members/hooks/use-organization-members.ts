@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { useRouter } from "next/navigation";
-import { 
-  listOrganizationUsers, 
-  removeUser, 
-  inviteToOrganization 
+import {
+  listOrganizationUsers,
+  removeUser,
+  inviteToOrganization,
 } from "@/features/settings/api/organization";
 import { QUERY_KEYS } from "@/features/settings/constants";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export function useOrganizationMembers() {
         queryKey: QUERY_KEYS.MEMBERS(activeOrg?.orgId || ""),
       });
       toast.success("Member removed successfully");
-      
+
       // If the current user is leaving the organization
       if (userId === user.userId) {
         router.push("/mcp-servers");
