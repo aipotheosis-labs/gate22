@@ -3,12 +3,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import TypeAdapter
+from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
-from aci.common.schemas.mcp_server import MCPServerPublic
+from aci.common.schemas.mcp_server import MCPServerBasic, MCPServerPublic
 from aci.common.schemas.mcp_tool import MCPToolPublic
+from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
 
 logger = get_logger(__name__)
@@ -46,3 +48,22 @@ async def get_mcp_server(
     )
 
     return mcp_server_public
+
+
+@router.get("")
+async def list_mcp_servers(
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    pagination_params: Annotated[PaginationParams, Depends()],
+) -> PaginationResponse[MCPServerBasic]:
+    # TODO: support search by keywords / categories (currently filtering is done in Frontend)
+
+    mcp_servers = crud.mcp_servers.list_mcp_servers(
+        db_session, offset=pagination_params.offset, limit=pagination_params.limit
+    )
+    return PaginationResponse(
+        data=[
+            MCPServerBasic.model_validate(mcp_server, from_attributes=True)
+            for mcp_server in mcp_servers
+        ],
+        offset=pagination_params.offset,
+    )

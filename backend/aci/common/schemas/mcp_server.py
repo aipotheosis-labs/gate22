@@ -61,3 +61,12 @@ class MCPServerPublic(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+
+class MCPServerBasic(BaseModel):
+    id: UUID
+    name: str
+    url: str
+    description: str
+    logo: str
+    categories: list[str]
