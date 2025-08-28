@@ -13,9 +13,9 @@ def check_permission(
     requested_organization_id: UUID | None = None,
     required_role: OrganizationRole = OrganizationRole.MEMBER,
     throw_error_if_not_permitted: bool = True,
-) -> None:
+) -> bool:
     """
-    This function throws an HTTPException if the user is not permitted to act as the requested
+    This function throws an NotPermittedError if the user is not permitted to act as the requested
     organization and role.
     """
 
@@ -36,3 +36,6 @@ def check_permission(
             raise e
         else:
             logger.error(f"NotPermittedError: {e.message}")
+        return False
+
+    return True
