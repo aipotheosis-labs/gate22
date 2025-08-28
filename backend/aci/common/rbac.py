@@ -18,6 +18,8 @@ def check_permission(
     This function throws an NotPermittedError if the user is not permitted to act as the requested
     organization and role.
     """
+    # TODO: Extend this function to check authorization of other entities
+    # E.g., MCPServerConfiguration, MCPServerBundle, ConnectedAccount, etc.
 
     try:
         if requested_organization_id and act_as.organization_id != requested_organization_id:
