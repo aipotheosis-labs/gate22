@@ -75,7 +75,7 @@ def is_mcp_server_configuration_in_user_team(
     else:
         if throw_error_if_not_permitted:
             raise NotPermittedError(
-                message=f"None of the user's team is allowed in MCP Server "
+                message=f"none of the user's team is allowed in MCP Server "
                 f"Configuration {mcp_server_configuration_id}"
             )
         return False

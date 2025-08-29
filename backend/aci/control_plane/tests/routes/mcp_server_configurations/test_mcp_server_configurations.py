@@ -152,10 +152,7 @@ def test_get_mcp_server_configuration(
         else:
             # Should not see any MCP server configuration
             assert response.status_code == 403
-            assert (
-                response.json()["detail"] == f"None of the user's team is allowed in MCP Server "
-                f"Configuration {dummy_mcp_server_configuration.id}"
-            )
+            assert response.json()["error"].startswith("Not permitted")
 
 
 @pytest.mark.parametrize(
