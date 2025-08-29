@@ -2,13 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from aci.common.db import crud
-from aci.common.db.sql_models import ConnectedAccount, User
-from aci.common.logging_setup import get_logger
-from aci.common.schemas.connected_account import ConnectedAccountPublic
+from aci.common.db.sql_models import MCPServerBundle, User
+from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic, MCPServerBundlePublicBasic
 from aci.common.schemas.pagination import PaginationResponse
-
-logger = get_logger(__name__)
 
 
 @pytest.mark.parametrize(
@@ -21,12 +17,12 @@ logger = get_logger(__name__)
     ],
 )
 @pytest.mark.parametrize("offset", [None, 0, 10])
-def test_list_connected_accounts(
+def test_list_mcp_server_bundles(
     test_client: TestClient,
     request: pytest.FixtureRequest,
     access_token_fixture: str,
     dummy_user: User,
-    dummy_connected_accounts: list[ConnectedAccount],
+    dummy_mcp_server_bundles: list[MCPServerBundle],
     offset: int | None,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
@@ -36,7 +32,7 @@ def test_list_connected_accounts(
         params["offset"] = offset
 
     response = test_client.get(
-        "/v1/connected-accounts",
+        "/v1/mcp-server-bundles",
         headers={"Authorization": f"Bearer {access_token}"},
         params=params,
     )
@@ -45,23 +41,20 @@ def test_list_connected_accounts(
         assert response.status_code == 403
         return
 
-    paginated_response = PaginationResponse[ConnectedAccountPublic].model_validate(
+    paginated_response = PaginationResponse[MCPServerBundlePublicBasic].model_validate(
         response.json(),
     )
 
-    assert paginated_response.offset == (offset if offset is not None else 0)
-
     if offset is None or offset == 0:
         if access_token_fixture == "dummy_access_token_admin":
-            # Should see all the connected accounts in the organization
+            # Should see all the MCP server bundles in the organization
             assert response.status_code == 200
-            assert len(paginated_response.data) == len(dummy_connected_accounts)
-
+            assert len(paginated_response.data) == len(dummy_mcp_server_bundles)
         elif access_token_fixture in [
             "dummy_access_token_member",
             "dummy_access_token_admin_act_as_member",
         ]:
-            # Should only see the connected accounts that the user has
+            # Should only see the MCP server bundles that the user has
             assert response.status_code == 200
             assert len(paginated_response.data) == 2
             assert all(
@@ -70,7 +63,7 @@ def test_list_connected_accounts(
         else:
             raise Exception("Untested access token fixture")
     else:
-        # shows nothing because offset should be larger than the total test MCP server configs
+        # shows nothing because offset should be larger than the total test MCP server bundles
         assert len(paginated_response.data) == 0
 
 
@@ -84,36 +77,36 @@ def test_list_connected_accounts(
         "dummy_access_token_another_org",
     ],
 )
-@pytest.mark.parametrize("delete_own_connected_account", [True, False])
-def test_delete_connected_account(
+@pytest.mark.parametrize("is_own_mcp_server_bundle", [True, False])
+def test_get_mcp_server_bundle(
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
     access_token_fixture: str,
-    dummy_connected_accounts: list[ConnectedAccount],
-    delete_own_connected_account: bool,
     dummy_user: User,
+    dummy_mcp_server_bundles: list[MCPServerBundle],
+    is_own_mcp_server_bundle: bool,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
-    # Find the target connected account for testing
-    if delete_own_connected_account:
-        target_connected_account = next(
-            connected_account
-            for connected_account in dummy_connected_accounts
-            if connected_account.user_id == dummy_user.id
+    # Find the target MCP server bundle for testing
+    if is_own_mcp_server_bundle:
+        target_mcp_server_bundle = next(
+            mcp_server_bundle
+            for mcp_server_bundle in dummy_mcp_server_bundles
+            if mcp_server_bundle.user_id == dummy_user.id
         )
     else:
-        target_connected_account = next(
-            connected_account
-            for connected_account in dummy_connected_accounts
-            if connected_account.user_id != dummy_user.id
+        target_mcp_server_bundle = next(
+            mcp_server_bundle
+            for mcp_server_bundle in dummy_mcp_server_bundles
+            if mcp_server_bundle.user_id != dummy_user.id
         )
 
     db_session.commit()
 
-    response = test_client.delete(
-        f"/v1/connected-accounts/{target_connected_account.id}",
+    response = test_client.get(
+        f"/v1/mcp-server-bundles/{target_mcp_server_bundle.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -121,32 +114,24 @@ def test_delete_connected_account(
         assert response.status_code == 403
         return
 
-    # Admin cannot delete anyone's connected account
+    # Admin can see all MCP server bundles
     elif access_token_fixture == "dummy_access_token_admin":
-        assert response.status_code == 403
-        return
+        assert response.status_code == 200
+        mcp_server_bundle = MCPServerBundlePublic.model_validate(response.json())
+        assert mcp_server_bundle.id == target_mcp_server_bundle.id
 
-    # Member can delete their own connected account
     elif access_token_fixture in [
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
-        if delete_own_connected_account:
+        if is_own_mcp_server_bundle:
+            # Member can see their own MCP server bundles only
             assert response.status_code == 200
-
-            # Check if the connected account is deleted
-            connected_account = crud.connected_accounts.get_connected_account_by_id(
-                db_session, target_connected_account.id
-            )
-            assert connected_account is None
-
+            mcp_server_bundle = MCPServerBundlePublic.model_validate(response.json())
+            assert mcp_server_bundle.id == target_mcp_server_bundle.id
         else:
+            # Should not see any MCP server bundle
             assert response.status_code == 403
-            # Check if the connected account is deleted
-            connected_account = crud.connected_accounts.get_connected_account_by_id(
-                db_session, target_connected_account.id
-            )
-            assert connected_account is not None
-
+            assert response.json()["error"].startswith("Not permitted")
     else:
         raise Exception("Untested access token fixture")

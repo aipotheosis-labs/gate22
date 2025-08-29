@@ -11,6 +11,7 @@ from aci.common.db.sql_models import (
     Base,
     ConnectedAccount,
     MCPServer,
+    MCPServerBundle,
     MCPServerConfiguration,
     Organization,
     Team,
@@ -19,6 +20,7 @@ from aci.common.db.sql_models import (
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
+from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 from aci.common.test_utils import clear_database, create_test_db_session
 from aci.control_plane import dependencies as deps
@@ -423,6 +425,67 @@ def dummy_connected_accounts(
         )
     )
     return connected_accounts
+
+
+@pytest.fixture(scope="function")
+def dummy_mcp_server_bundles(
+    dummy_organization: Organization,
+    db_session: Session,
+    dummy_user: User,
+    dummy_another_org_member: User,
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
+    dummy_mcp_server_configuration_notion: MCPServerConfiguration,
+) -> list[MCPServerBundle]:
+    """
+    Test settings:
+    - dummy_user has 2 bundles:
+        - github + notion
+        - github only
+    - dummy_another_org_member has 1 bundle:
+        - github only
+    """
+    mcp_server_bundles = []
+    mcp_server_bundles.append(
+        crud.mcp_server_bundles.create_mcp_server_bundle(
+            db_session=db_session,
+            user_id=dummy_user.id,
+            organization_id=dummy_organization.id,
+            mcp_server_bundle_create=MCPServerBundleCreate(
+                mcp_server_configuration_ids=[
+                    dummy_mcp_server_configuration_github.id,
+                    dummy_mcp_server_configuration_notion.id,
+                ],
+                name="Dummy MCPServerBundle 1 Github + Notion",
+                description="Dummy MCPServerBundle 1 Github + Notion Description",
+            ),
+        )
+    )
+    mcp_server_bundles.append(
+        crud.mcp_server_bundles.create_mcp_server_bundle(
+            db_session=db_session,
+            user_id=dummy_user.id,
+            organization_id=dummy_organization.id,
+            mcp_server_bundle_create=MCPServerBundleCreate(
+                mcp_server_configuration_ids=[dummy_mcp_server_configuration_github.id],
+                name="Dummy MCPServerBundle Github",
+                description="Dummy MCPServerBundle 2 Github Description",
+            ),
+        )
+    )
+    mcp_server_bundles.append(
+        crud.mcp_server_bundles.create_mcp_server_bundle(
+            db_session=db_session,
+            user_id=dummy_another_org_member.id,
+            organization_id=dummy_organization.id,
+            mcp_server_bundle_create=MCPServerBundleCreate(
+                mcp_server_configuration_ids=[dummy_mcp_server_configuration_github.id],
+                name="Dummy MCPServerBundle 3 Github",
+                description="Dummy MCPServerBundle 3 Github Description",
+            ),
+        )
+    )
+    db_session.commit()
+    return mcp_server_bundles
 
 
 # ------------------------------------------------------------

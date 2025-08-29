@@ -62,6 +62,17 @@ def get_mcp_server_configuration_by_id(
         return mcp_server_configuration
 
 
+def get_mcp_server_configurations_by_ids(
+    db_session: Session,
+    mcp_server_configuration_ids: list[UUID],
+) -> list[MCPServerConfiguration]:
+    statement = select(MCPServerConfiguration).where(
+        MCPServerConfiguration.id.in_(mcp_server_configuration_ids)
+    )
+
+    return list(db_session.execute(statement).scalars().all())
+
+
 def get_mcp_server_configurations(
     db_session: Session,
     organization_id: UUID,

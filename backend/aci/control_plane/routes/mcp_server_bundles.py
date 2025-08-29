@@ -2,15 +2,18 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from aci.common.db import crud
+from aci.common.db.sql_models import MCPServerBundle
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server_bundle import (
     MCPServerBundleCreate,
     MCPServerBundlePublic,
+    MCPServerBundlePublicBasic,
 )
-from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublicBasic
+from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
 from aci.control_plane import rbac
@@ -61,11 +64,11 @@ async def create_mcp_server_bundle(
     return MCPServerBundlePublic.model_validate(mcp_server_bundle, from_attributes=True)
 
 
-@router.get("", response_model=PaginationResponse[MCPServerConfigurationPublicBasic])
+@router.get("", response_model=PaginationResponse[MCPServerBundlePublicBasic])
 async def list_mcp_server_bundles(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
-) -> PaginationResponse[MCPServerConfigurationPublicBasic]:
+) -> PaginationResponse[MCPServerBundlePublicBasic]:
     if context.act_as.role == OrganizationRole.ADMIN:
         mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id(
             context.db_session,
@@ -84,11 +87,9 @@ async def list_mcp_server_bundles(
             )
         )
 
-    return PaginationResponse[MCPServerConfigurationPublicBasic](
+    return PaginationResponse[MCPServerBundlePublicBasic](
         data=[
-            MCPServerConfigurationPublicBasic.model_validate(
-                mcp_server_bundle, from_attributes=True
-            )
+            MCPServerBundlePublicBasic.model_validate(mcp_server_bundle, from_attributes=True)
             for mcp_server_bundle in mcp_server_bundles
         ],
         offset=pagination_params.offset,
@@ -127,7 +128,10 @@ async def get_mcp_server_bundle(
         context.db_session, mcp_server_bundle_id
     )
 
-    return MCPServerBundlePublic.model_validate(mcp_server_bundle, from_attributes=True)
+    if mcp_server_bundle is None:
+        raise HTTPException(status_code=404, detail="MCP server bundle not found")
+
+    return _construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
 
 
 @router.delete("/{mcp_server_bundle_id}", status_code=status.HTTP_200_OK)
@@ -163,3 +167,31 @@ async def delete_mcp_server_bundle(
     else:
         # Admin cannot delete MCP server bundle
         raise NotPermittedError(message="Cannot delete MCP server bundle")
+
+
+def _construct_mcp_server_bundle_public(
+    db_session: Session, mcp_server_bundle: MCPServerBundle
+) -> MCPServerBundlePublic:
+    """
+    Dynamically retreive and populate the mcp_server_configurations
+    for the MCP server bundle.
+    """
+    mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations_by_ids(
+        db_session, mcp_server_bundle.mcp_server_configuration_ids
+    )
+
+    return MCPServerBundlePublic(
+        id=mcp_server_bundle.id,
+        name=mcp_server_bundle.name,
+        description=mcp_server_bundle.description,
+        user_id=mcp_server_bundle.user_id,
+        organization_id=mcp_server_bundle.organization_id,
+        mcp_server_configurations=[
+            MCPServerConfigurationPublic.model_validate(
+                mcp_server_configuration, from_attributes=True
+            )
+            for mcp_server_configuration in mcp_server_configurations
+        ],
+        created_at=mcp_server_bundle.created_at,
+        updated_at=mcp_server_bundle.updated_at,
+    )
