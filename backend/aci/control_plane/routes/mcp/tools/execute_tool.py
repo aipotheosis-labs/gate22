@@ -67,23 +67,24 @@ async def handle_execute_tool(
     mcp_server_configuration: MCPServerConfiguration | None = None
     # find the mcp server configuration (from the mcp server bundle's configuration list) that is
     # the mcp server
+    # TODO: abstract this logic to a service layer function
     for mcp_server_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
-        mcp_server_configuration = (
+        mcp_server_configuration_candidate = (
             crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
                 db_session,
                 mcp_server_configuration_id,
                 False,
             )
         )
-        if mcp_server_configuration is None:
+        if mcp_server_configuration_candidate is None:
             logger.error(
                 f"MCP server configuration not found even though the id is part of the bundle, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
             )
             continue
         # TODO: this is under the assumption that the mcp server configuration is unique
         # per mcp server
-        if mcp_server_configuration.mcp_server_id == mcp_server.id:
-            mcp_server_configuration = mcp_server_configuration
+        if mcp_server_configuration_candidate.mcp_server_id == mcp_server.id:
+            mcp_server_configuration = mcp_server_configuration_candidate
             break
 
     if mcp_server_configuration is None:
