@@ -14,6 +14,8 @@ def test_list_mcp_servers(
     offset: int,
     dummy_access_token_no_orgs: str,
     dummy_mcp_servers: list[MCPServerPublicBasic],
+    dummy_mcp_server_notion: MCPServerPublicBasic,
+    dummy_mcp_server_github: MCPServerPublicBasic,
 ) -> None:
     params = {}
     if offset is not None:
@@ -31,6 +33,9 @@ def test_list_mcp_servers(
 
     if offset is None or offset == 0:
         assert len(paginated_response.data) == len(dummy_mcp_servers)
-        assert paginated_response.data[0].name == dummy_mcp_servers[0].name
+
+        # NOTE: sorted by name asc
+        assert paginated_response.data[0].name == dummy_mcp_server_github.name
+        assert paginated_response.data[1].name == dummy_mcp_server_notion.name
     else:
         assert len(paginated_response.data) == 0

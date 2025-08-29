@@ -138,6 +138,8 @@ def test_list_organization_members(
 
     # Now there should be two members
     assert len(organization_members) == 2
+    # Sorted by created_at desc
+    assert organization_members[0].user_id == new_member.id
 
 
 @pytest.mark.parametrize(

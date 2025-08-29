@@ -4,11 +4,14 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer, MCPServerConfiguration, Team
+from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationPublic,
     MCPServerConfigurationPublicBasic,
 )
 from aci.common.schemas.pagination import PaginationResponse
+
+logger = get_logger(__name__)
 
 
 @pytest.mark.parametrize(
@@ -27,7 +30,7 @@ def test_list_mcp_server_configurations(
     db_session: Session,
     request: pytest.FixtureRequest,
     access_token_fixture: str,
-    dummy_mcp_server_configuration: MCPServerConfiguration,
+    dummy_mcp_server_configurations: list[MCPServerConfiguration],
     dummy_mcp_server: MCPServer,
     dummy_team: Team,
     is_added_to_team: bool,
@@ -35,10 +38,12 @@ def test_list_mcp_server_configurations(
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
+    # dummy_mcp_server_configurations has 2 dummy MCP server configurations, both without team
+    config_added_to_team = dummy_mcp_server_configurations[0]
     if is_added_to_team:
-        dummy_mcp_server_configuration.allowed_teams = [dummy_team.id]
+        config_added_to_team.allowed_teams = [dummy_team.id]
     else:
-        dummy_mcp_server_configuration.allowed_teams = []
+        config_added_to_team.allowed_teams = []
     db_session.commit()
 
     params = {}
@@ -65,9 +70,11 @@ def test_list_mcp_server_configurations(
         if access_token_fixture == "dummy_access_token_admin":
             # Should see all the MCP server configurations, regardless of allowed_teams
             assert response.status_code == 200
-            assert len(paginated_response.data) == 1
-            assert paginated_response.data[0].id == dummy_mcp_server_configuration.id
-            assert paginated_response.data[0].mcp_server.id == dummy_mcp_server.id
+            assert len(paginated_response.data) == len(dummy_mcp_server_configurations)
+            assert any(
+                dummy_mcp_server.id == response_item.mcp_server.id
+                for response_item in paginated_response.data
+            )
 
         elif access_token_fixture in [
             "dummy_access_token_member",
@@ -76,10 +83,12 @@ def test_list_mcp_server_configurations(
             # Should only see the MCP server configuration that the user belongs to
             assert response.status_code == 200
             if is_added_to_team:
-                # Should see 1 mcp server configuration as it is added to the user's teams
+                # Should see only 1 mcp server configuration as it is added to the user's teams
                 assert len(paginated_response.data) == 1
-                assert paginated_response.data[0].id == dummy_mcp_server_configuration.id
-                assert paginated_response.data[0].mcp_server.id == dummy_mcp_server.id
+                assert paginated_response.data[0].id == config_added_to_team.id
+                assert (
+                    paginated_response.data[0].mcp_server.id == config_added_to_team.mcp_server.id
+                )
             else:
                 # Should not see any MCP server configuration
                 assert len(paginated_response.data) == 0
