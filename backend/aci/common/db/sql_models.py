@@ -408,6 +408,10 @@ class ConnectedAccount(Base):
         init=False,
     )
 
+    mcp_server_configuration: Mapped[MCPServerConfiguration] = relationship(
+        "MCPServerConfiguration", init=False
+    )
+
     # TODO: consider composite key instead
     __table_args__ = (
         UniqueConstraint(
@@ -429,6 +433,9 @@ class MCPServerBundle(Base):
     # user who created the mcp server bundle
     user_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    organization_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     # a list of mcp server configuration ids the bundle contains
     # TODO: should only allow mcp server configurations of the same mcp server once

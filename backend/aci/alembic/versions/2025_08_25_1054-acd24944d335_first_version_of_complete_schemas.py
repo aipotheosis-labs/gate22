@@ -65,10 +65,12 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=512), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('organization_id', sa.UUID(), nullable=False),
     sa.Column('mcp_server_configurations', sa.ARRAY(sa.UUID()), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['organization_id'], ['organizations.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('mcp_server_configurations',

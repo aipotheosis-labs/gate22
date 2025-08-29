@@ -10,12 +10,14 @@ from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 def create_mcp_server_bundle(
     db_session: Session,
     user_id: UUID,
+    organization_id: UUID,
     mcp_server_bundle_create: MCPServerBundleCreate,
 ) -> MCPServerBundle:
     mcp_server_bundle = MCPServerBundle(
         name=mcp_server_bundle_create.name,
         description=mcp_server_bundle_create.description,
         user_id=user_id,
+        organization_id=organization_id,
         mcp_server_configuration_ids=mcp_server_bundle_create.mcp_server_configuration_ids,
     )
     db_session.add(mcp_server_bundle)

@@ -15,6 +15,7 @@ class MCPServerBundlePublic(BaseModel):
     name: str
     description: str | None = None
     user_id: UUID
+    organization_id: UUID
     mcp_server_configuration_ids: list[UUID]
 
     created_at: datetime

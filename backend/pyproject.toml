@@ -34,6 +34,7 @@ dependencies = [
     "bcrypt>=4.3.0",
     "pyjwt>=2.10.1",
     "google-auth-oauthlib>=1.2.2",
+    "mcp[cli]>=1.13.1",
 ]
 
 [dependency-groups]

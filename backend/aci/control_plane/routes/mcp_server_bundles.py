@@ -47,6 +47,7 @@ async def create_mcp_server_bundle(
     mcp_server_bundle = crud.mcp_server_bundles.create_mcp_server_bundle(
         context.db_session,
         context.user_id,
+        context.act_as.organization_id,
         body,
     )
 

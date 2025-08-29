@@ -2,7 +2,6 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
@@ -30,7 +29,9 @@ async def get_mcp_server(
         # TODO: should we only use custom error class here, e.g, MCPServerNotFoundError?
         raise HTTPException(status_code=404, detail="MCP server not found")
 
-    auth_configs = TypeAdapter(list[AuthConfig]).validate_python(mcp_server.auth_configs)
+    auth_configs = [
+        AuthConfig.model_validate(auth_config_dict) for auth_config_dict in mcp_server.auth_configs
+    ]
 
     mcp_server_public = MCPServerPublic(
         id=mcp_server.id,
@@ -39,7 +40,7 @@ async def get_mcp_server(
         description=mcp_server.description,
         logo=mcp_server.logo,
         categories=mcp_server.categories,
-        supported_auth_types=[auth_config.type for auth_config in auth_configs],
+        supported_auth_types=[auth_config.root.type for auth_config in auth_configs],
         tools=[
             MCPToolPublic.model_validate(tool, from_attributes=True) for tool in mcp_server.tools
         ],

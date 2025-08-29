@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 
 from aci.common.enums import AuthType, HttpLocation
 
@@ -79,10 +79,10 @@ class OAuth2Config(BaseModel):
     )
 
 
-AuthConfig = Annotated[
-    NoAuthConfig | APIKeyConfig | OAuth2Config,
-    Field(discriminator="type"),
-]
+class AuthConfig(
+    RootModel[Annotated[NoAuthConfig | APIKeyConfig | OAuth2Config, Field(discriminator="type")],]
+):
+    pass
 
 
 class NoAuthCredentials(BaseModel, extra="forbid"):
@@ -107,7 +107,12 @@ class OAuth2Credentials(BaseModel):
     refresh_token: str | None = None
 
 
-AuthCredentials = Annotated[
-    NoAuthCredentials | APIKeyCredentials | OAuth2Credentials,
-    Field(discriminator="type"),
-]
+class AuthCredentials(
+    RootModel[
+        Annotated[
+            NoAuthCredentials | APIKeyCredentials | OAuth2Credentials,
+            Field(discriminator="type"),
+        ]
+    ]
+):
+    pass

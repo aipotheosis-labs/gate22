@@ -2,7 +2,6 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
@@ -50,9 +49,10 @@ async def create_mcp_server_configuration(
         raise HTTPException(status_code=404, detail="MCP server not found")
 
     # auth_type must be one of the supported auth types
-    type_adapter = TypeAdapter(list[AuthConfig])
-    auth_configs = type_adapter.validate_python(mcp_server.auth_configs)
-    if body.auth_type not in [auth_config.type for auth_config in auth_configs]:
+    auth_configs = [
+        AuthConfig.model_validate(auth_config_dict) for auth_config_dict in mcp_server.auth_configs
+    ]
+    if body.auth_type not in [auth_config.root.type for auth_config in auth_configs]:
         logger.error(
             f"Invalid auth type {body.auth_type} for mcp server configuration {body.mcp_server_id}",
         )

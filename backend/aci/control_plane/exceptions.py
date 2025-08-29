@@ -77,7 +77,63 @@ class NotPermittedError(ControlPlaneException):
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="Not permitted",
+            title="Connected account not found",
             message=message,
-            error_code=status.HTTP_403_FORBIDDEN,
+            error_code=status.HTTP_404_NOT_FOUND,
         )
+
+
+class UnexpectedError(ControlPlaneException):
+    """
+    Exception raised when an unexpected error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Unexpected error",
+            message=message,
+            error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+class AuthCredentialsRefreshError(ControlPlaneException):
+    """
+    Exception raised when an auth credentials refresh error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Auth credentials refresh error",
+            message=message,
+            error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+class MCPToolNotFound(ControlPlaneException):
+    """
+    Exception raised when an mcp tool is not found
+    """
+
+    def __init__(self, name: str):
+        super().__init__(title="MCP tool not found", message=f"MCP tool {name} not found")
+
+
+class MCPServerNotConfigured(ControlPlaneException):
+    """
+    Exception raised when an mcp server is not configured
+    """
+
+    def __init__(self, mcp_server_name: str):
+        super().__init__(
+            title="MCP server not configured",
+            message=f"MCP server {mcp_server_name} not configured",
+        )
+
+
+class MCPToolNotEnabled(ControlPlaneException):
+    """
+    Exception raised when an mcp tool is not enabled in the mcp server configuration
+    """
+
+    def __init__(self, tool_name: str):
+        super().__init__(title="MCP tool not enabled", message=f"MCP tool {tool_name} not enabled")

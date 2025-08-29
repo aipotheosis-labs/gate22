@@ -1,6 +1,11 @@
 # import time
 
-from pydantic import TypeAdapter
+import time
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from aci.common.db import crud
 
 # from sqlalchemy.orm import Session
 # from aci.common.db import crud
@@ -8,10 +13,15 @@ from aci.common.db.sql_models import (
     MCPServer,
     MCPServerConfiguration,
 )
-from aci.common.enums import AuthType
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp_auth import AuthConfig, OAuth2Config
-from aci.control_plane.exceptions import NoImplementationFound
+from aci.common.schemas.mcp_auth import AuthConfig, AuthCredentials, OAuth2Config, OAuth2Credentials
+from aci.control_plane.exceptions import (
+    AuthCredentialsRefreshError,
+    ConnectedAccountNotFound,
+    NoImplementationFound,
+    UnexpectedError,
+)
+from aci.control_plane.oauth2_manager import OAuth2Manager
 
 logger = get_logger(__name__)
 
@@ -158,40 +168,6 @@ logger = get_logger(__name__)
 #     return await oauth2_manager.refresh_token(refresh_token)
 
 
-# def _get_api_key_credentials(
-#     app: App, linked_account: LinkedAccount
-# ) -> SecurityCredentialsResponse:
-#     """
-#     Get API key credentials from linked account or use app's default credentials if no linked
-#     account's API key is found.
-#     and if the app has a default shared API key.
-#     """
-#     security_credentials = (
-#         linked_account.security_credentials
-#         or app.default_security_credentials_by_scheme.get(linked_account.security_scheme)
-#     )
-
-#     # use "not" to cover empty dict case
-#     if not security_credentials:
-#         logger.error(
-#             f"No API key credentials usable, app={app.name}, "
-#             f"security_scheme={linked_account.security_scheme}, "
-#             f"linked_account_id={linked_account.id}"
-#         )
-#         raise NoImplementationFound(
-#             f"No API key credentials usable for app={app.name}, "
-#             f"security_scheme={linked_account.security_scheme}, "
-#             f"linked_account_owner_id={linked_account.linked_account_owner_id}"
-#         )
-
-#     return SecurityCredentialsResponse(
-#         scheme=APIKeyScheme.model_validate(app.security_schemes[SecurityScheme.API_KEY]),
-#         credentials=APIKeySchemeCredentials.model_validate(security_credentials),
-#         is_app_default_credentials=not bool(linked_account.security_credentials),
-#         is_updated=False,
-#     )
-
-
 # def _get_no_auth_credentials(
 #     app: App, linked_account: LinkedAccount
 # ) -> SecurityCredentialsResponse:
@@ -206,13 +182,6 @@ logger = get_logger(__name__)
 #     )
 
 
-# # TODO: consider adding leeway for expiration
-# def _access_token_is_expired(oauth2_credentials: OAuth2SchemeCredentials) -> bool:
-#     if oauth2_credentials.expires_at is None:
-#         return False
-#     return oauth2_credentials.expires_at < int(time.time())
-
-
 def get_mcp_server_configuration_oauth2_config(
     mcp_server: MCPServer, mcp_server_configuration: MCPServerConfiguration
 ) -> OAuth2Config:
@@ -220,13 +189,167 @@ def get_mcp_server_configuration_oauth2_config(
     Get the OAuth2 scheme for an app configuration, taking into account potential overrides.
     """
     # TODO: optimize?
-    type_adapter = TypeAdapter(list[AuthConfig])
-    auth_configs = type_adapter.validate_python(mcp_server.auth_configs)
-    for auth_config in auth_configs:
-        if auth_config.type == AuthType.OAUTH2:
-            return OAuth2Config.model_validate(auth_config)
+    for auth_config_dict in mcp_server.auth_configs:
+        auth_config = AuthConfig.model_validate(auth_config_dict)
+        if isinstance(auth_config.root, OAuth2Config):
+            return auth_config.root
 
     raise NoImplementationFound(
         f"No OAuth2 config found for mcp_server_id={mcp_server.id}, "
         f"mcp_server_configuration_id={mcp_server_configuration.id}"
     )
+
+
+def get_auth_config(
+    mcp_server: MCPServer, mcp_server_configuration: MCPServerConfiguration
+) -> AuthConfig:
+    """
+    Get the auth config for a mcp server configuration.
+    """
+    for auth_config_dict in mcp_server.auth_configs:
+        auth_config = AuthConfig.model_validate(auth_config_dict)
+        if auth_config.root.type == mcp_server_configuration.auth_type:
+            return auth_config
+
+    logger.error(
+        f"No auth config found for mcp_server_id={mcp_server.id}, mcp_server_name={mcp_server.name}, "  # noqa: E501
+        f"mcp_server_configuration_id={mcp_server_configuration.id}, mcp_server_configuration_auth_type={mcp_server_configuration.auth_type}"  # noqa: E501
+    )
+    raise UnexpectedError(
+        f"No auth config found for mcp_server_name={mcp_server.name}, "
+        f"mcp_server_configuration_auth_type={mcp_server_configuration.auth_type}"
+    )
+
+
+async def get_auth_credentials(
+    db_session: Session,
+    user_id: UUID,
+    mcp_server_configuration_id: UUID,
+) -> AuthCredentials:
+    """
+    Get the auth credentials. (part of the connected account)
+    For now, connected account is unique per user and mcp server configuration.
+    """
+    logger.info(
+        f"Getting auth credentials, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
+    )
+    connected_account = (
+        crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(
+            db_session,
+            user_id,
+            mcp_server_configuration_id,
+        )
+    )
+    if connected_account is None:
+        logger.error(
+            f"Connected account not found, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
+        )
+        raise ConnectedAccountNotFound()
+
+    auth_credentials = AuthCredentials.model_validate(connected_account.auth_credentials)
+
+    if _need_refresh(auth_credentials):
+        logger.warning(
+            f"Auth credentials need to be refreshed, "
+            f"user_id={user_id}, "
+            f"mcp_server_configuration_id={mcp_server_configuration_id}, "
+            f"mcp_server_name={connected_account.mcp_server_configuration.mcp_server.name}"
+        )
+        # TODO: consider auth_config as parameters?
+        auth_credentials = await _refresh_auth_credentials(
+            connected_account.mcp_server_configuration.mcp_server.name,
+            get_auth_config(
+                connected_account.mcp_server_configuration.mcp_server,
+                connected_account.mcp_server_configuration,
+            ),
+            auth_credentials,
+        )
+        # update back to the connected account
+        crud.connected_accounts.update_connected_account_auth_credentials(
+            db_session,
+            connected_account,
+            auth_credentials.model_dump(mode="json", exclude_none=True),
+        )
+    return auth_credentials
+
+
+def _need_refresh(auth_credentials: AuthCredentials, leeway_seconds: int = 60) -> bool:
+    """
+    Check if the auth credentials need to be refreshed.
+    """
+
+    # TODO: api key based auth credentials can also expire
+    if isinstance(auth_credentials.root, OAuth2Credentials):
+        return (
+            auth_credentials.root.expires_at is not None
+            and auth_credentials.root.expires_at < int(time.time()) + leeway_seconds
+        )
+    return False
+
+
+# TODO: throw specific error for cases where re-authentication is needed?
+# e.g., expired access token but no way to refresh it
+async def _refresh_auth_credentials(
+    mcp_server_name: str, auth_config: AuthConfig, auth_credentials: AuthCredentials
+) -> AuthCredentials:
+    """
+    Refresh the auth credentials.
+    """
+    if isinstance(auth_config.root, OAuth2Config) and isinstance(
+        auth_credentials.root, OAuth2Credentials
+    ):
+        refresh_token = auth_credentials.root.refresh_token
+        if not refresh_token:
+            logger.error(f"No refresh token found for mcp_server_name={mcp_server_name}")
+            raise AuthCredentialsRefreshError("no refresh token found, please re-authenticate")
+
+        oauth2_manager = OAuth2Manager(
+            app_name=mcp_server_name,
+            client_id=auth_config.root.client_id,
+            scope=auth_config.root.scope,
+            authorize_url=auth_config.root.authorize_url,
+            access_token_url=auth_config.root.access_token_url,
+            refresh_token_url=auth_config.root.refresh_token_url,
+            client_secret=auth_config.root.client_secret,
+            token_endpoint_auth_method=auth_config.root.token_endpoint_auth_method,
+        )
+
+        refresh_token_response = await oauth2_manager.refresh_token(refresh_token)
+
+        expires_at: int | None = None
+        if "expires_at" in refresh_token_response:
+            expires_at = int(refresh_token_response["expires_at"])
+        elif "expires_in" in refresh_token_response:
+            expires_at = int(time.time()) + int(refresh_token_response["expires_in"])
+
+        if not refresh_token_response.get("access_token") or not expires_at:
+            logger.error(
+                f"Failed to refresh access token, refresh_token_response={refresh_token_response}, "
+                f"mcp_server_name={mcp_server_name}"
+            )
+            raise AuthCredentialsRefreshError("failed to refresh access token")
+
+        fields_to_update = {
+            "access_token": refresh_token_response["access_token"],
+            "expires_at": expires_at,
+        }
+        # NOTE: some providers' refresh token can only be used once, so we need to update the
+        # refresh token (if returned)
+        if refresh_token_response.get("refresh_token"):
+            fields_to_update["refresh_token"] = refresh_token_response["refresh_token"]
+
+        # Update the root OAuth2Credentials object, not the wrapper
+        updated_oauth2_credentials = auth_credentials.root.model_copy(
+            update=fields_to_update,
+        )
+        # Create new AuthCredentials with the updated root
+        auth_credentials = AuthCredentials(root=updated_oauth2_credentials)
+
+        return auth_credentials
+    else:
+        logger.error(
+            f"Unsupported auth credentials type for refresh: {type(auth_credentials.root)}"
+        )
+        raise NotImplementedError(
+            f"Unsupported auth credentials type for refresh: {type(auth_credentials.root)}"
+        )
