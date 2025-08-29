@@ -68,8 +68,10 @@ def get_mcp_server_configurations_by_ids(
 ) -> list[MCPServerConfiguration]:
     if not mcp_server_configuration_ids:
         return []
-    statement = select(MCPServerConfiguration).where(
-        MCPServerConfiguration.id.in_(mcp_server_configuration_ids)
+    statement = (
+        select(MCPServerConfiguration)
+        .where(MCPServerConfiguration.id.in_(mcp_server_configuration_ids))
+        .order_by(MCPServerConfiguration.created_at.desc())
     )
 
     return list(db_session.execute(statement).scalars().all())
