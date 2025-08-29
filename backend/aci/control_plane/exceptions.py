@@ -77,9 +77,9 @@ class NotPermittedError(ControlPlaneException):
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="Connected account not found",
+            title="Not permitted",
             message=message,
-            error_code=status.HTTP_404_NOT_FOUND,
+            error_code=status.HTTP_403_FORBIDDEN,
         )
 
 
