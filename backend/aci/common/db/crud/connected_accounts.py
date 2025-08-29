@@ -4,6 +4,9 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration
+from aci.common.logging_setup import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_connected_account_by_user_id_and_mcp_server_configuration_id(
@@ -57,7 +60,7 @@ def get_connected_accounts_by_user_id_and_organization_id(
 ) -> list[ConnectedAccount]:
     statement = (
         select(ConnectedAccount)
-        .join(ConnectedAccount.mcp_server_configuration_id)
+        .join(ConnectedAccount.mcp_server_configuration)
         .where(
             ConnectedAccount.user_id == user_id,
             MCPServerConfiguration.organization_id == organization_id,
@@ -68,6 +71,7 @@ def get_connected_accounts_by_user_id_and_organization_id(
         statement = statement.offset(offset)
     if limit is not None:
         statement = statement.limit(limit)
+
     return list(db_session.execute(statement).scalars().all())
 
 
@@ -79,6 +83,7 @@ def get_connected_accounts_by_organization_id(
 ) -> list[ConnectedAccount]:
     statement = (
         select(ConnectedAccount)
+        .join(ConnectedAccount.mcp_server_configuration)
         .where(MCPServerConfiguration.organization_id == organization_id)
         .order_by(ConnectedAccount.created_at.desc())
     )

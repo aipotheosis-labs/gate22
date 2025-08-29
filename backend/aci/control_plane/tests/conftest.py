@@ -138,6 +138,8 @@ def dummy_access_token_another_org(db_session: Session) -> str:
 # - dummy_admin (added to the dummy_organization as admin)
 # - dummy_member (added to the dummy_organization as member)
 # ------------------------------------------------------------
+
+
 @pytest.fixture(scope="function")
 def dummy_organization(db_session: Session, database_setup_and_cleanup: None) -> Organization:
     dummy_organization = crud.organizations.create_organization(
@@ -200,6 +202,27 @@ def dummy_member(db_session: Session, dummy_organization: Organization) -> User:
     membership.role = OrganizationRole.MEMBER
     db_session.commit()
     return membership.user
+
+
+@pytest.fixture(scope="function")
+def dummy_another_org_member(db_session: Session, dummy_organization: Organization) -> User:
+    """
+    This will add another member into dummy_organization.
+    """
+    dummy_another_user = crud.users.create_user(
+        db_session=db_session,
+        name="Dummy Another User",
+        email="dummy_another@example.com",
+        password_hash=None,
+        identity_provider=UserIdentityProvider.EMAIL,
+    )
+    crud.organizations.add_user_to_organization(
+        db_session=db_session,
+        organization_id=dummy_organization.id,
+        user_id=dummy_another_user.id,
+        role=OrganizationRole.MEMBER,
+    )
+    return dummy_another_user
 
 
 @pytest.fixture(scope="function")
@@ -278,6 +301,13 @@ def dummy_mcp_server(dummy_mcp_server_notion: MCPServer) -> MCPServer:
     return dummy_mcp_server_notion
 
 
+# ------------------------------------------------------------
+#
+# Dummy MCP Servers Configurations
+#
+# ------------------------------------------------------------
+
+
 @pytest.fixture(scope="function")
 def dummy_mcp_server_configurations(
     db_session: Session,
@@ -344,17 +374,55 @@ def dummy_mcp_server_configuration_github(
     return dummy_mcp_server_configuration
 
 
+# ------------------------------------------------------------
+#
+# Dummy Connected Accounts
+#
+# ------------------------------------------------------------
+
+
 @pytest.fixture(scope="function")
 def dummy_connected_accounts(
-    db_session: Session, dummy_user: User, dummy_mcp_server_configuration: MCPServerConfiguration
-) -> ConnectedAccount:
-    connected_account = crud.connected_accounts.create_connected_account(
-        db_session=db_session,
-        user_id=dummy_user.id,
-        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
-        auth_credentials={},
+    db_session: Session,
+    dummy_user: User,
+    dummy_another_org_member: User,
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
+    dummy_mcp_server_configuration_notion: MCPServerConfiguration,
+) -> list[ConnectedAccount]:
+    """
+    Test settings:
+    - dummy_user connected to dummy_mcp_server_configuration_github
+    - dummy_user connected to dummy_mcp_server_configuration_notion
+    - dummy_another_org_member connected to dummy_mcp_server_configuration_github
+    """
+
+    connected_accounts = []
+
+    connected_accounts.append(
+        crud.connected_accounts.create_connected_account(
+            db_session=db_session,
+            user_id=dummy_user.id,
+            mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
+            auth_credentials={},
+        )
     )
-    return connected_account
+    connected_accounts.append(
+        crud.connected_accounts.create_connected_account(
+            db_session=db_session,
+            user_id=dummy_user.id,
+            mcp_server_configuration_id=dummy_mcp_server_configuration_notion.id,
+            auth_credentials={},
+        )
+    )
+    connected_accounts.append(
+        crud.connected_accounts.create_connected_account(
+            db_session=db_session,
+            user_id=dummy_another_org_member.id,
+            mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
+            auth_credentials={},
+        )
+    )
+    return connected_accounts
 
 
 # ------------------------------------------------------------
