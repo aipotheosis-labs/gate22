@@ -152,7 +152,7 @@ logger = get_logger(__name__)
 #         raise OAuth2Error("no refresh token found")
 
 #     # NOTE: it's important to use oauth2_scheme_credentials's client_id, client_secret, scope
-#     # because these fields might have changed for the app configuration after the linked account
+#     # because these fields might have changed for the MCP configuration after the linked account
 #     # was created
 #     oauth2_manager = OAuth2Manager(
 #         app_name=app_name,
@@ -186,7 +186,7 @@ def get_mcp_server_configuration_oauth2_config(
     mcp_server: MCPServer, mcp_server_configuration: MCPServerConfiguration
 ) -> OAuth2Config:
     """
-    Get the OAuth2 scheme for an app configuration, taking into account potential overrides.
+    Get the OAuth2 scheme for an MCP configuration, taking into account potential overrides.
     """
     # TODO: optimize?
     for auth_config_dict in mcp_server.auth_configs:

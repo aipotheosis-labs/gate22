@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 // import { GoBell } from "react-icons/go";
-import { BsQuestionCircle, BsGithub, BsBook, BsDiscord } from "react-icons/bs";
+import { BsQuestionCircle, BsDiscord } from "react-icons/bs";
 import { Separator } from "@/components/ui/separator";
 import { BreadcrumbLinks } from "./BreadcrumbLinks";
 import { usePathname } from "next/navigation";
@@ -61,28 +61,6 @@ export const Header = () => {
             <Button variant="outline" className="px-2 h-9">
               <BsDiscord />
               <span>Discord</span>
-            </Button>
-          </a>
-
-          <a
-            href="https://github.com/aipotheosis-labs/aci"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline" className="px-2 h-9">
-              <BsGithub />
-              <span>GitHub</span>
-            </Button>
-          </a>
-
-          <a
-            href="https://aci.dev/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline" className="px-2 h-9">
-              <BsBook />
-              <span>Docs</span>
             </Button>
           </a>
 

@@ -2,8 +2,7 @@
 
 import { Table } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 
 interface EnhancedDataTableToolbarProps<TData> {
@@ -26,34 +25,23 @@ export function EnhancedDataTableToolbar<TData>({
     table.setGlobalFilter(value);
   };
 
-  const isFiltered = table.getState().globalFilter ? true : false;
-
   // Don't render toolbar if there's no search input and no filter component
   if (!showSearchInput && !filterComponent) {
     return null;
   }
 
   return (
-    <div className="flex items-center justify-between py-4">
+    <div className="flex items-center justify-between pb-4">
       <div className="flex items-center gap-4">
         {showSearchInput && (
-          <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder={placeholder}
               value={searchValue}
               onChange={(event) => handleSearch(event.target.value)}
-              className="h-8 w-[250px]"
+              className="pl-10 w-[250px]"
             />
-            {isFiltered && (
-              <Button
-                variant="ghost"
-                onClick={() => handleSearch("")}
-                className="h-8 px-2 lg:px-3"
-              >
-                Clear
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         )}
 

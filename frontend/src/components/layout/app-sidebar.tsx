@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { GrAppsRounded } from "react-icons/gr";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -22,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line, RiLinkUnlinkM } from "react-icons/ri";
 import { AiOutlineRobot } from "react-icons/ai";
-import {} from "lucide-react";
+import { Link2 } from "lucide-react";
 
 import {
   Tooltip,
@@ -39,18 +38,18 @@ export const sidebarItems = [
     icon: HiOutlineServerStack,
   },
   {
-    title: "App Configurations",
-    url: `/appconfigs`,
-    icon: GrAppsRounded,
+    title: "MCP Configuration",
+    url: `/mcp-configuration`,
+    icon: RiLinkUnlinkM,
   },
   {
     title: "Linked Accounts",
     url: `/linked-accounts`,
-    icon: RiLinkUnlinkM,
+    icon: Link2,
   },
   {
-    title: "Agents",
-    url: `/agents`,
+    title: "Bundle MCP",
+    url: `/bundle-mcp`,
     icon: AiOutlineRobot,
   },
   {

@@ -240,3 +240,98 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* JSON Viewer Styles */
+.json-viewer-container .react-json-view {
+  background-color: transparent !important;
+}
+
+/* Scrollbar styling */
+.json-viewer-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.json-viewer-container::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 3px;
+}
+
+.json-viewer-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+.json-viewer-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Override react-json-view default colors for better contrast */
+.react-json-view .string-value {
+  color: hsl(142 76% 36%) !important;
+}
+
+.react-json-view .integer-value,
+.react-json-view .float-value {
+  color: hsl(221 83% 53%) !important;
+}
+
+.react-json-view .boolean-value {
+  color: hsl(280 68% 60%) !important;
+}
+
+.react-json-view .null-value {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Dark mode specific */
+.dark .react-json-view .string-value {
+  color: hsl(142 71% 45%) !important;
+}
+
+.dark .react-json-view .integer-value,
+.dark .react-json-view .float-value {
+  color: hsl(217 91% 60%) !important;
+}
+
+.dark .react-json-view .boolean-value {
+  color: hsl(280 85% 70%) !important;
+}
+
+/* Icon styling */
+.react-json-view .icon-container {
+  vertical-align: middle !important;
+}
+
+/* Object key styling */
+.react-json-view .object-key {
+  color: hsl(var(--foreground) / 0.7) !important;
+  font-weight: 500 !important;
+}
+
+/* Object size styling */
+.react-json-view .object-size {
+  color: hsl(var(--muted-foreground)) !important;
+  font-size: 10px !important;
+  margin-left: 4px !important;
+}
+
+/* Hover effects */
+.react-json-view .node-ellipsis {
+  color: hsl(var(--muted-foreground)) !important;
+  cursor: pointer;
+}
+
+.react-json-view .node-ellipsis:hover {
+  color: hsl(var(--foreground) / 0.8) !important;
+}
+
+/* Better spacing */
+.react-json-view .pushed-content {
+  margin-left: 2px !important;
+}
+
+.react-json-view .object-content,
+.react-json-view .array-content {
+  margin-left: 8px !important;
+}
