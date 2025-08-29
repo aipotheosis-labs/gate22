@@ -42,6 +42,8 @@ def get_teams_by_ids(
     db_session: Session,
     team_ids: list[UUID],
 ) -> list[Team]:
+    if not team_ids:
+        return []
     return db_session.query(Team).filter(Team.id.in_(team_ids)).all()
 
 

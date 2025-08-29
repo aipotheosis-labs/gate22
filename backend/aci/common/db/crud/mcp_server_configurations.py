@@ -66,6 +66,8 @@ def get_mcp_server_configurations_by_ids(
     db_session: Session,
     mcp_server_configuration_ids: list[UUID],
 ) -> list[MCPServerConfiguration]:
+    if not mcp_server_configuration_ids:
+        return []
     statement = select(MCPServerConfiguration).where(
         MCPServerConfiguration.id.in_(mcp_server_configuration_ids)
     )
