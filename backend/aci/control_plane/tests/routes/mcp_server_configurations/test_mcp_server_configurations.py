@@ -92,6 +92,8 @@ def test_list_mcp_server_configurations(
             else:
                 # Should not see any MCP server configuration
                 assert len(paginated_response.data) == 0
+        else:
+            raise Exception("Untested access token fixture")
 
     else:
         # shows nothing because offset should be larger than the total test MCP server configs
@@ -136,7 +138,7 @@ def test_get_mcp_server_configuration(
         assert response.status_code == 403
         return
 
-    if access_token_fixture == "dummy_access_token_admin":
+    elif access_token_fixture == "dummy_access_token_admin":
         # Should be able to see the MCP server configuration
         assert response.status_code == 200
         mcp_server_configuration = MCPServerConfigurationPublic.model_validate(
@@ -145,7 +147,7 @@ def test_get_mcp_server_configuration(
         assert mcp_server_configuration.id == dummy_mcp_server_configuration.id
         assert len(mcp_server_configuration.allowed_teams) == 0 if not is_added_to_team else 1
 
-    if access_token_fixture in [
+    elif access_token_fixture in [
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
@@ -162,6 +164,8 @@ def test_get_mcp_server_configuration(
             # Should not see any MCP server configuration
             assert response.status_code == 403
             assert response.json()["error"].startswith("Not permitted")
+    else:
+        raise Exception("Untested access token fixture")
 
 
 @pytest.mark.parametrize(

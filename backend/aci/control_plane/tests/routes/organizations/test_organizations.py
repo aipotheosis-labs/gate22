@@ -194,7 +194,7 @@ def test_remove_organization_member(
         assert response.status_code == 403
         return
 
-    if access_token_fixture in [
+    elif access_token_fixture in [
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
@@ -206,13 +206,14 @@ def test_remove_organization_member(
         )
         return
 
-    assert response.status_code == 200
+    else:
+        assert response.status_code == 200
 
-    # Check if the new member is removed from the organization
-    organization_membership = crud.organizations.get_organization_membership(
-        db_session, dummy_organization.id, new_member.id
-    )
-    assert organization_membership is None
+        # Check if the new member is removed from the organization
+        organization_membership = crud.organizations.get_organization_membership(
+            db_session, dummy_organization.id, new_member.id
+        )
+        assert organization_membership is None
 
 
 @pytest.mark.parametrize(
@@ -266,19 +267,20 @@ def test_leave_organization(
         assert response.status_code == 403
         return
 
-    if access_token_fixture in ["dummy_access_token_admin"] and initial_admin_count == 1:
+    elif access_token_fixture in ["dummy_access_token_admin"] and initial_admin_count == 1:
         # Last admin cannot leave the organization
         assert response.status_code == 403
         assert response.json()["detail"] == "Cannot remove the last admin in the organization"
         return
 
-    assert response.status_code == 200
+    else:
+        assert response.status_code == 200
 
-    # Check if the user is removed from the organization
-    organization_membership = crud.organizations.get_organization_membership(
-        db_session, dummy_organization.id, dummy_user.id
-    )
-    assert organization_membership is None
+        # Check if the user is removed from the organization
+        organization_membership = crud.organizations.get_organization_membership(
+            db_session, dummy_organization.id, dummy_user.id
+        )
+        assert organization_membership is None
 
 
 @pytest.mark.parametrize(
@@ -351,8 +353,7 @@ def test_update_organization_member_role(
     ):
         assert response.status_code == 403
         assert response.json()["detail"] == "Cannot downgrade the last admin in the organization"
-        return
-
-    # Check if the role of the target user is updated
-    assert response.status_code == 200
-    assert target_membership.role == target_role
+    else:
+        # Check if the role of the target user is updated
+        assert response.status_code == 200
+        assert target_membership.role == target_role
