@@ -134,6 +134,7 @@ def test_get_mcp_server_configuration(
             response.json(),
         )
         assert mcp_server_configuration.id == dummy_mcp_server_configuration.id
+        assert len(mcp_server_configuration.allowed_teams) == 0 if not is_added_to_team else 1
 
     if access_token_fixture in [
         "dummy_access_token_member",
@@ -146,6 +147,8 @@ def test_get_mcp_server_configuration(
                 response.json(),
             )
             assert mcp_server_configuration.id == dummy_mcp_server_configuration.id
+            assert len(mcp_server_configuration.allowed_teams) == 1
+            assert mcp_server_configuration.allowed_teams[0].team_id == dummy_team.id
         else:
             # Should not see any MCP server configuration
             assert response.status_code == 403
