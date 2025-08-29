@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field, model_validator
 
 from aci.common.enums import AuthType
 from aci.common.schemas.mcp_server import MCPServerPublicBasic
+from aci.common.schemas.mcp_tool import MCPToolPublic
+from aci.common.schemas.organization import TeamInfo
 
 
 class MCPServerConfigurationCreate(BaseModel):
@@ -37,11 +39,13 @@ class MCPServerConfigurationPublic(BaseModel):
     organization_id: UUID
     auth_type: AuthType
     all_tools_enabled: bool
-    enabled_tools: list[UUID]
-    allowed_teams: list[UUID]
+    enabled_tools: list[MCPToolPublic]
+    allowed_teams: list[TeamInfo]
 
     created_at: datetime
     updated_at: datetime
+
+    mcp_server: MCPServerPublicBasic
 
     # TODO: scrub sensitive data from whitelabeling overrides if support in the future
 

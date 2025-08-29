@@ -1,4 +1,5 @@
 from typing import Literal, overload
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -94,3 +95,11 @@ def update_mcp_tools(
 
     db_session.flush()
     return mcp_tools
+
+
+def get_mcp_tools_by_ids(
+    db_session: Session,
+    mcp_tool_ids: list[UUID],
+) -> list[MCPTool]:
+    statement = select(MCPTool).where(MCPTool.id.in_(mcp_tool_ids)).order_by(MCPTool.name.asc())
+    return list(db_session.execute(statement).scalars().all())

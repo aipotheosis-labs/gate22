@@ -33,9 +33,16 @@ def get_teams_by_organization_id(
 
 def get_team_by_id(
     db_session: Session,
-    team_id: UUID,
+    team_id: UUID | list[UUID],
 ) -> Team | None:
     return db_session.query(Team).filter(Team.id == team_id).first()
+
+
+def get_teams_by_ids(
+    db_session: Session,
+    team_ids: list[UUID],
+) -> list[Team]:
+    return db_session.query(Team).filter(Team.id.in_(team_ids)).all()
 
 
 def get_team_by_organization_id_and_name(
