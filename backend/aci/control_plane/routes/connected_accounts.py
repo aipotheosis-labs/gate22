@@ -20,7 +20,11 @@ from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import auth_credentials_manager as acm
 from aci.control_plane import config, rbac
 from aci.control_plane import dependencies as deps
-from aci.control_plane.exceptions import MCPServerConfigurationNotFound, OAuth2Error
+from aci.control_plane.exceptions import (
+    MCPServerConfigurationNotFound,
+    NotPermittedError,
+    OAuth2Error,
+)
 from aci.control_plane.oauth2_manager import OAuth2Manager
 
 logger = get_logger(__name__)
@@ -293,6 +297,10 @@ async def delete_connected_account(
             requested_organization_id=connected_account.mcp_server_configuration.organization_id,
             throw_error_if_not_permitted=True,
         )
+        if context.user_id != connected_account.user_id:
+            raise NotPermittedError(message="Cannot delete others' connected accounts")
+
+        # Delete the connected account
         crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
 
         context.db_session.commit()

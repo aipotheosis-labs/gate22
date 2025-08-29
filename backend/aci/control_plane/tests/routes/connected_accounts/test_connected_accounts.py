@@ -134,13 +134,22 @@ def test_delete_connected_account(
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
-        assert response.status_code == 200
+        if delete_self_connected_account:
+            assert response.status_code == 200
 
-        # Check if the connected account is deleted
-        connected_account = crud.connected_accounts.get_connected_account_by_id(
-            db_session, target_connected_account.id
-        )
-        assert connected_account is None
+            # Check if the connected account is deleted
+            connected_account = crud.connected_accounts.get_connected_account_by_id(
+                db_session, target_connected_account.id
+            )
+            assert connected_account is None
+
+        else:
+            assert response.status_code == 403
+            # Check if the connected account is deleted
+            connected_account = crud.connected_accounts.get_connected_account_by_id(
+                db_session, target_connected_account.id
+            )
+            assert connected_account is not None
 
     else:
         raise Exception("Untested access token fixture")
