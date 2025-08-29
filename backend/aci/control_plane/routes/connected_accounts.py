@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from authlib.jose import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerConfiguration
-from aci.common.enums import AuthType
+from aci.common.enums import AuthType, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.connected_account import (
     ConnectedAccountCreate,
@@ -15,8 +16,9 @@ from aci.common.schemas.connected_account import (
     ConnectedAccountPublic,
     OAuth2ConnectedAccountCreateResponse,
 )
+from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import auth_credentials_manager as acm
-from aci.control_plane import config
+from aci.control_plane import config, rbac
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import MCPServerConfigurationNotFound, OAuth2Error
 from aci.control_plane.oauth2_manager import OAuth2Manager
@@ -236,3 +238,63 @@ async def oauth2_callback(
         )
 
     return ConnectedAccountPublic.model_validate(connected_account, from_attributes=True)
+
+
+@router.get("", response_model=PaginationResponse[ConnectedAccountPublic])
+async def list_connected_accounts(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    pagination_params: Annotated[PaginationParams, Depends()],
+) -> PaginationResponse[ConnectedAccountPublic]:
+    if context.act_as.role == OrganizationRole.ADMIN:
+        # Admin can see all connected accounts of the organization
+        connected_accounts = crud.connected_accounts.get_connected_accounts_by_organization_id(
+            context.db_session,
+            context.act_as.organization_id,
+            offset=pagination_params.offset,
+            limit=pagination_params.limit,
+        )
+    else:
+        # Member can see connected accounts of the themselves
+        connected_accounts = (
+            crud.connected_accounts.get_connected_accounts_by_user_id_and_organization_id(
+                context.db_session,
+                context.user_id,
+                context.act_as.organization_id,
+                offset=pagination_params.offset,
+                limit=pagination_params.limit,
+            )
+        )
+
+    return PaginationResponse[ConnectedAccountPublic](
+        data=[
+            ConnectedAccountPublic.model_validate(connected_account, from_attributes=True)
+            for connected_account in connected_accounts
+        ],
+        offset=pagination_params.offset,
+    )
+
+
+@router.delete("/{connected_account_id}")
+async def delete_connected_account(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    connected_account_id: UUID,
+) -> None:
+    # TODO: Admin can only delete shared accounts. (Shared account is not implemented yet)
+    # If a person is acted as an admin, they cannot do any deletion at this moment.
+    if context.act_as.role != OrganizationRole.MEMBER:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    connected_account = crud.connected_accounts.get_connected_account_by_id(
+        context.db_session, connected_account_id
+    )
+    if connected_account is not None:
+        rbac.check_permission(
+            context.act_as,
+            requested_organization_id=connected_account.mcp_server_configuration.organization_id,
+            throw_error_if_not_permitted=True,
+        )
+        crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
+
+        context.db_session.commit()
+    else:
+        raise HTTPException(status_code=404, detail="Connected account not found")

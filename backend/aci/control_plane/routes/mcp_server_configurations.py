@@ -164,13 +164,13 @@ async def delete_mcp_server_configuration(
         crud.mcp_server_configurations.delete_mcp_server_configuration(
             context.db_session, mcp_server_configuration_id
         )
+
+        context.db_session.commit()
     else:
         raise HTTPException(
             status_code=404,
             detail=f"MCP Server Configuration {mcp_server_configuration_id} not found",
         )
-
-    context.db_session.commit()
 
 
 def _construct_mcp_server_configuration_public(
