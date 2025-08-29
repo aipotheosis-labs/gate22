@@ -61,7 +61,7 @@ async def create_mcp_server_bundle(
 
     context.db_session.commit()
 
-    return MCPServerBundlePublic.model_validate(mcp_server_bundle, from_attributes=True)
+    return _construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
 
 
 @router.get("", response_model=PaginationResponse[MCPServerBundlePublicBasic])
@@ -173,7 +173,7 @@ def _construct_mcp_server_bundle_public(
     db_session: Session, mcp_server_bundle: MCPServerBundle
 ) -> MCPServerBundlePublic:
     """
-    Dynamically retreive and populate the mcp_server_configurations
+    Dynamically retrieve and populate the mcp_server_configurations
     for the MCP server bundle.
     """
     mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations_by_ids(

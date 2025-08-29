@@ -175,7 +175,7 @@ def _construct_mcp_server_configuration_public(
     db_session: Session, mcp_server_configuration: MCPServerConfiguration
 ) -> MCPServerConfigurationPublic:
     """
-    Dynamically retreive and populate the enabled_tools and allowed_teams
+    Dynamically retrieve and populate the enabled_tools and allowed_teams
     for the MCP server configuration.
     """
     enabled_tools = crud.mcp_tools.get_mcp_tools_by_ids(
