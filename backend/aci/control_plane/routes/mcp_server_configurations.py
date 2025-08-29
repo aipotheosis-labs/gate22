@@ -148,7 +148,7 @@ async def delete_mcp_server_configuration(
     mcp_server_configuration_id: UUID,
 ) -> None:
     mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
-        context.db_session, mcp_server_configuration_id, throw_error_if_not_found=True
+        context.db_session, mcp_server_configuration_id, throw_error_if_not_found=False
     )
 
     if mcp_server_configuration is not None:

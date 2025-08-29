@@ -33,7 +33,7 @@ def get_teams_by_organization_id(
 
 def get_team_by_id(
     db_session: Session,
-    team_id: UUID | list[UUID],
+    team_id: UUID,
 ) -> Team | None:
     return db_session.query(Team).filter(Team.id == team_id).first()
 
