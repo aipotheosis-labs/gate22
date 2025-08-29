@@ -19,18 +19,21 @@ repos:
         entry: sh -c "cd frontend && pnpm run format:check"
         pass_filenames: false
         require_serial: true
+        files: ^frontend/
       - id: lint check
         name: running frontend lint check
         language: system
         entry: sh -c "cd frontend && pnpm run lint"
         pass_filenames: false
         require_serial: true
+        files: ^frontend/
       - id: build check
         name: running frontend build check
         language: system
         entry: sh -c "cd frontend && pnpm run build"
         pass_filenames: false
         require_serial: true
+        files: ^frontend/
 
   # Backend checks
   - repo: local
@@ -41,15 +44,18 @@ repos:
         entry: sh -c "cd backend && uv run ruff format ."
         pass_filenames: false
         require_serial: true
+        files: ^backend/
       - id: lint
         name: running backend lint checks
         language: system
         entry: sh -c "cd backend && uv run ruff check . --fix"
         pass_filenames: false
         require_serial: true
+        files: ^backend/
       - id: mypy
         name: running backend mypy checks
         language: system
         entry: sh -c "cd backend && uv run mypy ."
         pass_filenames: false
         require_serial: true
+        files: ^backend/
