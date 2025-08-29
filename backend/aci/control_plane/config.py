@@ -9,6 +9,7 @@ APP_OPENAPI_URL = "/v1/control-plane-openapi.json"
 
 ENVIRONMENT = check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT")
 REDIRECT_URI_BASE = check_and_get_env_variable("CONTROL_PLANE_REDIRECT_URI_BASE")
+LOG_LEVEL = check_and_get_env_variable("CONTROL_PLANE_LOG_LEVEL", default="INFO")
 
 # ROUTERS
 ROUTER_PREFIX_HEALTH = "/v1/health"
