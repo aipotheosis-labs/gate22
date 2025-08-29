@@ -97,8 +97,6 @@ async def list_mcp_server_configurations(
         team_ids=team_ids,
     )
 
-    logger.info(f"mcp_server_configurations: {mcp_server_configurations}")
-
     return PaginationResponse[MCPServerConfigurationPublicBasic](
         data=[
             MCPServerConfigurationPublicBasic.model_validate(
@@ -122,13 +120,13 @@ async def get_mcp_server_configuration(
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
     # Check if the MCP server configuration is under the user's org
-    if mcp_server_configuration.organization_id != context.act_as.organization_id:
-        logger.info(
-            f"MCP server configuration {mcp_server_configuration_id} is not under the user's org"
-        )
-        raise HTTPException(status_code=403, detail="Forbidden")
+    rbac.check_permission(
+        context.act_as,
+        requested_organization_id=mcp_server_configuration.organization_id,
+        throw_error_if_not_permitted=True,
+    )
 
-    elif context.act_as.role == OrganizationRole.MEMBER:
+    if context.act_as.role == OrganizationRole.MEMBER:
         # If user is member, check if the MCP server configuration's allowed teams contains the
         # user's team
         rbac.is_mcp_server_configuration_in_user_team(

@@ -1,6 +1,7 @@
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
@@ -9,7 +10,11 @@ from aci.common.schemas.mcp_server_bundle import (
     MCPServerBundleCreate,
     MCPServerBundlePublic,
 )
+from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublicBasic
+from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
+from aci.control_plane import rbac
+from aci.control_plane.exceptions import NotPermittedError
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -54,3 +59,107 @@ async def create_mcp_server_bundle(
     context.db_session.commit()
 
     return MCPServerBundlePublic.model_validate(mcp_server_bundle, from_attributes=True)
+
+
+@router.get("", response_model=PaginationResponse[MCPServerConfigurationPublicBasic])
+async def list_mcp_server_bundles(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    pagination_params: Annotated[PaginationParams, Depends()],
+) -> PaginationResponse[MCPServerConfigurationPublicBasic]:
+    if context.act_as.role == OrganizationRole.ADMIN:
+        mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id(
+            context.db_session,
+            context.act_as.organization_id,
+            offset=pagination_params.offset,
+            limit=pagination_params.limit,
+        )
+    else:
+        mcp_server_bundles = (
+            crud.mcp_server_bundles.get_mcp_server_bundles_by_user_id_and_organization_id(
+                context.db_session,
+                context.user_id,
+                context.act_as.organization_id,
+                offset=pagination_params.offset,
+                limit=pagination_params.limit,
+            )
+        )
+
+    return PaginationResponse[MCPServerConfigurationPublicBasic](
+        data=[
+            MCPServerConfigurationPublicBasic.model_validate(
+                mcp_server_bundle, from_attributes=True
+            )
+            for mcp_server_bundle in mcp_server_bundles
+        ],
+        offset=pagination_params.offset,
+    )
+
+
+@router.get("/{mcp_server_bundle_id}", response_model=MCPServerBundlePublic)
+async def get_mcp_server_bundle(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_bundle_id: UUID,
+) -> MCPServerBundlePublic:
+    mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+        context.db_session, mcp_server_bundle_id
+    )
+
+    if mcp_server_bundle is None:
+        raise HTTPException(status_code=404, detail="MCP server bundle not found")
+
+    # check if the MCP server bundle is under the user's org
+    if mcp_server_bundle.organization_id != context.act_as.organization_id:
+        rbac.check_permission(
+            context.act_as,
+            requested_organization_id=mcp_server_bundle.organization_id,
+            throw_error_if_not_permitted=True,
+        )
+
+    if context.act_as.role == OrganizationRole.MEMBER:
+        # If user is member, check if the MCP server bundle is belongs to the member
+        if mcp_server_bundle.user_id != context.user_id:
+            logger.error(
+                f"MCP server bundle {mcp_server_bundle_id} is not belongs to the member {context.user_id}"  # noqa: E501
+            )
+            raise NotPermittedError(message="Cannot access MCP server bundle")
+
+    mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+        context.db_session, mcp_server_bundle_id
+    )
+
+    return MCPServerBundlePublic.model_validate(mcp_server_bundle, from_attributes=True)
+
+
+@router.delete("/{mcp_server_bundle_id}", status_code=status.HTTP_200_OK)
+async def delete_mcp_server_bundle(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_bundle_id: UUID,
+) -> None:
+    mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+        context.db_session, mcp_server_bundle_id
+    )
+    if mcp_server_bundle is None:
+        raise HTTPException(status_code=404, detail="MCP server bundle not found")
+
+    # check if the MCP server bundle is under the user's org
+    if mcp_server_bundle.organization_id != context.act_as.organization_id:
+        rbac.check_permission(
+            context.act_as,
+            requested_organization_id=mcp_server_bundle.organization_id,
+            throw_error_if_not_permitted=True,
+        )
+
+    if context.act_as.role == OrganizationRole.MEMBER:
+        # If user is member, check if the MCP server bundle is belongs to the member
+        if mcp_server_bundle.user_id != context.user_id:
+            logger.error(
+                f"MCP server bundle {mcp_server_bundle_id} is not belongs to the member {context.user_id}"  # noqa: E501
+            )
+            raise NotPermittedError(message="Cannot delete MCP server bundle")
+
+        crud.mcp_server_bundles.delete_mcp_server_bundle(context.db_session, mcp_server_bundle_id)
+        context.db_session.commit()
+
+    else:
+        # Admin cannot delete MCP server bundle
+        raise NotPermittedError(message="Cannot delete MCP server bundle")

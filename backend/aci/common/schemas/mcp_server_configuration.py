@@ -54,3 +54,6 @@ class MCPServerConfigurationPublicBasic(BaseModel):
     id: UUID
     mcp_server_id: UUID
     mcp_server: MCPServerPublicBasic
+
+    created_at: datetime
+    updated_at: datetime

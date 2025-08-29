@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerBundle
@@ -33,3 +33,50 @@ def get_mcp_server_bundle_by_id(
 ) -> MCPServerBundle | None:
     statement = select(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
     return db_session.execute(statement).scalar_one_or_none()
+
+
+def get_mcp_server_bundles_by_organization_id(
+    db_session: Session,
+    organization_id: UUID,
+    offset: int | None = None,
+    limit: int | None = None,
+) -> list[MCPServerBundle]:
+    statement = (
+        select(MCPServerBundle)
+        .where(MCPServerBundle.organization_id == organization_id)
+        .order_by(MCPServerBundle.created_at.desc())
+    )
+    if offset is not None:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
+    return list(db_session.execute(statement).scalars().all())
+
+
+def get_mcp_server_bundles_by_user_id_and_organization_id(
+    db_session: Session,
+    user_id: UUID,
+    organization_id: UUID,
+    offset: int | None = None,
+    limit: int | None = None,
+) -> list[MCPServerBundle]:
+    statement = (
+        select(MCPServerBundle)
+        .where(
+            MCPServerBundle.user_id == user_id, MCPServerBundle.organization_id == organization_id
+        )
+        .order_by(MCPServerBundle.created_at.desc())
+    )
+    if offset is not None:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
+    return list(db_session.execute(statement).scalars().all())
+
+
+def delete_mcp_server_bundle(
+    db_session: Session,
+    mcp_server_bundle_id: UUID,
+) -> None:
+    statement = delete(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
+    db_session.execute(statement)
