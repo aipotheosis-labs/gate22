@@ -109,6 +109,19 @@ class AuthCredentialsRefreshError(ControlPlaneException):
         )
 
 
+class ConnectedAccountNotFound(ControlPlaneException):
+    """
+    Exception raised when a connected account is not found
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Connected account not found",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
 class MCPToolNotFound(ControlPlaneException):
     """
     Exception raised when an mcp tool is not found
