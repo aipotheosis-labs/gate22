@@ -25,12 +25,17 @@ from aci.control_plane.routes import (
 )
 from aci.control_plane.routes.mcp import route
 
-setup_logging(
-    formatter=JsonFormatter(
+if config.ENVIRONMENT == "local":
+    formatter = None
+else:
+    formatter = JsonFormatter(
         "{levelname} {asctime} {name} {message}",
         style="{",
         rename_fields={"asctime": "timestamp", "name": "file", "levelname": "level"},
-    ),
+    )
+
+setup_logging(
+    formatter=formatter,
     filters=[RequestContextFilter()],
 )
 
