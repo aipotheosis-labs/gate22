@@ -293,14 +293,16 @@ async def delete_connected_account(
             requested_organization_id=connected_account.mcp_server_configuration.organization_id,
             throw_error_if_not_permitted=True,
         )
-        
+
         # Allow deletion if:
         # 1. User is deleting their own account (regardless of role)
         # 2. User is an admin (can delete any account in the organization)
         if context.act_as.role == OrganizationRole.MEMBER:
             # Members can only delete their own accounts
             if context.user_id != connected_account.user_id:
-                raise NotPermittedError(message="Members can only delete their own connected accounts")
+                raise NotPermittedError(
+                    message="Members can only delete their own connected accounts"
+                )
         # Admins can delete any account in the organization (no additional check needed)
 
         # Delete the connected account
