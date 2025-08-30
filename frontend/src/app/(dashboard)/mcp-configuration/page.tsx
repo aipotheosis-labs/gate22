@@ -83,7 +83,7 @@ export default function MCPConfigurationPage() {
           enableGlobalFilter: true,
         }),
 
-        columnHelper.accessor("mcp_server.name", {
+        columnHelper.accessor((row) => row.mcp_server?.name, {
           id: "mcp_server_name",
           header: ({ column }) => (
             <div className="flex items-center justify-start">
@@ -100,20 +100,21 @@ export default function MCPConfigurationPage() {
             </div>
           ),
           cell: (info) => {
-            const server = info.row.original.mcp_server;
+            const name = info.getValue();
+            const logo = info.row.original.mcp_server?.logo;
             return (
               <div className="flex items-center gap-2">
-                {server.logo && (
+                {logo && (
                   <div className="relative h-5 w-5 shrink-0 overflow-hidden">
                     <Image
-                      src={server.logo}
-                      alt={`${server.name} logo`}
+                      src={logo}
+                      alt={`${name} logo`}
                       fill
                       className="object-contain rounded-sm"
                     />
                   </div>
                 )}
-                <div className="font-medium">{server.name}</div>
+                <div className="font-medium">{name}</div>
               </div>
             );
           },

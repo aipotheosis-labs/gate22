@@ -11,9 +11,9 @@ from aci.common.schemas.organization import TeamInfo
 
 class MCPServerConfigurationCreate(BaseModel):
     """Create a new MCP configuration
-    "all_functions_enabled=True" → ignore enabled_functions.
-    "all_functions_enabled=False" AND non-empty enabled_functions → selectively enable that list.
-    "all_functions_enabled=False" AND empty enabled_functions → all functions disabled.
+    "all_tools_enabled=True" → ignore enabled_tools.
+    "all_tools_enabled=False" AND non-empty enabled_tools → selectively enable that list.
+    "all_tools_enabled=False" AND empty enabled_tools → all tools disabled.
     """
 
     # TODO: allow white-labeling by providingthe redirect url
