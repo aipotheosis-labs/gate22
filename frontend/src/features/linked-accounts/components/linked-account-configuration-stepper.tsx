@@ -43,13 +43,12 @@ export function LinkedAccountConfigurationStepper({
   account,
 }: LinkedAccountConfigurationStepperProps) {
   const stepper = useStepper();
-  const [appName, setAppName] = useState(account?.app_name || "");
-  const [accountOwnerId, setAccountOwnerId] = useState(
-    account?.linked_account_owner_id || "",
+  const [appName, setAppName] = useState(
+    account?.mcp_server_configuration?.mcp_server?.name || "",
   );
-  const [securityScheme, setSecurityScheme] = useState(
-    account?.security_scheme || "oauth2",
-  );
+  const [accountOwnerId, setAccountOwnerId] = useState(account?.user_id || "");
+  // TODO: Security scheme should come from mcp_server_configuration
+  const [securityScheme, setSecurityScheme] = useState("oauth2");
   const [allPermissionsEnabled, setAllPermissionsEnabled] = useState(true);
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(
     new Set(),
@@ -173,7 +172,9 @@ export function LinkedAccountConfigurationStepper({
         <div className="flex flex-col h-full overflow-hidden">
           <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
             <DialogTitle>
-              {account ? `Configure ${account.app_name}` : "Add Linked Account"}
+              {account
+                ? `Configure ${account.mcp_server_configuration?.mcp_server?.name}`
+                : "Add Linked Account"}
             </DialogTitle>
             <DialogDescription>
               Set up your account connection and permissions

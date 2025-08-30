@@ -78,10 +78,7 @@ export const useAgentStore = create<AgentState>()(
         const linkedAccounts = get().linkedAccounts;
         const uniqueLinkedAccounts = Array.from(
           new Map(
-            linkedAccounts.map((account) => [
-              account.linked_account_owner_id,
-              account,
-            ]),
+            linkedAccounts.map((account) => [account.user_id, account]),
           ).values(),
         );
         return uniqueLinkedAccounts;
@@ -105,16 +102,18 @@ export const useAgentStore = create<AgentState>()(
         if (!get().selectedLinkedAccountOwnerId) {
           filteredApps = filteredApps.filter((app) =>
             get().linkedAccounts.some(
-              (linkedAccount) => linkedAccount.app_name === app.name,
+              (linkedAccount) =>
+                linkedAccount.mcp_server_configuration?.mcp_server?.name ===
+                app.name,
             ),
           );
         } else {
           filteredApps = filteredApps.filter((app) =>
             get().linkedAccounts.some(
               (linkedAccount) =>
-                linkedAccount.app_name === app.name &&
-                linkedAccount.linked_account_owner_id ===
-                  get().selectedLinkedAccountOwnerId,
+                linkedAccount.mcp_server_configuration?.mcp_server?.name ===
+                  app.name &&
+                linkedAccount.user_id === get().selectedLinkedAccountOwnerId,
             ),
           );
         }

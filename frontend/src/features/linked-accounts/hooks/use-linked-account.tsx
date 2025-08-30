@@ -38,7 +38,9 @@ export const useAppLinkedAccounts = (appName?: string | null) => {
     data: useMemo(
       () =>
         appName && base.data
-          ? base.data.filter((a) => a.app_name === appName)
+          ? base.data.filter(
+              (a) => a.mcp_server_configuration?.mcp_server?.name === appName,
+            )
           : [],
       [base.data, appName],
     ),

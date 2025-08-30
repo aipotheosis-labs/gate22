@@ -18,8 +18,9 @@ export async function getAllLinkedAccounts(
     );
   }
 
-  const linkedAccounts = await response.json();
-  return linkedAccounts;
+  const paginatedResponse = await response.json();
+  // The backend returns a paginated response with data array
+  return paginatedResponse.data || [];
 }
 
 export interface CreateOAuth2ConnectedAccountRequest {

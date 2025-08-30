@@ -32,20 +32,6 @@ router = APIRouter()
 CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME = "connected_accounts_oauth2_callback"
 
 
-@router.get("")
-async def list_connected_accounts(
-    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
-) -> list[ConnectedAccountPublic]:
-    """List all connected accounts for the current user."""
-    connected_accounts = crud.connected_accounts.get_connected_accounts_by_user_id(
-        context.db_session, context.user_id
-    )
-    return [
-        ConnectedAccountPublic.model_validate(account, from_attributes=True)
-        for account in connected_accounts
-    ]
-
-
 @router.post("")
 async def create_connected_account(
     request: Request,
