@@ -80,6 +80,18 @@ async def google_callback(
 ) -> RedirectResponse:
     # Check if error
     if error:
+        # Try to extract redirect URL from state if possible
+        if state:
+            try:
+                state_jwt = jwt.decode(
+                    state, config.JWT_SIGNING_KEY, algorithms=[config.JWT_ALGORITHM]
+                )
+                oauth_info = OAuth2State(**state_jwt)
+                # The URL already has ?provider=google, so we use &
+                error_redirect_url = f"{oauth_info.post_oauth_redirect_uri}&error=oauth_error"
+                return RedirectResponse(error_redirect_url, status_code=status.HTTP_302_FOUND)
+            except Exception:
+                pass
         raise OAuth2Error(message="Error during OAuth2 flow")
 
     if not code:
@@ -100,9 +112,10 @@ async def google_callback(
         # Check if email already been used
         user = crud.users.get_user_by_email(db_session, google_userinfo.email)
         if user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
-            )
+            # Redirect to frontend with error parameter
+            # The URL already has ?provider=google, so we use &
+            error_redirect_url = f"{oauth_info.post_oauth_redirect_uri}&error=email_exists"
+            return RedirectResponse(error_redirect_url, status_code=status.HTTP_302_FOUND)
 
         # Create user
         user = crud.users.create_user(
@@ -118,7 +131,10 @@ async def google_callback(
 
         # User not found or deleted
         if not user or user.deleted_at:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not exists")
+            # Redirect to frontend with error parameter
+            # The URL already has ?provider=google, so we use &
+            error_redirect_url = f"{oauth_info.post_oauth_redirect_uri}&error=user_not_found"
+            return RedirectResponse(error_redirect_url, status_code=status.HTTP_302_FOUND)
 
     else:
         raise OAuth2Error(message="Invalid operation parameter during OAuth2 flow")

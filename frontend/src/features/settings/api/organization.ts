@@ -48,7 +48,6 @@ export async function inviteToOrganization(
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      "X-ACI-ORG-ID": orgId,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ email, role }),
@@ -71,7 +70,6 @@ export async function removeUser(
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "X-ACI-ORG-ID": orgId,
       },
     },
   );

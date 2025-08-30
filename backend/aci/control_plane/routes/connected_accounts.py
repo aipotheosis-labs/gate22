@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from authlib.jose import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -24,6 +25,20 @@ from aci.control_plane.oauth2_manager import OAuth2Manager
 logger = get_logger(__name__)
 router = APIRouter()
 CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME = "connected_accounts_oauth2_callback"
+
+
+@router.get("")
+async def list_connected_accounts(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+) -> list[ConnectedAccountPublic]:
+    """List all connected accounts for the current user."""
+    connected_accounts = crud.connected_accounts.get_connected_accounts_by_user_id(
+        context.db_session, context.user_id
+    )
+    return [
+        ConnectedAccountPublic.model_validate(account, from_attributes=True)
+        for account in connected_accounts
+    ]
 
 
 @router.post("")
@@ -236,3 +251,28 @@ async def oauth2_callback(
         )
 
     return ConnectedAccountPublic.model_validate(connected_account, from_attributes=True)
+
+
+@router.delete("/{connected_account_id}")
+async def delete_connected_account(
+    connected_account_id: str,
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+) -> dict:
+    """Delete a connected account."""
+    connected_account = crud.connected_accounts.get_connected_account_by_id(
+        context.db_session, UUID(connected_account_id)
+    )
+
+    if not connected_account:
+        raise HTTPException(status_code=404, detail="Connected account not found")
+
+    # Check if the user owns this connected account
+    if connected_account.user_id != context.user_id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this connected account"
+        )
+
+    crud.connected_accounts.delete_connected_account(context.db_session, connected_account)
+    context.db_session.commit()
+
+    return {"message": "Connected account deleted successfully"}
