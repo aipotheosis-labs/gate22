@@ -71,7 +71,8 @@ export default function LinkedAccountsPage() {
         toast.success("Account deleted successfully");
       } catch (error) {
         console.error("Failed to delete account:", error);
-        toast.error("Failed to delete account");
+        const errorMessage = error instanceof Error ? error.message : "Failed to delete account";
+        toast.error(errorMessage);
       }
     },
     [deleteAccount],

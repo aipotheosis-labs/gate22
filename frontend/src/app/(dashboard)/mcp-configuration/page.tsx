@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
-import { formatToLocalTime } from "@/utils/time";
 import { ArrowUpDown, Trash2, Settings, Eye } from "lucide-react";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
@@ -121,33 +120,6 @@ export default function MCPConfigurationPage() {
           enableGlobalFilter: true,
         }),
 
-        columnHelper.accessor("created_at", {
-          id: "created_at",
-          header: ({ column }) => (
-            <div className="flex items-center justify-start">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  column.toggleSorting(column.getIsSorted() === "asc")
-                }
-                className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-              >
-                CREATED
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          ),
-          cell: (info) => {
-            const dateString = info.getValue();
-            return (
-              <div className="text-sm text-muted-foreground">
-                {dateString ? formatToLocalTime(dateString) : "-"}
-              </div>
-            );
-          },
-          enableGlobalFilter: false,
-        }),
-
         columnHelper.accessor((row) => row, {
           id: "actions",
           header: "",
@@ -252,7 +224,7 @@ export default function MCPConfigurationPage() {
           <EnhancedDataTable
             columns={columns}
             data={configurationsResponse.data}
-            defaultSorting={[{ id: "created_at", desc: true }]}
+            defaultSorting={[{ id: "mcp_server_name", desc: false }]}
             searchBarProps={{
               placeholder: "Search configurations...",
             }}
