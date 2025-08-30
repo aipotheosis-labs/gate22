@@ -226,22 +226,26 @@ export default function MCPConfigurationDetailPage() {
             </div>
 
             <div className="border-t pt-4 grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Created At
-                </label>
-                <p className="text-sm mt-1">
-                  {new Date(configuration.created_at).toLocaleString()}
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Updated At
-                </label>
-                <p className="text-sm mt-1">
-                  {new Date(configuration.updated_at).toLocaleString()}
-                </p>
-              </div>
+              {configuration.created_at && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Created At
+                  </label>
+                  <p className="text-sm mt-1">
+                    {new Date(configuration.created_at).toLocaleString()}
+                  </p>
+                </div>
+              )}
+              {configuration.updated_at && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Updated At
+                  </label>
+                  <p className="text-sm mt-1">
+                    {new Date(configuration.updated_at).toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

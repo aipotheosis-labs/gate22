@@ -141,7 +141,7 @@ export default function MCPConfigurationPage() {
             const dateString = info.getValue();
             return (
               <div className="text-sm text-muted-foreground">
-                {formatToLocalTime(dateString)}
+                {dateString ? formatToLocalTime(dateString) : "-"}
               </div>
             );
           },

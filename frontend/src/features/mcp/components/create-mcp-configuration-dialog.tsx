@@ -36,7 +36,7 @@ export function CreateMCPConfigurationDialog() {
   const [open, setOpen] = useState(false);
   const [selectedServerId, setSelectedServerId] = useState<string>("");
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
-    AuthType.NONE,
+    AuthType.NO_AUTH,
   );
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
@@ -79,7 +79,7 @@ export function CreateMCPConfigurationDialog() {
 
   const resetForm = () => {
     setSelectedServerId("");
-    setSelectedAuthType(AuthType.NONE);
+    setSelectedAuthType(AuthType.NO_AUTH);
     setAllToolsEnabled(true);
     setSelectedTools([]);
     setSelectedTeams([]);

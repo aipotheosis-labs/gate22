@@ -40,7 +40,7 @@ export function MCPServerConfigurationModal({
   server,
 }: MCPServerConfigurationModalProps) {
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
-    server.supported_auth_types[0] || AuthType.NONE,
+    server.supported_auth_types[0] || AuthType.NO_AUTH,
   );
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());

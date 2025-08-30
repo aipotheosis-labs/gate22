@@ -43,14 +43,12 @@ const { useStepper, steps } = defineStepper(
 // Helper functions for auth type display
 const getAuthTypeLabel = (authType: string): string => {
   switch (authType) {
-    case "NONE":
+    case "no_auth":
       return "No Authentication";
-    case "API_KEY":
+    case "api_key":
       return "API Key";
-    case "OAUTH":
+    case "oauth2":
       return "OAuth 2.0";
-    case "BASIC":
-      return "Basic Auth";
     default:
       return authType;
   }
@@ -58,14 +56,12 @@ const getAuthTypeLabel = (authType: string): string => {
 
 const getAuthTypeDescription = (authType: string): string => {
   switch (authType) {
-    case "NONE":
+    case "no_auth":
       return "No authentication required";
-    case "API_KEY":
+    case "api_key":
       return "Use an API key for authentication";
-    case "OAUTH":
+    case "oauth2":
       return "Authenticate via OAuth 2.0 flow";
-    case "BASIC":
-      return "Username and password authentication";
     default:
       return "";
   }
@@ -78,7 +74,7 @@ export function MCPServerConfigurationStepper({
 }: MCPServerConfigurationStepperProps) {
   const stepper = useStepper();
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
-    server?.supported_auth_types?.[0] || AuthType.NONE,
+    server?.supported_auth_types?.[0] || AuthType.NO_AUTH,
   );
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
@@ -96,7 +92,9 @@ export function MCPServerConfigurationStepper({
       setSelectedTools(new Set());
       setSelectedTeams(new Set());
       setAllToolsEnabled(true);
-      setSelectedAuthType(server?.supported_auth_types?.[0] || AuthType.NONE);
+      setSelectedAuthType(
+        server?.supported_auth_types?.[0] || AuthType.NO_AUTH,
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);

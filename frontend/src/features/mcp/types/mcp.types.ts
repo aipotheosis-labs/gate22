@@ -1,8 +1,7 @@
 export enum AuthType {
-  OAUTH = "OAUTH",
-  API_KEY = "API_KEY",
-  BASIC = "BASIC",
-  NONE = "NONE",
+  OAUTH = "oauth2",
+  API_KEY = "api_key",
+  NO_AUTH = "no_auth",
 }
 
 export interface AuthConfig {
@@ -73,8 +72,8 @@ export interface MCPServerConfigurationPublicBasic {
   id: string;
   mcp_server_id: string;
   mcp_server: MCPServerPublicBasic;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PaginationParams {
