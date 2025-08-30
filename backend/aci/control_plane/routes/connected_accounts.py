@@ -298,9 +298,7 @@ async def delete_connected_account(
         # - Admins cannot delete any connected accounts (including their own)
         # - Members can only delete their own connected accounts
         if context.act_as.role == OrganizationRole.ADMIN:
-            raise NotPermittedError(
-                message="Admins cannot delete connected accounts"
-            )
+            raise NotPermittedError(message="Admins cannot delete connected accounts")
         elif context.act_as.role == OrganizationRole.MEMBER:
             # Members can only delete their own accounts
             if context.user_id != connected_account.user_id:
