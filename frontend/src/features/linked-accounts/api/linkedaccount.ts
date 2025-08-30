@@ -5,7 +5,8 @@ export async function getAllLinkedAccounts(
   accessToken: string,
 ): Promise<LinkedAccount[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/connected-accounts`, {
+  // Fetch with a large limit to get all accounts
+  const response = await fetch(`${baseUrl}/v1/connected-accounts?limit=100`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -21,46 +22,6 @@ export async function getAllLinkedAccounts(
   const paginatedResponse = await response.json();
   // The backend returns a paginated response with data array
   return paginatedResponse.data || [];
-}
-
-export interface CreateOAuth2ConnectedAccountRequest {
-  mcp_server_configuration_id: string;
-  redirect_url_after_account_creation?: string;
-}
-
-export interface OAuth2ConnectedAccountResponse {
-  authorization_url: string;
-}
-
-export async function createOAuth2ConnectedAccount(
-  request: CreateOAuth2ConnectedAccountRequest,
-  accessToken: string,
-): Promise<OAuth2ConnectedAccountResponse> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/connected-accounts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    let errorMsg = `Failed to create connected account: ${response.status} ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData && errorData.detail) {
-        errorMsg = errorData.detail;
-      }
-    } catch (e) {
-      console.error("Error parsing error response:", e);
-    }
-    throw new Error(errorMsg);
-  }
-
-  const result = await response.json();
-  return result;
 }
 
 export interface CreateOAuth2ConnectedAccountRequest {
