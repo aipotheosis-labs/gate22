@@ -2,7 +2,7 @@ import json
 
 from mcp import types as mcp_types
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
@@ -42,8 +42,7 @@ class SearchToolsInputSchema(BaseModel):
         description="Pagination offset.",
     )
 
-    class Config:
-        extra = "forbid"  # Equivalent to additionalProperties: False
+    model_config = ConfigDict(extra="forbid")
 
 
 SEARCH_TOOLS = {
