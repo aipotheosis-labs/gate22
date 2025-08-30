@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import select
 
 from aci.common.db.sql_models import Team, TeamMembership
 from aci.common.enums import TeamRole
@@ -44,7 +45,12 @@ def get_teams_by_ids(
 ) -> list[Team]:
     if not team_ids:
         return []
-    return db_session.query(Team).filter(Team.id.in_(team_ids)).all()
+    statement = select(Team).where(Team.id.in_(team_ids))
+    results = db_session.execute(statement).scalars().all()
+
+    # map the rows by id, and use the order of requested ids to map the final results
+    results_by_id = {result.id: result for result in results}
+    return [results_by_id[team_id] for team_id in team_ids if team_id in results_by_id]
 
 
 def get_team_by_organization_id_and_name(

@@ -103,5 +103,12 @@ def get_mcp_tools_by_ids(
 ) -> list[MCPTool]:
     if not mcp_tool_ids:
         return []
-    statement = select(MCPTool).where(MCPTool.id.in_(mcp_tool_ids)).order_by(MCPTool.name.asc())
-    return list(db_session.execute(statement).scalars().all())
+
+    statement = select(MCPTool).where(MCPTool.id.in_(mcp_tool_ids))
+    results = list(db_session.execute(statement).scalars().all())
+
+    # map the rows by id, and use the order of requested ids to map the final results
+    results_by_id = {result.id: result for result in results}
+    return [
+        results_by_id[mcp_tool_id] for mcp_tool_id in mcp_tool_ids if mcp_tool_id in results_by_id
+    ]
