@@ -123,13 +123,6 @@ async def get_mcp_server_bundle(
             )
             raise NotPermittedError(message="Cannot access MCP server bundle")
 
-    mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
-        context.db_session, mcp_server_bundle_id
-    )
-
-    if mcp_server_bundle is None:
-        raise HTTPException(status_code=404, detail="MCP server bundle not found")
-
     return _construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
 
 
