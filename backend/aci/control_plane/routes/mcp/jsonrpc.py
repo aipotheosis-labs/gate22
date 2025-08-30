@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import Annotated, Any, Literal
 
 from mcp import types as mcp_types
@@ -64,6 +65,35 @@ class JSONRPCSuccessResponse(BaseModel):
 
 
 class JSONRPCErrorResponse(BaseModel):
+    class ErrorData(BaseModel):
+        """Error information for JSON-RPC error responses."""
+
+        code: int
+        """The error type that occurred."""
+
+        message: str
+        """
+        A short description of the error. The message SHOULD be limited to a concise single
+        sentence.
+        """
+
+        data: Any | None = None
+        """
+        Additional information about the error. The value of this member is defined by the
+        sender (e.g. detailed error information, nested errors etc.).
+        """
+        model_config = ConfigDict(extra="allow")
+
     jsonrpc: Literal["2.0"] = "2.0"
     id: int | str | None = None
-    error: dict = Field(default_factory=dict)
+    error: ErrorData
+
+    model_config = ConfigDict(extra="allow")
+
+
+class JSONRPCErrorCode(IntEnum):
+    PARSE_ERROR = -32700
+    INVALID_REQUEST = -32600
+    METHOD_NOT_FOUND = -32601
+    INVALID_METHOD_PARAMS = -32602
+    INTERNAL_ERROR = -32603

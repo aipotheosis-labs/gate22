@@ -7,9 +7,7 @@ from sqlalchemy.orm import Session
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
 from aci.control_plane import dependencies as deps
-from aci.control_plane.routes.mcp.tools.execute_tool import EXECUTE_TOOL, handle_execute_tool
-from aci.control_plane.routes.mcp.tools.search_tools import SEARCH_TOOLS
-from aci.control_plane.routes.mcp.types import (
+from aci.control_plane.routes.mcp.jsonrpc import (
     JSONRPCErrorResponse,
     JSONRPCInitializeRequest,
     JSONRPCNotificationInitialized,
@@ -18,6 +16,8 @@ from aci.control_plane.routes.mcp.types import (
     JSONRPCToolsCallRequest,
     JSONRPCToolsListRequest,
 )
+from aci.control_plane.routes.mcp.tools.execute_tool import EXECUTE_TOOL, handle_execute_tool
+from aci.control_plane.routes.mcp.tools.search_tools import SEARCH_TOOLS, handle_search_tools
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -45,10 +45,10 @@ async def mcp_post(
         logger.error(f"Bundle not found, bundle_id={bundle_id}")
         return JSONRPCErrorResponse(
             id=getattr(body, "id", None),  # Use getattr to safely get id, defaulting to None
-            error={
-                "code": -32004,
-                "message": f"Bundle not found, bundle_id={bundle_id}",
-            },
+            error=JSONRPCErrorResponse.ErrorData(
+                code=-32004,
+                message=f"Bundle not found, bundle_id={bundle_id}",
+            ),
         )
 
     match body:
@@ -87,11 +87,7 @@ async def mcp_post(
             logger.info(f"Received tools/call request={body.model_dump()}")
             match body.params.name:
                 case "SEARCH_TOOLS":
-                    logger.info(f"Received SEARCH_TOOLS request, arguments={body.params.arguments}")
-                    return JSONRPCSuccessResponse(
-                        id=body.id,
-                        result={},
-                    )
+                    return await handle_search_tools(db_session, mcp_server_bundle, body)
                 case "EXECUTE_TOOL":
                     logger.info(f"Received EXECUTE_TOOL request, arguments={body.params.arguments}")
                     arguments = body.params.arguments
@@ -103,10 +99,10 @@ async def mcp_post(
                         )
                         return JSONRPCErrorResponse(
                             id=body.id,
-                            error={
-                                "code": -32602,
-                                "message": "Invalid tool arguments for EXECUTE_TOOL",
-                            },
+                            error=JSONRPCErrorResponse.ErrorData(
+                                code=-32602,
+                                message="Invalid tool arguments for EXECUTE_TOOL",
+                            ),
                         )
                     try:
                         tool_call_result = await handle_execute_tool(
@@ -124,19 +120,19 @@ async def mcp_post(
                         logger.exception("Error executing tool")
                         return JSONRPCErrorResponse(
                             id=body.id,
-                            error={
-                                "code": -32603,
-                                "message": str(e),
-                            },
+                            error=JSONRPCErrorResponse.ErrorData(
+                                code=-32603,
+                                message=str(e),
+                            ),
                         )
                 case _:
                     logger.error(f"Unknown tool: {body.params.name}")
                     return JSONRPCErrorResponse(
                         id=body.id,
-                        error={
-                            "code": -32601,
-                            "message": f"Unknown tool: {body.params.name}",
-                        },
+                        error=JSONRPCErrorResponse.ErrorData(
+                            code=-32601,
+                            message=f"Unknown tool: {body.params.name}",
+                        ),
                     )
 
         case JSONRPCNotificationInitialized():
