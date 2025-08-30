@@ -19,6 +19,7 @@ from aci.control_plane.routes.mcp.jsonrpc import (
 )
 
 logger = get_logger(__name__)
+# TODO: put to cache and share the same instance?
 openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
@@ -103,6 +104,7 @@ async def _search_tools(
     limit: int,
     offset: int,
 ) -> mcp_types.CallToolResult:
+    # TODO: use anyio.to_thread.run_sync to run the embedding generation?
     intent_embedding = generate_embedding(openai_client, intent) if intent else None
     mcp_server_configurations = (
         crud.mcp_server_bundles.get_mcp_server_configurations_of_mcp_server_bundle(

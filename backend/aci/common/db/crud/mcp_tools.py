@@ -133,9 +133,13 @@ def search_mcp_tools(
     statement = select(MCPTool)
     # Filter by MCP server IDs if provided
     if mcp_server_ids is not None:
-        statement = statement.where(MCPTool.mcp_server_id.in_(mcp_server_ids))
+        # For empty mcp_server_ids, return an empty list
+        if len(mcp_server_ids) == 0:
+            return []
+        else:
+            statement = statement.where(MCPTool.mcp_server_id.in_(mcp_server_ids))
     # Filter by excluded tool IDs if provided
-    if excluded_tool_ids is not None:
+    if excluded_tool_ids:
         statement = statement.where(MCPTool.id.not_in(excluded_tool_ids))
     # Rank by similarity to intent embedding if provided, else default order by tool name
     if intent_embedding is not None:
