@@ -283,28 +283,22 @@ async def delete_connected_account(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     connected_account_id: UUID,
 ) -> None:
+    # TODO: Admin can only delete shared accounts. (Shared account is not implemented yet)
+    # If a person is acted as an admin, they cannot do any deletion at this moment.
+    if context.act_as.role != OrganizationRole.MEMBER:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
     connected_account = crud.connected_accounts.get_connected_account_by_id(
         context.db_session, connected_account_id
     )
     if connected_account is not None:
-        # Check if the account belongs to the same organization
         rbac.check_permission(
             context.act_as,
             requested_organization_id=connected_account.mcp_server_configuration.organization_id,
             throw_error_if_not_permitted=True,
         )
-
-        # Permission check:
-        # - Admins cannot delete any connected accounts (including their own)
-        # - Members can only delete their own connected accounts
-        if context.act_as.role == OrganizationRole.ADMIN:
-            raise NotPermittedError(message="Admins cannot delete connected accounts")
-        elif context.act_as.role == OrganizationRole.MEMBER:
-            # Members can only delete their own accounts
-            if context.user_id != connected_account.user_id:
-                raise NotPermittedError(
-                    message="Members can only delete their own connected accounts"
-                )
+        if context.user_id != connected_account.user_id:
+            raise NotPermittedError(message="Cannot delete others' connected accounts")
 
         # Delete the connected account
         crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
