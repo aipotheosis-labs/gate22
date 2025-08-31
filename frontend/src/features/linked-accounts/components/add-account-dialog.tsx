@@ -155,7 +155,7 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
                                   "Unknown Server"}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                ({selectedConfig.id.slice(0, 8)}...)
+                                ({selectedConfig.id})
                               </span>
                             </div>
                           )}
@@ -183,7 +183,7 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
                               {config.mcp_server?.name || "Unknown Server"}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              ({config.id.slice(0, 8)}...)
+                              ({config.id})
                             </span>
                           </div>
                         </SelectItem>
