@@ -8,6 +8,7 @@ from aci.common.db import crud
 from aci.common.logging_setup import get_logger
 from aci.control_plane import dependencies as deps
 from aci.control_plane.routes.mcp.jsonrpc import (
+    JSONRPCErrorCode,
     JSONRPCErrorResponse,
     JSONRPCInitializeRequest,
     JSONRPCNotificationInitialized,
@@ -73,6 +74,8 @@ async def mcp_post(
 
         case JSONRPCToolsListRequest():
             logger.info(f"Received tools/list request={body.model_dump()}")
+            logger.info(f"searched tools={SEARCH_TOOLS}")
+            logger.info(f"executed tools={EXECUTE_TOOL}")
             return JSONRPCSuccessResponse(
                 id=body.id,
                 result={
@@ -89,48 +92,13 @@ async def mcp_post(
                 case "SEARCH_TOOLS":
                     return await handle_search_tools(db_session, mcp_server_bundle, body)
                 case "EXECUTE_TOOL":
-                    logger.info(f"Received EXECUTE_TOOL request, arguments={body.params.arguments}")
-                    arguments = body.params.arguments
-                    tool_name: str | None = arguments.get("tool_name")
-                    tool_arguments: dict | None = arguments.get("tool_arguments")
-                    if tool_name is None or tool_arguments is None:
-                        logger.error(
-                            f"Invalid tool arguments for EXECUTE_TOOL, tool_name={tool_name}, tool_arguments={tool_arguments}"  # noqa: E501
-                        )
-                        return JSONRPCErrorResponse(
-                            id=body.id,
-                            error=JSONRPCErrorResponse.ErrorData(
-                                code=-32602,
-                                message="Invalid tool arguments for EXECUTE_TOOL",
-                            ),
-                        )
-                    try:
-                        tool_call_result = await handle_execute_tool(
-                            db_session,
-                            mcp_server_bundle,
-                            tool_name,
-                            tool_arguments,
-                        )
-                        return JSONRPCSuccessResponse(
-                            id=body.id,
-                            result=tool_call_result.model_dump(),
-                        )
-                    # TODO: catch specific errors and use more specific error code?
-                    except Exception as e:
-                        logger.exception("Error executing tool")
-                        return JSONRPCErrorResponse(
-                            id=body.id,
-                            error=JSONRPCErrorResponse.ErrorData(
-                                code=-32603,
-                                message=str(e),
-                            ),
-                        )
+                    return await handle_execute_tool(db_session, mcp_server_bundle, body)
                 case _:
                     logger.error(f"Unknown tool: {body.params.name}")
                     return JSONRPCErrorResponse(
                         id=body.id,
                         error=JSONRPCErrorResponse.ErrorData(
-                            code=-32601,
+                            code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
                             message=f"Unknown tool: {body.params.name}",
                         ),
                     )

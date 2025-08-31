@@ -4,10 +4,11 @@ from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServer, MCPServerBundle, MCPServerConfiguration
+from aci.common.db.sql_models import MCPServer, MCPServerBundle, MCPServerConfiguration, MCPTool
 from aci.common.enums import MCPServerTransportType
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import (
@@ -21,45 +22,129 @@ from aci.control_plane.exceptions import (
     MCPToolNotEnabled,
     MCPToolNotFound,
 )
+from aci.control_plane.routes.mcp.jsonrpc import (
+    JSONRPCErrorCode,
+    JSONRPCErrorResponse,
+    JSONRPCSuccessResponse,
+    JSONRPCToolsCallRequest,
+)
 from aci.control_plane.routes.mcp.mcp_auth_manager import MCPAuthManager
 
 logger = get_logger(__name__)
+
+
+class ExecuteToolInputSchema(BaseModel):
+    tool_name: str = Field(..., description="The name of the tool to execute")
+    tool_arguments: dict = Field(
+        ...,
+        description="A dictionary containing key-value pairs of input parameters required by the "
+        "specified tool. The parameter names and types must match those defined in "
+        "the tool definition previously retrieved. If the tool requires no "
+        "parameters, provide an empty object.",
+    )
+
+    model_config = ConfigDict(extra="forbid")
+
 
 EXECUTE_TOOL = {
     "name": "EXECUTE_TOOL",
     "description": "Execute a specific retrieved tool. Provide the executable tool name, and the "
     "required tool parameters for that tool based on tool definition retrieved.",
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "tool_name": {
-                "type": "string",
-                "description": "The name of the tool to execute",
-            },
-            "tool_arguments": {
-                "type": "object",
-                "description": "A dictionary containing key-value pairs of input parameters required by the "  # noqa: E501
-                "specified tool. The parameter names and types must match those defined in "
-                "the tool definition previously retrieved. If the tool requires no "
-                "parameters, provide an empty object.",
-                "additionalProperties": True,
-            },
-        },
-        "required": ["tool_name", "tool_arguments"],
-        "additionalProperties": False,
-    },
+    "inputSchema": ExecuteToolInputSchema.model_json_schema(),
 }
 
 
 # TODO: handle direct tool call that is not through the "EXECUTE_TOOL" tool
-
-
+# (can happen due to LLM misbehavior)
+# TODO: handle wrong input where tool arguments are under tool_arguments?
 async def handle_execute_tool(
     db_session: Session,
     mcp_server_bundle: MCPServerBundle,
+    jsonrpc_tools_call_request: JSONRPCToolsCallRequest,
+) -> JSONRPCSuccessResponse | JSONRPCErrorResponse:
+    # validate input
+    try:
+        validated_input = ExecuteToolInputSchema.model_validate(
+            jsonrpc_tools_call_request.params.arguments
+        )
+        tool_name = validated_input.tool_name
+        tool_arguments = validated_input.tool_arguments
+    except Exception as e:
+        logger.exception(f"Error validating execute tool input: {e}")
+        return JSONRPCErrorResponse(
+            id=jsonrpc_tools_call_request.id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
+                message=str(e),
+            ),
+        )
+
+    # check tool call permissions and get relevant context
+    try:
+        mcp_tool, mcp_server, mcp_server_configuration = await _tool_call_permissions_check(
+            db_session, tool_name, mcp_server_bundle
+        )
+    except Exception as e:
+        logger.exception(f"Error checking tool call permissions: {e}")
+        return JSONRPCErrorResponse(
+            id=jsonrpc_tools_call_request.id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
+                message=str(e),
+            ),
+        )
+
+    try:
+        # Get the auth config and credentials for the mcp server configuration per user
+        auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
+        # TODO: handle token refresh for oauth2 credentials
+        auth_credentials = await acm.get_auth_credentials(
+            db_session,
+            mcp_server_bundle.user_id,
+            mcp_server_configuration.id,
+        )
+        # TODO: need to commit because get_auth_credentials might update the auth credentials
+        # consider making the logic here more explicit?
+        db_session.commit()
+    except Exception as e:
+        logger.exception(f"Error getting auth config and credentials: {e}")
+        return JSONRPCErrorResponse(
+            id=jsonrpc_tools_call_request.id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message=str(e),
+            ),
+        )
+
+    # forward tool call to the corresponding mcp server
+    try:
+        tool_call_result = await _forward_tool_call(
+            name=MCPToolMetadata.model_validate(mcp_tool.tool_metadata).canonical_tool_name,
+            arguments=tool_arguments,
+            mcp_server=mcp_server,
+            auth_config=auth_config,
+            auth_credentials=auth_credentials,
+        )
+        return JSONRPCSuccessResponse(
+            id=jsonrpc_tools_call_request.id,
+            result=tool_call_result.model_dump(),
+        )
+    except Exception as e:
+        logger.exception(f"Error forwarding tool call: {e}")
+        return JSONRPCErrorResponse(
+            id=jsonrpc_tools_call_request.id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message=str(e),
+            ),
+        )
+
+
+async def _tool_call_permissions_check(
+    db_session: Session,
     tool_name: str,
-    tool_arguments: dict,
-) -> mcp_types.CallToolResult:
+    mcp_server_bundle: MCPServerBundle,
+) -> tuple[MCPTool, MCPServer, MCPServerConfiguration]:
     mcp_tool = crud.mcp_tools.get_mcp_tool_by_name(db_session, tool_name, False)
     if mcp_tool is None:
         logger.error(f"MCP tool not found, tool_name={tool_name}")
@@ -106,25 +191,7 @@ async def handle_execute_tool(
         )
         raise MCPToolNotEnabled(mcp_tool.name)
 
-    # Get the auth config and credentials for the mcp server configuration per user
-    auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
-    # TODO: handle token refresh for oauth2 credentials
-    auth_credentials = await acm.get_auth_credentials(
-        db_session,
-        mcp_server_bundle.user_id,
-        mcp_server_configuration.id,
-    )
-    # TODO: need to commit because get_auth_credentials might update the auth credentials
-    # consider making the logic here more explicit?
-    db_session.commit()
-
-    return await _forward_tool_call(
-        name=MCPToolMetadata.model_validate(mcp_tool.tool_metadata).canonical_tool_name,
-        arguments=tool_arguments,
-        mcp_server=mcp_server,
-        auth_config=auth_config,
-        auth_credentials=auth_credentials,
-    )
+    return mcp_tool, mcp_server, mcp_server_configuration
 
 
 async def _forward_tool_call(
