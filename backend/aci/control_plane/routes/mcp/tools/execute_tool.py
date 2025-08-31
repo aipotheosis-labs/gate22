@@ -2,11 +2,13 @@ import time
 
 from mcp import types as mcp_types
 from mcp.client.session import ClientSession
+from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer, MCPServerBundle, MCPServerConfiguration
+from aci.common.enums import MCPServerTransportType
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import (
     AuthConfig,
@@ -137,26 +139,41 @@ async def _forward_tool_call(
         auth_config=auth_config,
         auth_credentials=auth_credentials,
     )
-    # TODO: support both http and sse mcp servers
-    async with streamablehttp_client(mcp_server.url, auth=mcp_auth_credentials_manager) as (
-        read,
-        write,
-        _,
-    ):
-        async with ClientSession(read, write) as session:
-            # initialize
-            # TODO: conditionally initialize the session based on the mcp server?
-            # many mcp servers don't support/need to initialize the session
-            start_time = time.time()
-            await session.initialize()
-            logger.info(f"Initialize took {time.time() - start_time} seconds")
+    match mcp_server.transport_type:
+        case MCPServerTransportType.STREAMABLE_HTTP:
+            async with streamablehttp_client(mcp_server.url, auth=mcp_auth_credentials_manager) as (
+                read,
+                write,
+                _,
+            ):
+                async with ClientSession(read, write) as session:
+                    return await _call_tool(session, name, arguments)
 
-            # call tool
-            start_time = time.time()
-            tool_call_response = await session.call_tool(
-                name=name,
-                arguments=arguments,
-            )
-            logger.info(f"Tool call took {time.time() - start_time} seconds")
-            logger.info(tool_call_response.model_dump_json())
-            return tool_call_response
+        case MCPServerTransportType.SSE:
+            async with sse_client(mcp_server.url, auth=mcp_auth_credentials_manager) as (
+                read,
+                write,
+            ):
+                async with ClientSession(read, write) as session:
+                    return await _call_tool(session, name, arguments)
+
+
+async def _call_tool(
+    session: ClientSession, name: str, arguments: dict
+) -> mcp_types.CallToolResult:
+    # initialize
+    # TODO: conditionally initialize the session based on the mcp server?
+    # many mcp servers don't support/need to initialize the session
+    start_time = time.time()
+    await session.initialize()
+    logger.info(f"Initialize took {time.time() - start_time} seconds")
+
+    # call tool
+    start_time = time.time()
+    tool_call_response = await session.call_tool(
+        name=name,
+        arguments=arguments,
+    )
+    logger.info(f"Tool call took {time.time() - start_time} seconds")
+    logger.debug(tool_call_response.model_dump_json())
+    return tool_call_response

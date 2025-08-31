@@ -29,3 +29,8 @@ class HttpLocation(StrEnum):
     HEADER = "header"
     COOKIE = "cookie"
     BODY = "body"
+
+
+class MCPServerTransportType(StrEnum):
+    STREAMABLE_HTTP = "streamable_http"
+    SSE = "sse"

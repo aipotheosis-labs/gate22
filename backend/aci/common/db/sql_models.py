@@ -20,7 +20,13 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
 
-from aci.common.enums import AuthType, OrganizationRole, TeamRole, UserIdentityProvider
+from aci.common.enums import (
+    AuthType,
+    MCPServerTransportType,
+    OrganizationRole,
+    TeamRole,
+    UserIdentityProvider,
+)
 
 EMBEDDING_DIMENSION = 1024
 MAX_STRING_LENGTH = 512
@@ -277,6 +283,9 @@ class MCPServer(Base):
     # e.g., https://example.com/mcp
     url: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    transport_type: Mapped[MCPServerTransportType] = mapped_column(
+        SQLEnum(MCPServerTransportType, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
+    )
     logo: Mapped[str] = mapped_column(Text, nullable=False)
     # TODO: consider adding a category table
     categories: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)

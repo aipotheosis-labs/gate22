@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from aci.common.enums import AuthType
+from aci.common.enums import AuthType, MCPServerTransportType
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_tool import MCPToolPublic
 
@@ -21,6 +21,7 @@ class MCPServerMetadata(BaseModel):
 class MCPServerUpsert(BaseModel, extra="forbid"):
     name: str
     url: str
+    transport_type: MCPServerTransportType
     description: str
     logo: str
     categories: list[str]
@@ -52,6 +53,7 @@ class MCPServerPublic(BaseModel):
     id: UUID
     name: str
     url: str
+    # TODO: is it necessary to expose transport_type?
     description: str
     logo: str
     categories: list[str]
