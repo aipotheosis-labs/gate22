@@ -36,6 +36,7 @@ else:
 
 setup_logging(
     formatter=formatter,
+    aci_log_level=config.LOG_LEVEL,
     filters=[RequestContextFilter()],
 )
 

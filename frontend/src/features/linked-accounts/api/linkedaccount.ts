@@ -2,13 +2,14 @@ import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.ty
 import { getApiBaseUrl } from "@/lib/api-client";
 
 export async function getAllLinkedAccounts(
-  apiKey: string,
+  accessToken: string,
 ): Promise<LinkedAccount[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/linked-accounts`, {
+  // Fetch with a large limit to get all accounts
+  const response = await fetch(`${baseUrl}/v1/connected-accounts?limit=100`, {
     method: "GET",
     headers: {
-      "X-API-KEY": apiKey,
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 
@@ -18,25 +19,62 @@ export async function getAllLinkedAccounts(
     );
   }
 
-  const linkedAccounts = await response.json();
-  return linkedAccounts;
+  const paginatedResponse = await response.json();
+  // The backend returns a paginated response with data array
+  return paginatedResponse.data || [];
+}
+
+export interface CreateOAuth2ConnectedAccountRequest {
+  mcp_server_configuration_id: string;
+  redirect_url_after_account_creation?: string;
+}
+
+export interface OAuth2ConnectedAccountResponse {
+  authorization_url: string;
+}
+
+export async function createOAuth2ConnectedAccount(
+  request: CreateOAuth2ConnectedAccountRequest,
+  accessToken: string,
+): Promise<OAuth2ConnectedAccountResponse> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}/v1/connected-accounts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let errorMsg = `Failed to create connected account: ${response.status} ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      if (errorData && errorData.detail) {
+        errorMsg = errorData.detail;
+      }
+    } catch (e) {
+      console.error("Error parsing error response:", e);
+    }
+    throw new Error(errorMsg);
+  }
+
+  const result = await response.json();
+  return result;
 }
 
 export async function getAppLinkedAccounts(
   appName: string,
-  apiKey: string,
 ): Promise<LinkedAccount[]> {
   const params = new URLSearchParams();
   params.append("app_name", appName);
 
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/linked-accounts?${params.toString()}`,
+    `${baseUrl}/v1/connected-accounts?${params.toString()}`,
     {
       method: "GET",
-      headers: {
-        "X-API-KEY": apiKey,
-      },
     },
   );
 
@@ -54,14 +92,12 @@ export async function createAPILinkedAccount(
   appName: string,
   linkedAccountOwnerId: string,
   linkedAPIKey: string,
-  apiKey: string,
 ): Promise<LinkedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/linked-accounts/api-key`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-KEY": apiKey,
     },
     body: JSON.stringify({
       app_name: appName,
@@ -90,14 +126,12 @@ export async function createAPILinkedAccount(
 export async function createNoAuthLinkedAccount(
   appName: string,
   linkedAccountOwnerId: string,
-  apiKey: string,
 ): Promise<LinkedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/linked-accounts/no-auth`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-KEY": apiKey,
     },
     body: JSON.stringify({
       app_name: appName,
@@ -125,7 +159,6 @@ export async function createNoAuthLinkedAccount(
 export async function getOauth2LinkURL(
   appName: string,
   linkedAccountOwnerId: string,
-  apiKey: string,
   afterOAuth2LinkRedirectURL?: string,
 ): Promise<string> {
   const params = new URLSearchParams();
@@ -142,7 +175,6 @@ export async function getOauth2LinkURL(
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
       },
     },
   );
@@ -169,15 +201,15 @@ export async function getOauth2LinkURL(
 
 export async function deleteLinkedAccount(
   linkedAccountId: string,
-  apiKey: string,
+  accessToken: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/linked-accounts/${linkedAccountId}`,
+    `${baseUrl}/v1/connected-accounts/${linkedAccountId}`,
     {
       method: "DELETE",
       headers: {
-        "X-API-KEY": apiKey,
+        Authorization: `Bearer ${accessToken}`,
       },
     },
   );
@@ -191,7 +223,6 @@ export async function deleteLinkedAccount(
 
 export async function updateLinkedAccount(
   linkedAccountId: string,
-  apiKey: string,
   enabled: boolean,
 ): Promise<LinkedAccount> {
   const baseUrl = getApiBaseUrl();
@@ -201,7 +232,6 @@ export async function updateLinkedAccount(
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
       },
       body: JSON.stringify({
         enabled,

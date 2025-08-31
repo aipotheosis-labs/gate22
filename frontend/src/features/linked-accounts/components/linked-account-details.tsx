@@ -19,21 +19,21 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+// import { Switch } from "@/components/ui/switch";
+// import { toast } from "sonner";
 import { formatToLocalTime } from "@/utils/time";
 interface LinkedAccountDetailsProps {
   account: LinkedAccount;
-  toggleAccountStatus?: (
-    accountId: string,
-    newStatus: boolean,
-  ) => Promise<boolean>;
+  // toggleAccountStatus?: (
+  //   accountId: string,
+  //   newStatus: boolean,
+  // ) => Promise<boolean>;
   children: React.ReactNode;
 }
 
 export function LinkedAccountDetails({
   account,
-  toggleAccountStatus,
+  // toggleAccountStatus,
   children,
 }: LinkedAccountDetailsProps) {
   const [open, setOpen] = useState(false);
@@ -72,7 +72,7 @@ export function LinkedAccountDetails({
                         Account Owner ID
                       </TableCell>
                       <TableCell className="text-right">
-                        {account.linked_account_owner_id}
+                        {account.user_id}
                       </TableCell>
                     </TableRow>
                     <TableRow>
@@ -80,10 +80,11 @@ export function LinkedAccountDetails({
                         App Name
                       </TableCell>
                       <TableCell className="text-right">
-                        {account.app_name}
+                        {account.mcp_server_configuration?.mcp_server?.name}
                       </TableCell>
                     </TableRow>
-                    <TableRow>
+                    {/* TODO: Enable/disable functionality needs to be implemented in backend */}
+                    {/* <TableRow>
                       <TableCell className="font-medium text-left">
                         Enabled
                       </TableCell>
@@ -100,7 +101,7 @@ export function LinkedAccountDetails({
                                   );
                                   if (success) {
                                     toast.success(
-                                      `Linked account ${account.linked_account_owner_id} ${checked ? "enabled" : "disabled"}`,
+                                      `Linked account ${account.user_id} ${checked ? "enabled" : "disabled"}`,
                                     );
                                   } else {
                                     toast.error(
@@ -117,15 +118,16 @@ export function LinkedAccountDetails({
                           />
                         </div>
                       </TableCell>
-                    </TableRow>
-                    <TableRow>
+                    </TableRow> */}
+                    {/* TODO: Security scheme is now part of mcp_server_configuration */}
+                    {/* <TableRow>
                       <TableCell className="font-medium text-left">
                         Security Scheme
                       </TableCell>
                       <TableCell className="text-right">
                         {account.security_scheme}
                       </TableCell>
-                    </TableRow>
+                    </TableRow> */}
                     <TableRow>
                       <TableCell className="font-medium text-left">
                         Created at

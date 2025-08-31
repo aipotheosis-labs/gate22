@@ -9,6 +9,24 @@ from aci.common.logging_setup import get_logger
 logger = get_logger(__name__)
 
 
+def get_connected_accounts_by_user_id(
+    db_session: Session,
+    user_id: UUID,
+) -> list[ConnectedAccount]:
+    statement = select(ConnectedAccount).where(ConnectedAccount.user_id == user_id)
+    connected_accounts = db_session.execute(statement).scalars().all()
+    return list(connected_accounts)
+
+
+def get_connected_account_by_id(
+    db_session: Session,
+    connected_account_id: UUID,
+) -> ConnectedAccount | None:
+    statement = select(ConnectedAccount).where(ConnectedAccount.id == connected_account_id)
+    connected_account = db_session.execute(statement).scalar_one_or_none()
+    return connected_account
+
+
 def get_connected_account_by_user_id_and_mcp_server_configuration_id(
     db_session: Session,
     user_id: UUID,
@@ -92,15 +110,6 @@ def get_connected_accounts_by_organization_id(
     if limit is not None:
         statement = statement.limit(limit)
     return list(db_session.execute(statement).scalars().all())
-
-
-def get_connected_account_by_id(
-    db_session: Session,
-    connected_account_id: UUID,
-) -> ConnectedAccount | None:
-    statement = select(ConnectedAccount).where(ConnectedAccount.id == connected_account_id)
-    connected_account = db_session.execute(statement).scalar_one_or_none()
-    return connected_account
 
 
 def delete_connected_account(

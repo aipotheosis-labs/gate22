@@ -15,7 +15,7 @@ export default function SettingsLayout({
           <SettingsNavigation />
         </div>
       </aside>
-      <main className="flex-1 max-w-4xl p-4">{children}</main>
+      <main className="flex-1 max-w-4xl p-4 lg:pl-12">{children}</main>
     </div>
   );
 }

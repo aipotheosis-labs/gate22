@@ -7,6 +7,8 @@ from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields
 logger = get_logger(__name__)
 
 
+# TODO: abstract inference/embedding functions into a separate service
+# potentially allow overriding the embedding model, dimension, inference provider
 def generate_mcp_server_embedding(
     openai_client: OpenAI, mcp_server: MCPServerEmbeddingFields
 ) -> list[float]:

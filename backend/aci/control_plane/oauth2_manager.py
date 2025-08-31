@@ -196,7 +196,7 @@ class OAuth2Manager:
         elif "expires_in" in data:
             expires_at = int(time.time()) + int(data["expires_in"])
 
-        # TODO: if scope is present, check if it matches the scope in the App Configuration
+        # TODO: if scope is present, check if it matches the scope in the MCP Configuration
 
         return OAuth2Credentials(
             access_token=data["access_token"],

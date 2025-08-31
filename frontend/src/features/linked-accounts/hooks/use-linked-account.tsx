@@ -9,9 +9,11 @@ import {
   deleteLinkedAccount,
   updateLinkedAccount,
   getOauth2LinkURL,
+  createOAuth2ConnectedAccount,
+  CreateOAuth2ConnectedAccountRequest,
+  OAuth2ConnectedAccountResponse,
 } from "@/features/linked-accounts/api/linkedaccount";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { getApiKey } from "@/lib/api-utils";
 import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.types";
 import { toast } from "sonner";
 
@@ -21,11 +23,11 @@ export const linkedAccountKeys = {
 
 export const useLinkedAccounts = () => {
   const { accessToken } = useMetaInfo();
-  const apiKey = getApiKey(accessToken);
 
   return useQuery<LinkedAccount[], Error>({
     queryKey: linkedAccountKeys.all(),
-    queryFn: () => getAllLinkedAccounts(apiKey),
+    queryFn: () => getAllLinkedAccounts(accessToken!),
+    enabled: !!accessToken,
   });
 };
 
@@ -36,7 +38,9 @@ export const useAppLinkedAccounts = (appName?: string | null) => {
     data: useMemo(
       () =>
         appName && base.data
-          ? base.data.filter((a) => a.app_name === appName)
+          ? base.data.filter(
+              (a) => a.mcp_server_configuration?.mcp_server?.name === appName,
+            )
           : [],
       [base.data, appName],
     ),
@@ -130,10 +134,10 @@ type DeleteLinkedAccountParams = {
 export const useDeleteLinkedAccount = () => {
   const queryClient = useQueryClient();
   const { accessToken } = useMetaInfo();
-  const apiKey = getApiKey(accessToken);
 
   return useMutation<void, Error, DeleteLinkedAccountParams>({
-    mutationFn: (params) => deleteLinkedAccount(params.linkedAccountId, apiKey),
+    mutationFn: (params) =>
+      deleteLinkedAccount(params.linkedAccountId, accessToken!),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: linkedAccountKeys.all(),
@@ -158,5 +162,37 @@ export const useUpdateLinkedAccount = () => {
       queryClient.invalidateQueries({
         queryKey: linkedAccountKeys.all(),
       }),
+  });
+};
+
+type CreateOAuth2ConnectedAccountParams = {
+  mcpServerConfigurationId: string;
+  redirectUrl?: string;
+};
+
+export const useCreateOAuth2ConnectedAccount = () => {
+  const queryClient = useQueryClient();
+  const { accessToken } = useMetaInfo();
+
+  return useMutation<
+    OAuth2ConnectedAccountResponse,
+    Error,
+    CreateOAuth2ConnectedAccountParams
+  >({
+    mutationFn: (params) => {
+      const request: CreateOAuth2ConnectedAccountRequest = {
+        mcp_server_configuration_id: params.mcpServerConfigurationId,
+        redirect_url_after_account_creation: params.redirectUrl,
+      };
+      return createOAuth2ConnectedAccount(request, accessToken!);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: linkedAccountKeys.all(),
+      });
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 };

@@ -47,8 +47,29 @@ export async function register(data: EmailRegistrationRequest): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Registration failed");
+    try {
+      const errorData = await response.json();
+      // Handle different error response formats
+      const errorMessage =
+        errorData.detail || errorData.message || errorData.error;
+
+      // Provide user-friendly messages for common errors
+      if (typeof errorMessage === "string") {
+        if (errorMessage.toLowerCase().includes("email already")) {
+          throw new Error(
+            "This email is already registered. Please try logging in instead.",
+          );
+        }
+        throw new Error(errorMessage);
+      }
+      throw new Error("Registration failed. Please try again.");
+    } catch (e) {
+      // If parsing JSON fails or error is already thrown, use the existing error or fallback
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error("Registration failed. Please try again.");
+    }
   }
 }
 
@@ -67,8 +88,35 @@ export async function login(email: string, password: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Login failed");
+    try {
+      const errorData = await response.json();
+      // Handle different error response formats
+      const errorMessage =
+        errorData.detail || errorData.message || errorData.error;
+
+      // Provide user-friendly messages for common errors
+      if (typeof errorMessage === "string") {
+        if (
+          errorMessage.toLowerCase().includes("invalid") ||
+          errorMessage.toLowerCase().includes("incorrect")
+        ) {
+          throw new Error("Invalid email or password. Please try again.");
+        }
+        if (errorMessage.toLowerCase().includes("not found")) {
+          throw new Error(
+            "No account found with this email. Please sign up first.",
+          );
+        }
+        throw new Error(errorMessage);
+      }
+      throw new Error("Login failed. Please try again.");
+    } catch (e) {
+      // If parsing JSON fails or error is already thrown, use the existing error or fallback
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error("Login failed. Please try again.");
+    }
   }
 }
 
@@ -86,8 +134,21 @@ export async function issueToken(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Failed to issue token");
+    try {
+      const errorData = await response.json();
+      const errorMessage =
+        errorData.detail || errorData.message || errorData.error;
+
+      if (typeof errorMessage === "string") {
+        throw new Error(errorMessage);
+      }
+      throw new Error("Failed to issue token. Please try again.");
+    } catch (e) {
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error("Failed to issue token. Please try again.");
+    }
   }
 
   return response.json();
@@ -111,8 +172,21 @@ export async function getProfile(token: string): Promise<UserInfo> {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || "Failed to fetch user profile");
+    try {
+      const errorData = await response.json();
+      const errorMessage =
+        errorData.detail || errorData.message || errorData.error;
+
+      if (typeof errorMessage === "string") {
+        throw new Error(errorMessage);
+      }
+      throw new Error("Failed to fetch user profile. Please try again.");
+    } catch (e) {
+      if (e instanceof Error) {
+        throw e;
+      }
+      throw new Error("Failed to fetch user profile. Please try again.");
+    }
   }
 
   return response.json();

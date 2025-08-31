@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Literal, overload
 from uuid import UUID
 
@@ -101,14 +102,51 @@ def get_mcp_tools_by_ids(
     db_session: Session,
     mcp_tool_ids: list[UUID],
 ) -> list[MCPTool]:
-    if not mcp_tool_ids:
-        return []
+    statement = select(MCPTool).where(MCPTool.id.in_(mcp_tool_ids)).order_by(MCPTool.name.asc())
+    return list(db_session.execute(statement).scalars().all())
 
-    statement = select(MCPTool).where(MCPTool.id.in_(mcp_tool_ids))
-    results = list(db_session.execute(statement).scalars().all())
 
-    # map the rows by id, and use the order of requested ids to map the final results
-    results_by_id = {result.id: result for result in results}
-    return [
-        results_by_id[mcp_tool_id] for mcp_tool_id in mcp_tool_ids if mcp_tool_id in results_by_id
-    ]
+def search_mcp_tools(
+    db_session: Session,
+    mcp_server_ids: Sequence[UUID] | None,
+    excluded_tool_ids: Sequence[UUID] | None,
+    intent_embedding: list[float] | None,
+    limit: int,
+    offset: int,
+) -> list[MCPTool]:
+    """
+    Search for MCP tools, optionally ranking by similarity to an intent embedding
+    (if provided, default order by tool name)
+    and optionally filtering by MCP server IDs (if provided).
+
+    Args:
+        db_session: The SQLAlchemy database session.
+        mcp_server_ids: List of MCP server IDs to filter tools by.
+        excluded_tool_ids: List of tool IDs to exclude from the search.
+        intent_embedding: Optional embedding vector representing the search intent.
+        limit: Maximum number of tools to return.
+        offset: Pagination offset.
+
+    Returns:
+        list[MCPTool]: List of matching MCPTool objects.
+    """
+    statement = select(MCPTool)
+    # Filter by MCP server IDs if provided
+    if mcp_server_ids is not None:
+        # For empty mcp_server_ids, return an empty list
+        if len(mcp_server_ids) == 0:
+            return []
+        else:
+            statement = statement.where(MCPTool.mcp_server_id.in_(mcp_server_ids))
+    # Filter by excluded tool IDs if provided
+    if excluded_tool_ids:
+        statement = statement.where(MCPTool.id.not_in(excluded_tool_ids))
+    # Rank by similarity to intent embedding if provided, else default order by tool name
+    if intent_embedding is not None:
+        similarity_score = MCPTool.embedding.cosine_distance(intent_embedding)
+        statement = statement.order_by(similarity_score)
+    else:
+        statement = statement.order_by(MCPTool.name)
+
+    statement = statement.limit(limit).offset(offset)
+    return list(db_session.execute(statement).scalars().all())

@@ -352,7 +352,7 @@ To enable pagination, pass the `paginationOptions` prop:
 
 ## Practical Application Examples
 
-### App Configuration Table (with Icons, Category Filtering, and Toggle Switch)
+### MCP Configuration Table (with Icons, Category Filtering, and Toggle Switch)
 
 ```tsx
 // In page component

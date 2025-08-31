@@ -47,7 +47,7 @@ export const mcpIntegrations: MCPIntegration[] = [
         "Manage organization settings and teams",
         "Access user profiles and contributions",
       ],
-      count: "many tools",
+      count: "11",
     },
     docsUrl:
       "https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp/use-the-github-mcp-server",
@@ -172,7 +172,7 @@ export const mcpIntegrations: MCPIntegration[] = [
       "Asana remote MCP (beta) over SSE with OAuth; brings the Work Graph to AI tools.",
     tools: {
       examples: ["projects", "tasks", "users", "goals", "teams", "typeahead"],
-      count: "30+",
+      count: "30",
     },
     docsUrl: "https://developers.asana.com/docs/mcp-server",
     categories: ["Project Management", "Collaboration"],
@@ -234,7 +234,7 @@ export const mcpIntegrations: MCPIntegration[] = [
         "custom-code",
         "ask-webflow-ai",
       ],
-      count: "20+",
+      count: "20",
     },
     docsUrl: "https://developers.webflow.com/data/docs/ai-tools",
     repoUrl: "https://github.com/webflow/mcp-server",
