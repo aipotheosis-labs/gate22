@@ -1,5 +1,6 @@
 import { OrganizationUser } from "@/features/settings/types/organization.types";
 import { getApiBaseUrl } from "@/lib/api-client";
+import { throwApiError } from "@/lib/api-error-handler";
 
 export async function listOrganizationUsers(
   accessToken: string,
@@ -13,7 +14,7 @@ export async function listOrganizationUsers(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch organization users");
+    await throwApiError(response, "Failed to fetch organization users");
   }
 
   const data = await response.json();
@@ -54,7 +55,7 @@ export async function inviteToOrganization(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to invite user to organization");
+    await throwApiError(response, "Failed to invite user to organization");
   }
 }
 
@@ -75,6 +76,6 @@ export async function removeUser(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to remove user from organization");
+    await throwApiError(response, "Failed to remove user from organization");
   }
 }

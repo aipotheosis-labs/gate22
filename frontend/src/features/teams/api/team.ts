@@ -1,5 +1,6 @@
 import { Team, TeamMember, CreateTeamRequest } from "../types/team.types";
 import { getApiBaseUrl } from "@/lib/api-client";
+import { throwApiError } from "@/lib/api-error-handler";
 
 export async function listTeams(
   accessToken: string,
@@ -13,7 +14,7 @@ export async function listTeams(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch teams");
+    await throwApiError(response, "Failed to fetch teams");
   }
 
   return response.json();
@@ -35,7 +36,7 @@ export async function getTeam(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch team");
+    await throwApiError(response, "Failed to fetch team");
   }
 
   return response.json();
@@ -57,7 +58,7 @@ export async function createTeam(
   });
 
   if (!response.ok) {
-    throw new Error("Failed to create team");
+    await throwApiError(response, "Failed to create team");
   }
 
   return response.json();
@@ -80,7 +81,7 @@ export async function deleteTeam(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to delete team");
+    await throwApiError(response, "Failed to delete team");
   }
 }
 
@@ -100,7 +101,7 @@ export async function listTeamMembers(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch team members");
+    await throwApiError(response, "Failed to fetch team members");
   }
 
   return response.json();
@@ -124,7 +125,7 @@ export async function addTeamMember(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to add team member");
+    await throwApiError(response, "Failed to add team member");
   }
 }
 
@@ -146,6 +147,6 @@ export async function removeTeamMember(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to remove team member");
+    await throwApiError(response, "Failed to remove team member");
   }
 }

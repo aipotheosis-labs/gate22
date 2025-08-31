@@ -5,6 +5,7 @@ import {
   UseMutationOptions,
 } from "@tanstack/react-query";
 import { tokenManager } from "./token-manager";
+import { throwApiError } from "./api-error-handler";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 // Get API base URL from environment
@@ -58,8 +59,7 @@ export async function fetcher<T = unknown>(
   }
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `Request failed: ${response.status}`);
+    await throwApiError(response, `Request failed: ${response.status}`);
   }
 
   // Handle empty responses (204 No Content)
@@ -129,8 +129,7 @@ export function fetcherWithAuth<T = unknown>(
     }
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `Request failed: ${response.status}`);
+      await throwApiError(response, `Request failed: ${response.status}`);
     }
 
     // Handle empty responses (204 No Content)

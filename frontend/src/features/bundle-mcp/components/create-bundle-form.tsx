@@ -14,15 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { CreateMCPServerBundleInput } from "@/features/bundle-mcp/types/bundle-mcp.types";
 
 interface CreateBundleFormProps {
@@ -68,38 +60,22 @@ export function CreateBundleForm({
     }
   };
 
-  const addConfiguration = (configId: string) => {
-    if (!formData.mcp_server_configuration_ids.includes(configId)) {
-      setFormData({
-        ...formData,
-        mcp_server_configuration_ids: [
-          ...formData.mcp_server_configuration_ids,
-          configId,
-        ],
-      });
-    }
-  };
-
-  const removeConfiguration = (configId: string) => {
+  const handleConfigurationChange = (selectedIds: string[]) => {
     setFormData({
       ...formData,
-      mcp_server_configuration_ids:
-        formData.mcp_server_configuration_ids.filter((id) => id !== configId),
+      mcp_server_configuration_ids: selectedIds,
     });
   };
 
-  const selectedConfigs = availableConfigurations.filter((config) =>
-    formData.mcp_server_configuration_ids.includes(config.id),
-  );
-
-  const availableToSelect = availableConfigurations.filter(
-    (config) => !formData.mcp_server_configuration_ids.includes(config.id),
-  );
+  const multiSelectOptions = availableConfigurations.map((config) => ({
+    value: config.id,
+    label: config.name,
+  }));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
@@ -118,6 +94,7 @@ export function CreateBundleForm({
                 }
                 placeholder="Enter bundle name"
                 required
+                className="w-full"
               />
             </div>
             <div className="grid gap-2">
@@ -130,44 +107,20 @@ export function CreateBundleForm({
                 }
                 placeholder="Enter bundle description (optional)"
                 rows={3}
+                className="w-full resize-none"
               />
             </div>
             <div className="grid gap-2">
               <Label>MCP Server Configurations</Label>
-              {availableToSelect.length > 0 && (
-                <Select onValueChange={addConfiguration}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select configurations to add" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableToSelect.map((config) => (
-                      <SelectItem key={config.id} value={config.id}>
-                        {config.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <div className="flex flex-wrap gap-2 min-h-[40px] p-2 border rounded-md">
-                {selectedConfigs.length === 0 ? (
-                  <span className="text-sm text-muted-foreground">
-                    No configurations selected
-                  </span>
-                ) : (
-                  selectedConfigs.map((config) => (
-                    <Badge key={config.id} variant="secondary">
-                      {config.name}
-                      <button
-                        type="button"
-                        onClick={() => removeConfiguration(config.id)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))
-                )}
-              </div>
+              <MultiSelect
+                options={multiSelectOptions}
+                selected={formData.mcp_server_configuration_ids}
+                onChange={handleConfigurationChange}
+                placeholder="Select configurations to add..."
+                searchPlaceholder="Search configurations..."
+                emptyText="No configurations found."
+                className="w-full"
+              />
               {formData.mcp_server_configuration_ids.length === 0 && (
                 <p className="text-sm text-destructive">
                   At least one configuration is required
@@ -176,6 +129,14 @@ export function CreateBundleForm({
             </div>
           </div>
           <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
             <Button
               type="submit"
               disabled={
