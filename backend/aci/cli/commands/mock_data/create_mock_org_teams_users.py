@@ -123,7 +123,7 @@ def create_mock_org_teams_users(
             db_session.commit()
             console.rule("[bold green]Organization created with following hierarchy[/bold green]")
             console.print(f"""Organization:
-ACI DevOrg {short_id} (ID: {organization.id})
+ACI Dev Org {short_id} (ID: {organization.id})
 
 Users:
 - Admin (admin-{short_id}@aci.dev) (ID: {admin.id}) - Admin role
