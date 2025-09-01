@@ -116,36 +116,45 @@ def create_mock_org_teams_users(
 
         if not skip_dry_run:
             console.rule(
-                "[bold green]Provide --skip-dry-run to create mock organization[/bold green]"
+                "[bold green]Provide --skip-dry-run to create mock organization, team and users[/bold green]"  # noqa: E501
             )
             db_session.rollback()
         else:
             db_session.commit()
             console.rule("[bold green]Organization created with following hierarchy[/bold green]")
             console.print(f"""Organization:
-ACI DevOrg {short_id}
+ACI DevOrg {short_id} (ID: {organization.id})
 
 Users:
-- Admin (admin-{short_id}@aci.dev) - Admin role
-- User1 (user1-{short_id}@aci.dev) - Member role
-- User2 (user2-{short_id}@aci.dev) - Member role
+- Admin (admin-{short_id}@aci.dev) (ID: {admin.id}) - Admin role
+- User1 (user1-{short_id}@aci.dev) (ID: {user1.id}) - Member role
+- User2 (user2-{short_id}@aci.dev) (ID: {user2.id}) - Member role
 
 Teams:
-- Team 1 - {short_id} (Admin, User1)
-- Team 2 - {short_id} (Admin, User1, User2)
+- Team 1 - {short_id} (ID: {team1.id}) (Admin, User1)
+- Team 2 - {short_id} (ID: {team2.id}) (Admin, User1, User2)
             """)
             console.print(
-                f"Admin JWT:\n{jwt_admin}\n", style="bold yellow", overflow="ignore", soft_wrap=True
-            )
-            console.print(
-                f"User 1 JWT:\n{jwt_user1}\n",
+                f"Admin ({admin.id}) JWT:\n{jwt_admin}\n",
                 style="bold yellow",
                 overflow="ignore",
                 soft_wrap=True,
             )
             console.print(
-                f"User 2 JWT:\n{jwt_user2}\n",
+                f"User 1 ({user1.id}) JWT:\n{jwt_user1}\n",
                 style="bold yellow",
                 overflow="ignore",
                 soft_wrap=True,
+            )
+            console.print(
+                f"User 2 ({user2.id}) JWT:\n{jwt_user2}\n",
+                style="bold yellow",
+                overflow="ignore",
+                soft_wrap=True,
+            )
+
+            console.print(
+                "You can create mock configuration by:\n"
+                "docker compose exec runner python -m aci.cli create-mock-mcp-configuration "
+                f"--mcp-server NOTION --user-id {admin.id} --team-id {team1.id}"
             )
