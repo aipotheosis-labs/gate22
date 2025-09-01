@@ -125,9 +125,7 @@ export default function BundleMCPPage() {
         cell: (info) => {
           const description = info.getValue();
           return description ? (
-            <div className="text-sm text-muted-foreground">
-              {description}
-            </div>
+            <div className="text-sm text-muted-foreground">{description}</div>
           ) : (
             <div className="text-sm text-muted-foreground italic">
               No description
@@ -302,9 +300,7 @@ export default function BundleMCPPage() {
                 <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                   <Package className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold">
-                  No bundles yet
-                </h3>
+                <h3 className="text-lg font-semibold">No bundles yet</h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
                   Create your first bundle to group MCP server configurations
                   for easier management

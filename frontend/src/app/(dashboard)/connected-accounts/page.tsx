@@ -248,8 +248,8 @@ export default function ConnectedAccountsPage() {
                     <AlertDialogTitle>Delete Account?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. This will permanently delete
-                      the connected account for {config?.name || "this MCP server"}
-                      .
+                      the connected account for{" "}
+                      {config?.name || "this MCP server"}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

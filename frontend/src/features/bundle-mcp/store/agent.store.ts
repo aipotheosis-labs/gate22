@@ -113,7 +113,8 @@ export const useAgentStore = create<AgentState>()(
               (connectedAccount) =>
                 connectedAccount.mcp_server_configuration?.mcp_server?.name ===
                   app.name &&
-                connectedAccount.user_id === get().selectedConnectedAccountOwnerId,
+                connectedAccount.user_id ===
+                  get().selectedConnectedAccountOwnerId,
             ),
           );
         }

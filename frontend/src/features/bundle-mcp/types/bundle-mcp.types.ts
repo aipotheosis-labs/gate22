@@ -1,3 +1,5 @@
+import { MCPToolPublic } from "@/features/mcp/types/mcp.types";
+
 export interface MCPServerBundle {
   id: string;
   name: string;
@@ -15,7 +17,7 @@ export interface MCPServerConfiguration {
   organization_id: string;
   auth_type: string;
   all_tools_enabled: boolean;
-  enabled_tools: any[]; // Array of tool objects
+  enabled_tools: MCPToolPublic[]; // Array of tool objects
   allowed_teams: string[]; // Array of team UUIDs
   created_at: string;
   updated_at: string;
@@ -27,7 +29,8 @@ export interface MCPServerConfiguration {
   };
 }
 
-export interface MCPServerBundleDetailed extends Omit<MCPServerBundle, 'mcp_server_configuration_ids'> {
+export interface MCPServerBundleDetailed
+  extends Omit<MCPServerBundle, "mcp_server_configuration_ids"> {
   mcp_server_configurations: MCPServerConfiguration[];
 }
 

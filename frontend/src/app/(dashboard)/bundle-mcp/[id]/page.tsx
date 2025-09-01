@@ -3,10 +3,23 @@
 import { useParams, useRouter } from "next/navigation";
 import { useMCPServerBundle } from "@/features/bundle-mcp/hooks/use-bundle-mcp";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, Shield, Wrench, Calendar, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Package,
+  Shield,
+  Wrench,
+  Calendar,
+  User,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BundleDetailPage() {
@@ -39,13 +52,18 @@ export default function BundleDetailPage() {
       <div className="w-full p-4">
         <Card className="border-destructive">
           <CardHeader>
-            <CardTitle className="text-destructive">Error Loading Bundle</CardTitle>
+            <CardTitle className="text-destructive">
+              Error Loading Bundle
+            </CardTitle>
             <CardDescription>
               {error?.message || "Bundle not found"}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push("/bundle-mcp")} variant="secondary">
+            <Button
+              onClick={() => router.push("/bundle-mcp")}
+              variant="secondary"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Bundles
             </Button>
@@ -119,7 +137,9 @@ export default function BundleDetailPage() {
           <CardHeader>
             <CardTitle>MCP Server Configurations</CardTitle>
             <CardDescription>
-              {bundle.mcp_server_configurations.length} configuration{bundle.mcp_server_configurations.length !== 1 ? "s" : ""} in this bundle
+              {bundle.mcp_server_configurations.length} configuration
+              {bundle.mcp_server_configurations.length !== 1 ? "s" : ""} in this
+              bundle
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -154,9 +174,13 @@ export default function BundleDetailPage() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="text-xs text-muted-foreground space-y-1">
-                      <p>Configuration ID: <span className="font-mono">{config.id}</span></p>
                       <p>
-                        Added: {new Date(config.created_at).toLocaleDateString()}
+                        Configuration ID:{" "}
+                        <span className="font-mono">{config.id}</span>
+                      </p>
+                      <p>
+                        Added:{" "}
+                        {new Date(config.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </CardContent>
