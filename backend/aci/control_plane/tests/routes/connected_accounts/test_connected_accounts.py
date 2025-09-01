@@ -3,12 +3,114 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import ConnectedAccount, User
+from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration, Team, User
+from aci.common.enums import AuthType
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.connected_account import ConnectedAccountPublic
+from aci.common.schemas.connected_account import (
+    ConnectedAccountCreate,
+    ConnectedAccountPublic,
+    OAuth2ConnectedAccountCreateResponse,
+)
 from aci.common.schemas.pagination import PaginationResponse
 
 logger = get_logger(__name__)
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+    ],
+)
+@pytest.mark.parametrize("is_team_allowed_by_config", [True, False])
+@pytest.mark.parametrize("auth_type", [AuthType.API_KEY, AuthType.NO_AUTH, AuthType.OAUTH2])
+@pytest.mark.parametrize("api_key", [None, "dummy_api_key"])
+def test_create_connected_account(
+    test_client: TestClient,
+    db_session: Session,
+    request: pytest.FixtureRequest,
+    auth_type: AuthType,
+    api_key: str | None,
+    dummy_team: Team,
+    dummy_user: User,
+    access_token_fixture: str,
+    dummy_mcp_server_configuration: MCPServerConfiguration,
+    is_team_allowed_by_config: bool,
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+    print(f"access_token: {access_token}")
+
+    # dummy_mcp_server_configurations has 2 dummy MCP server configurations, both without team
+    config_added_to_team = dummy_mcp_server_configuration
+    if is_team_allowed_by_config:
+        config_added_to_team.allowed_teams = [dummy_team.id]
+    else:
+        config_added_to_team.allowed_teams = []
+
+    config_added_to_team.auth_type = auth_type
+    db_session.commit()
+
+    body = ConnectedAccountCreate(
+        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+        api_key=api_key,
+        redirect_url_after_account_creation="some_random_url",
+    )
+
+    response = test_client.post(
+        "/v1/connected-accounts",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json=body.model_dump(mode="json"),
+    )
+
+    if access_token_fixture == "dummy_access_token_no_orgs":
+        assert response.status_code == 403
+        return
+
+    elif access_token_fixture in [
+        "dummy_access_token_admin",
+        "dummy_access_token_admin_act_as_member",
+        "dummy_access_token_member",
+    ]:
+        # if not allowed to add to team, should return 403
+        if not is_team_allowed_by_config:
+            assert response.status_code == 403
+            assert response.json()["error"].startswith("Not permitted")
+            return
+
+        else:
+            # assert input check
+            if auth_type == AuthType.OAUTH2:
+                assert response.status_code == 200
+                oauth2_response = OAuth2ConnectedAccountCreateResponse.model_validate(
+                    response.json()
+                )
+                assert oauth2_response.authorization_url.startswith("https://")
+
+            elif auth_type == AuthType.API_KEY:
+                if not api_key:
+                    assert response.status_code == 400
+                    return
+
+                assert response.status_code == 200
+                connected_account = ConnectedAccountPublic.model_validate(response.json())
+                assert (
+                    connected_account.mcp_server_configuration.id
+                    == dummy_mcp_server_configuration.id
+                )
+
+            elif auth_type == AuthType.NO_AUTH:
+                assert response.status_code == 200
+                connected_account = ConnectedAccountPublic.model_validate(response.json())
+                assert (
+                    connected_account.mcp_server_configuration.id
+                    == dummy_mcp_server_configuration.id
+                )
+                assert connected_account.user_id == dummy_user.id
+    else:
+        raise Exception("Untested access token fixture")
 
 
 @pytest.mark.parametrize(

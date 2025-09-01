@@ -96,7 +96,9 @@ async def create_connected_account(
 
         context.db_session.commit()
 
-    return schema_utils.construct_connected_account_public(context.db_session, connected_account)
+        return schema_utils.construct_connected_account_public(
+            context.db_session, connected_account
+        )
 
 
 async def _create_oauth2_connected_account(
