@@ -1,11 +1,11 @@
 [
   {
     "name": "NOTION__SEARCH",
-    "description": "Perform a search over:\n- \"internal\": Search your entire Notion workspace and connected sources (Slack, Google Drive, Github, Jira, Teams, Sharepoint, OneDrive, or Linear).\n- \"users\": Search Notion users in the current workspace.\nUse search when you need information not available via other tools and you're unsure where it's located. If Notion AI isn't available, it falls back to a non-AI workspace search (\"type\": \"workspace_search\"). Do not use search for database integrations, views, or components. \nTry more specific queries if initial results are insufficient. After internal search, use \"fetch\" to get full contents of a page or database (shows only highlights, URL, and title). To find pages under a Notion database, use this tool with the database's URL as the data_source_url. Refer to all as \"databases\" for user clarity.",
+    "description": "Perform a search over:\n- \"internal\": Perform a semantic search over your entire Notion workspace and connected\nsources (Slack, Google Drive, Github, Jira, Microsoft Teams, Sharepoint, OneDrive, or\nLinear).\n- \"users\": Perform a search over the Notion users in the current workspace.\nYou can use search when you need to find information which is not already available via\nother tools, and you don't know where it's located.\nIf the user doesn't have access to Notion AI features, the search will automatically fall\nback to a workspace search that doesn't use AI or include connected sources. This will be\nindicated by the \"type\" field in the response being \"workspace_search\" instead of\n\"ai_search\".\nDo NOT use search to get information about a Database's integrations, views, or other\ncomponents.\nIf initial results do not contain all the information you need, you can try more specific\nqueries.\nAfter obtaining internal search results, if the user asks for the full contents of a page or\ndatabase, use the \"fetch\" tool. This tool only shows some details like a highlight and the\nURL and title of each search result.\nTo find pages under a Notion database, use this tool and supply the database's URL as the\ndata_source_url parameter. These look like \"collection://f336d0bc-b841-465b-8045-024475c079dd\".\nYou can get this URL by using the \"fetch\" tool to view the database and copying the URL from\nthe <data-source url=\"...\"> block. Keep in mind that Notion-flavored Markdown has this\nconcept of a hierarchy of <database> blocks that contain <data-source> blocks, but users\naren't familiar with the Notion \"Data Source\" terminology or product. Prefer to refer to\nboth of them as \"databases\" in your response to humans to avoid confusion.\nExamples of searches:\n1. Search for information across the workspace:\n{\n\"query\": \"quarterly revenue report\",\n\"query_type\": \"internal\"\n}\n2. Search within a specific page and its children:\n{\n\"query\": \"meeting notes action items\",\n\"query_type\": \"internal\",\n\"page_url\": \"https://www.notion.so/workspace/Team-Hub-1234567890abcdef\"\n}\n3. Search within a database's pages:\n{\n\"query\": \"design review feedback\",\n\"query_type\": \"internal\",\n\"data_source_url\": \"collection://f336d0bc-b841-465b-8045-024475c079dd\"\n}\n4. Search within a specific teamspace:\n{\n\"query\": \"project updates\",\n\"query_type\": \"internal\",\n\"teamspace_id\": \"f336d0bc-b841-465b-8045-024475c079dd\"\n}\n5. Search for users:\n{\n\"query\": \"john@example.com\",\n\"query_type\": \"user\"\n}\n6. Find users by partial name:\n{\n\"query\": \"sarah\",\n\"query_type\": \"user\"\n}\nCommon use cases:\n- \"What does the sales team require from the product team in the next quarter?\"\n- \"Find all meeting notes that mention the new pricing strategy\"\n- \"Which pages discuss the API migration project?\"\n- \"Find all team members with email addresses ending in @design.company.com\"\n- \"What are the latest updates on the mobile app redesign?\"",
     "tags": [],
     "tool_metadata": {
       "canonical_tool_name": "search",
-      "canonical_tool_description_hash": "f325db8a0dc55001e5ba22c3412913fc1a08a0c77d42d71db2f0bcc6dba2bcf1",
+      "canonical_tool_description_hash": "4cb2619b785c2cbcd991acbd8f98999c22221735069dbfcd9aa61019929a9bf5",
       "canonical_tool_input_schema_hash": "78f0176b3ea5aa14ef61161dd1abb4a445bbd83b8a7f7b580c6738b39355d7ac"
     },
     "input_schema": {
@@ -41,11 +41,11 @@
   },
   {
     "name": "NOTION__FETCH",
-    "description": "Retrieves details about a Notion entity by its URL or ID. You can fetch the following types:  \n- Page (from a <page> block or <mention-page> mention)\n- Database (from a <database> block or <mention-database> mention)\n\nUse the \"fetch\" tool when you need to view details of an existing Notion entity and you have its URL or ID. Provide the Notion entity\u2019s URL or ID in the `id` parameter. To fetch multiple entities, make multiple calls.  \n\nPage content is returned in enhanced Markdown (a superset of standard Markdown). Notion only supports Databases (not public Data Sources); treat the database details as the entire data source.  \n\nExamples:  \n1. Fetch a page by URL: `{ \"id\": \"https://www.notion.so/workspace/Page-1234567890abcdef\" }`  \n2. Fetch by ID: `{ \"id\": \"12345678-90ab-cdef-1234-567890abcdef\" }`  \n3. Fetch a database: `{ \"id\": \"https://www.notion.so/workspace/DB-abcdef1234567890\" }`",
+    "description": "Retrieves details about a Notion entity by its URL or ID.\nYou can fetch the following types of entities:\n- Page, i.e. from a <page> block or a <mention-page> mention\n- Database, i.e. from a <database> block or a <mention-database> mention\nUse the \"fetch\" tool when you need to see the details of a Notion entity you already know\nexists and have its URL or ID.\nProvide the Notion entity's URL or ID in the `id` parameter. You must make multiple calls\nto the \"fetch\" tool if you want to fetch multiple entities.\nContent for pages that are returned use the enhanced Markdown format, which is a superset of\nthe standard Markdown syntax. See the full spec in the description of the \"create-pages\"\ntool.\nDatabases can have multiple data sources, which are collections of pages with the same schema.\nWhen fetching a database, the tool will return information about all its data sources.\nExamples of fetching entities:\n1. Fetch a page by URL:\n{\n\"id\": \"https://www.notion.so/workspace/Product-Requirements-1234567890abcdef\"\n}\n2. Fetch a page by ID (UUIDv4 with dashes):\n{\n\"id\": \"12345678-90ab-cdef-1234-567890abcdef\"\n}\n3. Fetch a page by ID (UUIDv4 without dashes):\n{\n\"id\": \"1234567890abcdef1234567890abcdef\"\n}\n4. Fetch a database:\n{\n\"id\": \"https://www.notion.so/workspace/Projects-Database-abcdef1234567890\"\n}\nCommon use cases:\n- \"What are the product requirements still need to be implemented from this ticket\nhttps://notion.so/page-url?\"\n- \"Show me the details of the project database at this URL\"\n- \"Get the content of page 12345678-90ab-cdef-1234-567890abcdef\"",
     "tags": [],
     "tool_metadata": {
       "canonical_tool_name": "fetch",
-      "canonical_tool_description_hash": "c4b0aa4bdb3ceaff1c636e7e693b28baa2c2db562bd5721b61adf5e73040e061",
+      "canonical_tool_description_hash": "3bb456ce03a99a8ebc7a2b01ae7158f1617def2868b4ff0d40e4bf172078b3ee",
       "canonical_tool_input_schema_hash": "d14771ef99cf6c6473cd0acde7b8d5a7993a597836984c1f215c8d8f765c53c2"
     },
     "input_schema": {
@@ -62,13 +62,13 @@
     }
   },
   {
-    "name": "NOTION__CREATE_PAGES",
-    "description": "Creates one or more Notion pages with specified properties and content. Use \"create-pages\" for new pages that don't exist yet. Always include a title property in each entry of the pages array; otherwise, the page title will be blank even if content is present. Do not duplicate the page title in the content. When creating pages in a database, property names must match its schema\u2014use the fetch tool with a database URL to get this schema. You may use the generic \"title\" property; it will be mapped to the actual database schema title property. All created pages share the same parent, which can be a Notion page or database. If parent is omitted, pages are private, workspace-level. Only databases define schemas; ignore \"data sources.\" Use Notion-flavored Markdown for content, supporting headings, lists, tables, callouts, media embeds, colors, mentions, and more.",
+    "name": "NOTION__NOTION_CREATE_PAGES",
+    "description": "Creates one or more Notion pages with specified properties and content.\nUse \"create-pages\" when you need to create one or more new pages that don't exist yet.\nAlways include a title property under `properties` in each entry of the `pages` array.\nOtherwise, the page title will appear blank even if the page content is populated. Don't\nduplicate the page title at the top of the page's `content`.\nWhen creating pages under a Notion database, the property names must match the database's\nschema. Use the \"fetch\" tool with a Notion database URL to get the database schema. Or, look\nfor existing pages under the database using the \"search\" tool then use the \"fetch\" tool to see\nthe names of the property keys. One exception is the \"title\" property, which all pages have,\nbut can be named differently in the schema of a database. For convenience, you can use the\ngeneric property name \"title\" in the \"properties\" object, and it will automatically be\nre-mapped to the actual name of the title property in the database schema when creating the\npage.\nAll pages created with a single call to this tool will have the same parent.\nThe parent can be a Notion page or database. If the parent is omitted, the pages will be\ncreated as standalone, workspace-level private pages and the person that created them\ncan organize them as they see fit later.\nIMPORTANT: When specifying a parent database, use the appropriate ID format:\n- Use \"data_source_id\" when you have a collection:// URL from the fetch tool (this is the most common case)\n- Use \"database_id\" when you have a page URL for a database view (less common)\n- Use \"page_id\" when the parent is a regular page\nExamples of creating pages:\n1. Create a standalone page with a title and content:\n{\n\"pages\": [\n{\n\"properties\": {\"title\":\"Page title\"},\n\"content\": \"# Section 1\nSection 1 content\n# Section 2\nSection 2 content\"\n}\n]\n}\n2. Create a page under a database's data source (collection), e.g. using an ID from a collection:// URL provided by the fetch tool:\n{\n\"parent\": {\"data_source_id\": \"f336d0bc-b841-465b-8045-024475c079dd\"},\n\"pages\": [\n{\n\"properties\": {\n\"Task Name\": \"Task 123\",\n\"Status\": \"In Progress\",\n},\n},\n],\n}\n3. Create a page with an existing page as a parent:\n{\n\"parent\": {\"page_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"},\n\"pages\": [\n{\n\"properties\": {\"title\": \"Page title\"},\n\"content\": \"# Section 1\nSection 1 content\n# Section 2\nSection 2 content\"\n}\n]\n}\nThe enhanced Markdown format used for page content is a superset of the standard Markdown\nsyntax. Here is the full spec, but please note that Notion does not yet use the Data Source\nterminology, and only supports Databases. Ignore anything related to \"data sources\" and assume\ndatabases can only define one schema for now.\n### Notion-flavored Markdown\nNotion-flavored Markdown is a variant of standard Markdown with additional features to support all Block and Rich text types.\nUse tabs for indentation.\nUse backslashes to escape characters. For example, * will render as * and not as a bold delimiter.\nBlock types:\nMarkdown blocks use a {color=\"Color\"} attribute list to set a block color.\nText:\nRich text {color=\"Color\"}\nChildren\nHeadings:\n# Rich text {color=\"Color\"}\n## Rich text {color=\"Color\"}\n### Rich text {color=\"Color\"}\n(Headings 4, 5, and 6 are not supported in Notion and will be converted to heading 3.)\nBulleted list:\n- Rich text {color=\"Color\"}\nChildren\nNumbered list:\n1. Rich text {color=\"Color\"}\nChildren\nRich text types:\nBold:\n**Rich text**\nItalic:\n*Rich text*\nStrikethrough:\n~~Rich text~~\nUnderline:\n<span underline=\"true\">Rich text</span>\nInline code:\n`Code`\nLink:\n[Link text](URL)\nCitation:\n[^URL]\nTo create a citation, you can either reference a compressed URL like [^{{1}}], or a full URL like [^https://example.com].\nColors:\n<span color?=\"Color\">Rich text</span>\nInline math:\n$Equation$ or $`Equation`$ if you want to use markdown delimiters within the equation.\nThere must be whitespace before the starting $ symbol and after the ending $ symbol. There must not be whitespace right after the starting $ symbol or before the ending $ symbol.\nInline line breaks within rich text:\n<br>\nMentions:\nUser:\n<mention-user url=\"{{URL}}\">User name</mention-user>\nThe URL must always be provided, and refer to an existing User.\nBut Providing the user name is optional. In the UI, the name will always be displayed.\nSo an alternative self-closing format is also supported: <mention-user url=\"{{URL}}\"/>\nPage:\n<mention-page url=\"{{URL}}\">Page title</mention-page>\nThe URL must always be provided, and refer to an existing Page.\nProviding the page title is optional. In the UI, the title will always be displayed.\nMentioned pages can be viewed using the \"view\" tool.\nDatabase:\n<mention-database url=\"{{URL}}\">Database name</mention-database>\nThe URL must always be provided, and refer to an existing Database.\nProviding the database name is optional. In the UI, the name will always be displayed.\nMentioned databases can be viewed using the \"view\" tool.\nDate:\n<mention-date start=\"YYYY-MM-DD\" end=\"YYYY-MM-DD\"/>\nDatetime:\n<mention-date start=\"YYYY-MM-DDThh:mm:ssZ\" end=\"YYYY-MM-DDThh:mm:ssZ\"/>\nCustom emoji:\n:emoji_name:\nCustom emoji are rendered as the emoji name surrounded by colons.\nColors:\nText colors (colored text with transparent background):\ngray, brown, orange, yellow, green, blue, purple, pink, red\nBackground colors (colored background with contrasting text):\ngray_bg, brown_bg, orange_bg, yellow_bg, green_bg, blue_bg, purple_bg, pink_bg, red_bg\nUsage:\n- Block colors: Add color=\"Color\" to the first line of any block\n- Rich text colors (text colors and background colors are both supported): Use <span color=\"Color\">Rich text</span>\n#### Advanced Block types for Page content\nThe following block types may only be used in page content.\n<advanced-blocks>\nQuote:\n> Rich text {color=\"Color\"}\nChildren\nTo-do:\n- [ ] Rich text {color=\"Color\"}\nChildren\n- [x] Rich text {color=\"Color\"}\nChildren\nToggle:\n\u25b6 Rich text {color=\"Color\"}\nChildren\nToggle heading 1:\n\u25b6# Rich text {color=\"Color\"}\nChildren\nToggle heading 2:\n\u25b6## Rich text {color=\"Color\"}\nChildren\nToggle heading 3:\n\u25b6### Rich text {color=\"Color\"}\nChildren\nFor toggles and toggle headings, the children must be indented in order for them to be toggleable. If you do not indent the children, they will not be contained within the toggle or toggle heading.\nDivider:\n---\nTable:\n<table fit-page-width?=\"true|false\" header-row?=\"true|false\" header-column?=\"true|false\">\n<colgroup>\n<col color?=\"Color\">\n<col color?=\"Color\">\n</colgroup>\n<tr color?=\"Color\">\n<td>Data cell</td>\n<td color?=\"Color\">Data cell</td>\n</tr>\n<tr>\n<td>Data cell</td>\n<td>Data cell</td>\n</tr>\n</table>\nNote: All table attributes are optional. If omitted, they default to false.\nTable structure:\n- <table>: Root element with optional attributes:\n- fit-page-width: Whether the table should fill the page width\n- header-row: Whether the first row is a header\n- header-column: Whether the first column is a header\n- <colgroup>: Optional element defining column-wide styles\n- <col>: Column definition with optional attributes:\n- color: The color of the column\n- width: The width of the column. Leave empty to auto-size.\n- <tr>: Table row with optional color attribute\n- <td>: Data cell with optional color attribute\nColor precedence (highest to lowest):\n1. Cell color (<td color=\"red\">)\n2. Row color (<tr color=\"blue_bg\">)\n3. Column color (<col color=\"gray\">)\nEquation:\n$$\nEquation\n$$\nCode:\n```language\nCode\n```\nXML blocks use the \"color\" attribute to set a block color.\nCallout:\n<callout icon?=\"emoji\" color?=\"Color\">\nChildren\n</callout>\nColumns:\n<columns>\n<column>\nChildren\n</column>\n<column>\nChildren\n</column>\n</columns>\nPage:\n<page url=\"{{URL}}\" color?=\"Color\">Title</page>\nSub-pages can be viewed using the \"view\" tool.\nTo create a new sub-page, omit the URL. You can then update the page content and properties with the \"update-page\" tool. Example: <page>New Page</page>\nDatabase:\n<database url=\"{{URL}}\" inline?=\"{true|false}\" color?=\"Color\">Title</database>\nTo create a new database, omit the URL. You can then update the database properties and content with the \"update-database\" tool. Example: <database>New Database</database>\nThe \"inline\" toggles how the database is displayed in the UI. If it is true, the database is fully visible and interactive on the page. If false, the database is displayed as a sub-page.\nThere is no \"Data Source\" block type. Data Sources are always inside a Database, and only Databases can be inserted into a Page.\nAudio:\n<audio source=\"{{URL}}\" color?=\"Color\">Caption</audio>\nFile:\nFile content can be viewed using the \"view\" tool.\n<file source=\"{{URL}}\" color?=\"Color\">Caption</file>\nImage:\nImage content can be viewed using the \"view\" tool.\n<image source=\"{{URL}}\" color?=\"Color\">Caption</image>\nPDF:\nPDF content can be viewed using the \"view\" tool.\n<pdf source=\"{{URL}}\" color?=\"Color\">Caption</pdf>\nVideo:\n<video source=\"{{URL}}\" color?=\"Color\">Caption</video>\nTable of contents:\n<table_of_contents color?=\"Color\"/>\nSynced block:\nThe original source for a synced block.\nWhen creating a new synced block, do not provide the URL. After inserting the synced block into a page, the URL will be provided.\n<synced_block url?=\"{{URL}}\">\nChildren\n</synced_block>\nNote: When creating new synced blocks, omit the url attribute - it will be auto-generated. When reading existing synced blocks, the url attribute will be present.\nSynced block reference:\nA reference to a synced block.\nThe synced block must already exist and url must be provided.\nYou can directly update the children of the synced block reference and it will update both the original synced block and the synced block reference.\n<synced_block_reference url=\"{{URL}}\">\nChildren\n</synced_block_reference>\nMeeting notes:\n<meeting-notes>\nRich text (meeting title)\n<summary>\nAI-generated summary of the notes + transcript\n</summary>\n<notes>\nUser notes\n</notes>\n<transcript>\nTranscript of the audio (cannot be edited)\n</transcript>\n</meeting-notes>\nNote: The <transcript> tag contains a raw transcript and cannot be edited.\nUnknown (a block type that is not supported in the API yet):\n<unknown url=\"{{URL}}\" alt=\"Alt\"/>\n</advanced-blocks>",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "create-pages",
-      "canonical_tool_description_hash": "0d171ec2a5b8af33f8dc8540f6471edf6fafb5288eca8c894deec2903ff8a0b1",
-      "canonical_tool_input_schema_hash": "aac4aae9924958126352c74a00d0ca77a8c424caf7189a0e6035c1fe75999714"
+      "canonical_tool_name": "notion-create-pages",
+      "canonical_tool_description_hash": "3ddcc016945d6ed80cd9afa009867956273115e4995bc63424ff1afe49f3aa68",
+      "canonical_tool_input_schema_hash": "05a8cbd24e3c35b9629b799ccc5cd97c22bc28ea7ebb58459d3da0c0ff96b661"
     },
     "input_schema": {
       "type": "object",
@@ -101,7 +101,8 @@
               "type": "object",
               "properties": {
                 "page_id": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "The ID of the parent page (with or without dashes), for example, 195de9221179449fab8075a27c979105"
                 },
                 "type": {
                   "type": "string",
@@ -115,7 +116,8 @@
               "type": "object",
               "properties": {
                 "database_id": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "The ID of the parent database (with or without dashes), for example, 195de9221179449fab8075a27c979105"
                 },
                 "type": {
                   "type": "string",
@@ -124,9 +126,24 @@
               },
               "required": ["database_id"],
               "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "data_source_id": {
+                  "type": "string",
+                  "description": "The ID of the parent data source (collection), with or without dashes. For example, f336d0bc-b841-465b-8045-024475c079dd"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["data_source_id"]
+                }
+              },
+              "required": ["data_source_id"],
+              "additionalProperties": false
             }
           ],
-          "description": "The parent under which the new pages will be created. This can be a page or a database. If omitted, the new pages will be created as private pages at the workspace level."
+          "description": "The parent under which the new pages will be created. This can be a page (page_id), a database page (database_id), or a data source/collection under a database (data_source_id). If omitted, the new pages will be created as private pages at the workspace level. Use data_source_id when you have a collection:// URL from the fetch tool."
         }
       },
       "required": ["pages"],
@@ -135,13 +152,13 @@
     }
   },
   {
-    "name": "NOTION__UPDATE_PAGE",
-    "description": "Update a Notion page's properties or content.  \nProperties are a JSON map of property names to SQLite values. For database pages, use the schema in <database>; for pages outside a database, only the \"title\" property is allowed.  \nContent is a string in Notion-flavored Markdown (see \"create-pages\" for Markdown spec). Before updating content, use \"fetch\" to get current page content to identify correct Markdown snippets for \"replace_content_range\" or \"insert_content_after\" commands.  \nExamples:  \n1. Update properties:  \n{\"page_id\":\"...\", \"command\":\"update_properties\", \"properties\":{\"title\":\"...\",\"status\":\"In Progress\"}}  \n2. Replace all content:  \n{\"page_id\":\"...\", \"command\":\"replace_content\", \"new_str\":\"...\"}  \n3. Replace specific content:  \n{\"page_id\":\"...\", \"command\":\"replace_content_range\", \"selection_with_ellipsis\":\"start...end\", \"new_str\":\"...\"}  \nUse unique, concise snippets for content selection; avoid ambiguity.  \n4. Insert content:  \n{\"page_id\":\"...\", \"command\":\"insert_content_after\", \"selection_with_ellipsis\":\"start...end\",\"new_str\":\"...\"}",
+    "name": "NOTION__NOTION_UPDATE_PAGE",
+    "description": "Update a Notion page's properties or content.\nNotion page properties are a JSON map of property names to SQLite values.\nFor pages in a database, use the SQLite schema definition shown in <database>.\nFor pages outside of a database, the only allowed property is \"title\", which is the title of the page in inline markdown format.\nNotion page content is a string in Notion-flavored Markdown format. See the \"create-pages\" tool description for the full enhanced Markdown spec.\nBefore updating a page's content with this tool, use the \"fetch\" tool first to get the existing content to find out the Markdown snippets to use in the \"replace_content_range\" or \"insert_content_after\" commands.\nIMPORTANT: Some property types require expanded formats:\n- Date properties: Split into \"date:{property}:start\", \"date:{property}:end\" (optional), and \"date:{property}:is_datetime\" (0 or 1)\n- Place properties: Split into \"place:{property}:name\", \"place:{property}:address\", \"place:{property}:latitude\", \"place:{property}:longitude\", and \"place:{property}:google_place_id\" (optional)\nNumber properties accept JavaScript numbers (not strings). Use null to remove a property's value. Boolean values like \"__YES__\" are supported for checkbox properties.\nExamples:\n(1) Update page properties:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"update_properties\",\n\"properties\": {\n\"title\": \"New Page Title\",\n\"status\": \"In Progress\",\n\"priority\": 5,\n\"checkbox\": \"__YES__\",\n\"date:deadline:start\": \"2024-12-25\",\n\"date:deadline:is_datetime\": 0,\n\"place:office:name\": \"HQ\",\n\"place:office:latitude\": 37.7749,\n\"place:office:longitude\": -122.4194\n}\n}\n(2) Replace the entire content of a page:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"replace_content\",\n\"new_str\": \"# New Section\nUpdated content goes here\"\n}\n(3) Replace specific content in a page:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"replace_content_range\",\n\"selection_with_ellipsis\": \"# Old Section...end of section\",\n\"new_str\": \"# New Section\nUpdated content goes here\"\n}\n(4) Insert content after specific text:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"insert_content_after\",\n\"selection_with_ellipsis\": \"## Previous section...\",\n\"new_str\": \"\n## New Section\nContent to insert goes here\"\n}\nNote: For selection_with_ellipsis, provide only the first ~10 characters, an ellipsis, and the last ~10 characters. Ensure the selection is unique; use longer snippets if needed to avoid ambiguity.",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "update-page",
-      "canonical_tool_description_hash": "b42e9107edc5aec85d5c3653a8b4db6b172a6298197bdb83bc5ed090ad8c8dd2",
-      "canonical_tool_input_schema_hash": "4fdb165ce02d6cbd6ab881a0535636d96fb14a5656407616d413eabac569e54a"
+      "canonical_tool_name": "notion-update-page",
+      "canonical_tool_description_hash": "429c4c8553ead83049c7ea67fc5d376c6c883af2c94e10db6a673866c6bb05d1",
+      "canonical_tool_input_schema_hash": "bb141c00f307bd07e7df2ea39040d30345e8afaabc42d19114cdcd52314e94b4"
     },
     "input_schema": {
       "type": "object",
@@ -170,7 +187,7 @@
                     "properties": {
                       "type": "object",
                       "additionalProperties": {
-                        "type": "string"
+                        "type": ["string", "number", "null"]
                       },
                       "description": "A JSON object that updates the page's properties.\nFor pages in a database, use the SQLite schema definition shown in <database>.\nFor pages outside of a database, the only allowed property is \"title\", which is the title of the page in inline markdown format.\nUse null to remove a property's value."
                     }
@@ -243,11 +260,11 @@
     }
   },
   {
-    "name": "NOTION__MOVE_PAGES",
+    "name": "NOTION__NOTION_MOVE_PAGES",
     "description": "Move one or more Notion pages or databases to a new parent.",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "move-pages",
+      "canonical_tool_name": "notion-move-pages",
       "canonical_tool_description_hash": "15370373cf2ba38d1db810e4bdde9d223b004e74ba1509c93647f78ef8bc59a3",
       "canonical_tool_input_schema_hash": "9bd9f06475edebe84e0f548a4617f4bdc4957316834d538e7ba5af801c5a2d7c"
     },
@@ -305,11 +322,11 @@
     }
   },
   {
-    "name": "NOTION__DUPLICATE_PAGE",
+    "name": "NOTION__NOTION_DUPLICATE_PAGE",
     "description": "Duplicate a Notion page. The page must be within the current workspace, and you must have permission to access it. The duplication completes asynchronously, so do not rely on the new page identified by the returned ID or URL to be populated immediately. Let the user know that the duplication is in progress and that they can check back later using the 'fetch' tool or by clicking the returned URL and viewing it in the Notion app.",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "duplicate-page",
+      "canonical_tool_name": "notion-duplicate-page",
       "canonical_tool_description_hash": "8f7eaad7e37ac338a95cead7435f1f2323c4c09ed905e806d6fa207138c0da9b",
       "canonical_tool_input_schema_hash": "2369c24ec8e85f681982c8e4e1af2fb10bfd65dabf218d06be2ac2a7a76cb4c0"
     },
@@ -327,13 +344,13 @@
     }
   },
   {
-    "name": "NOTION__CREATE_DATABASE",
-    "description": "Creates a new Notion database with the specified properties.",
+    "name": "NOTION__NOTION_CREATE_DATABASE",
+    "description": "Creates a new Notion database with the specified properties.\nUse this tool when you need to create a new database that doesn't exist yet.\nThe database schema is defined through the \"properties\" object. If no title property is\nprovided, one will be automatically added with the name \"Name\". Each property should\ninclude a type and may have additional configuration based on the property type.\nCommon property types:\n- title: The main property (required, cannot be deleted)\n- rich_text: Multi-line text\n- number: Numeric values with optional formatting\n- select: Single choice from options\n- multi_select: Multiple choices from options\n- date: Date with optional time\n- people: User references\n- checkbox: Boolean values\n- url: Web links\n- email: Email addresses\n- phone_number: Phone numbers\n- formula: Calculated values based on other properties\n- relation: Links to pages in another database\n- rollup: Aggregated values from related pages\nThe tool returns a rendered Markdown representation of the created database including\nits structure, data source configuration with full schema details, and SQLite table\ndefinition. This provides complete visibility into the database that was created.\nExamples of creating databases:\n1. Create a minimal database with auto-added title property:\n{\n\"properties\": {}\n}\n2. Create a task database under a page:\n{\n\"parent\": {\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\"},\n\"title\": [{\"text\": {\"content\": \"Project Tasks\"}}],\n\"properties\": {\n\"Status\": {\n\"type\": \"select\",\n\"select\": {\n\"options\": [\n{\"name\": \"To Do\", \"color\": \"red\"},\n{\"name\": \"In Progress\", \"color\": \"yellow\"},\n{\"name\": \"Done\", \"color\": \"green\"}\n]\n}\n},\n\"Priority\": {\n\"type\": \"select\",\n\"select\": {\n\"options\": [\n{\"name\": \"High\", \"color\": \"red\"},\n{\"name\": \"Medium\", \"color\": \"yellow\"},\n{\"name\": \"Low\", \"color\": \"green\"}\n]\n}\n},\n\"Due Date\": {\"type\": \"date\", \"date\": {}},\n\"Assignee\": {\"type\": \"people\", \"people\": {}}\n}\n}\n3. Create a workspace-level database with various property types:\n{\n\"title\": [{\"text\": {\"content\": \"Company Directory\"}}],\n\"properties\": {\n\"Name\": {\"type\": \"title\", \"title\": {}},\n\"Email\": {\"type\": \"email\", \"email\": {}},\n\"Phone\": {\"type\": \"phone_number\", \"phone_number\": {}},\n\"Department\": {\n\"type\": \"select\",\n\"select\": {\n\"options\": [\n{\"name\": \"Engineering\", \"color\": \"blue\"},\n{\"name\": \"Sales\", \"color\": \"green\"},\n{\"name\": \"Marketing\", \"color\": \"purple\"}\n]\n}\n},\n\"Start Date\": {\"type\": \"date\", \"date\": {}},\n\"Is Active\": {\"type\": \"checkbox\", \"checkbox\": {}},\n\"Notes\": {\"type\": \"rich_text\", \"rich_text\": {}}\n}\n}\n4. Create a database with relations (assuming target database exists):\n{\n\"title\": [{\"text\": {\"content\": \"Tasks\"}}],\n\"properties\": {\n\"Project\": {\n\"type\": \"relation\",\n\"relation\": {\n\"database_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n\"type\": \"single_property\",\n\"single_property\": {}\n}\n}\n}\n}",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "create-database",
-      "canonical_tool_description_hash": "c82e796594a546cd91be2666e576e31ca0e57b5667931b358fcb87949a049b1c",
-      "canonical_tool_input_schema_hash": "e51282c221780672d1aa5f23d8724cb5fc8ba9eaae7a6f21de1a3a1f4d2895bf"
+      "canonical_tool_name": "notion-create-database",
+      "canonical_tool_description_hash": "2320deccad82e62961ce6edb3ce84e6be61ad58b7ba7d9dacb63255df21b75e6",
+      "canonical_tool_input_schema_hash": "ad0f097e74cc46e8fe9a10e7fa71a8c764576302c9fa7535b7fe23341a0d6d8f"
     },
     "input_schema": {
       "type": "object",
@@ -349,6 +366,7 @@
                     "anyOf": [
                       {
                         "type": "string",
+                        "minLength": 1,
                         "maxLength": 280
                       },
                       {
@@ -434,7 +452,8 @@
                                     "purple",
                                     "pink",
                                     "red"
-                                  ]
+                                  ],
+                                  "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`"
                                 },
                                 "description": {
                                   "type": ["string", "null"]
@@ -483,7 +502,8 @@
                                     "purple",
                                     "pink",
                                     "red"
-                                  ]
+                                  ],
+                                  "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`"
                                 },
                                 "description": {
                                   "type": ["string", "null"]
@@ -529,17 +549,21 @@
                           {
                             "type": "object",
                             "properties": {
-                              "database_id": {
+                              "data_source_id": {
                                 "type": "string"
                               }
                             },
-                            "required": ["database_id"]
+                            "required": ["data_source_id"]
                           },
                           {
                             "anyOf": [
                               {
                                 "type": "object",
                                 "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": ["single_property"]
+                                  },
                                   "single_property": {
                                     "type": "object",
                                     "properties": {},
@@ -552,6 +576,10 @@
                               {
                                 "type": "object",
                                 "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": ["dual_property"]
+                                  },
                                   "dual_property": {
                                     "type": "object",
                                     "properties": {
@@ -885,12 +913,92 @@
                     },
                     "required": ["last_edited_time"],
                     "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["button"]
+                      },
+                      "button": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["button"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["location"]
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["location"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["verification"]
+                      },
+                      "verification": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["verification"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["last_visited_time"]
+                      },
+                      "last_visited_time": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["last_visited_time"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["place"]
+                      },
+                      "place": {
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": ["place"],
+                    "additionalProperties": false
                   }
                 ]
               }
             ]
           },
-          "description": "The property schema of the new database. Must at least have a title property."
+          "description": "The property schema of the new database. If no title property is provided, one will be automatically added."
         },
         "parent": {
           "type": "object",
@@ -941,7 +1049,8 @@
                       "color": {
                         "type": "string",
                         "minLength": 3,
-                        "maxLength": 18
+                        "maxLength": 18,
+                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
                       }
                     },
                     "additionalProperties": false
@@ -1409,7 +1518,8 @@
                       "color": {
                         "type": "string",
                         "minLength": 3,
-                        "maxLength": 18
+                        "maxLength": 18,
+                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
                       }
                     },
                     "additionalProperties": false
@@ -1851,13 +1961,13 @@
     }
   },
   {
-    "name": "NOTION__UPDATE_DATABASE",
-    "description": "Update a Notion database\u2019s properties, name, description, or other attributes. The tool returns a rendered Markdown string showing the updated database structure, including properties, data sources, and schema info. Database properties define columns/fields with types (text, number, select, etc.) and config options.  \nExamples:  \n1. Change title/description  \n2. Add property  \n3. Rename property  \n4. Remove property  \n5. Change to inline/full page  \n6. Move to trash (**Warning: cannot be undone without Notion UI\u2013confirm with user!**)  \nCommon property types include: title (main), rich_text, number, select, multi_select, date, people, checkbox, url, email, phone_number, formula, relation, rollup.  \nNotes: Can\u2019t add/remove title, only one unique_id allowed, synced DBs cannot be updated. Use \u201cfetch\u201d tool first to see schema.",
+    "name": "NOTION__NOTION_UPDATE_DATABASE",
+    "description": "Update a Notion database's properties, name, description, or other attributes.\nThe tool returns a rendered Markdown string showing the updated database structure,\nincluding its properties, data sources, and schema information.\nDatabase properties define the columns/fields that pages in the database can have.\nEach property has a type (text, number, select, etc.) and configuration options.\nExamples:\n(1) Update database title and description:\n{\n\"database_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"title\": [{\"type\": \"text\", \"text\": {\"content\": \"Project Tracker 2024\"}}],\n\"description\": [{\"type\": \"text\", \"text\": {\"content\": \"Track all projects and deliverables\"}}]\n}\n(2) Add new properties to a database:\n{\n\"database_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"properties\": {\n\"Priority\": {\n\"select\": {\n\"options\": [\n{\"name\": \"High\", \"color\": \"red\"},\n{\"name\": \"Medium\", \"color\": \"yellow\"},\n{\"name\": \"Low\", \"color\": \"green\"}\n]\n}\n},\n\"Due Date\": {\"date\": {}},\n\"Assigned To\": {\"people\": {}}\n}\n}\n(3) Rename an existing property (use the property ID or current name):\n{\n\"database_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"properties\": {\n\"Status\": {\"name\": \"Project Status\"}\n}\n}\n(4) Remove a property (set to null):\n{\n\"database_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"properties\": {\n\"Old Property\": null\n}\n}\n(5) Change display mode from inline to full page:\n{\n\"database_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"is_inline\": false\n}\n(6) Move database to trash (WARNING: cannot be undone without going to the Notion app UI so\nexplicitly confirm with the user that they really want to do this):\n{\n\"database_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"in_trash\": true\n}\nCommon property types:\n- title: The main property (required, cannot be deleted)\n- rich_text: Multi-line text\n- number: Numeric values with optional formatting\n- select: Single choice from options\n- multi_select: Multiple choices from options\n- date: Date with optional time\n- people: User references\n- checkbox: Boolean values\n- url: Web links\n- email: Email addresses\n- phone_number: Phone numbers\n- formula: Calculated values based on other properties\n- relation: Links to pages in another database\n- rollup: Aggregated values from related pages\nNotes:\n- You cannot delete or create new title properties\n- A database can only have one unique_id property\n- Synced databases cannot be updated\n- Use the \"fetch\" tool first to see the current database schema",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "update-database",
-      "canonical_tool_description_hash": "3914cc19ad84fdffa50808b417a507a3d112d1997e2ff7e6bb9959c3a0efd00e",
-      "canonical_tool_input_schema_hash": "ab86267c41e7b49e88dabaaf5ab4fc118bc8b7e8207843c71d9730fea6a49fd7"
+      "canonical_tool_name": "notion-update-database",
+      "canonical_tool_description_hash": "0c7b092df72e1dae5d670afc56bbe3fe6e9f30e7bba46d31dd0365280ce418c5",
+      "canonical_tool_input_schema_hash": "c2ab4707b2a009d68de5ba2ad18bdc075dd3f8e67e69ce854c9542d0519b7dc4"
     },
     "input_schema": {
       "type": "object",
@@ -1899,7 +2009,8 @@
                       "color": {
                         "type": "string",
                         "minLength": 3,
-                        "maxLength": 18
+                        "maxLength": 18,
+                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
                       }
                     },
                     "additionalProperties": false
@@ -2367,7 +2478,8 @@
                       "color": {
                         "type": "string",
                         "minLength": 3,
-                        "maxLength": 18
+                        "maxLength": 18,
+                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
                       }
                     },
                     "additionalProperties": false
@@ -2819,6 +2931,7 @@
                         "anyOf": [
                           {
                             "type": "string",
+                            "minLength": 1,
                             "maxLength": 280
                           },
                           {
@@ -2906,7 +3019,8 @@
                                             "purple",
                                             "pink",
                                             "red"
-                                          ]
+                                          ],
+                                          "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`"
                                         },
                                         "description": {
                                           "type": ["string", "null"]
@@ -2988,7 +3102,8 @@
                                             "purple",
                                             "pink",
                                             "red"
-                                          ]
+                                          ],
+                                          "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`"
                                         },
                                         "description": {
                                           "type": ["string", "null"]
@@ -3065,17 +3180,21 @@
                               {
                                 "type": "object",
                                 "properties": {
-                                  "database_id": {
+                                  "data_source_id": {
                                     "type": "string"
                                   }
                                 },
-                                "required": ["database_id"]
+                                "required": ["data_source_id"]
                               },
                               {
                                 "anyOf": [
                                   {
                                     "type": "object",
                                     "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["single_property"]
+                                      },
                                       "single_property": {
                                         "type": "object",
                                         "properties": {},
@@ -3088,6 +3207,10 @@
                                   {
                                     "type": "object",
                                     "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["dual_property"]
+                                      },
                                       "dual_property": {
                                         "type": "object",
                                         "properties": {
@@ -3459,13 +3582,13 @@
     }
   },
   {
-    "name": "NOTION__CREATE_COMMENT",
+    "name": "NOTION__NOTION_CREATE_COMMENT",
     "description": "Add a comment to a page",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "create-comment",
+      "canonical_tool_name": "notion-create-comment",
       "canonical_tool_description_hash": "edb9177d9556d8518de283756987b68514cc71861cff565a348fbc4ec02d01a9",
-      "canonical_tool_input_schema_hash": "c8ff48c3c1e08610d07795d3519c5dfdc146a29522553c14049acd6599074cce"
+      "canonical_tool_input_schema_hash": "4a6f7aafa0ada1234cd64897051e3d197ba8d1f7c57c8ee242c9466b50aac28f"
     },
     "input_schema": {
       "type": "object",
@@ -3518,7 +3641,8 @@
                       "color": {
                         "type": "string",
                         "minLength": 3,
-                        "maxLength": 18
+                        "maxLength": 18,
+                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
                       }
                     },
                     "additionalProperties": false
@@ -3960,11 +4084,11 @@
     }
   },
   {
-    "name": "NOTION__GET_COMMENTS",
+    "name": "NOTION__NOTION_GET_COMMENTS",
     "description": "Get all comments of a page",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "get-comments",
+      "canonical_tool_name": "notion-get-comments",
       "canonical_tool_description_hash": "fd81d3b6682ba309fca7c1de5971b179b1de6b2ca7af656b4602915a1c2d8cf7",
       "canonical_tool_input_schema_hash": "2504ac262828a39fd5802ee1101eb11ae392f741a31ab9969dd5e23830bbff98"
     },
@@ -3982,11 +4106,11 @@
     }
   },
   {
-    "name": "NOTION__GET_USERS",
+    "name": "NOTION__NOTION_GET_USERS",
     "description": "List all users",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "get-users",
+      "canonical_tool_name": "notion-get-users",
       "canonical_tool_description_hash": "43320051235d3da2c9855ff4a28c923b4c5039cdc77e15db3d7909b96aa12405",
       "canonical_tool_input_schema_hash": "82f062b1fdf22f01fec3b81ad149480f74c7e34e52d54d160a14c823c923ae6e"
     },
@@ -4012,11 +4136,11 @@
     }
   },
   {
-    "name": "NOTION__GET_SELF",
+    "name": "NOTION__NOTION_GET_SELF",
     "description": "Retrieve your token's bot user",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "get-self",
+      "canonical_tool_name": "notion-get-self",
       "canonical_tool_description_hash": "97ac25b46b29d0f7a5d22972e8b8339eebc556d681ba5a39244e626abd3802fd",
       "canonical_tool_input_schema_hash": "f973399805c1c233633f5196cf8e2ad40ee100b94996d711dcd030813b671bc5"
     },
@@ -4028,11 +4152,11 @@
     }
   },
   {
-    "name": "NOTION__GET_USER",
+    "name": "NOTION__NOTION_GET_USER",
     "description": "Retrieve a user",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "get-user",
+      "canonical_tool_name": "notion-get-user",
       "canonical_tool_description_hash": "ca8560e2dac5cb314c3f20e720f07a3a667ac2b6a4719f2a4d507bc825fe8d40",
       "canonical_tool_input_schema_hash": "3197cabfa9ff056cbdf87102509c36bd6688203558c39af209397c09fbfd2b18"
     },

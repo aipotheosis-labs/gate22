@@ -12,6 +12,7 @@ from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer, MCPServerBundle, MCPServerConfiguration, MCPTool
 from aci.common.enums import MCPServerTransportType
 from aci.common.logging_setup import get_logger
+from aci.common.mcp_auth_manager import MCPAuthManager
 from aci.common.schemas.mcp_auth import (
     AuthConfig,
     AuthCredentials,
@@ -28,7 +29,6 @@ from aci.control_plane.routes.mcp.jsonrpc import (
     JSONRPCSuccessResponse,
     JSONRPCToolsCallRequest,
 )
-from aci.control_plane.routes.mcp.mcp_auth_manager import MCPAuthManager
 
 logger = get_logger(__name__)
 
