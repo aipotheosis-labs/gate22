@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from aci.common.enums import AuthType, MCPServerTransportType
 from aci.common.schemas.mcp_auth import AuthConfig
-from aci.common.schemas.mcp_tool import MCPToolPublic
+from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
 
 
 # NOTE: using a generic metadata schema for now before the schema is finalized
@@ -58,16 +58,7 @@ class MCPServerPublic(BaseModel):
     categories: list[str]
     supported_auth_types: list[AuthType]
 
-    tools: list[MCPToolPublic]
+    tools: list[MCPToolPublicWithoutSchema]
 
     created_at: datetime
     updated_at: datetime
-
-
-class MCPServerPublicBasic(BaseModel):
-    id: UUID
-    name: str
-    url: str
-    description: str
-    logo: str
-    categories: list[str]

@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerBundle, User
-from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic, MCPServerBundlePublicBasic
+from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
 from aci.common.schemas.pagination import PaginationResponse
 
 
@@ -41,7 +41,7 @@ def test_list_mcp_server_bundles(
         assert response.status_code == 403
         return
 
-    paginated_response = PaginationResponse[MCPServerBundlePublicBasic].model_validate(
+    paginated_response = PaginationResponse[MCPServerBundlePublic].model_validate(
         response.json(),
     )
 

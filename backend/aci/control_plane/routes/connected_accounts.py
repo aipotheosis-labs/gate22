@@ -19,7 +19,7 @@ from aci.common.schemas.connected_account import (
     OAuth2ConnectedAccountCreateResponse,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import config, rbac
+from aci.control_plane import config, rbac, schema_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     MCPServerConfigurationNotFound,
@@ -241,7 +241,7 @@ async def oauth2_callback(
             url=state.redirect_url_after_account_creation, status_code=status.HTTP_302_FOUND
         )
 
-    return ConnectedAccountPublic.model_validate(connected_account, from_attributes=True)
+    return schema_utils.construct_connected_account_public(db_session, connected_account)
 
 
 @router.get("", response_model=PaginationResponse[ConnectedAccountPublic])
@@ -271,7 +271,7 @@ async def list_connected_accounts(
 
     return PaginationResponse[ConnectedAccountPublic](
         data=[
-            ConnectedAccountPublic.model_validate(connected_account, from_attributes=True)
+            schema_utils.construct_connected_account_public(context.db_session, connected_account)
             for connected_account in connected_accounts
         ],
         offset=pagination_params.offset,

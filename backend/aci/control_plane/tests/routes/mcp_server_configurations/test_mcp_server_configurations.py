@@ -5,10 +5,7 @@ from sqlalchemy.orm import Session
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer, MCPServerConfiguration, Team
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp_server_configuration import (
-    MCPServerConfigurationPublic,
-    MCPServerConfigurationPublicBasic,
-)
+from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.pagination import PaginationResponse
 
 logger = get_logger(__name__)
@@ -60,7 +57,7 @@ def test_list_mcp_server_configurations(
         assert response.status_code == 403
         return
 
-    paginated_response = PaginationResponse[MCPServerConfigurationPublicBasic].model_validate(
+    paginated_response = PaginationResponse[MCPServerConfigurationPublic].model_validate(
         response.json(),
     )
 

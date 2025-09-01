@@ -2,24 +2,18 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServerConfiguration
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
-from aci.common.schemas.mcp_server import MCPServerPublicBasic
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationCreate,
     MCPServerConfigurationPublic,
-    MCPServerConfigurationPublicBasic,
 )
-from aci.common.schemas.mcp_tool import MCPToolPublic
-from aci.common.schemas.organization import TeamInfo
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
-from aci.control_plane import rbac
+from aci.control_plane import rbac, schema_utils
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -66,14 +60,16 @@ async def create_mcp_server_configuration(
 
     context.db_session.commit()
 
-    return _construct_mcp_server_configuration_public(context.db_session, mcp_server_configuration)
+    return schema_utils.construct_mcp_server_configuration_public(
+        context.db_session, mcp_server_configuration
+    )
 
 
 @router.get("")
 async def list_mcp_server_configurations(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
-) -> PaginationResponse[MCPServerConfigurationPublicBasic]:
+) -> PaginationResponse[MCPServerConfigurationPublic]:
     team_ids: list[UUID] | None
 
     if context.act_as.role == OrganizationRole.ADMIN:
@@ -97,10 +93,10 @@ async def list_mcp_server_configurations(
         team_ids=team_ids,
     )
 
-    return PaginationResponse[MCPServerConfigurationPublicBasic](
+    return PaginationResponse[MCPServerConfigurationPublic](
         data=[
-            MCPServerConfigurationPublicBasic.model_validate(
-                mcp_server_configuration, from_attributes=True
+            schema_utils.construct_mcp_server_configuration_public(
+                context.db_session, mcp_server_configuration
             )
             for mcp_server_configuration in mcp_server_configurations
         ],
@@ -137,7 +133,9 @@ async def get_mcp_server_configuration(
             throw_error_if_not_permitted=True,
         )
 
-    return _construct_mcp_server_configuration_public(context.db_session, mcp_server_configuration)
+    return schema_utils.construct_mcp_server_configuration_public(
+        context.db_session, mcp_server_configuration
+    )
 
 
 @router.delete("/{mcp_server_configuration_id}", status_code=status.HTTP_200_OK)
@@ -169,41 +167,3 @@ async def delete_mcp_server_configuration(
             status_code=404,
             detail=f"MCP Server Configuration {mcp_server_configuration_id} not found",
         )
-
-
-def _construct_mcp_server_configuration_public(
-    db_session: Session, mcp_server_configuration: MCPServerConfiguration
-) -> MCPServerConfigurationPublic:
-    """
-    Dynamically retrieve and populate the enabled_tools and allowed_teams
-    for the MCP server configuration.
-    """
-    enabled_tools = crud.mcp_tools.get_mcp_tools_by_ids(
-        db_session, mcp_server_configuration.enabled_tools
-    )
-    allowed_teams = crud.teams.get_teams_by_ids(db_session, mcp_server_configuration.allowed_teams)
-
-    return MCPServerConfigurationPublic(
-        id=mcp_server_configuration.id,
-        mcp_server_id=mcp_server_configuration.mcp_server_id,
-        organization_id=mcp_server_configuration.organization_id,
-        auth_type=mcp_server_configuration.auth_type,
-        all_tools_enabled=mcp_server_configuration.all_tools_enabled,
-        enabled_tools=[
-            MCPToolPublic.model_validate(tool, from_attributes=True) for tool in enabled_tools
-        ],
-        allowed_teams=[
-            TeamInfo(
-                team_id=team.id,
-                name=team.name,
-                description=team.description,
-                created_at=team.created_at,
-            )
-            for team in allowed_teams
-        ],
-        mcp_server=MCPServerPublicBasic.model_validate(
-            mcp_server_configuration.mcp_server, from_attributes=True
-        ),
-        created_at=mcp_server_configuration.created_at,
-        updated_at=mcp_server_configuration.updated_at,
-    )

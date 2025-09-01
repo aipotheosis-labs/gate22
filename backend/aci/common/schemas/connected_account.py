@@ -3,7 +3,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublicBasic
+from aci.common.schemas.mcp_server_configuration import (
+    MCPServerConfigurationPublic,
+)
 
 
 class ConnectedAccountCreate(BaseModel):
@@ -33,4 +35,4 @@ class ConnectedAccountPublic(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    mcp_server_configuration: MCPServerConfigurationPublicBasic
+    mcp_server_configuration: MCPServerConfigurationPublic

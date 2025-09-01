@@ -20,6 +20,7 @@ ROUTER_PREFIX_MCP_SERVERS = "/v1/mcp-servers"
 ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/v1/mcp-server-configurations"
 ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/v1/connected-accounts"
 ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/v1/mcp-server-bundles"
+ROUTER_PREFIX_MCP_TOOLS = "/v1/mcp-tools"
 ROUTER_PREFIX_MCP = "/v1/mcp"
 
 # Frontend

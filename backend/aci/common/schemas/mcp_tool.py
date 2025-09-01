@@ -67,11 +67,22 @@ class MCPToolEmbeddingFields(BaseModel):
     input_schema: dict
 
 
+# Only used in /mcp-tools/{id} endpoint
 class MCPToolPublic(BaseModel):
     id: UUID
     name: str
     description: str
     input_schema: dict
+    tags: list[str]
+
+    created_at: datetime
+    updated_at: datetime
+
+
+class MCPToolPublicWithoutSchema(BaseModel):
+    id: UUID
+    name: str
+    description: str
     tags: list[str]
 
     created_at: datetime

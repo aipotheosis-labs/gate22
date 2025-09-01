@@ -22,14 +22,3 @@ class MCPServerBundlePublic(BaseModel):
 
     created_at: datetime
     updated_at: datetime
-
-
-class MCPServerBundlePublicBasic(BaseModel):
-    id: UUID
-    name: str
-    description: str | None = None
-    user_id: UUID
-    organization_id: UUID
-
-    created_at: datetime
-    updated_at: datetime
