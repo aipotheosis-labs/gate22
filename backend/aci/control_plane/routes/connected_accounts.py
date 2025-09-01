@@ -18,6 +18,7 @@ from aci.common.schemas.connected_account import (
     ConnectedAccountPublic,
     OAuth2ConnectedAccountCreateResponse,
 )
+from aci.common.schemas.mcp_auth import APIKeyCredentials, AuthCredentials, NoAuthCredentials
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import config, rbac, schema_utils
 from aci.control_plane import dependencies as deps
@@ -37,25 +38,65 @@ async def create_connected_account(
     request: Request,
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: ConnectedAccountCreate,
-) -> OAuth2ConnectedAccountCreateResponse:
+) -> OAuth2ConnectedAccountCreateResponse | ConnectedAccountPublic:
     mcp_server_config = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
         context.db_session, body.mcp_server_configuration_id, throw_error_if_not_found=False
     )
-    # TODO: check user has access to the mcp server configuration
 
     if not mcp_server_config:
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
-    match mcp_server_config.auth_type:
-        case AuthType.NO_AUTH:
-            # TODO: support no auth and api key auth
-            raise HTTPException(status_code=400, detail="No auth type is not supported")
-        case AuthType.API_KEY:
-            raise HTTPException(status_code=400, detail="API key auth type is not supported")
-        case AuthType.OAUTH2:
-            return await _create_oauth2_connected_account(
-                request, context, mcp_server_config, body.redirect_url_after_account_creation
+    # check if the MCP server configuration's allowed teams contains team the user belongs to
+    rbac.is_mcp_server_configuration_in_user_team(
+        db_session=context.db_session,
+        user_id=context.user_id,
+        act_as_organization_id=context.act_as.organization_id,
+        mcp_server_configuration_id=mcp_server_config.id,
+        throw_error_if_not_permitted=True,
+    )
+
+    if mcp_server_config.auth_type == AuthType.OAUTH2:
+        return await _create_oauth2_connected_account(
+            request, context, mcp_server_config, body.redirect_url_after_account_creation
+        )
+    else:
+        connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
+            context.db_session,
+            context.user_id,
+            mcp_server_config.id,
+        )
+
+        auth_credentials: AuthCredentials
+        if mcp_server_config.auth_type == AuthType.NO_AUTH:
+            auth_credentials = AuthCredentials.model_validate(
+                NoAuthCredentials(type=AuthType.NO_AUTH)
             )
+        elif mcp_server_config.auth_type == AuthType.API_KEY:
+            if not body.api_key:
+                raise HTTPException(status_code=400, detail="API key is required")
+
+            auth_credentials = AuthCredentials.model_validate(
+                APIKeyCredentials(type=AuthType.API_KEY, secret_key=body.api_key)
+            )
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported auth type")
+
+        # if the connected account already exists, update it, otherwise create a new one
+        if connected_account:
+            crud.connected_accounts.update_connected_account_auth_credentials(
+                context.db_session, connected_account, auth_credentials.model_dump(mode="json")
+            )
+        else:
+            connected_account = crud.connected_accounts.create_connected_account(
+                context.db_session,
+                context.user_id,
+                mcp_server_config.id,
+                auth_credentials.model_dump(mode="json"),
+            )
+
+        context.db_session.commit()
+
+    return schema_utils.construct_connected_account_public(context.db_session, connected_account)
 
 
 async def _create_oauth2_connected_account(

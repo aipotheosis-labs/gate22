@@ -10,8 +10,8 @@ from aci.common.schemas.mcp_server_configuration import (
 
 class ConnectedAccountCreate(BaseModel):
     mcp_server_configuration_id: UUID
-    # TODO: typing for different auth data of different auth types?
-    redirect_url_after_account_creation: str | None = None
+    api_key: str | None = None  # for API key auth type
+    redirect_url_after_account_creation: str | None = None  # for OAuth2 auth type
 
 
 class OAuth2ConnectedAccountCreateResponse(BaseModel):
