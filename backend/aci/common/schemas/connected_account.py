@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationPublic,
@@ -10,7 +10,7 @@ from aci.common.schemas.mcp_server_configuration import (
 
 class ConnectedAccountCreate(BaseModel):
     mcp_server_configuration_id: UUID
-    api_key: str | None = None  # for API key auth type
+    api_key: str | None = Field(default=None, min_length=1)  # for API key auth type
     redirect_url_after_account_creation: str | None = None  # for OAuth2 auth type
 
 
