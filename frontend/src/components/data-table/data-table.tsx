@@ -61,9 +61,7 @@ export function DataTable<TData>({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
-                  <TableRow
-                    data-state={row.getIsSelected() && "selected"}
-                  >
+                  <TableRow data-state={row.getIsSelected() && "selected"}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}

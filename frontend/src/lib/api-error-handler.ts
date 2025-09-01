@@ -3,7 +3,7 @@
  */
 export async function parseApiError(
   response: Response,
-  defaultMessage: string
+  defaultMessage: string,
 ): Promise<string> {
   if (response.ok) {
     return defaultMessage;
@@ -11,20 +11,20 @@ export async function parseApiError(
 
   try {
     const errorData = await response.json();
-    
+
     // Try to extract error message from common API error response formats
     if (errorData.detail) {
       return errorData.detail;
     }
-    
+
     if (errorData.message) {
       return errorData.message;
     }
-    
-    if (typeof errorData === 'string') {
+
+    if (typeof errorData === "string") {
       return errorData;
     }
-    
+
     // If errorData is an object but doesn't have expected fields
     return defaultMessage;
   } catch {
@@ -43,7 +43,7 @@ export async function parseApiError(
  */
 export async function throwApiError(
   response: Response,
-  defaultMessage: string
+  defaultMessage: string,
 ): Promise<never> {
   const errorMessage = await parseApiError(response, defaultMessage);
   throw new Error(errorMessage);

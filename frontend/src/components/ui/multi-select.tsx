@@ -71,7 +71,7 @@ export function MultiSelect({
           className={cn(
             "w-full justify-between min-h-[40px] h-auto",
             !selected.length && "text-muted-foreground",
-            className
+            className,
           )}
         >
           <div className="flex gap-1 flex-wrap">
@@ -115,7 +115,7 @@ export function MultiSelect({
                       "mr-2 h-4 w-4",
                       selected.includes(option.value)
                         ? "opacity-100"
-                        : "opacity-0"
+                        : "opacity-0",
                     )}
                   />
                   {option.label}

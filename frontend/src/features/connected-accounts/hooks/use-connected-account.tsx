@@ -87,7 +87,11 @@ export const useCreateNoAuthConnectedAccount = () => {
   const { accessToken } = useMetaInfo();
   const apiKey = getApiKey(accessToken);
 
-  return useMutation<ConnectedAccount, Error, CreateNoAuthConnectedAccountParams>({
+  return useMutation<
+    ConnectedAccount,
+    Error,
+    CreateNoAuthConnectedAccountParams
+  >({
     mutationFn: (params) =>
       createNoAuthConnectedAccount(
         params.appName,

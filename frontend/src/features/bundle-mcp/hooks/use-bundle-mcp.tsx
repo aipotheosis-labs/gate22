@@ -27,12 +27,15 @@ export function useMCPServerBundles() {
   return useQuery<MCPServerBundle[]>({
     queryKey: ["mcp-server-bundles"],
     queryFn: async () => {
-      const response = await fetch(`${getApiBaseUrl()}/v1/mcp-server-bundles?limit=100`, {
-        headers: {
-          "Authorization": `Bearer ${accessToken}`,
+      const response = await fetch(
+        `${getApiBaseUrl()}/v1/mcp-server-bundles?limit=100`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: "include",
         },
-        credentials: "include",
-      });
+      );
       if (!response.ok) {
         await throwApiError(response, "Failed to fetch MCP server bundles");
       }
@@ -52,17 +55,20 @@ export function useCreateMCPServerBundle() {
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
       }
-      
+
       try {
-        const response = await fetch(`${getApiBaseUrl()}/v1/mcp-server-bundles`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`,
+        const response = await fetch(
+          `${getApiBaseUrl()}/v1/mcp-server-bundles`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify(data),
+            credentials: "include",
           },
-          body: JSON.stringify(data),
-          credentials: "include",
-        });
+        );
 
         if (!response.ok) {
           await throwApiError(response, "Failed to create MCP server bundle");
@@ -71,7 +77,9 @@ export function useCreateMCPServerBundle() {
         return response.json();
       } catch (error) {
         if (error instanceof TypeError && error.message === "Failed to fetch") {
-          throw new Error("Network error: Unable to connect to the server. Please check your connection.");
+          throw new Error(
+            "Network error: Unable to connect to the server. Please check your connection.",
+          );
         }
         throw error;
       }
@@ -95,14 +103,14 @@ export function useDeleteMCPServerBundle() {
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
       }
-      
+
       try {
         const response = await fetch(
           `${getApiBaseUrl()}/v1/mcp-server-bundles/${bundleId}`,
           {
             method: "DELETE",
             headers: {
-              "Authorization": `Bearer ${accessToken}`,
+              Authorization: `Bearer ${accessToken}`,
             },
             credentials: "include",
           },
@@ -113,7 +121,10 @@ export function useDeleteMCPServerBundle() {
         }
 
         // Handle empty response (204 No Content) or other successful responses
-        if (response.status === 204 || response.headers.get('content-length') === '0') {
+        if (
+          response.status === 204 ||
+          response.headers.get("content-length") === "0"
+        ) {
           return null;
         }
 
@@ -125,7 +136,9 @@ export function useDeleteMCPServerBundle() {
         }
       } catch (error) {
         if (error instanceof TypeError && error.message === "Failed to fetch") {
-          throw new Error("Network error: Unable to connect to the server. Please check your connection.");
+          throw new Error(
+            "Network error: Unable to connect to the server. Please check your connection.",
+          );
         }
         throw error;
       }
@@ -150,7 +163,7 @@ export function useMCPServerBundle(bundleId: string) {
         `${getApiBaseUrl()}/v1/mcp-server-bundles/${bundleId}`,
         {
           headers: {
-            "Authorization": `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           credentials: "include",
         },
