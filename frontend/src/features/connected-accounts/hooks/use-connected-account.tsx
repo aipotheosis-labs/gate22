@@ -154,6 +154,9 @@ export const useUpdateConnectedAccount = () => {
       queryClient.invalidateQueries({
         queryKey: connectedAccountKeys.all(),
       }),
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 };
 
