@@ -55,8 +55,6 @@ type CreateAPIConnectedAccountParams = {
 
 export const useCreateAPIConnectedAccount = () => {
   const queryClient = useQueryClient();
-  const { accessToken } = useMetaInfo();
-  const apiKey = getApiKey(accessToken);
 
   return useMutation<ConnectedAccount, Error, CreateAPIConnectedAccountParams>({
     mutationFn: (params) =>
@@ -64,7 +62,6 @@ export const useCreateAPIConnectedAccount = () => {
         params.appName,
         params.connectedAccountOwnerId,
         params.connectedAPIKey,
-        apiKey,
       ),
 
     onSuccess: () =>
@@ -84,8 +81,6 @@ type CreateNoAuthConnectedAccountParams = {
 
 export const useCreateNoAuthConnectedAccount = () => {
   const queryClient = useQueryClient();
-  const { accessToken } = useMetaInfo();
-  const apiKey = getApiKey(accessToken);
 
   return useMutation<
     ConnectedAccount,
@@ -96,7 +91,6 @@ export const useCreateNoAuthConnectedAccount = () => {
       createNoAuthConnectedAccount(
         params.appName,
         params.connectedAccountOwnerId,
-        apiKey,
       ),
     onSuccess: () =>
       queryClient.invalidateQueries({
@@ -114,15 +108,11 @@ type GetOauth2LinkURLParams = {
 };
 
 export const useGetOauth2LinkURL = () => {
-  const { accessToken } = useMetaInfo();
-  const apiKey = getApiKey(accessToken);
-
   return useMutation<string, Error, GetOauth2LinkURLParams>({
     mutationFn: (params) =>
       getOauth2LinkURL(
         params.appName,
         params.connectedAccountOwnerId,
-        apiKey,
         params.afterOAuth2LinkRedirectURL,
       ),
     onError: (error) => {
@@ -156,12 +146,10 @@ type UpdateConnectedAccountParams = {
 
 export const useUpdateConnectedAccount = () => {
   const queryClient = useQueryClient();
-  const { accessToken } = useMetaInfo();
-  const apiKey = getApiKey(accessToken);
 
   return useMutation<ConnectedAccount, Error, UpdateConnectedAccountParams>({
     mutationFn: (params) =>
-      updateConnectedAccount(params.connectedAccountId, apiKey, params.enabled),
+      updateConnectedAccount(params.connectedAccountId, params.enabled),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: connectedAccountKeys.all(),

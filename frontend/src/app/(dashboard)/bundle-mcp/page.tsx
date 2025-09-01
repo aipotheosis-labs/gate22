@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, ArrowUpDown, Plus, Package } from "lucide-react";
+import { Trash2, ArrowUpDown, Plus, Package, Eye } from "lucide-react";
 import { CreateBundleForm } from "@/features/bundle-mcp/components/create-bundle-form";
 import {
   useCreateMCPServerBundle,
@@ -27,10 +28,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const columnHelper = createColumnHelper<MCPServerBundle>();
 
 export default function BundleMCPPage() {
+  const router = useRouter();
   const { data: bundles = [], isLoading: isBundlesLoading } =
     useMCPServerBundles();
   const { data: configurationsData, isLoading: isConfigsLoading } =
@@ -53,31 +61,6 @@ export default function BundleMCPPage() {
 
   const columns: ColumnDef<MCPServerBundle>[] = useMemo(() => {
     return [
-      columnHelper.accessor("id", {
-        id: "bundle_id",
-        header: ({ column }) => (
-          <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              BUNDLE ID
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        ),
-        cell: (info) => {
-          const id = info.getValue();
-          return (
-            <div className="font-mono text-xs text-muted-foreground">{id}</div>
-          );
-        },
-        enableGlobalFilter: true,
-      }),
-
       columnHelper.accessor("name", {
         id: "name",
         header: ({ column }) => (
@@ -106,8 +89,8 @@ export default function BundleMCPPage() {
         enableGlobalFilter: true,
       }),
 
-      columnHelper.accessor("description", {
-        id: "description",
+      columnHelper.accessor("id", {
+        id: "bundle_id",
         header: ({ column }) => (
           <div className="flex items-center justify-start">
             <Button
@@ -117,25 +100,21 @@ export default function BundleMCPPage() {
               }
               className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
             >
-              DESCRIPTION
+              BUNDLE ID
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </div>
         ),
         cell: (info) => {
-          const description = info.getValue();
-          return description ? (
-            <div className="text-sm text-muted-foreground">{description}</div>
-          ) : (
-            <div className="text-sm text-muted-foreground italic">
-              No description
-            </div>
+          const id = info.getValue();
+          return (
+            <div className="font-mono text-xs text-muted-foreground">{id}</div>
           );
         },
         enableGlobalFilter: true,
       }),
 
-      columnHelper.accessor("mcp_server_configuration_ids", {
+      columnHelper.accessor("mcp_server_configurations", {
         id: "configurations",
         header: ({ column }) => (
           <div className="flex items-center justify-start">
@@ -152,8 +131,8 @@ export default function BundleMCPPage() {
           </div>
         ),
         cell: (info) => {
-          const configIds = info.getValue();
-          const count = configIds?.length || 0;
+          const configurations = info.getValue();
+          const count = configurations?.length || 0;
           return (
             <Badge variant="secondary">
               {count} configuration{count !== 1 ? "s" : ""}
@@ -196,7 +175,24 @@ export default function BundleMCPPage() {
         cell: (info) => {
           const bundle = info.getValue();
           return (
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push(`/bundle-mcp/${bundle.id}`)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>View Bundle</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -232,7 +228,7 @@ export default function BundleMCPPage() {
         enableGlobalFilter: false,
       }),
     ] as ColumnDef<MCPServerBundle>[];
-  }, [handleDeleteBundle]);
+  }, [handleDeleteBundle, router]);
 
   if (isBundlesLoading) {
     return (

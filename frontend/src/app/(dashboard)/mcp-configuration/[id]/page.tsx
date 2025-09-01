@@ -193,36 +193,6 @@ export default function MCPConfigurationDetailPage() {
                 </label>
                 <p className="text-sm mt-1">{configuration.auth_type}</p>
               </div>
-
-              {configuration.linked_account_id && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Connected Account ID
-                  </label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <code className="text-sm">
-                      {configuration.linked_account_id}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() =>
-                        handleCopy(
-                          configuration.linked_account_id!,
-                          "linked-account",
-                        )
-                      }
-                    >
-                      {copiedField === "linked-account" ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="border-t pt-4 grid grid-cols-2 gap-4">
@@ -335,47 +305,6 @@ export default function MCPConfigurationDetailPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Environment Variables */}
-      {configuration.env_vars &&
-        Object.keys(configuration.env_vars).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Environment Variables</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {Object.entries(configuration.env_vars).map(([key, value]) => (
-                  <div key={key} className="border rounded-lg p-3">
-                    <code className="text-sm font-medium">{key}</code>
-                    <p className="text-sm text-muted-foreground mt-1 font-mono">
-                      {typeof value === "string" && value.includes("***")
-                        ? value
-                        : "••••••••"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-      {/* Tool Configuration */}
-      {configuration.tool_config &&
-        Object.keys(configuration.tool_config).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Tool Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="text-sm bg-muted p-4 rounded-lg overflow-x-auto">
-                <code>
-                  {JSON.stringify(configuration.tool_config, null, 2)}
-                </code>
-              </pre>
-            </CardContent>
-          </Card>
-        )}
     </div>
   );
 }

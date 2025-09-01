@@ -1,6 +1,6 @@
 "use client";
 
-import { MCPToolPublic } from "../types/mcp.types";
+import { MCPToolBasic } from "../types/mcp.types";
 import {
   Sheet,
   SheetContent,
@@ -9,11 +9,12 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code2, FileJson } from "lucide-react";
+import { Code2, FileJson, Loader2, AlertCircle } from "lucide-react";
 import { JsonViewer } from "./json-viewer";
+import { useMCPTool } from "../hooks/use-mcp-servers";
 
 interface ToolSchemaDrawerProps {
-  tool: MCPToolPublic | null;
+  tool: MCPToolBasic | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -23,12 +24,54 @@ export function ToolSchemaDrawer({
   isOpen,
   onClose,
 }: ToolSchemaDrawerProps) {
+  // Fetch full tool details including schema when drawer opens
+  const { data: fullTool, isLoading, error } = useMCPTool(tool?.name || "");
+
   if (!tool) return null;
 
   const renderSchemaContent = (
     schema?: Record<string, unknown>,
     type: "input" | "output" = "input",
   ) => {
+    // Show loading state while fetching
+    if (isLoading) {
+      return (
+        <div className="py-8 rounded-lg border border-dashed bg-muted/5 flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin mb-2 text-muted-foreground/30" />
+          <p className="text-xs font-medium text-center text-muted-foreground">
+            Loading schema...
+          </p>
+        </div>
+      );
+    }
+
+    // Show error state if fetch failed
+    if (error) {
+      return (
+        <div className="py-8 rounded-lg border border-dashed bg-destructive/5 flex flex-col items-center">
+          <AlertCircle className="h-8 w-8 mb-2 text-destructive/50" />
+          <p className="text-xs font-medium text-center text-destructive">
+            Failed to load schema
+          </p>
+          <p className="text-xs text-center text-muted-foreground mt-1">
+            {error instanceof Error ? error.message : "Unknown error"}
+          </p>
+        </div>
+      );
+    }
+
+    // Only input schema is available from the API
+    if (type === "output") {
+      return (
+        <div className="py-8 rounded-lg border border-dashed bg-muted/5">
+          <FileJson className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+          <p className="text-xs font-medium text-center text-muted-foreground">
+            Output schema not available
+          </p>
+        </div>
+      );
+    }
+
     if (!schema) {
       return (
         <div className="py-8 rounded-lg border border-dashed bg-muted/5">
@@ -90,11 +133,11 @@ export function ToolSchemaDrawer({
               </TabsList>
 
               <TabsContent value="input" className="mt-3 space-y-3">
-                {renderSchemaContent(tool.input_schema, "input")}
+                {renderSchemaContent(fullTool?.input_schema, "input")}
               </TabsContent>
 
               <TabsContent value="output" className="mt-3 space-y-3">
-                {renderSchemaContent(tool.output_schema, "output")}
+                {renderSchemaContent(undefined, "output")}
               </TabsContent>
             </Tabs>
           </div>

@@ -9,15 +9,19 @@ export interface AuthConfig {
   [key: string]: unknown;
 }
 
-export interface MCPToolPublic {
+// Tool without schema (used in server responses to keep payload small)
+export interface MCPToolBasic {
   id: string;
   name: string;
   description: string;
-  input_schema?: Record<string, unknown>;
-  output_schema?: Record<string, unknown>;
-  mcp_server_id: string;
+  tags: string[];
   created_at: string;
   updated_at: string;
+}
+
+// Full tool with schema (fetched individually)
+export interface MCPToolPublic extends MCPToolBasic {
+  input_schema: Record<string, unknown>;
 }
 
 export interface MCPServerPublicBasic {
@@ -31,7 +35,7 @@ export interface MCPServerPublicBasic {
 
 export interface MCPServerPublic extends MCPServerPublicBasic {
   supported_auth_types: AuthType[];
-  tools: MCPToolPublic[];
+  tools: MCPToolBasic[];
   created_at: string;
   updated_at: string;
 }
@@ -57,7 +61,7 @@ export interface MCPServerConfigurationPublic {
   organization_id: string;
   auth_type: AuthType;
   all_tools_enabled: boolean;
-  enabled_tools: MCPToolPublic[];
+  enabled_tools: MCPToolBasic[];
   allowed_teams: TeamInfo[];
   created_at: string;
   updated_at: string;

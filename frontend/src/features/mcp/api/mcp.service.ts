@@ -8,6 +8,7 @@ import {
   MCPServerConfigurationPublic,
   MCPServerConfigurationPublicBasic,
   MCPServerConfigurationCreate,
+  MCPToolPublic,
   PaginationParams,
   PaginationResponse,
 } from "../types/mcp.types";
@@ -15,9 +16,22 @@ import {
 const API_ENDPOINTS = {
   SERVERS: "/v1/mcp-servers",
   CONFIGURATIONS: "/v1/mcp-server-configurations",
+  TOOLS: "/v1/mcp-tools",
 };
 
 export const mcpService = {
+  // MCP Tools endpoints
+  tools: {
+    getByName: async (
+      token: string,
+      toolName: string,
+    ): Promise<MCPToolPublic> => {
+      return fetcherWithAuth<MCPToolPublic>(token)(
+        `${API_ENDPOINTS.TOOLS}/${toolName}`,
+      );
+    },
+  },
+
   // MCP Servers endpoints
   servers: {
     list: async (

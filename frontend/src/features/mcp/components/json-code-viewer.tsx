@@ -82,53 +82,56 @@ export function JsonCodeViewer({
         }}
       >
         <JsonView
-          data={data}
+          data={data as object | unknown[]}
           shouldExpandNode={() => true}
           clickToExpandNode={false}
-          style={{
-            container: {
-              backgroundColor: "transparent",
-              fontFamily:
-                "ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace",
-              fontSize: compact ? "11px" : "14px",
-              lineHeight: compact ? "1.4" : "1.6",
-            },
-            basicChildStyle: {
-              paddingLeft: compact ? "16px" : "24px",
-            },
-            label: {
-              color: "hsl(var(--foreground) / 0.7)",
-              marginRight: compact ? "4px" : "8px",
-              fontWeight: "500",
-            },
-            stringValue: {
-              color: "hsl(142 76% 36%)",
-            },
-            numberValue: {
-              color: "hsl(221 83% 53%)",
-            },
-            booleanValue: {
-              color: "hsl(280 68% 60%)",
-            },
-            nullValue: {
-              color: "hsl(var(--muted-foreground))",
-            },
-            punctuation: {
-              color: "hsl(var(--muted-foreground))",
-            },
-            otherValue: {
-              color: "hsl(45 93% 47%)",
-            },
-            collapseIcon: {
-              display: "none",
-            },
-            expandIcon: {
-              display: "none",
-            },
-            collapsedContent: {
-              display: "none",
-            },
-          }}
+          style={
+            {
+              container: {
+                backgroundColor: "transparent",
+                fontFamily:
+                  "ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace",
+                fontSize: compact ? "11px" : "14px",
+                lineHeight: compact ? "1.4" : "1.6",
+              },
+              basicChildStyle: {
+                paddingLeft: compact ? "16px" : "24px",
+              },
+              label: {
+                color: "hsl(var(--foreground) / 0.7)",
+                marginRight: compact ? "4px" : "8px",
+                fontWeight: "500",
+              },
+              stringValue: {
+                color: "hsl(142 76% 36%)",
+              },
+              numberValue: {
+                color: "hsl(221 83% 53%)",
+              },
+              booleanValue: {
+                color: "hsl(280 68% 60%)",
+              },
+              nullValue: {
+                color: "hsl(var(--muted-foreground))",
+              },
+              punctuation: {
+                color: "hsl(var(--muted-foreground))",
+              },
+              otherValue: {
+                color: "hsl(45 93% 47%)",
+              },
+              collapseIcon: {
+                display: "none",
+              },
+              expandIcon: {
+                display: "none",
+              },
+              collapsedContent: {
+                display: "none",
+              },
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any
+          }
         />
       </div>
 

@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    name: Lint & Format
+    name: Lint & Format & Build Check
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +23,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'pnpm'
+          node-version: "20"
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install Dependencies
@@ -38,3 +38,7 @@ jobs:
       - name: Check Prettier Formatting
         working-directory: frontend
         run: pnpm run format:check
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: pnpm run build

@@ -163,7 +163,7 @@ export async function getOauth2LinkURL(
 ): Promise<string> {
   const params = new URLSearchParams();
   params.append("app_name", appName);
-  params.append("linked_account_owner_id", linkedAccountOwnerId);
+  params.append("linked_account_owner_id", connectedAccountOwnerId);
   if (afterOAuth2LinkRedirectURL) {
     params.append("after_oauth2_link_redirect_url", afterOAuth2LinkRedirectURL);
   }

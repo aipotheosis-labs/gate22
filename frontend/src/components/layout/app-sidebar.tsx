@@ -20,8 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line } from "react-icons/ri";
-import { AiOutlineRobot } from "react-icons/ai";
-import { Link2, Settings2 } from "lucide-react";
+import { Link2, Settings2, Package } from "lucide-react";
 
 import {
   Tooltip,
@@ -50,7 +49,7 @@ export const sidebarItems = [
   {
     title: "Bundle MCP",
     url: `/bundle-mcp`,
-    icon: AiOutlineRobot,
+    icon: Package,
   },
   {
     title: "Settings",

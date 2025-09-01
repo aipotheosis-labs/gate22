@@ -63,7 +63,7 @@ export function JsonViewer({
         }}
       >
         <ReactJson
-          src={data}
+          src={data as object}
           theme={jsonTheme}
           collapsed={collapsed}
           enableClipboard={false}
@@ -82,8 +82,18 @@ export function JsonViewer({
           shouldCollapse={(field) => {
             // Collapse large arrays and objects at deeper levels
             if (field.namespace && field.namespace.length > 2) {
-              if (field.type === "array" && field.src.length > 3) return true;
-              if (field.type === "object" && Object.keys(field.src).length > 3)
+              if (
+                field.type === "array" &&
+                Array.isArray(field.src) &&
+                field.src.length > 3
+              )
+                return true;
+              if (
+                field.type === "object" &&
+                typeof field.src === "object" &&
+                field.src !== null &&
+                Object.keys(field.src).length > 3
+              )
                 return true;
             }
             return false;

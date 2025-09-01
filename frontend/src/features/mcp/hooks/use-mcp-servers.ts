@@ -22,6 +22,10 @@ export const mcpQueryKeys = {
       ["mcp", "configurations", "list", params] as const,
     detail: (id: string) => ["mcp", "configurations", "detail", id] as const,
   },
+  tools: {
+    all: ["mcp", "tools"] as const,
+    detail: (name: string) => ["mcp", "tools", "detail", name] as const,
+  },
 };
 
 // Hook to list all available MCP servers
@@ -106,5 +110,16 @@ export function useDeleteMCPServerConfiguration() {
         queryKey: mcpQueryKeys.configurations.all,
       });
     },
+  });
+}
+
+// Hook to get a specific MCP tool by name
+export function useMCPTool(toolName: string) {
+  const { accessToken } = useMetaInfo();
+
+  return useQuery({
+    queryKey: mcpQueryKeys.tools.detail(toolName),
+    queryFn: () => mcpService.tools.getByName(accessToken!, toolName),
+    enabled: !!accessToken && !!toolName,
   });
 }

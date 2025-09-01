@@ -10,14 +10,14 @@ import { useMCPServer } from "@/features/mcp/hooks/use-mcp-servers";
 import { useState } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
 import { ToolSchemaDrawer } from "@/features/mcp/components/tool-schema-drawer";
-import { MCPToolPublic } from "@/features/mcp/types/mcp.types";
+import { MCPToolBasic } from "@/features/mcp/types/mcp.types";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const serverId = params.id as string;
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<MCPToolPublic | null>(null);
+  const [selectedTool, setSelectedTool] = useState<MCPToolBasic | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Fetch server data using the new hook
