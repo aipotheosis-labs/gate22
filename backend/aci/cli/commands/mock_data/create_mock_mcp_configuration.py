@@ -1,7 +1,6 @@
 from uuid import UUID
 
 import click
-from openai import OpenAI
 from rich.console import Console
 from sqlalchemy.orm import Session
 
@@ -13,32 +12,27 @@ from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCr
 
 console = Console()
 
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
-
 
 @click.command()
 @click.option(
     "--mcp-server",
     "mcp_server",
     type=str,
-    default=None,
-    show_default=True,
+    required=True,
     help="MCP server name",
 )
 @click.option(
     "--user-id",
     "user_id",
     type=UUID,
-    default=None,
-    show_default=True,
+    required=True,
     help="User ID",
 )
 @click.option(
     "--team-id",
     "team_id",
     type=UUID,
-    default=None,
-    show_default=True,
+    required=True,
     help="Team ID",
 )
 @click.option(
