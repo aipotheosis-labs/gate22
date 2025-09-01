@@ -353,6 +353,8 @@ class MCPServerConfiguration(Base):
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
+    name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
     mcp_server_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("mcp_servers.id", ondelete="CASCADE"), nullable=False
     )

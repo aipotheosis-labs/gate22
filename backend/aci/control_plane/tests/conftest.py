@@ -318,18 +318,18 @@ def dummy_mcp_server_configurations(
 ) -> list[MCPServerConfiguration]:
     dummy_mcp_server_configurations = []
     for dummy_mcp_server in dummy_mcp_servers:
-        dummy_mcp_server_configuration = (
-            crud.mcp_server_configurations.create_mcp_server_configuration(
-                db_session=db_session,
-                organization_id=dummy_organization.id,
-                mcp_server_configuration=MCPServerConfigurationCreate(
-                    mcp_server_id=dummy_mcp_server.id,
-                    auth_type=dummy_mcp_server.auth_configs[0]["type"],
-                    all_tools_enabled=True,
-                    enabled_tools=[],
-                    allowed_teams=[],
-                ),
-            )
+        dummy_mcp_server_configuration = crud.mcp_server_configurations.create_mcp_server_configuration(  # noqa: E501
+            db_session=db_session,
+            organization_id=dummy_organization.id,
+            mcp_server_configuration=MCPServerConfigurationCreate(
+                name=f"Dummy MCP Server Configuration {dummy_mcp_server.name}",
+                description=f"Dummy MCP Server Configuration {dummy_mcp_server.name} Description",
+                mcp_server_id=dummy_mcp_server.id,
+                auth_type=dummy_mcp_server.auth_configs[0]["type"],
+                all_tools_enabled=True,
+                enabled_tools=[],
+                allowed_teams=[],
+            ),
         )
         dummy_mcp_server_configurations.append(dummy_mcp_server_configuration)
     return dummy_mcp_server_configurations

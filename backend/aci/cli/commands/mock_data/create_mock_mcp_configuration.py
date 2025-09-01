@@ -75,6 +75,8 @@ def create_mock_mcp_configuration_helper(
         db_session,
         team.organization_id,
         MCPServerConfigurationCreate(
+            name=f"{mcp_server_name} configuration",
+            description=None,
             mcp_server_id=mcp_server.id,
             auth_type=auth_type,
             all_tools_enabled=True,

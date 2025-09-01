@@ -14,6 +14,8 @@ def create_mcp_server_configuration(
     mcp_server_configuration: MCPServerConfigurationCreate,
 ) -> MCPServerConfiguration:
     db_mcp_server_configuration = MCPServerConfiguration(
+        name=mcp_server_configuration.name,
+        description=mcp_server_configuration.description,
         mcp_server_id=mcp_server_configuration.mcp_server_id,
         organization_id=organization_id,
         auth_type=mcp_server_configuration.auth_type,

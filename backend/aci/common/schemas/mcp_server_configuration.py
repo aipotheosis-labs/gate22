@@ -17,6 +17,9 @@ class MCPServerConfigurationCreate(BaseModel):
     """
 
     # TODO: allow white-labeling by providingthe redirect url
+    name: str
+    # TODO: put magic number in constants
+    description: str | None = Field(default=None, max_length=512)
     mcp_server_id: UUID
     auth_type: AuthType
     all_tools_enabled: bool = Field(default=True)
@@ -35,6 +38,8 @@ class MCPServerConfigurationCreate(BaseModel):
 
 class MCPServerConfigurationPublic(BaseModel):
     id: UUID
+    name: str
+    description: str | None = None
     mcp_server_id: UUID
     organization_id: UUID
     auth_type: AuthType

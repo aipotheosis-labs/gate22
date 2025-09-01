@@ -52,6 +52,8 @@ def construct_mcp_server_configuration_public(
 
     return MCPServerConfigurationPublic(
         id=mcp_server_configuration.id,
+        name=mcp_server_configuration.name,
+        description=mcp_server_configuration.description,
         mcp_server_id=mcp_server_configuration.mcp_server_id,
         organization_id=mcp_server_configuration.organization_id,
         auth_type=mcp_server_configuration.auth_type,
