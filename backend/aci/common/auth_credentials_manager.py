@@ -1,27 +1,17 @@
-# import time
-
 import time
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-
-# from sqlalchemy.orm import Session
-# from aci.common.db import crud
 from aci.common.db.sql_models import (
     MCPServer,
     MCPServerConfiguration,
 )
+from aci.common.exceptions import AuthCredentialsManagerError
 from aci.common.logging_setup import get_logger
+from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.mcp_auth import AuthConfig, AuthCredentials, OAuth2Config, OAuth2Credentials
-from aci.control_plane.exceptions import (
-    AuthCredentialsRefreshError,
-    ConnectedAccountNotFound,
-    NoImplementationFound,
-    UnexpectedError,
-)
-from aci.control_plane.oauth2_manager import OAuth2Manager
 
 logger = get_logger(__name__)
 
@@ -194,7 +184,7 @@ def get_mcp_server_configuration_oauth2_config(
         if isinstance(auth_config.root, OAuth2Config):
             return auth_config.root
 
-    raise NoImplementationFound(
+    raise AuthCredentialsManagerError(
         f"No OAuth2 config found for mcp_server_id={mcp_server.id}, "
         f"mcp_server_configuration_id={mcp_server_configuration.id}"
     )
@@ -215,7 +205,7 @@ def get_auth_config(
         f"No auth config found for mcp_server_id={mcp_server.id}, mcp_server_name={mcp_server.name}, "  # noqa: E501
         f"mcp_server_configuration_id={mcp_server_configuration.id}, mcp_server_configuration_auth_type={mcp_server_configuration.auth_type}"  # noqa: E501
     )
-    raise UnexpectedError(
+    raise AuthCredentialsManagerError(
         f"No auth config found for mcp_server_name={mcp_server.name}, "
         f"mcp_server_configuration_auth_type={mcp_server_configuration.auth_type}"
     )
@@ -244,7 +234,7 @@ async def get_auth_credentials(
         logger.error(
             f"Connected account not found, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
         )
-        raise ConnectedAccountNotFound()
+        raise AuthCredentialsManagerError("Connected account not found")
 
     auth_credentials = AuthCredentials.model_validate(connected_account.auth_credentials)
 
@@ -301,7 +291,7 @@ async def _refresh_auth_credentials(
         refresh_token = auth_credentials.root.refresh_token
         if not refresh_token:
             logger.error(f"No refresh token found for mcp_server_name={mcp_server_name}")
-            raise AuthCredentialsRefreshError("no refresh token found, please re-authenticate")
+            raise AuthCredentialsManagerError("no refresh token found, please re-authenticate")
 
         oauth2_manager = OAuth2Manager(
             app_name=mcp_server_name,
@@ -327,7 +317,7 @@ async def _refresh_auth_credentials(
                 f"Failed to refresh access token, refresh_token_response={refresh_token_response}, "
                 f"mcp_server_name={mcp_server_name}"
             )
-            raise AuthCredentialsRefreshError("failed to refresh access token")
+            raise AuthCredentialsManagerError("failed to refresh access token")
 
         fields_to_update = {
             "access_token": refresh_token_response["access_token"],

@@ -5,9 +5,9 @@ from typing import Any, cast
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
+from aci.common.exceptions import OAuth2ManagerError
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import OAuth2Credentials
-from aci.control_plane.exceptions import OAuth2Error
 
 UNICODE_ASCII_CHARACTER_SET = string.ascii_letters + string.digits
 logger = get_logger(__name__)
@@ -146,7 +146,7 @@ class OAuth2Manager:
             return token
         except Exception as e:
             logger.error(f"Failed to fetch access token, app_name={self.app_name}, error={e}")
-            raise OAuth2Error("failed to fetch access token") from e
+            raise OAuth2ManagerError("Failed to fetch access token") from e
 
     async def refresh_token(
         self,
@@ -162,7 +162,7 @@ class OAuth2Manager:
             return token
         except Exception as e:
             logger.error(f"Failed to refresh access token, app_name={self.app_name}, error={e}")
-            raise OAuth2Error("Failed to refresh access token") from e
+            raise OAuth2ManagerError("Failed to refresh access token") from e
 
     def parse_fetch_token_response(self, token: dict) -> OAuth2Credentials:
         """
@@ -187,7 +187,7 @@ class OAuth2Manager:
 
         if "access_token" not in data:
             logger.error(f"Missing access_token in OAuth response, app={self.app_name}")
-            raise OAuth2Error("Missing access_token in OAuth response")
+            raise OAuth2ManagerError("Missing access_token in OAuth response")
 
         # some apps have long live access token so expiration time may not be present
         expires_at: int | None = None

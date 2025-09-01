@@ -7,6 +7,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from aci.common import auth_credentials_manager as acm
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer, MCPServerBundle, MCPServerConfiguration, MCPTool
 from aci.common.enums import MCPServerTransportType
@@ -16,7 +17,6 @@ from aci.common.schemas.mcp_auth import (
     AuthCredentials,
 )
 from aci.common.schemas.mcp_tool import MCPToolMetadata
-from aci.control_plane import auth_credentials_manager as acm
 from aci.control_plane.exceptions import (
     MCPServerNotConfigured,
     MCPToolNotEnabled,

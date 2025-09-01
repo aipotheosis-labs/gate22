@@ -6,10 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from aci.common import auth_credentials_manager as acm
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerConfiguration
 from aci.common.enums import AuthType, OrganizationRole
 from aci.common.logging_setup import get_logger
+from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.connected_account import (
     ConnectedAccountCreate,
     ConnectedAccountOAuth2CreateState,
@@ -17,7 +19,6 @@ from aci.common.schemas.connected_account import (
     OAuth2ConnectedAccountCreateResponse,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import auth_credentials_manager as acm
 from aci.control_plane import config, rbac
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
@@ -25,7 +26,6 @@ from aci.control_plane.exceptions import (
     NotPermittedError,
     OAuth2Error,
 )
-from aci.control_plane.oauth2_manager import OAuth2Manager
 
 logger = get_logger(__name__)
 router = APIRouter()

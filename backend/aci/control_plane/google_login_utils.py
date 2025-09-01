@@ -4,10 +4,10 @@ from google.oauth2 import id_token
 from pydantic import BaseModel
 
 from aci.common.logging_setup import get_logger
+from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.auth import AuthOperation, OAuth2State
 from aci.control_plane import config
 from aci.control_plane.exceptions import OAuth2Error
-from aci.control_plane.oauth2_manager import OAuth2Manager
 
 logger = get_logger(__name__)
 
