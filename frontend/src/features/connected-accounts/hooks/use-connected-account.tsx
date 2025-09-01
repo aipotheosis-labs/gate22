@@ -3,36 +3,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
-  getAllLinkedAccounts,
-  createAPILinkedAccount,
-  createNoAuthLinkedAccount,
-  deleteLinkedAccount,
-  updateLinkedAccount,
+  getAllConnectedAccounts,
+  createAPIConnectedAccount,
+  createNoAuthConnectedAccount,
+  deleteConnectedAccount,
+  updateConnectedAccount,
   getOauth2LinkURL,
   createOAuth2ConnectedAccount,
   CreateOAuth2ConnectedAccountRequest,
   OAuth2ConnectedAccountResponse,
-} from "@/features/linked-accounts/api/linkedaccount";
+} from "@/features/connected-accounts/api/connectedaccount";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.types";
+import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import { toast } from "sonner";
 
-export const linkedAccountKeys = {
-  all: () => ["linkedaccounts"] as const,
+export const connectedAccountKeys = {
+  all: () => ["connectedaccounts"] as const,
 };
 
-export const useLinkedAccounts = () => {
+export const useConnectedAccounts = () => {
   const { accessToken } = useMetaInfo();
 
-  return useQuery<LinkedAccount[], Error>({
-    queryKey: linkedAccountKeys.all(),
-    queryFn: () => getAllLinkedAccounts(accessToken!),
+  return useQuery<ConnectedAccount[], Error>({
+    queryKey: connectedAccountKeys.all(),
+    queryFn: () => getAllConnectedAccounts(accessToken!),
     enabled: !!accessToken,
   });
 };
 
-export const useAppLinkedAccounts = (appName?: string | null) => {
-  const base = useLinkedAccounts();
+export const useAppConnectedAccounts = (appName?: string | null) => {
+  const base = useConnectedAccounts();
   return {
     ...base,
     data: useMemo(
@@ -47,29 +47,29 @@ export const useAppLinkedAccounts = (appName?: string | null) => {
   };
 };
 
-type CreateAPILinkedAccountParams = {
+type CreateAPIConnectedAccountParams = {
   appName: string;
-  linkedAccountOwnerId: string;
-  linkedAPIKey: string;
+  connectedAccountOwnerId: string;
+  connectedAPIKey: string;
 };
 
-export const useCreateAPILinkedAccount = () => {
+export const useCreateAPIConnectedAccount = () => {
   const queryClient = useQueryClient();
   const { accessToken } = useMetaInfo();
   const apiKey = getApiKey(accessToken);
 
-  return useMutation<LinkedAccount, Error, CreateAPILinkedAccountParams>({
+  return useMutation<ConnectedAccount, Error, CreateAPIConnectedAccountParams>({
     mutationFn: (params) =>
-      createAPILinkedAccount(
+      createAPIConnectedAccount(
         params.appName,
-        params.linkedAccountOwnerId,
-        params.linkedAPIKey,
+        params.connectedAccountOwnerId,
+        params.connectedAPIKey,
         apiKey,
       ),
 
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: linkedAccountKeys.all(),
+        queryKey: connectedAccountKeys.all(),
       }),
     onError: (error) => {
       toast.error(error.message);
@@ -77,26 +77,26 @@ export const useCreateAPILinkedAccount = () => {
   });
 };
 
-type CreateNoAuthLinkedAccountParams = {
+type CreateNoAuthConnectedAccountParams = {
   appName: string;
-  linkedAccountOwnerId: string;
+  connectedAccountOwnerId: string;
 };
 
-export const useCreateNoAuthLinkedAccount = () => {
+export const useCreateNoAuthConnectedAccount = () => {
   const queryClient = useQueryClient();
   const { accessToken } = useMetaInfo();
   const apiKey = getApiKey(accessToken);
 
-  return useMutation<LinkedAccount, Error, CreateNoAuthLinkedAccountParams>({
+  return useMutation<ConnectedAccount, Error, CreateNoAuthConnectedAccountParams>({
     mutationFn: (params) =>
-      createNoAuthLinkedAccount(
+      createNoAuthConnectedAccount(
         params.appName,
-        params.linkedAccountOwnerId,
+        params.connectedAccountOwnerId,
         apiKey,
       ),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: linkedAccountKeys.all(),
+        queryKey: connectedAccountKeys.all(),
       }),
     onError: (error) => {
       toast.error(error.message);
@@ -105,7 +105,7 @@ export const useCreateNoAuthLinkedAccount = () => {
 };
 type GetOauth2LinkURLParams = {
   appName: string;
-  linkedAccountOwnerId: string;
+  connectedAccountOwnerId: string;
   afterOAuth2LinkRedirectURL?: string;
 };
 
@@ -117,7 +117,7 @@ export const useGetOauth2LinkURL = () => {
     mutationFn: (params) =>
       getOauth2LinkURL(
         params.appName,
-        params.linkedAccountOwnerId,
+        params.connectedAccountOwnerId,
         apiKey,
         params.afterOAuth2LinkRedirectURL,
       ),
@@ -127,40 +127,40 @@ export const useGetOauth2LinkURL = () => {
   });
 };
 
-type DeleteLinkedAccountParams = {
-  linkedAccountId: string;
+type DeleteConnectedAccountParams = {
+  connectedAccountId: string;
 };
 
-export const useDeleteLinkedAccount = () => {
+export const useDeleteConnectedAccount = () => {
   const queryClient = useQueryClient();
   const { accessToken } = useMetaInfo();
 
-  return useMutation<void, Error, DeleteLinkedAccountParams>({
+  return useMutation<void, Error, DeleteConnectedAccountParams>({
     mutationFn: (params) =>
-      deleteLinkedAccount(params.linkedAccountId, accessToken!),
+      deleteConnectedAccount(params.connectedAccountId, accessToken!),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: linkedAccountKeys.all(),
+        queryKey: connectedAccountKeys.all(),
       }),
   });
 };
 
-type UpdateLinkedAccountParams = {
-  linkedAccountId: string;
+type UpdateConnectedAccountParams = {
+  connectedAccountId: string;
   enabled: boolean;
 };
 
-export const useUpdateLinkedAccount = () => {
+export const useUpdateConnectedAccount = () => {
   const queryClient = useQueryClient();
   const { accessToken } = useMetaInfo();
   const apiKey = getApiKey(accessToken);
 
-  return useMutation<LinkedAccount, Error, UpdateLinkedAccountParams>({
+  return useMutation<ConnectedAccount, Error, UpdateConnectedAccountParams>({
     mutationFn: (params) =>
-      updateLinkedAccount(params.linkedAccountId, apiKey, params.enabled),
+      updateConnectedAccount(params.connectedAccountId, apiKey, params.enabled),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: linkedAccountKeys.all(),
+        queryKey: connectedAccountKeys.all(),
       }),
   });
 };
@@ -188,7 +188,7 @@ export const useCreateOAuth2ConnectedAccount = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: linkedAccountKeys.all(),
+        queryKey: connectedAccountKeys.all(),
       });
     },
     onError: (error) => {

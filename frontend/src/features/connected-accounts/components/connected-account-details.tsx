@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.types";
+import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // import { Switch } from "@/components/ui/switch";
 // import { toast } from "sonner";
 import { formatToLocalTime } from "@/utils/time";
-interface LinkedAccountDetailsProps {
-  account: LinkedAccount;
+interface ConnectedAccountDetailsProps {
+  account: ConnectedAccount;
   // toggleAccountStatus?: (
   //   accountId: string,
   //   newStatus: boolean,
@@ -31,11 +31,11 @@ interface LinkedAccountDetailsProps {
   children: React.ReactNode;
 }
 
-export function LinkedAccountDetails({
+export function ConnectedAccountDetails({
   account,
   // toggleAccountStatus,
   children,
-}: LinkedAccountDetailsProps) {
+}: ConnectedAccountDetailsProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -45,7 +45,7 @@ export function LinkedAccountDetails({
         <DialogHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">
-              Linked Account Details
+              Connected Account Details
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -101,11 +101,11 @@ export function LinkedAccountDetails({
                                   );
                                   if (success) {
                                     toast.success(
-                                      `Linked account ${account.user_id} ${checked ? "enabled" : "disabled"}`,
+                                      `Connected account ${account.user_id} ${checked ? "enabled" : "disabled"}`,
                                     );
                                   } else {
                                     toast.error(
-                                      "Failed to update linked account status",
+                                      "Failed to update connected account status",
                                     );
                                   }
                                 } catch {

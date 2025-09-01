@@ -15,6 +15,8 @@ export interface MCPServerConfiguration {
   organization_id: string;
   auth_type: string;
   all_tools_enabled: boolean;
+  enabled_tools: any[]; // Array of tool objects
+  allowed_teams: string[]; // Array of team UUIDs
   created_at: string;
   updated_at: string;
   mcp_server: {

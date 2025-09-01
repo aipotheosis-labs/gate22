@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { Trash2, Plus, ArrowUpDown } from "lucide-react";
-import { AddAccountDialog } from "@/features/linked-accounts/components/add-account-dialog";
+import { AddAccountDialog } from "@/features/connected-accounts/components/add-account-dialog";
 import {
-  useLinkedAccounts,
-  useDeleteLinkedAccount,
-} from "@/features/linked-accounts/hooks/use-linked-account";
+  useConnectedAccounts,
+  useDeleteConnectedAccount,
+} from "@/features/connected-accounts/hooks/use-connected-account";
 import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-server-configurations";
-import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.types";
+import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import { formatToLocalTime } from "@/utils/time";
 import { toast } from "sonner";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
@@ -29,13 +29,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const columnHelper = createColumnHelper<LinkedAccount>();
+const columnHelper = createColumnHelper<ConnectedAccount>();
 
-export default function LinkedAccountsPage() {
+export default function ConnectedAccountsPage() {
   const searchParams = useSearchParams();
-  const { data: accounts, isLoading } = useLinkedAccounts();
+  const { data: accounts, isLoading } = useConnectedAccounts();
   const { data: mcpConfigurationsResponse } = useMCPServerConfigurations();
-  const { mutateAsync: deleteAccount } = useDeleteLinkedAccount();
+  const { mutateAsync: deleteAccount } = useDeleteConnectedAccount();
 
   // Check for OAuth errors in query params
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function LinkedAccountsPage() {
     if (error === "oauth_failed") {
       toast.error(`OAuth authentication failed: ${message || "Unknown error"}`);
       // Clean up the URL
-      window.history.replaceState({}, "", "/linked-accounts");
+      window.history.replaceState({}, "", "/connected-accounts");
     }
   }, [searchParams]);
 
@@ -65,9 +65,9 @@ export default function LinkedAccountsPage() {
   }, [mcpConfigurationsResponse]);
 
   const handleDelete = useCallback(
-    async (account: LinkedAccount) => {
+    async (account: ConnectedAccount) => {
       try {
-        await deleteAccount({ linkedAccountId: account.id });
+        await deleteAccount({ connectedAccountId: account.id });
         toast.success("Account deleted successfully");
       } catch (error) {
         console.error("Failed to delete account:", error);
@@ -79,7 +79,7 @@ export default function LinkedAccountsPage() {
     [deleteAccount],
   );
 
-  const columns: ColumnDef<LinkedAccount>[] = useMemo(() => {
+  const columns: ColumnDef<ConnectedAccount>[] = useMemo(() => {
     return [
       columnHelper.accessor("id", {
         id: "account_id",
@@ -92,7 +92,7 @@ export default function LinkedAccountsPage() {
               }
               className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
             >
-              LINKED ACCOUNT ID
+              CONNECTED ACCOUNT ID
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -248,7 +248,7 @@ export default function LinkedAccountsPage() {
                     <AlertDialogTitle>Delete Account?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. This will permanently delete
-                      the linked account for {config?.name || "this MCP server"}
+                      the connected account for {config?.name || "this MCP server"}
                       .
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -268,14 +268,14 @@ export default function LinkedAccountsPage() {
         },
         enableGlobalFilter: false,
       }),
-    ] as ColumnDef<LinkedAccount>[];
+    ] as ColumnDef<ConnectedAccount>[];
   }, [handleDelete, mcpConfigMap]);
 
   if (isLoading) {
     return (
       <div>
         <div className="px-4 py-3 border-b">
-          <h1 className="text-2xl font-bold">Linked Accounts</h1>
+          <h1 className="text-2xl font-bold">Connected Accounts</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage and configure your connected accounts
           </p>
@@ -294,7 +294,7 @@ export default function LinkedAccountsPage() {
     <div>
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Linked Accounts</h1>
+          <h1 className="text-2xl font-bold">Connected Accounts</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage and configure your connected accounts
           </p>
@@ -324,7 +324,7 @@ export default function LinkedAccountsPage() {
                   <Plus className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold">
-                  No linked accounts yet
+                  No connected accounts yet
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
                   Connect your first account to start managing integrations with

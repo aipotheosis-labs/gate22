@@ -33,7 +33,7 @@ import { Plus, ExternalLink, Server } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-server-configurations";
-import { useCreateOAuth2ConnectedAccount } from "@/features/linked-accounts/hooks/use-linked-account";
+import { useCreateOAuth2ConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerConfigurationPublicBasic } from "@/features/mcp/types/mcp.types";
 
 const formSchema = z.object({
@@ -74,9 +74,9 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
 
   const handleSubmit = async (values: FormValues) => {
     try {
-      // Automatically generate the redirect URL to return to linked accounts page
+      // Automatically generate the redirect URL to return to connected accounts page
       const currentOrigin = window.location.origin;
-      const redirectUrl = `${currentOrigin}/linked-accounts`;
+      const redirectUrl = `${currentOrigin}/connected-accounts`;
 
       const result = await createOAuth2Account({
         mcpServerConfigurationId: values.mcpServerConfigurationId,
@@ -114,7 +114,7 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Linked Account</DialogTitle>
+          <DialogTitle>Add Connected Account</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form

@@ -18,16 +18,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Loader2, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
-import { LinkedAccount } from "../types/linkedaccount.types";
+import { ConnectedAccount } from "../types/connectedaccount.types";
 import { toast } from "sonner";
 import { listTeams } from "@/features/teams/api/team";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { Team } from "@/features/teams/types/team.types";
 
-interface LinkedAccountConfigurationStepperProps {
+interface ConnectedAccountConfigurationStepperProps {
   isOpen: boolean;
   onClose: () => void;
-  account?: LinkedAccount;
+  account?: ConnectedAccount;
 }
 
 // Define the stepper
@@ -37,11 +37,11 @@ const { useStepper, steps } = defineStepper(
   { id: "authentication", label: "Authentication" },
 );
 
-export function LinkedAccountConfigurationStepper({
+export function ConnectedAccountConfigurationStepper({
   isOpen,
   onClose,
   account,
-}: LinkedAccountConfigurationStepperProps) {
+}: ConnectedAccountConfigurationStepperProps) {
   const stepper = useStepper();
   const [appName, setAppName] = useState(
     account?.mcp_server_configuration?.mcp_server?.name || "",
@@ -130,10 +130,10 @@ export function LinkedAccountConfigurationStepper({
     try {
       // In real app, this would call the API
       console.log("Submitting configuration:", configurationData);
-      toast.success("Linked account configured successfully");
+      toast.success("Connected account configured successfully");
       onClose();
     } catch {
-      toast.error("Failed to configure linked account");
+      toast.error("Failed to configure connected account");
     }
   };
 
@@ -174,7 +174,7 @@ export function LinkedAccountConfigurationStepper({
             <DialogTitle>
               {account
                 ? `Configure ${account.mcp_server_configuration?.mcp_server?.name}`
-                : "Add Linked Account"}
+                : "Add Connected Account"}
             </DialogTitle>
             <DialogDescription>
               Set up your account connection and permissions
