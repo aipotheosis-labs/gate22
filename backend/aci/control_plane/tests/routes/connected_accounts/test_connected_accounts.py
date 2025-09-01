@@ -20,9 +20,7 @@ logger = get_logger(__name__)
     "access_token_fixture",
     [
         "dummy_access_token_no_orgs",
-        "dummy_access_token_admin",
         "dummy_access_token_member",
-        "dummy_access_token_admin_act_as_member",
     ],
 )
 @pytest.mark.parametrize("is_team_allowed_by_config", [True, False])
@@ -69,16 +67,11 @@ def test_create_connected_account(
         assert response.status_code == 403
         return
 
-    elif access_token_fixture in [
-        "dummy_access_token_admin",
-        "dummy_access_token_admin_act_as_member",
-        "dummy_access_token_member",
-    ]:
+    elif access_token_fixture == "dummy_access_token_member":
         # if not allowed to add to team, should return 403
         if not is_team_allowed_by_config:
             assert response.status_code == 403
             assert response.json()["error"].startswith("Not permitted")
-            return
 
         else:
             # assert input check

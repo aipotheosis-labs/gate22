@@ -143,7 +143,7 @@ def dummy_access_token_another_org(db_session: Session) -> str:
 
 
 @pytest.fixture(scope="function")
-def dummy_organization(db_session: Session, database_setup_and_cleanup: None) -> Organization:
+def dummy_organization(db_session: Session) -> Organization:
     dummy_organization = crud.organizations.create_organization(
         db_session=db_session,
         name="Dummy Organization",
