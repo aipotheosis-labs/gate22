@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import secrets
 from typing import Annotated
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 from uuid import UUID
 
 import bcrypt
@@ -62,6 +63,20 @@ async def get_google_oauth2_url(
     )
 
 
+def _construct_error_url(post_oauth_redirect_uri: str, error_msg: str) -> str:
+    """
+    Construct an error URL with the given redirect URI and error message.
+    """
+    parsed = urlparse(post_oauth_redirect_uri)
+    query_params = parse_qs(parsed.query)
+    query_params["error"] = [error_msg]
+
+    new_query = urlencode(query_params, doseq=True)
+    return urlunparse(
+        (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+    )
+
+
 @router.get(
     "/{operation}/google/callback",
     status_code=status.HTTP_200_OK,
@@ -100,8 +115,9 @@ async def google_callback(
         # Check if email already been used
         user = crud.users.get_user_by_email(db_session, google_userinfo.email)
         if user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
+            return RedirectResponse(
+                _construct_error_url(oauth_info.post_oauth_redirect_uri, "User already exists"),
+                status_code=status.HTTP_302_FOUND,
             )
 
         # Create user
@@ -118,7 +134,10 @@ async def google_callback(
 
         # User not found or deleted
         if not user or user.deleted_at:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not exists")
+            return RedirectResponse(
+                _construct_error_url(oauth_info.post_oauth_redirect_uri, "User not exists"),
+                status_code=status.HTTP_302_FOUND,
+            )
 
     else:
         raise OAuth2Error(message="Invalid operation parameter during OAuth2 flow")
