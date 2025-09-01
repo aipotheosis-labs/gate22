@@ -27,16 +27,20 @@ function CallbackContent() {
         let displayMessage = "An error occurred during sign in.";
         let path = "/login";
 
-        if (errorParam === "email_exists") {
+        if (errorParam === "User already exists") {
           displayMessage =
             "This email is already registered. Please try logging in instead.";
           path = "/login";
-        } else if (errorParam === "user_not_found") {
+        } else if (errorParam === "User does not exist") {
           displayMessage =
             "No account found with this email. Please sign up first.";
           path = "/signup";
         } else if (errorParam === "oauth_error") {
           displayMessage = "Authentication failed. Please try again.";
+          path = "/login";
+        } else {
+          // Handle any other error message passed from backend
+          displayMessage = errorParam;
           path = "/login";
         }
 
