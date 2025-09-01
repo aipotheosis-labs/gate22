@@ -1,9 +1,9 @@
-import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.types";
+import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import { getApiBaseUrl } from "@/lib/api-client";
 
-export async function getAllLinkedAccounts(
+export async function getAllConnectedAccounts(
   accessToken: string,
-): Promise<LinkedAccount[]> {
+): Promise<ConnectedAccount[]> {
   const baseUrl = getApiBaseUrl();
   // Fetch with a large limit to get all accounts
   const response = await fetch(`${baseUrl}/v1/connected-accounts?limit=100`, {
@@ -15,7 +15,7 @@ export async function getAllLinkedAccounts(
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch all linked accounts: ${response.status} ${response.statusText}`,
+      `Failed to fetch all connected accounts: ${response.status} ${response.statusText}`,
     );
   }
 
@@ -64,9 +64,9 @@ export async function createOAuth2ConnectedAccount(
   return result;
 }
 
-export async function getAppLinkedAccounts(
+export async function getAppConnectedAccounts(
   appName: string,
-): Promise<LinkedAccount[]> {
+): Promise<ConnectedAccount[]> {
   const params = new URLSearchParams();
   params.append("app_name", appName);
 
@@ -80,19 +80,19 @@ export async function getAppLinkedAccounts(
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch linked accounts: ${response.status} ${response.statusText}`,
+      `Failed to fetch connected accounts: ${response.status} ${response.statusText}`,
     );
   }
 
-  const linkedAccounts = await response.json();
-  return linkedAccounts;
+  const connectedAccounts = await response.json();
+  return connectedAccounts;
 }
 
-export async function createAPILinkedAccount(
+export async function createAPIConnectedAccount(
   appName: string,
-  linkedAccountOwnerId: string,
-  linkedAPIKey: string,
-): Promise<LinkedAccount> {
+  connectedAccountOwnerId: string,
+  connectedAPIKey: string,
+): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/linked-accounts/api-key`, {
     method: "POST",
@@ -101,13 +101,13 @@ export async function createAPILinkedAccount(
     },
     body: JSON.stringify({
       app_name: appName,
-      linked_account_owner_id: linkedAccountOwnerId,
-      api_key: linkedAPIKey,
+      linked_account_owner_id: connectedAccountOwnerId,
+      api_key: connectedAPIKey,
     }),
   });
 
   if (!response.ok) {
-    let errorMsg = `Failed to create linked account: ${response.status} ${response.statusText}`;
+    let errorMsg = `Failed to create connected account: ${response.status} ${response.statusText}`;
     try {
       const errorData = await response.json();
       if (errorData && errorData.error) {
@@ -119,14 +119,14 @@ export async function createAPILinkedAccount(
     throw new Error(errorMsg);
   }
 
-  const linkedAccount = await response.json();
-  return linkedAccount;
+  const connectedAccount = await response.json();
+  return connectedAccount;
 }
 
-export async function createNoAuthLinkedAccount(
+export async function createNoAuthConnectedAccount(
   appName: string,
-  linkedAccountOwnerId: string,
-): Promise<LinkedAccount> {
+  connectedAccountOwnerId: string,
+): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}/v1/linked-accounts/no-auth`, {
     method: "POST",
@@ -135,12 +135,12 @@ export async function createNoAuthLinkedAccount(
     },
     body: JSON.stringify({
       app_name: appName,
-      linked_account_owner_id: linkedAccountOwnerId,
+      linked_account_owner_id: connectedAccountOwnerId,
     }),
   });
 
   if (!response.ok) {
-    let errorMsg = `Failed to create no auth linked account: ${response.status} ${response.statusText}`;
+    let errorMsg = `Failed to create no auth connected account: ${response.status} ${response.statusText}`;
     try {
       const errorData = await response.json();
       if (errorData && errorData.error) {
@@ -152,13 +152,13 @@ export async function createNoAuthLinkedAccount(
     throw new Error(errorMsg);
   }
 
-  const linkedAccount = await response.json();
-  return linkedAccount;
+  const connectedAccount = await response.json();
+  return connectedAccount;
 }
 
 export async function getOauth2LinkURL(
   appName: string,
-  linkedAccountOwnerId: string,
+  connectedAccountOwnerId: string,
   afterOAuth2LinkRedirectURL?: string,
 ): Promise<string> {
   const params = new URLSearchParams();
@@ -199,13 +199,13 @@ export async function getOauth2LinkURL(
   return data.url;
 }
 
-export async function deleteLinkedAccount(
-  linkedAccountId: string,
+export async function deleteConnectedAccount(
+  connectedAccountId: string,
   accessToken: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/connected-accounts/${linkedAccountId}`,
+    `${baseUrl}/v1/connected-accounts/${connectedAccountId}`,
     {
       method: "DELETE",
       headers: {
@@ -216,18 +216,18 @@ export async function deleteLinkedAccount(
 
   if (!response.ok) {
     throw new Error(
-      `Failed to delete linked account: ${response.status} ${response.statusText}`,
+      `Failed to delete connected account: ${response.status} ${response.statusText}`,
     );
   }
 }
 
-export async function updateLinkedAccount(
-  linkedAccountId: string,
+export async function updateConnectedAccount(
+  connectedAccountId: string,
   enabled: boolean,
-): Promise<LinkedAccount> {
+): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/linked-accounts/${linkedAccountId}`,
+    `${baseUrl}/v1/linked-accounts/${connectedAccountId}`,
     {
       method: "PATCH",
       headers: {
@@ -241,10 +241,10 @@ export async function updateLinkedAccount(
 
   if (!response.ok) {
     throw new Error(
-      `Failed to update linked account: ${response.status} ${response.statusText}`,
+      `Failed to update connected account: ${response.status} ${response.statusText}`,
     );
   }
 
-  const updatedLinkedAccount = await response.json();
-  return updatedLinkedAccount;
+  const updatedConnectedAccount = await response.json();
+  return updatedConnectedAccount;
 }

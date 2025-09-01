@@ -197,7 +197,7 @@ export default function MCPConfigurationDetailPage() {
               {configuration.linked_account_id && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
-                    Linked Account ID
+                    Connected Account ID
                   </label>
                   <div className="flex items-center gap-2 mt-1">
                     <code className="text-sm">

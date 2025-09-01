@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { getApiKey } from "@/lib/api-utils";
-import { LinkedAccount } from "@/features/linked-accounts/types/linkedaccount.types";
+import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import { Agent } from "../types/agent.types";
-import { getAllLinkedAccounts } from "@/features/linked-accounts/api/linkedaccount";
+import { getAllConnectedAccounts } from "@/features/connected-accounts/api/connectedaccount";
 import { getApps } from "@/features/apps/api/app";
 import { App } from "@/features/apps/types/app.types";
 import { AppFunction } from "@/features/apps/types/appfunction.types";
@@ -12,23 +12,23 @@ import { searchFunctions } from "@/features/apps/api/appfunction";
 interface AgentState {
   allowedApps: string[];
   selectedApps: string[];
-  selectedLinkedAccountOwnerId: string;
+  selectedConnectedAccountOwnerId: string;
   selectedFunctions: string[];
   selectedAgent: string;
-  linkedAccounts: LinkedAccount[];
+  connectedAccounts: ConnectedAccount[];
   agents: Agent[];
   apps: App[];
   appFunctions: AppFunction[];
   loadingFunctions: boolean;
   setSelectedApps: (apps: string[]) => void;
-  setSelectedLinkedAccountOwnerId: (id: string) => void;
+  setSelectedConnectedAccountOwnerId: (id: string) => void;
   setAllowedApps: (apps: string[]) => void;
   setSelectedFunctions: (functions: string[]) => void;
   setSelectedAgent: (id: string) => void;
   setAgents: (agents: Agent[]) => void;
   getApiKey: (accessToken: string) => string;
-  fetchLinkedAccounts: (apiKey: string) => Promise<LinkedAccount[]>;
-  getUniqueLinkedAccounts: () => LinkedAccount[];
+  fetchConnectedAccounts: (apiKey: string) => Promise<ConnectedAccount[]>;
+  getUniqueConnectedAccounts: () => ConnectedAccount[];
   fetchApps: (apiKey: string) => Promise<App[]>;
   getAvailableApps: () => App[];
   fetchAppFunctions: (apiKey: string) => Promise<AppFunction[]>;
@@ -40,19 +40,19 @@ export const useAgentStore = create<AgentState>()(
   persist(
     (set, get) => ({
       selectedApps: [],
-      selectedLinkedAccountOwnerId: "",
+      selectedConnectedAccountOwnerId: "",
       allowedApps: [],
       selectedFunctions: [],
       selectedAgent: "",
-      linkedAccounts: [],
+      connectedAccounts: [],
       agents: [],
       apps: [],
       appFunctions: [],
       loadingFunctions: false,
       setSelectedApps: (apps: string[]) =>
         set((state) => ({ ...state, selectedApps: apps })),
-      setSelectedLinkedAccountOwnerId: (id: string) =>
-        set((state) => ({ ...state, selectedLinkedAccountOwnerId: id })),
+      setSelectedConnectedAccountOwnerId: (id: string) =>
+        set((state) => ({ ...state, selectedConnectedAccountOwnerId: id })),
       setAllowedApps: (apps: string[]) =>
         set((state) => ({ ...state, allowedApps: apps })),
       setSelectedFunctions: (functions: string[]) =>
@@ -64,24 +64,24 @@ export const useAgentStore = create<AgentState>()(
       getApiKey: (accessToken: string) => {
         return getApiKey(accessToken);
       },
-      fetchLinkedAccounts: async (apiKey: string) => {
+      fetchConnectedAccounts: async (apiKey: string) => {
         try {
-          const accounts = await getAllLinkedAccounts(apiKey);
-          set((state) => ({ ...state, linkedAccounts: accounts }));
+          const accounts = await getAllConnectedAccounts(apiKey);
+          set((state) => ({ ...state, connectedAccounts: accounts }));
           return accounts;
         } catch (error) {
-          console.error("Failed to fetch linked accounts:", error);
+          console.error("Failed to fetch connected accounts:", error);
           throw error;
         }
       },
-      getUniqueLinkedAccounts: () => {
-        const linkedAccounts = get().linkedAccounts;
-        const uniqueLinkedAccounts = Array.from(
+      getUniqueConnectedAccounts: () => {
+        const connectedAccounts = get().connectedAccounts;
+        const uniqueConnectedAccounts = Array.from(
           new Map(
-            linkedAccounts.map((account) => [account.user_id, account]),
+            connectedAccounts.map((account) => [account.user_id, account]),
           ).values(),
         );
-        return uniqueLinkedAccounts;
+        return uniqueConnectedAccounts;
       },
 
       fetchApps: async (apiKey: string) => {
@@ -98,22 +98,22 @@ export const useAgentStore = create<AgentState>()(
         let filteredApps = get().apps.filter((app) =>
           get().allowedApps.includes(app.name),
         );
-        // filter from linked accounts
-        if (!get().selectedLinkedAccountOwnerId) {
+        // filter from connected accounts
+        if (!get().selectedConnectedAccountOwnerId) {
           filteredApps = filteredApps.filter((app) =>
-            get().linkedAccounts.some(
-              (linkedAccount) =>
-                linkedAccount.mcp_server_configuration?.mcp_server?.name ===
+            get().connectedAccounts.some(
+              (connectedAccount) =>
+                connectedAccount.mcp_server_configuration?.mcp_server?.name ===
                 app.name,
             ),
           );
         } else {
           filteredApps = filteredApps.filter((app) =>
-            get().linkedAccounts.some(
-              (linkedAccount) =>
-                linkedAccount.mcp_server_configuration?.mcp_server?.name ===
+            get().connectedAccounts.some(
+              (connectedAccount) =>
+                connectedAccount.mcp_server_configuration?.mcp_server?.name ===
                   app.name &&
-                linkedAccount.user_id === get().selectedLinkedAccountOwnerId,
+                connectedAccount.user_id === get().selectedConnectedAccountOwnerId,
             ),
           );
         }
@@ -181,7 +181,7 @@ export const useAgentStore = create<AgentState>()(
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         selectedApps: state.selectedApps,
-        selectedLinkedAccountOwnerId: state.selectedLinkedAccountOwnerId,
+        selectedConnectedAccountOwnerId: state.selectedConnectedAccountOwnerId,
         selectedFunctions: state.selectedFunctions,
         selectedAgent: state.selectedAgent,
       }),
