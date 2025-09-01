@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from aci.cli import config
 from aci.common import utils
 from aci.common.db import crud
+from aci.common.enums import AuthType
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 
@@ -64,13 +65,18 @@ def create_mock_mcp_configuration_helper(
     if not team:
         raise ValueError(f"Team {team_id} not found")
 
+    if len(mcp_server.auth_configs) == 0:
+        auth_type = AuthType.NO_AUTH
+    else:
+        auth_type = mcp_server.auth_configs[0]["type"]
+
     # Create MCP Server Configuration
     mcp_server_configuration = crud.mcp_server_configurations.create_mcp_server_configuration(
         db_session,
         team.organization_id,
         MCPServerConfigurationCreate(
             mcp_server_id=mcp_server.id,
-            auth_type=mcp_server.auth_configs[0]["type"],
+            auth_type=auth_type,
             all_tools_enabled=True,
             enabled_tools=[],
             allowed_teams=[team.id],
