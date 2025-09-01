@@ -39,7 +39,6 @@ def test_create_connected_account(
     is_team_allowed_by_config: bool,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
-    print(f"access_token: {access_token}")
 
     # dummy_mcp_server_configurations has 2 dummy MCP server configurations, both without team
     config_added_to_team = dummy_mcp_server_configuration
