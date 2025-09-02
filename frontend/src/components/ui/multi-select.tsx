@@ -108,17 +108,17 @@ export function MultiSelect({
                   key={option.value}
                   value={option.value}
                   onSelect={() => handleSelect(option.value)}
-                  className="cursor-pointer"
+                  className="cursor-pointer flex items-center justify-between"
                 >
+                  <span>{option.label}</span>
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "ml-2 h-4 w-4",
                       selected.includes(option.value)
                         ? "opacity-100"
                         : "opacity-0",
                     )}
                   />
-                  {option.label}
                 </CommandItem>
               ))}
             </CommandGroup>

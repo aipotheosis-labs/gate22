@@ -76,10 +76,10 @@ export default function MCPConfigurationDetailPage() {
         </Badge>
       </div>
 
-      {/* MCP Server Information */}
+      {/* Unified Configuration and MCP Server Overview */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             {configuration.mcp_server.logo && (
               <Image
                 src={configuration.mcp_server.logo}
@@ -90,24 +90,29 @@ export default function MCPConfigurationDetailPage() {
               />
             )}
             <div className="flex-1">
-              <CardTitle className="text-xl">
-                {configuration.mcp_server.name}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                {configuration.mcp_server.description}
-              </p>
+              <CardTitle className="text-2xl">{configuration.name}</CardTitle>
+              {configuration.description && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {configuration.description}
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  MCP Server:
+                </span>
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-sm font-medium"
+                  onClick={() =>
+                    router.push(`/mcp-servers/${configuration.mcp_server_id}`)
+                  }
+                >
+                  {configuration.mcp_server.name}
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {configuration.mcp_server.categories?.map((category) => (
-              <Badge key={category} variant="secondary">
-                {category}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
       </Card>
 
       {/* Configuration Details */}

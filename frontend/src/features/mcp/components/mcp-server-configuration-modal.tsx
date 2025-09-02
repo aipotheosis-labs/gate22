@@ -10,7 +10,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
@@ -39,6 +41,8 @@ export function MCPServerConfigurationModal({
   onClose,
   server,
 }: MCPServerConfigurationModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
     server.supported_auth_types[0] || AuthType.NO_AUTH,
   );
@@ -88,8 +92,15 @@ export function MCPServerConfigurationModal({
   };
 
   const handleSubmit = async () => {
+    if (!name.trim()) {
+      toast.error("Please enter a configuration name");
+      return;
+    }
+
     const configurationData: MCPServerConfigurationCreate = {
       mcp_server_id: server.id,
+      name: name.trim(),
+      description: description.trim() || undefined,
       auth_type: selectedAuthType,
       all_tools_enabled: allToolsEnabled,
       enabled_tools: allToolsEnabled ? [] : Array.from(selectedTools),
@@ -117,6 +128,31 @@ export function MCPServerConfigurationModal({
 
         <ScrollArea className="h-[60vh] pr-4">
           <div className="space-y-6">
+            {/* Configuration Name and Description */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="config-name">Configuration Name *</Label>
+                <Input
+                  id="config-name"
+                  placeholder="Enter a name for this configuration"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="config-description">Description</Label>
+                <Textarea
+                  id="config-description"
+                  placeholder="Optional description for this configuration"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Authentication Type Selection */}
             <div className="space-y-3">
               <Label>Authentication Type</Label>

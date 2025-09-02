@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -34,6 +36,9 @@ import { AuthType, MCPServerConfigurationCreate } from "../types/mcp.types";
 
 export function CreateMCPConfigurationDialog() {
   const [open, setOpen] = useState(false);
+  const [name, setName] = useState<string>("");
+  const [nameError, setNameError] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const [selectedServerId, setSelectedServerId] = useState<string>("");
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
     AuthType.NO_AUTH,
@@ -48,6 +53,11 @@ export function CreateMCPConfigurationDialog() {
   const createConfiguration = useCreateMCPServerConfiguration();
 
   const handleSubmit = async () => {
+    if (!name.trim()) {
+      setNameError("Configuration name is required");
+      return;
+    }
+
     if (!selectedServerId) {
       toast.error("Please select an MCP server");
       return;
@@ -60,6 +70,8 @@ export function CreateMCPConfigurationDialog() {
 
     const configData: MCPServerConfigurationCreate = {
       mcp_server_id: selectedServerId,
+      name: name.trim(),
+      description: description.trim() || undefined,
       auth_type: selectedAuthType,
       all_tools_enabled: allToolsEnabled,
       enabled_tools: allToolsEnabled ? [] : selectedTools,
@@ -78,6 +90,9 @@ export function CreateMCPConfigurationDialog() {
   };
 
   const resetForm = () => {
+    setName("");
+    setNameError("");
+    setDescription("");
     setSelectedServerId("");
     setSelectedAuthType(AuthType.NO_AUTH);
     setAllToolsEnabled(true);
@@ -118,9 +133,40 @@ export function CreateMCPConfigurationDialog() {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Configuration Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Configuration Name *</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError("");
+              }}
+              placeholder="Enter a name for this configuration"
+              className={nameError ? "border-red-500" : ""}
+              maxLength={100}
+              required
+            />
+            {nameError && <p className="text-xs text-red-500">{nameError}</p>}
+          </div>
+
+          {/* Configuration Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Optional description for this configuration"
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+
           {/* Server Selection */}
           <div className="space-y-2">
-            <Label htmlFor="server">MCP Server</Label>
+            <Label htmlFor="server">MCP Server *</Label>
             <Select
               value={selectedServerId}
               onValueChange={setSelectedServerId}
@@ -258,6 +304,7 @@ export function CreateMCPConfigurationDialog() {
           <Button
             onClick={handleSubmit}
             disabled={
+              !name.trim() ||
               !selectedServerId ||
               !selectedAuthType ||
               createConfiguration.isPending

@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -36,6 +38,7 @@ interface MCPServerConfigurationStepperProps {
 
 // Define the stepper outside the component
 const { useStepper, steps } = defineStepper(
+  { id: "general", label: "General" },
   { id: "account", label: "Authentication" },
   { id: "tools", label: "Tools" },
   { id: "teams", label: "Teams" },
@@ -74,6 +77,9 @@ export function MCPServerConfigurationStepper({
   server,
 }: MCPServerConfigurationStepperProps) {
   const stepper = useStepper();
+  const [name, setName] = useState<string>("");
+  const [nameError, setNameError] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
     server?.supported_auth_types?.[0] || AuthType.NO_AUTH,
   );
@@ -90,6 +96,9 @@ export function MCPServerConfigurationStepper({
   useEffect(() => {
     if (isOpen) {
       stepper.reset();
+      setName("");
+      setNameError("");
+      setDescription("");
       setSelectedTools(new Set());
       setSelectedTeams(new Set());
       setAllToolsEnabled(true);
@@ -127,9 +136,14 @@ export function MCPServerConfigurationStepper({
     setSelectedTools(newSelectedTools);
   };
 
-
   const handleSubmit = async () => {
     // Final validation
+    if (!name.trim()) {
+      setNameError("Configuration name is required");
+      stepper.goTo("general"); // Go to general step
+      return;
+    }
+
     if (selectedTeams.size === 0) {
       toast.error("Please select at least one team");
       stepper.goTo("teams"); // Go to teams step
@@ -138,6 +152,8 @@ export function MCPServerConfigurationStepper({
 
     const configurationData: MCPServerConfigurationCreate = {
       mcp_server_id: server.id,
+      name: name.trim(),
+      description: description.trim() || undefined,
       auth_type: selectedAuthType,
       all_tools_enabled: allToolsEnabled,
       enabled_tools: allToolsEnabled ? [] : Array.from(selectedTools),
@@ -159,6 +175,8 @@ export function MCPServerConfigurationStepper({
 
   const isStepValid = (stepId: string) => {
     switch (stepId) {
+      case "general":
+        return !!name.trim();
       case "account":
         return (
           !server?.supported_auth_types ||
@@ -190,6 +208,50 @@ export function MCPServerConfigurationStepper({
         {/* Main Content */}
         <ScrollArea className="flex-1 px-6">
           <div className="space-y-6 pb-4">
+            {stepper.current.id === "general" && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-1">
+                    General Information
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Provide a name and description for this configuration
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="config-name">Configuration Name *</Label>
+                  <Input
+                    id="config-name"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (nameError) setNameError("");
+                    }}
+                    placeholder="Enter a name for this configuration"
+                    className={nameError ? "border-red-500" : ""}
+                    maxLength={100}
+                    required
+                  />
+                  {nameError && (
+                    <p className="text-xs text-red-500">{nameError}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="config-description">Description</Label>
+                  <Textarea
+                    id="config-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Optional description for this configuration"
+                    rows={3}
+                    maxLength={500}
+                  />
+                </div>
+              </div>
+            )}
+
             {stepper.current.id === "account" && (
               <div className="space-y-4">
                 <div>
@@ -341,10 +403,12 @@ export function MCPServerConfigurationStepper({
                     <MultiSelect
                       options={teams.map((team) => ({
                         value: team.team_id,
-                        label: `${team.name}${team.member_count !== undefined ? ` (${team.member_count} member${team.member_count !== 1 ? 's' : ''})` : ''}`,
+                        label: `${team.name}${team.member_count !== undefined ? ` (${team.member_count} member${team.member_count !== 1 ? "s" : ""})` : ""}`,
                       }))}
                       selected={Array.from(selectedTeams)}
-                      onChange={(selected) => setSelectedTeams(new Set(selected))}
+                      onChange={(selected) =>
+                        setSelectedTeams(new Set(selected))
+                      }
                       placeholder="Select teams..."
                       searchPlaceholder="Search teams..."
                       emptyText="No teams found."
@@ -352,22 +416,24 @@ export function MCPServerConfigurationStepper({
                     />
                     {selectedTeams.size > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        {selectedTeams.size} team{selectedTeams.size !== 1 ? 's' : ''} selected
+                        {selectedTeams.size} team
+                        {selectedTeams.size !== 1 ? "s" : ""} selected
                       </p>
                     )}
-                    {selectedTeams.size === 0 && !teamsLoading && teams.length > 0 && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          Please select at least one team to proceed
-                        </AlertDescription>
-                      </Alert>
-                    )}
+                    {selectedTeams.size === 0 &&
+                      !teamsLoading &&
+                      teams.length > 0 && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            Please select at least one team to proceed
+                          </AlertDescription>
+                        </Alert>
+                      )}
                   </div>
                 )}
               </div>
             )}
-
           </div>
         </ScrollArea>
 

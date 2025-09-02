@@ -49,6 +49,8 @@ export interface TeamInfo {
 
 export interface MCPServerConfigurationCreate {
   mcp_server_id: string;
+  name: string;
+  description?: string;
   auth_type: AuthType;
   all_tools_enabled: boolean;
   enabled_tools: string[];
@@ -59,6 +61,8 @@ export interface MCPServerConfigurationPublic {
   id: string;
   mcp_server_id: string;
   organization_id: string;
+  name: string;
+  description?: string;
   auth_type: AuthType;
   all_tools_enabled: boolean;
   enabled_tools: MCPToolBasic[];
@@ -71,6 +75,8 @@ export interface MCPServerConfigurationPublic {
 export interface MCPServerConfigurationPublicBasic {
   id: string;
   mcp_server_id: string;
+  name: string;
+  description?: string;
   mcp_server: MCPServerPublicBasic;
   created_at?: string;
   updated_at?: string;

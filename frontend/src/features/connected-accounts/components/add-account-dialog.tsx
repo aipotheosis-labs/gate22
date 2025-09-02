@@ -151,11 +151,13 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
                                 )}
                               </div>
                               <span className="font-medium">
-                                {selectedConfig.mcp_server?.name ||
-                                  "Unknown Server"}
+                                {selectedConfig.name || "Unknown Configuration"}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                ({selectedConfig.id})
+                                (
+                                {selectedConfig.mcp_server?.name ||
+                                  "Unknown Server"}
+                                )
                               </span>
                             </div>
                           )}
@@ -180,10 +182,10 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
                               )}
                             </div>
                             <span className="font-medium">
-                              {config.mcp_server?.name || "Unknown Server"}
+                              {config.name || "Unknown Configuration"}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              ({config.id})
+                              ({config.mcp_server?.name || "Unknown Server"})
                             </span>
                           </div>
                         </SelectItem>

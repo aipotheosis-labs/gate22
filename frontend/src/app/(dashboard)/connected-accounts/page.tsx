@@ -83,18 +83,9 @@ export default function ConnectedAccountsPage() {
     return [
       columnHelper.accessor("id", {
         id: "account_id",
-        header: ({ column }) => (
+        header: () => (
           <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              CONNECTED ACCOUNT ID
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <span className="text-left font-normal">CONNECTED ACCOUNT ID</span>
           </div>
         ),
         cell: (info) => {
@@ -108,18 +99,9 @@ export default function ConnectedAccountsPage() {
 
       columnHelper.accessor("mcp_server_configuration_id", {
         id: "configuration_id",
-        header: ({ column }) => (
+        header: () => (
           <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              CONFIGURATION ID
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <span className="text-left font-normal">CONFIGURATION ID</span>
           </div>
         ),
         cell: (info) => {
@@ -135,18 +117,9 @@ export default function ConnectedAccountsPage() {
 
       columnHelper.accessor("mcp_server_configuration_id", {
         id: "mcp_server",
-        header: ({ column }) => (
+        header: () => (
           <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              MCP SERVER
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <span className="text-left font-normal">MCP SERVER</span>
           </div>
         ),
         cell: (info) => {

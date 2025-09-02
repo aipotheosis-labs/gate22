@@ -13,6 +13,15 @@ export const getApiBaseUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 };
 
+// Get MCP base URL from environment
+export const getMcpBaseUrl = () => {
+  return (
+    process.env.NEXT_PUBLIC_MCP_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8000"
+  );
+};
+
 // Generic fetcher function with automatic token refresh
 export async function fetcher<T = unknown>(
   endpoint: string,

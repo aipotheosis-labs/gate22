@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useMCPServerBundle } from "@/features/bundle-mcp/hooks/use-bundle-mcp";
+import { getMcpBaseUrl } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +13,9 @@ import {
   Check,
   AlertCircle,
   Package,
-  Calendar,
-  Clock,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export default function BundleDetailPage() {
@@ -26,6 +25,15 @@ export default function BundleDetailPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const { data: bundle, isLoading, error } = useMCPServerBundle(bundleId);
+
+  // Generate MCP URL using configured base URL
+  const mcpUrl = useMemo(() => {
+    if (bundle) {
+      const baseUrl = getMcpBaseUrl();
+      return `${baseUrl}/mcp?bundle_id=${bundle.id}`;
+    }
+    return "";
+  }, [bundle]);
 
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
@@ -121,6 +129,27 @@ export default function BundleDetailPage() {
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">
+                MCP URL
+              </label>
+              <div className="flex items-center gap-2 mt-1">
+                <code className="text-sm break-all">{mcpUrl}</code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={() => handleCopy(mcpUrl, "mcp-url")}
+                >
+                  {copiedField === "mcp-url" ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
                 Organization ID
               </label>
               <div className="flex items-center gap-2 mt-1">
@@ -160,7 +189,9 @@ export default function BundleDetailPage() {
                 </Button>
               </div>
             </div>
+          </div>
 
+          <div className="border-t pt-4 mt-4 grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground">
                 Configurations
@@ -170,12 +201,9 @@ export default function BundleDetailPage() {
                 {bundle.mcp_server_configurations.length !== 1 ? "s" : ""}
               </p>
             </div>
-          </div>
-
-          <div className="border-t pt-4 mt-4 grid grid-cols-2 gap-4">
+            <div></div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">
-                <Calendar className="inline h-3 w-3 mr-1" />
                 Created At
               </label>
               <p className="text-sm mt-1">
@@ -184,7 +212,6 @@ export default function BundleDetailPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">
-                <Clock className="inline h-3 w-3 mr-1" />
                 Updated At
               </label>
               <p className="text-sm mt-1">

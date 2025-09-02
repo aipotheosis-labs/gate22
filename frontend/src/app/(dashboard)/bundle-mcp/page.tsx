@@ -4,7 +4,7 @@ import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, ArrowUpDown, Plus, Package, Eye } from "lucide-react";
+import { Trash2, Plus, Package, Eye, ArrowUpDown } from "lucide-react";
 import { CreateBundleForm } from "@/features/bundle-mcp/components/create-bundle-form";
 import {
   useCreateMCPServerBundle,
@@ -63,18 +63,9 @@ export default function BundleMCPPage() {
     return [
       columnHelper.accessor("name", {
         id: "name",
-        header: ({ column }) => (
+        header: () => (
           <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              NAME
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <span className="text-left font-normal">NAME</span>
           </div>
         ),
         cell: (info) => {
@@ -91,18 +82,9 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("id", {
         id: "bundle_id",
-        header: ({ column }) => (
+        header: () => (
           <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              BUNDLE ID
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <span className="text-left font-normal">BUNDLE ID</span>
           </div>
         ),
         cell: (info) => {
@@ -116,18 +98,9 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("mcp_server_configurations", {
         id: "configurations",
-        header: ({ column }) => (
+        header: () => (
           <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              CONFIGURATIONS
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
+            <span className="text-left font-normal">CONFIGURATIONS</span>
           </div>
         ),
         cell: (info) => {
@@ -262,7 +235,7 @@ export default function BundleMCPPage() {
           title="Create MCP Bundle"
           availableConfigurations={configurations.map((config) => ({
             id: config.id,
-            name: `${config.mcp_server.name} (${config.id})`,
+            name: config.name,
           }))}
           onSubmit={async (values) => {
             await createBundleMutation(values);
@@ -305,7 +278,7 @@ export default function BundleMCPPage() {
                   title="Create MCP Bundle"
                   availableConfigurations={configurations.map((config) => ({
                     id: config.id,
-                    name: `${config.mcp_server.name} (${config.id})`,
+                    name: config.name,
                   }))}
                   onSubmit={async (values) => {
                     await createBundleMutation(values);
