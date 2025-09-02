@@ -10,7 +10,7 @@ from aci.common.schemas.mcp_server_configuration import (
 
 class ConnectedAccountAPIKeyCreate(BaseModel):
     mcp_server_configuration_id: UUID
-    api_key: str = Field(min_length=1)  # for API key auth type
+    api_key: str = Field(min_length=1)  # for API key auth type. # TODO: use SecretStr
 
 
 class ConnectedAccountOAuth2Create(BaseModel):
