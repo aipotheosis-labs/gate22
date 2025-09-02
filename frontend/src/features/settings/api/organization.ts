@@ -7,11 +7,14 @@ export async function listOrganizationUsers(
   orgId: string,
 ): Promise<OrganizationUser[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/control-plane/organizations/${orgId}/members`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const response = await fetch(
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/members`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch organization users");
@@ -45,14 +48,17 @@ export async function inviteToOrganization(
   role: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/control-plane/organizations/${orgId}/invite`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/invite`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, role }),
     },
-    body: JSON.stringify({ email, role }),
-  });
+  );
 
   if (!response.ok) {
     await throwApiError(response, "Failed to invite user to organization");

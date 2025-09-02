@@ -11,7 +11,18 @@ import { issueToken, getProfile } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
 // Error code mapping to user-friendly messages
-const ERROR_MESSAGES: Record<string, { message: string; redirectPath: string }> = {
+const ERROR_MESSAGES: Record<
+  string,
+  { message: string; redirectPath: string }
+> = {
+  "User already exists": {
+    message: "This email is already registered. Please try logging in instead.",
+    redirectPath: "/login",
+  },
+  "User not exists": {
+    message: "No account found with this email. Please sign up first.",
+    redirectPath: "/signup",
+  },
   user_already_exists: {
     message: "This email is already registered. Please try logging in instead.",
     redirectPath: "/login",
@@ -46,7 +57,7 @@ function CallbackContent() {
         // Map error code to user-friendly message
         const errorInfo = ERROR_MESSAGES[errorParam];
         let path = "/login";
-        
+
         if (errorInfo) {
           setError(errorInfo.message);
           path = errorInfo.redirectPath;
@@ -105,8 +116,11 @@ function CallbackContent() {
         ) {
           // Check if the error message contains any of our error codes
           const errorCode = error.message.toLowerCase();
-          
-          if (errorCode.includes("email_already_exists") || errorCode.includes("user_already_exists")) {
+
+          if (
+            errorCode.includes("email_already_exists") ||
+            errorCode.includes("user_already_exists")
+          ) {
             const errorInfo = ERROR_MESSAGES.email_already_exists;
             errorMessage = errorInfo.message;
             path = errorInfo.redirectPath;

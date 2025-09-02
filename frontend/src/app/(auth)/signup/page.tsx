@@ -29,7 +29,7 @@ export default function SignupPage() {
       email,
       password,
     });
-    
+
     if (!success) {
       return; // Error is already displayed as toast
     }

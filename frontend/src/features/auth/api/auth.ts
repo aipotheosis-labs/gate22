@@ -36,16 +36,21 @@ export interface IssueTokenRequest {
 }
 
 // Auth functions
-export async function register(data: EmailRegistrationRequest): Promise<boolean> {
+export async function register(
+  data: EmailRegistrationRequest,
+): Promise<boolean> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/control-plane/auth/register/email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${baseUrl}/v1/control-plane/auth/register/email`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // Include cookies
+      body: JSON.stringify(data),
     },
-    credentials: "include", // Include cookies
-    body: JSON.stringify(data),
-  });
+  );
 
   if (!response.ok) {
     try {
@@ -57,13 +62,20 @@ export async function register(data: EmailRegistrationRequest): Promise<boolean>
       // Provide user-friendly messages for common errors
       if (typeof errorMessage === "string") {
         // Map backend error codes to user-friendly messages
-        if (errorMessage === "email_already_exists" || errorMessage === "user_already_exists") {
-          toast.error("This email is already registered. Please try logging in instead.");
+        if (
+          errorMessage === "email_already_exists" ||
+          errorMessage === "user_already_exists"
+        ) {
+          toast.error(
+            "This email is already registered. Please try logging in instead.",
+          );
           return false;
         }
         // Fallback for old error messages (backwards compatibility)
         if (errorMessage.toLowerCase().includes("email already")) {
-          toast.error("This email is already registered. Please try logging in instead.");
+          toast.error(
+            "This email is already registered. Please try logging in instead.",
+          );
           return false;
         }
         toast.error(errorMessage);
@@ -71,12 +83,12 @@ export async function register(data: EmailRegistrationRequest): Promise<boolean>
       }
       toast.error("Registration failed. Please try again.");
       return false;
-    } catch (e) {
+    } catch {
       toast.error("Registration failed. Please try again.");
       return false;
     }
   }
-  
+
   toast.success("Registration successful!");
   return true;
 }
@@ -111,8 +123,13 @@ export async function login(email: string, password: string): Promise<boolean> {
           toast.error("Invalid email or password. Please try again.");
           return false;
         }
-        if (errorMessage === "user_not_found" || errorMessage.toLowerCase().includes("not found")) {
-          toast.error("No account found with this email. Please sign up first.");
+        if (
+          errorMessage === "user_not_found" ||
+          errorMessage.toLowerCase().includes("not found")
+        ) {
+          toast.error(
+            "No account found with this email. Please sign up first.",
+          );
           return false;
         }
         toast.error(errorMessage);
@@ -120,12 +137,12 @@ export async function login(email: string, password: string): Promise<boolean> {
       }
       toast.error("Login failed. Please try again.");
       return false;
-    } catch (e) {
+    } catch {
       toast.error("Login failed. Please try again.");
       return false;
     }
   }
-  
+
   toast.success("Login successful!");
   return true;
 }

@@ -16,7 +16,7 @@ export default function LoginPage() {
   const handleLogin = async (email: string, password: string) => {
     // Call the real login API (sets refresh token in cookie)
     const success = await login(email, password);
-    
+
     if (!success) {
       return; // Error is already displayed as toast
     }
