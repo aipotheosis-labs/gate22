@@ -5,6 +5,7 @@ import { CreateOrganizationForm } from "@/features/auth/components/create-organi
 import { useEffect, useState } from "react";
 import { tokenManager } from "@/lib/token-manager";
 import { getProfile } from "@/features/auth/api/auth";
+import { OrganizationRole } from "@/features/settings/types/organization.types";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
@@ -75,10 +76,40 @@ export default function CreateOrganizationPage() {
         );
       }
 
-      await response.json();
+      const createdOrg = await response.json();
 
-      // Organization created successfully
-      // The MetaInfoProvider will refresh user data on navigation
+      // Organization created successfully - need to refresh token with new org context
+      // First, get the updated user profile to ensure we have the latest org info
+      const updatedProfile = await getProfile(token);
+      
+      // Find the newly created organization in the user's organizations
+      const newOrg = updatedProfile.organizations?.find(
+        org => org.organization_id === createdOrg.id || 
+               org.organization_name === name
+      );
+
+      if (newOrg) {
+        // Clear the current token to force a refresh with new org context
+        tokenManager.clearToken();
+        
+        // Get a new token with the organization context (act_as parameter)
+        const newToken = await tokenManager.getAccessToken(
+          newOrg.organization_id,
+          newOrg.role as OrganizationRole // The role should be 'admin' for the creator
+        );
+        
+        if (!newToken) {
+          throw new Error("Failed to refresh token with organization context");
+        }
+        
+        // Store the organization info in localStorage for future use
+        const { organizationManager } = await import("@/lib/organization-manager");
+        organizationManager.setActiveOrganization(
+          newOrg.organization_id,
+          newOrg.organization_name,
+          newOrg.role
+        );
+      }
 
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 500));
