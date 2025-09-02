@@ -9,7 +9,7 @@ APP_OPENAPI_URL = "/openapi.json"
 
 
 ENVIRONMENT = check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT")
-REDIRECT_URI_BASE = check_and_get_env_variable("CONTROL_PLANE_REDIRECT_URI_BASE")
+CONTROL_PLANE_BASE_URL = check_and_get_env_variable("CONTROL_PLANE_BASE_URL")
 LOG_LEVEL = check_and_get_env_variable("CONTROL_PLANE_LOG_LEVEL", default="INFO")
 
 # ROUTERS
@@ -30,9 +30,6 @@ FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")
 # Authentication
 GOOGLE_CLIENT_ID = check_and_get_env_variable("CONTROL_PLANE_GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = check_and_get_env_variable("CONTROL_PLANE_GOOGLE_CLIENT_SECRET")
-GOOGLE_OAUTH_REDIRECT_URI_BASE = check_and_get_env_variable(
-    "CONTROL_PLANE_GOOGLE_OAUTH_REDIRECT_URI_BASE"
-)
 SESSION_SECRET_KEY = check_and_get_env_variable("CONTROL_PLANE_SESSION_SECRET_KEY")
 REFRESH_TOKEN_KEY = check_and_get_env_variable("CONTROL_PLANE_REFRESH_TOKEN_KEY")
 JWT_SIGNING_KEY = check_and_get_env_variable("CONTROL_PLANE_JWT_SIGNING_KEY")

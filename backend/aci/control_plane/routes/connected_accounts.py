@@ -188,7 +188,7 @@ async def _create_oauth2_connected_account(
     ).decode()
 
     path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
-    redirect_uri = f"{config.REDIRECT_URI_BASE}{path}"
+    redirect_uri = f"{config.CONTROL_PLANE_BASE_URL}{path}"
     authorization_url = await oauth2_manager.create_authorization_url(
         redirect_uri=redirect_uri,
         state=oauth2_state_jwt,
@@ -284,7 +284,7 @@ async def oauth2_callback(
     )
 
     path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
-    redirect_uri = f"{config.REDIRECT_URI_BASE}{path}"
+    redirect_uri = f"{config.CONTROL_PLANE_BASE_URL}{path}"
     token_response = await oauth2_manager.fetch_token(
         redirect_uri=redirect_uri,
         code=code,

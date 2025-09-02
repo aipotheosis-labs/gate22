@@ -30,7 +30,7 @@ class GoogleUserInfo(BaseModel):
 
 
 def _get_google_redirect_uri(operation: AuthOperation) -> str:
-    url = f"{config.GOOGLE_OAUTH_REDIRECT_URI_BASE}/v1/auth/{operation.value}/google/callback"
+    url = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/{operation.value}/google/callback"  # noqa: E501
     return url
 
 
