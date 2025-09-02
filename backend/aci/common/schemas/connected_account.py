@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, RootModel
+from pydantic import BaseModel, Field
 
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationPublic,
@@ -22,12 +22,10 @@ class ConnectedAccountNoAuthCreate(BaseModel):
     mcp_server_configuration_id: UUID
 
 
-class ConnectedAccountCreate(
-    RootModel[
-        ConnectedAccountAPIKeyCreate | ConnectedAccountOAuth2Create | ConnectedAccountNoAuthCreate
-    ]
-):
-    root: ConnectedAccountAPIKeyCreate | ConnectedAccountOAuth2Create | ConnectedAccountNoAuthCreate
+class ConnectedAccountCreate(BaseModel):
+    mcp_server_configuration_id: UUID
+    api_key: str | None = None
+    redirect_url_after_account_creation: str | None = None
 
 
 class OAuth2ConnectedAccountCreateResponse(BaseModel):

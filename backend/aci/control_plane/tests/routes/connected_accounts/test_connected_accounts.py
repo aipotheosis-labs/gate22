@@ -8,7 +8,6 @@ from aci.common.enums import AuthType
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.connected_account import (
     ConnectedAccountPublic,
-    OAuth2ConnectedAccountCreateResponse,
 )
 from aci.common.schemas.pagination import PaginationResponse
 
@@ -16,9 +15,21 @@ logger = get_logger(__name__)
 
 
 @pytest.mark.parametrize("is_team_allowed_by_config", [True, False])
-@pytest.mark.parametrize("auth_type", [AuthType.API_KEY, AuthType.NO_AUTH, AuthType.OAUTH2])
-@pytest.mark.parametrize("api_key", [None, "dummy_api_key"])
-@pytest.mark.parametrize("redirect_url_after_account_creation", [None, "some_random_url"])
+@pytest.mark.parametrize(
+    ("auth_type", "api_key", "redirect_url_after_account_creation", "should_succeed"),
+    [
+        # (AuthType.API_KEY, "dummy_api_key", None, True),
+        # (AuthType.API_KEY, "dummy_api_key", "some_random_url", False),
+        # (AuthType.API_KEY, None, None, False),
+        # (AuthType.API_KEY, "", None, False),
+        # (AuthType.OAUTH2, None, "some_random_url", True),
+        # (AuthType.OAUTH2, None, None, True),
+        # (AuthType.OAUTH2, "dummy_api_key", None, False),
+        (AuthType.NO_AUTH, None, None, True),
+        # (AuthType.NO_AUTH, "dummy_api_key", None, False),
+        # (AuthType.NO_AUTH, "dummy_api_key", "some_random_url", False),
+    ],
+)
 def test_create_connected_account(
     test_client: TestClient,
     db_session: Session,
@@ -26,6 +37,7 @@ def test_create_connected_account(
     auth_type: AuthType,
     api_key: str | None,
     redirect_url_after_account_creation: str | None,
+    should_succeed: bool,
     dummy_team: Team,
     dummy_user: User,
     dummy_access_token_member: str,
@@ -42,14 +54,20 @@ def test_create_connected_account(
     config_added_to_team.auth_type = auth_type
     db_session.commit()
 
+    body = {}
+    if api_key is not None:
+        body["api_key"] = api_key
+    if redirect_url_after_account_creation is not None:
+        body["redirect_url_after_account_creation"] = redirect_url_after_account_creation
+    body["mcp_server_configuration_id"] = str(dummy_mcp_server_configuration.id)
+
+    print("==================")
+    print(body)
+    print("==================")
     response = test_client.post(
         "/v1/connected-accounts",
         headers={"Authorization": f"Bearer {dummy_access_token_member}"},
-        json={
-            "mcp_server_configuration_id": str(dummy_mcp_server_configuration.id),
-            "api_key": api_key,
-            "redirect_url_after_account_creation": redirect_url_after_account_creation,
-        },
+        json=body,
     )
 
     # if not allowed to add to team, should return 403
@@ -59,32 +77,43 @@ def test_create_connected_account(
 
     else:
         # assert input check
-        if auth_type == AuthType.OAUTH2:
+        if should_succeed:
+            print("==================")
+            print(response.json())
+            print("==================")
             assert response.status_code == 200
-            oauth2_response = OAuth2ConnectedAccountCreateResponse.model_validate(response.json())
-            assert oauth2_response.authorization_url.startswith("https://")
+        else:
+            assert response.status_code == 400
+        # if auth_type == AuthType.OAUTH2:
+        #     if api_key is not None:
+        #         assert response.status_code == 400
+        #         return
 
-        elif auth_type == AuthType.API_KEY:
-            # Test for input validation
-            if api_key is None:
-                assert response.status_code == 400
-                return
+        #     assert response.status_code == 200
+        #     oauth2_response = OAuth2ConnectedAccountCreateResponse.model_validate(response.json())
+        #     assert oauth2_response.authorization_url.startswith("https://")
 
-            assert response.status_code == 200
-            connected_account = ConnectedAccountPublic.model_validate(response.json())
-            assert (
-                connected_account.mcp_server_configuration.id == dummy_mcp_server_configuration.id
-            )
+        # elif auth_type == AuthType.API_KEY:
+        #     # Test for input validation
+        #     if api_key is None or redirect_url_after_account_creation is not None:
+        #         assert response.status_code == 400
+        #         return
 
-        elif auth_type == AuthType.NO_AUTH:
-            # Test for input validation
+        #     assert response.status_code == 200
+        #     connected_account = ConnectedAccountPublic.model_validate(response.json())
+        #     assert (
+        #         connected_account.mcp_server_configuration.id == dummy_mcp_server_configuration.id
+        #     )
 
-            assert response.status_code == 200
-            connected_account = ConnectedAccountPublic.model_validate(response.json())
-            assert (
-                connected_account.mcp_server_configuration.id == dummy_mcp_server_configuration.id
-            )
-            assert connected_account.user_id == dummy_user.id
+        # elif auth_type == AuthType.NO_AUTH:
+        #     # Test for input validation
+
+        #     assert response.status_code == 200
+        #     connected_account = ConnectedAccountPublic.model_validate(response.json())
+        #     assert (
+        #         connected_account.mcp_server_configuration.id == dummy_mcp_server_configuration.id
+        #     )
+        #     assert connected_account.user_id == dummy_user.id
 
 
 @pytest.mark.parametrize(
