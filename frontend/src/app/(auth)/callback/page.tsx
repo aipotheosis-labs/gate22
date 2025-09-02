@@ -15,14 +15,6 @@ const ERROR_MESSAGES: Record<
   string,
   { message: string; redirectPath: string }
 > = {
-  "User already exists": {
-    message: "This email is already registered. Please try logging in instead.",
-    redirectPath: "/login",
-  },
-  "User not exists": {
-    message: "No account found with this email. Please sign up first.",
-    redirectPath: "/signup",
-  },
   user_already_exists: {
     message: "This email is already registered. Please try logging in instead.",
     redirectPath: "/login",

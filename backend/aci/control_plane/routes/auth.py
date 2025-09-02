@@ -116,7 +116,7 @@ async def google_callback(
         user = crud.users.get_user_by_email(db_session, google_userinfo.email)
         if user:
             return RedirectResponse(
-                _construct_error_url(oauth_info.post_oauth_redirect_uri, "User already exists"),
+                _construct_error_url(oauth_info.post_oauth_redirect_uri, "user_already_exists"),
                 status_code=status.HTTP_302_FOUND,
             )
 
@@ -135,7 +135,7 @@ async def google_callback(
         # User not found or deleted
         if not user or user.deleted_at:
             return RedirectResponse(
-                _construct_error_url(oauth_info.post_oauth_redirect_uri, "User not exists"),
+                _construct_error_url(oauth_info.post_oauth_redirect_uri, "user_not_found"),
                 status_code=status.HTTP_302_FOUND,
             )
 
