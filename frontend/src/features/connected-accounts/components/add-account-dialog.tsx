@@ -39,7 +39,7 @@ import { Plus, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-server-configurations";
+import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
 import { useCreateOAuth2ConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerConfigurationPublicBasic } from "@/features/mcp/types/mcp.types";
 
