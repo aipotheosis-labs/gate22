@@ -43,61 +43,73 @@ export async function throwApiError(
 ): Promise<never> {
   let errorMessage: string = defaultMessage;
 
+  // Read response body once as text
+  let responseText: string;
   try {
-    const errorData: unknown = await response.json();
+    responseText = await response.text();
+  } catch {
+    // If reading the body fails, use default message
+    throw new Error(errorMessage);
+  }
 
-    // Extract error message from various possible fields
-    if (typeof errorData === "string" && errorData.trim()) {
-      errorMessage = errorData;
-    } else if (errorData && typeof errorData === "object") {
-      const anyData = errorData as Record<string, unknown>;
+  // Only process if we have non-empty text
+  if (responseText && responseText.trim()) {
+    try {
+      // Try to parse as JSON
+      const errorData: unknown = JSON.parse(responseText);
 
-      // Check common error field names in order of preference
-      if (typeof anyData.error === "string" && anyData.error.trim()) {
-        errorMessage = anyData.error;
-      } else if (typeof anyData.detail === "string" && anyData.detail.trim()) {
-        errorMessage = anyData.detail;
-      } else if (
-        typeof anyData.message === "string" &&
-        anyData.message.trim()
-      ) {
-        errorMessage = anyData.message;
-      } else if (typeof anyData.msg === "string" && anyData.msg.trim()) {
-        errorMessage = anyData.msg;
-      } else if (typeof anyData.reason === "string" && anyData.reason.trim()) {
-        errorMessage = anyData.reason;
-      } else if (
-        typeof anyData.description === "string" &&
-        anyData.description.trim()
-      ) {
-        errorMessage = anyData.description;
-      }
+      // Extract error message from various possible fields
+      if (typeof errorData === "string" && errorData.trim()) {
+        errorMessage = errorData;
+      } else if (errorData && typeof errorData === "object") {
+        const anyData = errorData as Record<string, unknown>;
 
-      // Handle nested error objects
-      if (typeof anyData.error === "object" && anyData.error !== null) {
-        const nestedError = anyData.error as Record<string, unknown>;
-        if (
-          typeof nestedError.message === "string" &&
-          nestedError.message.trim()
-        ) {
-          errorMessage = nestedError.message;
+        // Check common error field names in order of preference
+        if (typeof anyData.error === "string" && anyData.error.trim()) {
+          errorMessage = anyData.error;
         } else if (
-          typeof nestedError.detail === "string" &&
-          nestedError.detail.trim()
+          typeof anyData.detail === "string" &&
+          anyData.detail.trim()
         ) {
-          errorMessage = nestedError.detail;
+          errorMessage = anyData.detail;
+        } else if (
+          typeof anyData.message === "string" &&
+          anyData.message.trim()
+        ) {
+          errorMessage = anyData.message;
+        } else if (typeof anyData.msg === "string" && anyData.msg.trim()) {
+          errorMessage = anyData.msg;
+        } else if (
+          typeof anyData.reason === "string" &&
+          anyData.reason.trim()
+        ) {
+          errorMessage = anyData.reason;
+        } else if (
+          typeof anyData.description === "string" &&
+          anyData.description.trim()
+        ) {
+          errorMessage = anyData.description;
+        }
+
+        // Handle nested error objects
+        if (typeof anyData.error === "object" && anyData.error !== null) {
+          const nestedError = anyData.error as Record<string, unknown>;
+          if (
+            typeof nestedError.message === "string" &&
+            nestedError.message.trim()
+          ) {
+            errorMessage = nestedError.message;
+          } else if (
+            typeof nestedError.detail === "string" &&
+            nestedError.detail.trim()
+          ) {
+            errorMessage = nestedError.detail;
+          }
         }
       }
-    }
-  } catch {
-    // If JSON parsing fails, try to get text
-    try {
-      const errorText = await response.text();
-      if (errorText.trim()) {
-        errorMessage = errorText;
-      }
     } catch {
-      // Use default message if all parsing fails
+      // JSON parsing failed, use the raw text as error message
+      errorMessage = responseText.trim();
     }
   }
 

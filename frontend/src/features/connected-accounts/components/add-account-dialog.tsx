@@ -35,12 +35,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import {
-  Plus,
-  ExternalLink,
-  Check,
-  ChevronsUpDown,
-} from "lucide-react";
+import { Plus, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
