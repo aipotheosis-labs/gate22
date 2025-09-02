@@ -7,7 +7,7 @@ export async function listTeams(
   orgId: string,
 ): Promise<Team[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/teams`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/organizations/${orgId}/teams`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -27,7 +27,7 @@ export async function getTeam(
 ): Promise<Team> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}`,
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/teams/${teamId}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -48,7 +48,7 @@ export async function createTeam(
   data: CreateTeamRequest,
 ): Promise<Team> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/teams`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/organizations/${orgId}/teams`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -71,7 +71,7 @@ export async function deleteTeam(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}`,
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/teams/${teamId}`,
     {
       method: "DELETE",
       headers: {
@@ -92,7 +92,7 @@ export async function listTeamMembers(
 ): Promise<TeamMember[]> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members`,
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/teams/${teamId}/members`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -115,7 +115,7 @@ export async function addTeamMember(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members/${userId}`,
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/teams/${teamId}/members/${userId}`,
     {
       method: "PUT",
       headers: {
@@ -137,7 +137,7 @@ export async function removeTeamMember(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/organizations/${orgId}/teams/${teamId}/members/${userId}`,
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/teams/${teamId}/members/${userId}`,
     {
       method: "DELETE",
       headers: {

@@ -14,9 +14,9 @@ import {
 } from "../types/mcp.types";
 
 const API_ENDPOINTS = {
-  SERVERS: "/v1/mcp-servers",
-  CONFIGURATIONS: "/v1/mcp-server-configurations",
-  TOOLS: "/v1/mcp-tools",
+  SERVERS: "/v1/control-plane/mcp-servers",
+  CONFIGURATIONS: "/v1/control-plane/mcp-server-configurations",
+  TOOLS: "/v1/control-plane/mcp-tools",
 };
 
 export const mcpService = {

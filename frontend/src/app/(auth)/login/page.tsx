@@ -15,7 +15,11 @@ export default function LoginPage() {
 
   const handleLogin = async (email: string, password: string) => {
     // Call the real login API (sets refresh token in cookie)
-    await login(email, password);
+    const success = await login(email, password);
+    
+    if (!success) {
+      return; // Error is already displayed as toast
+    }
 
     // Issue access token after successful login
     const tokenResponse = await issueToken();

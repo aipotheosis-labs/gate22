@@ -6,7 +6,7 @@ export async function getAllConnectedAccounts(
 ): Promise<ConnectedAccount[]> {
   const baseUrl = getApiBaseUrl();
   // Fetch with a large limit to get all accounts
-  const response = await fetch(`${baseUrl}/v1/connected-accounts?limit=100`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/connected-accounts?limit=100`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -38,7 +38,7 @@ export async function createOAuth2ConnectedAccount(
   accessToken: string,
 ): Promise<OAuth2ConnectedAccountResponse> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/connected-accounts`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/connected-accounts`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -72,7 +72,7 @@ export async function getAppConnectedAccounts(
 
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/connected-accounts?${params.toString()}`,
+    `${baseUrl}/v1/control-plane/connected-accounts?${params.toString()}`,
     {
       method: "GET",
     },
@@ -94,7 +94,7 @@ export async function createAPIConnectedAccount(
   connectedAPIKey: string,
 ): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/linked-accounts/api-key`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/linked-accounts/api-key`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export async function createNoAuthConnectedAccount(
   connectedAccountOwnerId: string,
 ): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/linked-accounts/no-auth`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/linked-accounts/no-auth`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -170,7 +170,7 @@ export async function getOauth2LinkURL(
 
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/linked-accounts/oauth2?${params.toString()}`,
+    `${baseUrl}/v1/control-plane/linked-accounts/oauth2?${params.toString()}`,
     {
       method: "GET",
       headers: {
@@ -205,7 +205,7 @@ export async function deleteConnectedAccount(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/connected-accounts/${connectedAccountId}`,
+    `${baseUrl}/v1/control-plane/connected-accounts/${connectedAccountId}`,
     {
       method: "DELETE",
       headers: {
@@ -227,7 +227,7 @@ export async function updateConnectedAccount(
 ): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/linked-accounts/${connectedAccountId}`,
+    `${baseUrl}/v1/control-plane/linked-accounts/${connectedAccountId}`,
     {
       method: "PATCH",
       headers: {

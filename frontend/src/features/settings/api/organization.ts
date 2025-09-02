@@ -7,7 +7,7 @@ export async function listOrganizationUsers(
   orgId: string,
 ): Promise<OrganizationUser[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/members`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/organizations/${orgId}/members`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -45,7 +45,7 @@ export async function inviteToOrganization(
   role: string,
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/organizations/${orgId}/invite`, {
+  const response = await fetch(`${baseUrl}/v1/control-plane/organizations/${orgId}/invite`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -66,7 +66,7 @@ export async function removeUser(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/organizations/${orgId}/members/${userId}`,
+    `${baseUrl}/v1/control-plane/organizations/${orgId}/members/${userId}`,
     {
       method: "DELETE",
       headers: {

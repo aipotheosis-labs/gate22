@@ -70,7 +70,7 @@ export function AddTeamMemberDialog({
     queryFn: async () => {
       const baseUrl = getApiBaseUrl();
       const response = await fetch(
-        `${baseUrl}/v1/organizations/${activeOrg.orgId}/members`,
+        `${baseUrl}/v1/control-plane/organizations/${activeOrg.orgId}/members`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -91,7 +91,7 @@ export function AddTeamMemberDialog({
     queryFn: async () => {
       const baseUrl = getApiBaseUrl();
       const response = await fetch(
-        `${baseUrl}/v1/organizations/${activeOrg.orgId}/teams/${teamId}/members`,
+        `${baseUrl}/v1/control-plane/organizations/${activeOrg.orgId}/teams/${teamId}/members`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,

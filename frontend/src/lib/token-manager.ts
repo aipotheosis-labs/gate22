@@ -102,7 +102,7 @@ class TokenManager {
     try {
       console.log("Refreshing access token");
 
-      const response = await fetch(`${baseUrl}/v1/auth/token`, {
+      const response = await fetch(`${baseUrl}/v1/control-plane/auth/token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

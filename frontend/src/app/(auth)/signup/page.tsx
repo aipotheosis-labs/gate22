@@ -24,11 +24,15 @@ export default function SignupPage() {
     name: string,
   ) => {
     // Call the real registration API (sets refresh token in cookie)
-    await register({
+    const success = await register({
       name,
       email,
       password,
     });
+    
+    if (!success) {
+      return; // Error is already displayed as toast
+    }
 
     // Issue access token after successful registration
     const tokenResponse = await issueToken();

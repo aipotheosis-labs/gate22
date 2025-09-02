@@ -10,6 +10,26 @@ import { AlertCircle, ArrowLeft } from "lucide-react";
 import { issueToken, getProfile } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
+// Error code mapping to user-friendly messages
+const ERROR_MESSAGES: Record<string, { message: string; redirectPath: string }> = {
+  user_already_exists: {
+    message: "This email is already registered. Please try logging in instead.",
+    redirectPath: "/login",
+  },
+  user_not_found: {
+    message: "No account found with this email. Please sign up first.",
+    redirectPath: "/signup",
+  },
+  email_already_exists: {
+    message: "This email is already registered. Please try logging in instead.",
+    redirectPath: "/login",
+  },
+  oauth_error: {
+    message: "Authentication failed. Please try again.",
+    redirectPath: "/login",
+  },
+};
+
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,29 +43,20 @@ function CallbackContent() {
       const errorParam = searchParams.get("error");
 
       if (errorParam) {
-        // Handle specific error cases from backend
-        let displayMessage = "An error occurred during sign in.";
+        // Map error code to user-friendly message
+        const errorInfo = ERROR_MESSAGES[errorParam];
         let path = "/login";
-
-        if (errorParam === "User already exists") {
-          displayMessage =
-            "This email is already registered. Please try logging in instead.";
-          path = "/login";
-        } else if (errorParam === "User does not exist") {
-          displayMessage =
-            "No account found with this email. Please sign up first.";
-          path = "/signup";
-        } else if (errorParam === "oauth_error") {
-          displayMessage = "Authentication failed. Please try again.";
-          path = "/login";
+        
+        if (errorInfo) {
+          setError(errorInfo.message);
+          path = errorInfo.redirectPath;
+          setRedirectPath(path);
         } else {
-          // Handle any other error message passed from backend
-          displayMessage = errorParam;
-          path = "/login";
+          // Fallback for unknown error codes
+          setError("An error occurred during sign in. Please try again.");
+          setRedirectPath(path);
         }
 
-        setError(displayMessage);
-        setRedirectPath(path);
         setTimeout(() => {
           router.push(path);
         }, 3000);
@@ -83,30 +94,26 @@ function CallbackContent() {
         console.error("OAuth callback error:", error);
 
         // Parse error message for better user feedback
-        let errorMessage = "Failed to complete sign in.";
-
+        let errorMessage = "Failed to complete sign in. Please try again.";
         let path = "/login";
+
         if (
           error &&
           typeof error === "object" &&
           "message" in error &&
           typeof error.message === "string"
         ) {
-          const message = error.message.toLowerCase();
-          if (message.includes("email already")) {
-            errorMessage =
-              "This email is already registered. Please try logging in instead.";
-            path = "/login";
-          } else if (
-            message.includes("user not exists") ||
-            message.includes("not found")
-          ) {
-            errorMessage =
-              "No account found with this email. Please sign up first.";
-            path = "/signup";
-          } else {
-            errorMessage = "Failed to complete sign in. Please try again.";
-            path = "/login";
+          // Check if the error message contains any of our error codes
+          const errorCode = error.message.toLowerCase();
+          
+          if (errorCode.includes("email_already_exists") || errorCode.includes("user_already_exists")) {
+            const errorInfo = ERROR_MESSAGES.email_already_exists;
+            errorMessage = errorInfo.message;
+            path = errorInfo.redirectPath;
+          } else if (errorCode.includes("user_not_found")) {
+            const errorInfo = ERROR_MESSAGES.user_not_found;
+            errorMessage = errorInfo.message;
+            path = errorInfo.redirectPath;
           }
         }
 

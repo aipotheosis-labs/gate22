@@ -28,7 +28,7 @@ export function useMCPServerBundles() {
     queryKey: ["mcp-server-bundles"],
     queryFn: async () => {
       const response = await fetch(
-        `${getApiBaseUrl()}/v1/mcp-server-bundles?limit=100`,
+        `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles?limit=100`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -58,7 +58,7 @@ export function useCreateMCPServerBundle() {
 
       try {
         const response = await fetch(
-          `${getApiBaseUrl()}/v1/mcp-server-bundles`,
+          `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles`,
           {
             method: "POST",
             headers: {
@@ -106,7 +106,7 @@ export function useDeleteMCPServerBundle() {
 
       try {
         const response = await fetch(
-          `${getApiBaseUrl()}/v1/mcp-server-bundles/${bundleId}`,
+          `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles/${bundleId}`,
           {
             method: "DELETE",
             headers: {
@@ -160,7 +160,7 @@ export function useMCPServerBundle(bundleId: string) {
     queryKey: ["mcp-server-bundles", bundleId],
     queryFn: async () => {
       const response = await fetch(
-        `${getApiBaseUrl()}/v1/mcp-server-bundles/${bundleId}`,
+        `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles/${bundleId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
