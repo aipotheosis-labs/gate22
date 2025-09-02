@@ -53,6 +53,28 @@ services:
       db:
         condition: service_healthy
 
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    healthcheck:
+      test: ["CMD-SHELL", "curl localhost:8001/gateway/mcp/health"]
+      interval: 10s
+      retries: 5
+      start_period: 3s
+      timeout: 10s
+    env_file:
+      - .env.local
+    volumes:
+      - ./aci/mcp:/workdir/aci/mcp
+      - ./aci/common:/workdir/aci/common
+    ports:
+      - "8001:8001"
+    command: uvicorn aci.mcp.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8001 --no-access-log
+    depends_on:
+      db:
+        condition: service_healthy
+
 
   # can think of runner as an staging host for executing any commands
   # e.g., run cli commands and scripts such as seed db etc.
