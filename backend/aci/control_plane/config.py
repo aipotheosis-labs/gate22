@@ -13,16 +13,16 @@ REDIRECT_URI_BASE = check_and_get_env_variable("CONTROL_PLANE_REDIRECT_URI_BASE"
 LOG_LEVEL = check_and_get_env_variable("CONTROL_PLANE_LOG_LEVEL", default="INFO")
 
 # ROUTERS
-ROUTER_PREFIX_HEALTH = "/v1/health"
-ROUTER_PREFIX_AUTH = "/v1/auth"
-ROUTER_PREFIX_ORGANIZATIONS = "/v1/organizations"
-ROUTER_PREFIX_USERS = "/v1/users"
-ROUTER_PREFIX_MCP_SERVERS = "/v1/mcp-servers"
-ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/v1/mcp-server-configurations"
-ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/v1/connected-accounts"
-ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/v1/mcp-server-bundles"
-ROUTER_PREFIX_MCP_TOOLS = "/v1/mcp-tools"
-ROUTER_PREFIX_MCP = "/v1/mcp"
+ROUTER_PREFIX_HEALTH = "/health"
+ROUTER_PREFIX_AUTH = "/auth"
+ROUTER_PREFIX_ORGANIZATIONS = "/organizations"
+ROUTER_PREFIX_USERS = "/users"
+ROUTER_PREFIX_MCP_SERVERS = "/mcp-servers"
+ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/mcp-server-configurations"
+ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/connected-accounts"
+ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/mcp-server-bundles"
+ROUTER_PREFIX_MCP_TOOLS = "/mcp-tools"
+ROUTER_PREFIX_MCP = "/mcp"
 
 # Frontend
 FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")
