@@ -34,6 +34,10 @@ class RequestContext:
     act_as: ActAsInfo
 
 
+# TODO: should we rollback in caught exceptions?
+# except Exception:
+#    db_session.rollback()
+#    raise
 def yield_db_session() -> Generator[Session, None, None]:
     db_session = utils.create_db_session(config.DB_FULL_URL)
     try:

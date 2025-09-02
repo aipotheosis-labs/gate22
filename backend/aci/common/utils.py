@@ -20,6 +20,10 @@ def check_and_get_env_variable(name: str, default: str | None = None) -> str:
     return value
 
 
+# TODO: from coderabbit review: construct_db_url doesn not escape special chars in user/password
+# (e.g., @:/). This will break connections.
+# from urllib.parse import quote_plus
+# return f"{scheme}://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{db_name}"
 def construct_db_url(
     scheme: str, user: str, password: str, host: str, port: str, db_name: str
 ) -> str:
