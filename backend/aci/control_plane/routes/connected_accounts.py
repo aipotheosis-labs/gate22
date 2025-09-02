@@ -4,6 +4,7 @@ from uuid import UUID
 from authlib.jose import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from aci.common import auth_credentials_manager as acm
@@ -13,12 +14,15 @@ from aci.common.enums import AuthType, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.connected_account import (
+    ConnectedAccountAPIKeyCreate,
     ConnectedAccountCreate,
+    ConnectedAccountNoAuthCreate,
+    ConnectedAccountOAuth2Create,
     ConnectedAccountOAuth2CreateState,
     ConnectedAccountPublic,
     OAuth2ConnectedAccountCreateResponse,
 )
-from aci.common.schemas.mcp_auth import APIKeyCredentials, AuthCredentials, NoAuthCredentials
+from aci.common.schemas.mcp_auth import APIKeyCredentials, NoAuthCredentials
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import config, rbac, schema_utils
 from aci.control_plane import dependencies as deps
@@ -40,7 +44,7 @@ async def create_connected_account(
     body: ConnectedAccountCreate,
 ) -> OAuth2ConnectedAccountCreateResponse | ConnectedAccountPublic:
     mcp_server_config = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
-        context.db_session, body.mcp_server_configuration_id, throw_error_if_not_found=False
+        context.db_session, body.root.mcp_server_configuration_id, throw_error_if_not_found=False
     )
 
     if not mcp_server_config:
@@ -56,9 +60,22 @@ async def create_connected_account(
     )
 
     if mcp_server_config.auth_type == AuthType.OAUTH2:
-        return await _create_oauth2_connected_account(
-            request, context, mcp_server_config, body.redirect_url_after_account_creation
-        )
+        try:
+            oauth2_create = ConnectedAccountOAuth2Create.model_validate(
+                body.root, from_attributes=True
+            )
+            return await _create_oauth2_connected_account(
+                request,
+                context,
+                mcp_server_config,
+                oauth2_create.redirect_url_after_account_creation,
+            )
+        except ValidationError as e:
+            logger.error(f"Invalid input for OAuth2 connected account creation: {e}")
+            raise HTTPException(
+                status_code=400, detail="Invalid input for OAuth2 connected account creation"
+            ) from e
+
     else:
         connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
             context.db_session,
@@ -66,18 +83,33 @@ async def create_connected_account(
             mcp_server_config.id,
         )
 
-        auth_credentials: AuthCredentials
+        auth_credentials: APIKeyCredentials | NoAuthCredentials
         if mcp_server_config.auth_type == AuthType.NO_AUTH:
-            auth_credentials = AuthCredentials.model_validate(
-                NoAuthCredentials(type=AuthType.NO_AUTH)
-            )
-        elif mcp_server_config.auth_type == AuthType.API_KEY:
-            if not body.api_key:
-                raise HTTPException(status_code=400, detail="API key is required")
+            try:
+                _ = ConnectedAccountNoAuthCreate.model_validate(body.root, from_attributes=True)
+            except ValidationError as e:
+                logger.error(f"Invalid input for NoAuth type connected account {e}")
+                raise HTTPException(
+                    status_code=400, detail="Invalid input for NoAuth connected account creation"
+                ) from e
 
-            auth_credentials = AuthCredentials.model_validate(
-                APIKeyCredentials(type=AuthType.API_KEY, secret_key=body.api_key)
+            auth_credentials = NoAuthCredentials(type=AuthType.NO_AUTH)
+
+        elif mcp_server_config.auth_type == AuthType.API_KEY:
+            try:
+                api_key_create = ConnectedAccountAPIKeyCreate.model_validate(
+                    body.root, from_attributes=True
+                )
+            except ValidationError as e:
+                logger.error(f"Invalid input for APIKey type connected account {e}")
+                raise HTTPException(
+                    status_code=400, detail="Invalid input for APIKey connected account creation"
+                ) from e
+
+            auth_credentials = APIKeyCredentials(
+                type=AuthType.API_KEY, secret_key=api_key_create.api_key
             )
+
         else:
             raise HTTPException(status_code=400, detail="Unsupported auth type")
 

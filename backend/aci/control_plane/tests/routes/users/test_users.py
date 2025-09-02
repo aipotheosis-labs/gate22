@@ -61,6 +61,5 @@ def test_get_profile_non_existence_user(
     response = test_client.get(
         "/v1/users/me/profile", headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"}
     )
-    print(response.json())
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}
