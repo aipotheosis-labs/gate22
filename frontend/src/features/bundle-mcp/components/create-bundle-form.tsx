@@ -19,7 +19,7 @@ import { CreateMCPServerBundleInput } from "@/features/bundle-mcp/types/bundle-m
 
 interface CreateBundleFormProps {
   title: string;
-  availableConfigurations: Array<{ id: string; name: string }>;
+  availableConfigurations: Array<{ id: string; name: string; icon?: string }>;
   onSubmit: (values: CreateMCPServerBundleInput) => Promise<void>;
   children: React.ReactNode;
 }
@@ -70,6 +70,7 @@ export function CreateBundleForm({
   const multiSelectOptions = availableConfigurations.map((config) => ({
     value: config.id,
     label: config.name,
+    icon: config.icon,
   }));
 
   return (

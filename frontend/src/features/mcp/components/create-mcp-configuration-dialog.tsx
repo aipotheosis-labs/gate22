@@ -47,7 +47,7 @@ export function CreateMCPConfigurationDialog() {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
 
-  const { data: serversResponse } = useMCPServers();
+  const { data: serversResponse } = useMCPServers({ limit: 100 });
   const { data: selectedServer } = useMCPServer(selectedServerId);
   const { data: teams } = useTeams();
   const createConfiguration = useCreateMCPServerConfiguration();

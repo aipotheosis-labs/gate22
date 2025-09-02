@@ -42,7 +42,7 @@ export const mcpService = {
         {
           params: {
             offset: params?.offset?.toString() || "0",
-            limit: params?.limit?.toString() || "10",
+            limit: params?.limit?.toString() || "100",
           },
         },
       );
@@ -88,7 +88,7 @@ export const mcpService = {
       >(token)(API_ENDPOINTS.CONFIGURATIONS, {
         params: {
           offset: params?.offset?.toString() || "0",
-          limit: params?.limit?.toString() || "10",
+          limit: params?.limit?.toString() || "100",
         },
       });
     },

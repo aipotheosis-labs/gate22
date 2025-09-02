@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 export interface MultiSelectOption {
   value: string;
   label: string;
+  icon?: string;
 }
 
 interface MultiSelectProps {
@@ -82,9 +84,19 @@ export function MultiSelect({
                   <Badge
                     key={value}
                     variant="secondary"
-                    className="mr-1 mb-1"
+                    className="mr-1 mb-1 flex items-center gap-1"
                     onClick={(e) => handleRemove(value, e)}
                   >
+                    {option.icon && (
+                      <div className="relative h-3 w-3 shrink-0">
+                        <Image
+                          src={option.icon}
+                          alt=""
+                          fill
+                          className="object-contain rounded-sm"
+                        />
+                      </div>
+                    )}
                     {option.label}
                     <X className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" />
                   </Badge>
@@ -110,7 +122,19 @@ export function MultiSelect({
                   onSelect={() => handleSelect(option.value)}
                   className="cursor-pointer flex items-center justify-between"
                 >
-                  <span>{option.label}</span>
+                  <div className="flex items-center gap-2">
+                    {option.icon && (
+                      <div className="relative h-4 w-4 shrink-0">
+                        <Image
+                          src={option.icon}
+                          alt=""
+                          fill
+                          className="object-contain rounded-sm"
+                        />
+                      </div>
+                    )}
+                    <span>{option.label}</span>
+                  </div>
                   <Check
                     className={cn(
                       "ml-2 h-4 w-4",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -14,12 +14,18 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -29,9 +35,15 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Plus, ExternalLink, Server } from "lucide-react";
+import {
+  Plus,
+  ExternalLink,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-server-configurations";
 import { useCreateOAuth2ConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerConfigurationPublicBasic } from "@/features/mcp/types/mcp.types";
@@ -50,13 +62,14 @@ interface AddAccountDialogProps {
 
 export function AddAccountDialog({}: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
   const [selectedConfig, setSelectedConfig] =
     useState<MCPServerConfigurationPublicBasic | null>(null);
 
   const {
     data: mcpConfigurationsResponse,
     isLoading: isLoadingConfigurations,
-  } = useMCPServerConfigurations();
+  } = useMCPServerConfigurations({ limit: 100 });
   const { mutateAsync: createOAuth2Account, isPending: isCreating } =
     useCreateOAuth2ConnectedAccount();
 
@@ -93,17 +106,6 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
     }
   };
 
-  // Update selected config when selection changes
-  const watchedConfigId = form.watch("mcpServerConfigurationId");
-  useEffect(() => {
-    if (watchedConfigId && mcpConfigurations.length > 0) {
-      const config = mcpConfigurations.find(
-        (c: MCPServerConfigurationPublicBasic) => c.id === watchedConfigId,
-      );
-      setSelectedConfig(config || null);
-    }
-  }, [watchedConfigId, mcpConfigurations, form]);
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -125,73 +127,94 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
               control={form.control}
               name="mcpServerConfigurationId"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>MCP Server Configuration</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoadingConfigurations}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select an MCP server configuration">
-                          {selectedConfig && (
+                  <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={comboboxOpen}
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground",
+                          )}
+                          disabled={isLoadingConfigurations}
+                        >
+                          {selectedConfig ? (
                             <div className="flex items-center gap-2">
-                              <div className="relative h-5 w-5 shrink-0 flex items-center justify-center">
-                                {selectedConfig.mcp_server?.logo ? (
+                              {selectedConfig.mcp_server?.logo && (
+                                <div className="relative h-4 w-4 shrink-0">
                                   <Image
                                     src={selectedConfig.mcp_server.logo}
-                                    alt={`${selectedConfig.mcp_server.name} logo`}
-                                    width={20}
-                                    height={20}
-                                    className="object-contain"
+                                    alt=""
+                                    fill
+                                    className="object-contain rounded-sm"
                                   />
-                                ) : (
-                                  <Server className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </div>
-                              <span className="font-medium">
+                                </div>
+                              )}
+                              <span>
                                 {selectedConfig.name || "Unknown Configuration"}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                (
-                                {selectedConfig.mcp_server?.name ||
-                                  "Unknown Server"}
-                                )
-                              </span>
                             </div>
+                          ) : (
+                            "Select configuration..."
                           )}
-                        </SelectValue>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {mcpConfigurations?.map((config) => (
-                        <SelectItem key={config.id} value={config.id}>
-                          <div className="flex items-center gap-2 w-full">
-                            <div className="relative h-5 w-5 shrink-0 flex items-center justify-center">
-                              {config.mcp_server?.logo ? (
-                                <Image
-                                  src={config.mcp_server.logo}
-                                  alt={`${config.mcp_server.name} logo`}
-                                  width={20}
-                                  height={20}
-                                  className="object-contain"
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput
+                          placeholder="Search configurations..."
+                          className="h-9"
+                        />
+                        <CommandList>
+                          <CommandEmpty>No configuration found.</CommandEmpty>
+                          <CommandGroup>
+                            {mcpConfigurations?.map((config) => (
+                              <CommandItem
+                                key={config.id}
+                                value={config.name || config.id}
+                                onSelect={() => {
+                                  field.onChange(config.id);
+                                  setSelectedConfig(config);
+                                  setComboboxOpen(false);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 flex-1">
+                                  {config.mcp_server?.logo && (
+                                    <div className="relative h-4 w-4 shrink-0">
+                                      <Image
+                                        src={config.mcp_server.logo}
+                                        alt=""
+                                        fill
+                                        className="object-contain rounded-sm"
+                                      />
+                                    </div>
+                                  )}
+                                  <span>
+                                    {config.name || "Unknown Configuration"}
+                                  </span>
+                                </div>
+                                <Check
+                                  className={cn(
+                                    "ml-auto h-4 w-4",
+                                    field.value === config.id
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
                                 />
-                              ) : (
-                                <Server className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </div>
-                            <span className="font-medium">
-                              {config.name || "Unknown Configuration"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              ({config.mcp_server?.name || "Unknown Server"})
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormDescription>
                     Select the MCP server configuration to link your account
                     with. You will be redirected to authenticate with the

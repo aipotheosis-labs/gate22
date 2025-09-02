@@ -42,7 +42,7 @@ export default function BundleMCPPage() {
   const { data: bundles = [], isLoading: isBundlesLoading } =
     useMCPServerBundles();
   const { data: configurationsData, isLoading: isConfigsLoading } =
-    useMCPServerConfigurations();
+    useMCPServerConfigurations({ limit: 100 });
   const configurations = configurationsData?.data || [];
 
   const { mutateAsync: createBundleMutation } = useCreateMCPServerBundle();
@@ -236,6 +236,7 @@ export default function BundleMCPPage() {
           availableConfigurations={configurations.map((config) => ({
             id: config.id,
             name: config.name,
+            icon: config.mcp_server?.logo || undefined,
           }))}
           onSubmit={async (values) => {
             await createBundleMutation(values);
@@ -279,6 +280,7 @@ export default function BundleMCPPage() {
                   availableConfigurations={configurations.map((config) => ({
                     id: config.id,
                     name: config.name,
+                    icon: config.mcp_server?.logo || undefined,
                   }))}
                   onSubmit={async (values) => {
                     await createBundleMutation(values);

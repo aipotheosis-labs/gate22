@@ -28,7 +28,7 @@ export default function MCPServersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [page, setPage] = useState(0);
-  const pageSize = 12;
+  const pageSize = 100;
 
   // Fetch MCP servers using the new hook
   const {

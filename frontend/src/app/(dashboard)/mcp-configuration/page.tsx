@@ -37,7 +37,7 @@ const columnHelper = createColumnHelper<MCPServerConfigurationPublicBasic>();
 export default function MCPConfigurationPage() {
   const router = useRouter();
   const { data: configurationsResponse, isLoading } =
-    useMCPServerConfigurations();
+    useMCPServerConfigurations({ limit: 100 });
   const deleteConfiguration = useDeleteMCPServerConfiguration();
 
   const handleDelete = useCallback(
@@ -56,6 +56,24 @@ export default function MCPConfigurationPage() {
   const columns: ColumnDef<MCPServerConfigurationPublicBasic>[] =
     useMemo(() => {
       return [
+        columnHelper.accessor("id", {
+          id: "configuration_id",
+          header: () => (
+            <div className="flex items-center justify-start">
+              <span className="text-left font-normal">CONFIGURATION ID</span>
+            </div>
+          ),
+          cell: (info) => {
+            const id = info.getValue();
+            return (
+              <div className="font-mono text-xs text-muted-foreground">
+                {id}
+              </div>
+            );
+          },
+          enableGlobalFilter: true,
+        }),
+
         columnHelper.accessor("name", {
           id: "configuration_name",
           header: () => (
@@ -74,24 +92,6 @@ export default function MCPConfigurationPage() {
                     {description}
                   </div>
                 )}
-              </div>
-            );
-          },
-          enableGlobalFilter: true,
-        }),
-
-        columnHelper.accessor("id", {
-          id: "configuration_id",
-          header: () => (
-            <div className="flex items-center justify-start">
-              <span className="text-left font-normal">CONFIGURATION ID</span>
-            </div>
-          ),
-          cell: (info) => {
-            const id = info.getValue();
-            return (
-              <div className="font-mono text-xs text-muted-foreground">
-                {id}
               </div>
             );
           },
