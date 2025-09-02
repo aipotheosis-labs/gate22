@@ -7,6 +7,7 @@ from aci.common.db.sql_models import MCPServer, MCPServerConfiguration, Team
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.pagination import PaginationResponse
+from aci.control_plane import config
 
 logger = get_logger(__name__)
 
@@ -48,7 +49,7 @@ def test_list_mcp_server_configurations(
         params["offset"] = offset
 
     response = test_client.get(
-        "/v1/mcp-server-configurations",
+        config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS,
         headers={"Authorization": f"Bearer {access_token}"},
         params=params,
     )
@@ -126,7 +127,7 @@ def test_get_mcp_server_configuration(
     db_session.commit()
 
     response = test_client.get(
-        f"/v1/mcp-server-configurations/{dummy_mcp_server_configuration.id}",
+        f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}/{dummy_mcp_server_configuration.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -194,7 +195,7 @@ def test_delete_mcp_server_configuration(
     db_session.commit()
 
     response = test_client.delete(
-        f"/v1/mcp-server-configurations/{dummy_mcp_server_configuration.id}",
+        f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}/{dummy_mcp_server_configuration.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import User
 from aci.common.schemas.user import UserInfo
+from aci.control_plane import config
 
 
 @pytest.mark.parametrize(
@@ -24,7 +25,8 @@ def test_get_profile(
     access_token = request.getfixturevalue(access_token_fixture)
 
     response = test_client.get(
-        "/v1/users/me/profile", headers={"Authorization": f"Bearer {access_token}"}
+        f"{config.ROUTER_PREFIX_USERS}/me/profile",
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
     userinfo = UserInfo.model_validate(response.json())
@@ -59,7 +61,8 @@ def test_get_profile_non_existence_user(
     db_session.commit()
 
     response = test_client.get(
-        "/v1/users/me/profile", headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"}
+        f"{config.ROUTER_PREFIX_USERS}/me/profile",
+        headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"},
     )
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}

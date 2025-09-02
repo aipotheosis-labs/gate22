@@ -11,6 +11,7 @@ from aci.common.schemas.organization import (
     TeamInfo,
     TeamMembershipInfo,
 )
+from aci.control_plane import config
 
 logger = get_logger(__name__)
 
@@ -42,7 +43,7 @@ def test_create_team(
     )
 
     response = test_client.post(
-        f"/v1/organizations/{dummy_organization.id}/teams",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/teams",
         json=test_input.model_dump(mode="json"),
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -99,7 +100,7 @@ def test_list_teams(
         db_session.commit()
 
     response = test_client.get(
-        f"/v1/organizations/{dummy_organization.id}/teams",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/teams",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -159,7 +160,7 @@ def test_list_team_members(
     db_session.commit()
 
     response = test_client.get(
-        f"/v1/organizations/{dummy_organization.id}/teams/{dummy_team.id}/members",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/teams/{dummy_team.id}/members",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -218,7 +219,7 @@ def test_add_team_member(
     db_session.commit()
 
     response = test_client.put(
-        f"/v1/organizations/{dummy_organization.id}/teams/{dummy_team.id}/members/{new_user.id}",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/teams/{dummy_team.id}/members/{new_user.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -302,7 +303,7 @@ def test_remove_team_member(
     db_session.commit()
 
     response = test_client.delete(
-        f"/v1/organizations/{dummy_organization.id}/teams/{dummy_team.id}/members/{target_user.id}",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/teams/{dummy_team.id}/members/{target_user.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 

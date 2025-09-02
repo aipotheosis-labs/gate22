@@ -10,6 +10,7 @@ from aci.common.schemas.connected_account import (
     ConnectedAccountPublic,
 )
 from aci.common.schemas.pagination import PaginationResponse
+from aci.control_plane import config
 
 logger = get_logger(__name__)
 
@@ -105,7 +106,7 @@ def test_list_connected_accounts(
         params["offset"] = offset
 
     response = test_client.get(
-        "/v1/connected-accounts",
+        config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
         headers={"Authorization": f"Bearer {access_token}"},
         params=params,
     )
@@ -182,7 +183,7 @@ def test_delete_connected_account(
     db_session.commit()
 
     response = test_client.delete(
-        f"/v1/connected-accounts/{target_connected_account.id}",
+        f"{config.ROUTER_PREFIX_CONNECTED_ACCOUNTS}/{target_connected_account.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 

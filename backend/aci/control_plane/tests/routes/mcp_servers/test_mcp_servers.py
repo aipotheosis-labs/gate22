@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server import MCPServerPublic
 from aci.common.schemas.pagination import PaginationResponse
+from aci.control_plane import config
 
 logger = get_logger(__name__)
 
@@ -22,7 +23,7 @@ def test_list_mcp_servers(
         params["offset"] = offset
 
     response = test_client.get(
-        "/v1/mcp-servers",
+        config.ROUTER_PREFIX_MCP_SERVERS,
         params=params,
         headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"},
     )

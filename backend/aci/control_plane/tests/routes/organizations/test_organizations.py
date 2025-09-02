@@ -12,6 +12,7 @@ from aci.common.schemas.organization import (
     OrganizationMembershipInfo,
     UpdateOrganizationMemberRoleRequest,
 )
+from aci.control_plane import config
 
 logger = get_logger(__name__)
 
@@ -28,7 +29,7 @@ def test_create_organization(
     )
 
     response = test_client.post(
-        "/v1/organizations",
+        config.ROUTER_PREFIX_ORGANIZATIONS,
         json=test_input.model_dump(mode="json"),
         headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"},
     )
@@ -68,7 +69,7 @@ def test_create_organization_with_existing_name(
 
     # Try to create a organization with the same name
     response = test_client.post(
-        "/v1/organizations",
+        config.ROUTER_PREFIX_ORGANIZATIONS,
         json=test_input.model_dump(mode="json"),
         headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"},
     )
@@ -97,7 +98,7 @@ def test_list_organization_members(
     access_token = request.getfixturevalue(access_token_fixture)
 
     response = test_client.get(
-        f"/v1/organizations/{dummy_organization.id}/members",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/members",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -129,7 +130,7 @@ def test_list_organization_members(
     db_session.commit()
 
     response = test_client.get(
-        f"/v1/organizations/{dummy_organization.id}/members",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/members",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     organization_members = [
@@ -185,7 +186,7 @@ def test_remove_organization_member(
 
     # Test removing the new member
     response = test_client.delete(
-        f"/v1/organizations/{dummy_organization.id}/members/{new_member.id}",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/members/{new_member.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -258,7 +259,7 @@ def test_leave_organization(
 
     # Test leaving the organization
     response = test_client.delete(
-        f"/v1/organizations/{dummy_organization.id}/members/{dummy_user.id}",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/members/{dummy_user.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
@@ -326,7 +327,7 @@ def test_update_organization_member_role(
     input_body = UpdateOrganizationMemberRoleRequest(role=target_role)
 
     response = test_client.patch(
-        f"/v1/organizations/{dummy_organization.id}/members/{target_user.id}",
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/members/{target_user.id}",
         headers={"Authorization": f"Bearer {access_token}"},
         json=input_body.model_dump(mode="json"),
     )

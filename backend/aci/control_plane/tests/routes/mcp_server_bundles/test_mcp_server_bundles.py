@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from aci.common.db.sql_models import MCPServerBundle, User
 from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
 from aci.common.schemas.pagination import PaginationResponse
+from aci.control_plane import config
 
 
 @pytest.mark.parametrize(
@@ -32,7 +33,7 @@ def test_list_mcp_server_bundles(
         params["offset"] = offset
 
     response = test_client.get(
-        "/v1/mcp-server-bundles",
+        config.ROUTER_PREFIX_MCP_SERVER_BUNDLES,
         headers={"Authorization": f"Bearer {access_token}"},
         params=params,
     )
@@ -106,7 +107,7 @@ def test_get_mcp_server_bundle(
     db_session.commit()
 
     response = test_client.get(
-        f"/v1/mcp-server-bundles/{target_mcp_server_bundle.id}",
+        f"{config.ROUTER_PREFIX_MCP_SERVER_BUNDLES}/{target_mcp_server_bundle.id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
 
