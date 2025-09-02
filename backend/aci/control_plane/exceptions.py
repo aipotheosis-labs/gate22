@@ -94,33 +94,3 @@ class UnexpectedError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
-
-class MCPToolNotFound(ControlPlaneException):
-    """
-    Exception raised when an mcp tool is not found
-    """
-
-    def __init__(self, name: str):
-        super().__init__(title="MCP tool not found", message=f"MCP tool {name} not found")
-
-
-class MCPServerNotConfigured(ControlPlaneException):
-    """
-    Exception raised when an mcp server is not configured
-    """
-
-    def __init__(self, mcp_server_name: str):
-        super().__init__(
-            title="MCP server not configured",
-            message=f"MCP server {mcp_server_name} not configured",
-        )
-
-
-class MCPToolNotEnabled(ControlPlaneException):
-    """
-    Exception raised when an mcp tool is not enabled in the mcp server configuration
-    """
-
-    def __init__(self, tool_name: str):
-        super().__init__(title="MCP tool not enabled", message=f"MCP tool {tool_name} not enabled")

@@ -24,7 +24,6 @@ from aci.control_plane.routes import (
     organizations,
     users,
 )
-from aci.control_plane.routes.mcp import route
 
 if config.ENVIRONMENT == "local":
     formatter = None
@@ -132,10 +131,4 @@ app.include_router(
     mcp_tools.router,
     prefix=config.ROUTER_PREFIX_MCP_TOOLS,
     tags=[config.ROUTER_PREFIX_MCP_TOOLS.split("/")[-1]],
-)
-
-app.include_router(
-    route.router,
-    prefix=config.ROUTER_PREFIX_MCP,
-    tags=[config.ROUTER_PREFIX_MCP.split("/")[-1]],
 )
