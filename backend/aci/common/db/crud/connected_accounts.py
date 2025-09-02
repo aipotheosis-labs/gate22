@@ -40,6 +40,17 @@ def get_connected_account_by_user_id_and_mcp_server_configuration_id(
     return connected_account
 
 
+def get_connected_accounts_by_mcp_server_configuration_id(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+) -> list[ConnectedAccount]:
+    statement = select(ConnectedAccount).where(
+        ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration_id
+    )
+    connected_accounts = db_session.execute(statement).scalars().all()
+    return list(connected_accounts)
+
+
 def update_connected_account_auth_credentials(
     db_session: Session,
     connected_account: ConnectedAccount,

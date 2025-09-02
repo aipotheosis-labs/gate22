@@ -36,6 +36,23 @@ class MCPServerConfigurationCreate(BaseModel):
         return self
 
 
+class MCPServerConfigurationUpdate(BaseModel, extra="forbid"):
+    name: str | None = Field(default=None)
+    description: str | None = Field(default=None, max_length=512)
+    all_tools_enabled: bool | None = None
+    enabled_tools: list[UUID] | None = None
+    allowed_teams: list[UUID] | None = None
+
+    # when all_tools_enabled is True, enabled_tools provided by user should be empty
+    @model_validator(mode="after")
+    def check_all_tools_enabled(self) -> "MCPServerConfigurationUpdate":
+        if self.all_tools_enabled and self.enabled_tools:
+            raise ValueError(
+                "all_tools_enabled and enabled_tools cannot be both True and non-empty"
+            )
+        return self
+
+
 class MCPServerConfigurationPublic(BaseModel):
     id: UUID
     name: str

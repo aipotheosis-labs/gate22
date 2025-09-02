@@ -5,7 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerConfiguration, Team
-from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
+from aci.common.schemas.mcp_server_configuration import (
+    MCPServerConfigurationCreate,
+    MCPServerConfigurationUpdate,
+)
 
 
 def create_mcp_server_configuration(
@@ -126,3 +129,21 @@ def delete_mcp_server_configuration(
     db_session.query(MCPServerConfiguration).filter(
         MCPServerConfiguration.id == mcp_server_configuration_id
     ).delete()
+
+
+def update_mcp_server_configuration(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+    mcp_server_configuration_update: MCPServerConfigurationUpdate,
+) -> MCPServerConfiguration:
+    statement = select(MCPServerConfiguration).where(
+        MCPServerConfiguration.id == mcp_server_configuration_id
+    )
+    mcp_server_configuration = db_session.execute(statement).scalar_one()
+
+    for field, value in mcp_server_configuration_update.model_dump(exclude_none=True).items():
+        setattr(mcp_server_configuration, field, value)
+
+    db_session.flush()
+    db_session.refresh(mcp_server_configuration)
+    return mcp_server_configuration

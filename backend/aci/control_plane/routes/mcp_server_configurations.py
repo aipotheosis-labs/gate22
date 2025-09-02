@@ -10,6 +10,7 @@ from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationCreate,
     MCPServerConfigurationPublic,
+    MCPServerConfigurationUpdate,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import dependencies as deps
@@ -132,6 +133,105 @@ async def get_mcp_server_configuration(
             mcp_server_configuration_id=mcp_server_configuration_id,
             throw_error_if_not_permitted=True,
         )
+
+    return schema_utils.construct_mcp_server_configuration_public(
+        context.db_session, mcp_server_configuration
+    )
+
+
+@router.patch("/{mcp_server_configuration_id}", response_model=MCPServerConfigurationPublic)
+async def update_mcp_server_configuration(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_configuration_id: UUID,
+    body: MCPServerConfigurationUpdate,
+) -> MCPServerConfigurationPublic:
+    mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
+        context.db_session, mcp_server_configuration_id, throw_error_if_not_found=False
+    )
+    if mcp_server_configuration is None:
+        raise HTTPException(status_code=404, detail="MCP server configuration not found")
+
+    # Check if the MCP server configuration is under the user's org
+    # Check if the user is acted as admin
+    rbac.check_permission(
+        context.act_as,
+        requested_organization_id=mcp_server_configuration.organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
+
+    # Check if all team exists in the organization
+    if body.allowed_teams is not None:
+        org_teams = crud.teams.get_teams_by_ids(
+            db_session=context.db_session,
+            team_ids=body.allowed_teams,
+        )
+        org_team_map = {team.id: team for team in org_teams}
+
+        for team_id in body.allowed_teams:
+            if team_id not in org_team_map:
+                logger.error(f"Team {team_id} not found")
+                raise HTTPException(status_code=400, detail=f"Team {team_id} not found")
+            if org_team_map[team_id].organization_id != mcp_server_configuration.organization_id:
+                logger.error(f"Team {team_id} not in the organization")
+                raise HTTPException(
+                    status_code=400, detail=f"Team {team_id} not in the organization"
+                )
+
+    # Check if all tool exists in the MCP server
+    if body.enabled_tools is not None:
+        mcp_tools = crud.mcp_tools.get_mcp_tools_by_ids(
+            db_session=context.db_session,
+            mcp_tool_ids=body.enabled_tools,
+        )
+        mcp_tool_map = {tool.id: tool for tool in mcp_tools}
+        for tool_id in body.enabled_tools:
+            if tool_id not in mcp_tool_map:
+                logger.error(f"Tool {tool_id} not found")
+                raise HTTPException(status_code=400, detail=f"Tool {tool_id} not found")
+            if mcp_tool_map[tool_id].mcp_server_id != mcp_server_configuration.mcp_server_id:
+                raise HTTPException(status_code=400, detail=f"Tool {tool_id} not in the MCP server")
+
+    connected_accounts_before_update = (
+        crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+            db_session=context.db_session,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+        )
+    )
+
+    # Perform the update
+    crud.mcp_server_configurations.update_mcp_server_configuration(
+        db_session=context.db_session,
+        mcp_server_configuration_id=mcp_server_configuration_id,
+        mcp_server_configuration_update=body,
+    )
+
+    # For each of the connected accounts, make sure the user still has access to the MCP server
+    # configuration by team membership. If not, delete the connected account.
+    # Just to be safe, running a full check on all connected accounts linkage everytime on
+    # MCPServerConfiguration update regardless if we make change to the `allowed_teams` or not.
+    for connected_account in connected_accounts_before_update:
+        logger.debug(
+            f"Checking if user {connected_account.user_id} has access to the MCP server configuration {mcp_server_configuration_id}"  # noqa: E501
+        )
+        has_access = rbac.is_mcp_server_configuration_in_user_team(
+            db_session=context.db_session,
+            user_id=connected_account.user_id,
+            act_as_organization_id=context.act_as.organization_id,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+            throw_error_if_not_permitted=False,
+        )
+
+        if not has_access:
+            logger.info(
+                f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration_id}"  # noqa: E501
+            )
+            crud.connected_accounts.delete_connected_account(
+                db_session=context.db_session,
+                connected_account_id=connected_account.id,
+            )
+
+    context.db_session.commit()
 
     return schema_utils.construct_mcp_server_configuration_public(
         context.db_session, mcp_server_configuration
