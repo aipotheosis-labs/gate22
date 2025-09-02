@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { tokenManager } from "@/lib/token-manager";
 import { getProfile } from "@/features/auth/api/auth";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
@@ -58,7 +59,7 @@ export default function CreateOrganizationPage() {
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await fetch(
-        `${baseUrl}/v1/control-plane/organizations/`,
+        `${baseUrl}${CONTROL_PLANE_PATH}/organizations/`,
         {
           method: "POST",
           headers: {

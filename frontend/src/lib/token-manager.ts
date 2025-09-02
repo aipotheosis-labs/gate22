@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from "./api-client";
 import { roleManager } from "./role-manager";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 interface TokenResponse {
   token: string;
@@ -102,14 +103,17 @@ class TokenManager {
     try {
       console.log("Refreshing access token");
 
-      const response = await fetch(`${baseUrl}/v1/control-plane/auth/token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${baseUrl}${CONTROL_PLANE_PATH}/auth/token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Include cookies for refresh token
+          body: JSON.stringify({ act_as }),
         },
-        credentials: "include", // Include cookies for refresh token
-        body: JSON.stringify({ act_as }),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();

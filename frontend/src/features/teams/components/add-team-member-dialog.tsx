@@ -33,6 +33,7 @@ import {
 import { Check, ChevronDown, UserPlus, Users } from "lucide-react";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 interface AddTeamMemberDialogProps {
   teamId: string;
@@ -70,7 +71,7 @@ export function AddTeamMemberDialog({
     queryFn: async () => {
       const baseUrl = getApiBaseUrl();
       const response = await fetch(
-        `${baseUrl}/v1/control-plane/organizations/${activeOrg.orgId}/members`,
+        `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${activeOrg.orgId}/members`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -91,7 +92,7 @@ export function AddTeamMemberDialog({
     queryFn: async () => {
       const baseUrl = getApiBaseUrl();
       const response = await fetch(
-        `${baseUrl}/v1/control-plane/organizations/${activeOrg.orgId}/teams/${teamId}/members`,
+        `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${activeOrg.orgId}/teams/${teamId}/members`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,

@@ -9,6 +9,7 @@ import {
   MCPServerBundleDetailed,
   CreateMCPServerBundleInput,
 } from "@/features/bundle-mcp/types/bundle-mcp.types";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 const getApiBaseUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -28,7 +29,7 @@ export function useMCPServerBundles() {
     queryKey: ["mcp-server-bundles"],
     queryFn: async () => {
       const response = await fetch(
-        `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles?limit=100`,
+        `${getApiBaseUrl()}${CONTROL_PLANE_PATH}/mcp-server-bundles?limit=100`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -58,7 +59,7 @@ export function useCreateMCPServerBundle() {
 
       try {
         const response = await fetch(
-          `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles`,
+          `${getApiBaseUrl()}${CONTROL_PLANE_PATH}/mcp-server-bundles`,
           {
             method: "POST",
             headers: {
@@ -106,7 +107,7 @@ export function useDeleteMCPServerBundle() {
 
       try {
         const response = await fetch(
-          `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles/${bundleId}`,
+          `${getApiBaseUrl()}${CONTROL_PLANE_PATH}/mcp-server-bundles/${bundleId}`,
           {
             method: "DELETE",
             headers: {
@@ -160,7 +161,7 @@ export function useMCPServerBundle(bundleId: string) {
     queryKey: ["mcp-server-bundles", bundleId],
     queryFn: async () => {
       const response = await fetch(
-        `${getApiBaseUrl()}/v1/control-plane/mcp-server-bundles/${bundleId}`,
+        `${getApiBaseUrl()}${CONTROL_PLANE_PATH}/mcp-server-bundles/${bundleId}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
