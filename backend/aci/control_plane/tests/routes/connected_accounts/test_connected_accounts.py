@@ -63,7 +63,7 @@ def test_create_connected_account(
     body["mcp_server_configuration_id"] = str(dummy_mcp_server_configuration.id)
 
     response = test_client.post(
-        "/v1/connected-accounts",
+        config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
         headers={"Authorization": f"Bearer {dummy_access_token_member}"},
         json=body,
     )
