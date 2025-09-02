@@ -3,9 +3,9 @@ from aci.common.utils import check_and_get_env_variable, construct_db_url
 # FastAPI APP CONFIG
 APP_TITLE = "ACI Control Plane"
 APP_ROOT_PATH = "/v1/control-plane"
-APP_DOCS_URL = "/v1/control-plane-docs"
-APP_REDOC_URL = "/v1/control-plane-redoc"
-APP_OPENAPI_URL = "/v1/control-plane-openapi.json"
+APP_DOCS_URL = "/docs"
+APP_REDOC_URL = "/redoc"
+APP_OPENAPI_URL = "/openapi.json"
 
 
 ENVIRONMENT = check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT")
