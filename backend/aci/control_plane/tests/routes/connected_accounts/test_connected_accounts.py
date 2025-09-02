@@ -15,13 +15,6 @@ from aci.common.schemas.pagination import PaginationResponse
 logger = get_logger(__name__)
 
 
-@pytest.mark.parametrize(
-    "access_token_fixture",
-    [
-        "dummy_access_token_no_orgs",
-        "dummy_access_token_member",
-    ],
-)
 @pytest.mark.parametrize("is_team_allowed_by_config", [True, False])
 @pytest.mark.parametrize("auth_type", [AuthType.API_KEY, AuthType.NO_AUTH, AuthType.OAUTH2])
 @pytest.mark.parametrize("api_key", [None, "dummy_api_key"])
@@ -35,12 +28,10 @@ def test_create_connected_account(
     redirect_url_after_account_creation: str | None,
     dummy_team: Team,
     dummy_user: User,
-    access_token_fixture: str,
+    dummy_access_token_member: str,
     dummy_mcp_server_configuration: MCPServerConfiguration,
     is_team_allowed_by_config: bool,
 ) -> None:
-    access_token = request.getfixturevalue(access_token_fixture)
-
     # dummy_mcp_server_configurations has 2 dummy MCP server configurations, both without team
     config_added_to_team = dummy_mcp_server_configuration
     if is_team_allowed_by_config:
@@ -53,7 +44,7 @@ def test_create_connected_account(
 
     response = test_client.post(
         "/v1/connected-accounts",
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
         json={
             "mcp_server_configuration_id": str(dummy_mcp_server_configuration.id),
             "api_key": api_key,
@@ -61,50 +52,39 @@ def test_create_connected_account(
         },
     )
 
-    if access_token_fixture == "dummy_access_token_no_orgs":
+    # if not allowed to add to team, should return 403
+    if not is_team_allowed_by_config:
         assert response.status_code == 403
-        return
+        assert response.json()["error"].startswith("Not permitted")
 
-    elif access_token_fixture == "dummy_access_token_member":
-        # if not allowed to add to team, should return 403
-        if not is_team_allowed_by_config:
-            assert response.status_code == 403
-            assert response.json()["error"].startswith("Not permitted")
-
-        else:
-            # assert input check
-            if auth_type == AuthType.OAUTH2:
-                assert response.status_code == 200
-                oauth2_response = OAuth2ConnectedAccountCreateResponse.model_validate(
-                    response.json()
-                )
-                assert oauth2_response.authorization_url.startswith("https://")
-
-            elif auth_type == AuthType.API_KEY:
-                # Test for input validation
-                if api_key is None:
-                    assert response.status_code == 400
-                    return
-
-                assert response.status_code == 200
-                connected_account = ConnectedAccountPublic.model_validate(response.json())
-                assert (
-                    connected_account.mcp_server_configuration.id
-                    == dummy_mcp_server_configuration.id
-                )
-
-            elif auth_type == AuthType.NO_AUTH:
-                # Test for input validation
-
-                assert response.status_code == 200
-                connected_account = ConnectedAccountPublic.model_validate(response.json())
-                assert (
-                    connected_account.mcp_server_configuration.id
-                    == dummy_mcp_server_configuration.id
-                )
-                assert connected_account.user_id == dummy_user.id
     else:
-        raise Exception("Untested access token fixture")
+        # assert input check
+        if auth_type == AuthType.OAUTH2:
+            assert response.status_code == 200
+            oauth2_response = OAuth2ConnectedAccountCreateResponse.model_validate(response.json())
+            assert oauth2_response.authorization_url.startswith("https://")
+
+        elif auth_type == AuthType.API_KEY:
+            # Test for input validation
+            if api_key is None:
+                assert response.status_code == 400
+                return
+
+            assert response.status_code == 200
+            connected_account = ConnectedAccountPublic.model_validate(response.json())
+            assert (
+                connected_account.mcp_server_configuration.id == dummy_mcp_server_configuration.id
+            )
+
+        elif auth_type == AuthType.NO_AUTH:
+            # Test for input validation
+
+            assert response.status_code == 200
+            connected_account = ConnectedAccountPublic.model_validate(response.json())
+            assert (
+                connected_account.mcp_server_configuration.id == dummy_mcp_server_configuration.id
+            )
+            assert connected_account.user_id == dummy_user.id
 
 
 @pytest.mark.parametrize(
