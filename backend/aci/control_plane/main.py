@@ -48,6 +48,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 app = FastAPI(
     title=config.APP_TITLE,
+    root_path=config.APP_ROOT_PATH,
     docs_url=config.APP_DOCS_URL,
     redoc_url=config.APP_REDOC_URL,
     openapi_url=config.APP_OPENAPI_URL,
