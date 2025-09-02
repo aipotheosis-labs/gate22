@@ -63,7 +63,7 @@ async def create_connected_account(
         match mcp_server_config.auth_type:
             case AuthType.OAUTH2:
                 redirect_url_after_account_creation = ConnectedAccountOAuth2Create.model_validate(
-                    body.model_dump()
+                    body.model_dump(exclude_none=True)
                 ).redirect_url_after_account_creation
                 return await _create_oauth2_connected_account(
                     request,
@@ -72,7 +72,9 @@ async def create_connected_account(
                     redirect_url_after_account_creation,
                 )
             case AuthType.API_KEY:
-                api_key = ConnectedAccountAPIKeyCreate.model_validate(body.model_dump()).api_key
+                api_key = ConnectedAccountAPIKeyCreate.model_validate(
+                    body.model_dump(exclude_none=True)
+                ).api_key
                 connected_account = await _create_api_key_connected_account(
                     context,
                     mcp_server_config,
@@ -83,7 +85,7 @@ async def create_connected_account(
                     context.db_session, connected_account
                 )
             case AuthType.NO_AUTH:
-                ConnectedAccountNoAuthCreate.model_validate(body.model_dump())
+                ConnectedAccountNoAuthCreate.model_validate(body.model_dump(exclude_none=True))
                 connected_account = await _create_no_auth_connected_account(
                     context, mcp_server_config
                 )
