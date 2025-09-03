@@ -96,17 +96,20 @@ export async function register(
 
 export async function login(email: string, password: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/login/email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${baseUrl}${CONTROL_PLANE_PATH}/auth/login/email`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // Include cookies
+      body: JSON.stringify({
+        email,
+        password,
+      } as EmailLoginRequest),
     },
-    credentials: "include", // Include cookies
-    body: JSON.stringify({
-      email,
-      password,
-    } as EmailLoginRequest),
-  });
+  );
 
   if (!response.ok) {
     try {
@@ -192,12 +195,15 @@ export async function logout(): Promise<void> {
 
 export async function getProfile(token: string): Promise<UserInfo> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/users/me/profile`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const response = await fetch(
+    `${baseUrl}${CONTROL_PLANE_PATH}/users/me/profile`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     try {
