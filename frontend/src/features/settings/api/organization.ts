@@ -86,3 +86,28 @@ export async function removeUser(
     await throwApiError(response, "Failed to remove user from organization");
   }
 }
+
+export async function createOrganization(
+  accessToken: string,
+  name: string,
+  description?: string,
+): Promise<{ organization_id: string; name: string; description?: string }> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, description }),
+    },
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to create organization");
+  }
+
+  return response.json();
+}

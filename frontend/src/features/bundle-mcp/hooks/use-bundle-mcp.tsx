@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { throwApiError } from "@/lib/api-error-handler";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 import {
   MCPServerBundle,
   MCPServerBundleDetailed,
@@ -23,9 +24,9 @@ interface PaginatedResponse<T> {
 }
 
 export function useMCPServerBundles() {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, checkPermission, isTokenRefreshing } = useMetaInfo();
 
-  return useQuery<MCPServerBundle[]>({
+  const query = useQuery<MCPServerBundle[]>({
     queryKey: ["mcp-server-bundles"],
     queryFn: async () => {
       const response = await fetch(
@@ -43,18 +44,39 @@ export function useMCPServerBundles() {
       const result: PaginatedResponse<MCPServerBundle> = await response.json();
       return result.data || [];
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && !isTokenRefreshing,
   });
+
+  // Add permission flags for UI decisions
+  const canCreate = checkPermission(PERMISSIONS.BUNDLE_CREATE);
+  const canViewPage = checkPermission(PERMISSIONS.BUNDLE_PAGE_VIEW);
+
+  return {
+    ...query,
+    canCreate,
+    canViewPage,
+  };
 }
 
 export function useCreateMCPServerBundle() {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, checkPermission, isTokenRefreshing } = useMetaInfo();
   const queryClient = useQueryClient();
+
+  const canCreate = checkPermission(PERMISSIONS.BUNDLE_CREATE);
 
   return useMutation({
     mutationFn: async (data: CreateMCPServerBundleInput) => {
+      // Wait if token is refreshing
+      if (isTokenRefreshing) {
+        throw new Error("Please wait, updating permissions...");
+      }
+
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
+      }
+
+      if (!canCreate) {
+        throw new Error("You do not have permission to create bundles");
       }
 
       try {
@@ -96,13 +118,31 @@ export function useCreateMCPServerBundle() {
 }
 
 export function useDeleteMCPServerBundle() {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, user, activeOrg, isActingAsRole, isTokenRefreshing } = useMetaInfo();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (bundleId: string) => {
+    mutationFn: async ({ bundleId, bundleOwnerId }: { bundleId: string; bundleOwnerId?: string }) => {
+      // Wait if token is refreshing
+      if (isTokenRefreshing) {
+        throw new Error("Please wait, updating permissions...");
+      }
+
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
+      }
+
+      // Check if user can delete this bundle
+      // Admin cannot delete bundles (based on backend logic)
+      // Member can only delete their own bundles
+      const currentRole = isActingAsRole && activeOrg?.userRole === 'Admin' 
+        ? 'member' 
+        : activeOrg?.userRole?.toLowerCase();
+      const isAdmin = currentRole === 'admin';
+      const isOwner = bundleOwnerId === user?.userId;
+      
+      if (isAdmin || !isOwner) {
+        throw new Error("You do not have permission to delete this bundle");
       }
 
       try {
@@ -155,7 +195,7 @@ export function useDeleteMCPServerBundle() {
 }
 
 export function useMCPServerBundle(bundleId: string) {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, isTokenRefreshing } = useMetaInfo();
 
   return useQuery<MCPServerBundleDetailed>({
     queryKey: ["mcp-server-bundles", bundleId],
@@ -174,6 +214,6 @@ export function useMCPServerBundle(bundleId: string) {
       }
       return response.json();
     },
-    enabled: !!accessToken && !!bundleId,
+    enabled: !!accessToken && !!bundleId && !isTokenRefreshing,
   });
 }

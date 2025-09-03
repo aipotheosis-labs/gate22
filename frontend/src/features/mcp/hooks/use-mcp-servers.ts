@@ -5,6 +5,7 @@ import {
   PaginationParams,
 } from "../types/mcp.types";
 import { useMetaInfo } from "@/components/context/metainfo";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 // Query keys
 export const mcpQueryKeys = {
@@ -58,13 +59,23 @@ export function useMCPServerByName(serverName: string) {
 
 // Hook to list MCP server configurations for the current organization
 export function useMCPServerConfigurations(params?: PaginationParams) {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, checkPermission } = useMetaInfo();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: mcpQueryKeys.configurations.list(params),
     queryFn: () => mcpService.configurations.list(accessToken!, params),
     enabled: !!accessToken,
   });
+
+  // Add permission flags for UI decisions
+  const canConfigure = checkPermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
+  const canDelete = checkPermission(PERMISSIONS.MCP_CONFIGURATION_DELETE);
+
+  return {
+    ...query,
+    canConfigure,
+    canDelete,
+  };
 }
 
 // Hook to get a specific MCP server configuration
@@ -79,14 +90,20 @@ export function useMCPServerConfiguration(configurationId: string) {
   });
 }
 
-// Hook to create a new MCP server configuration
+// Hook to create a new MCP server configuration with permission check
 export function useCreateMCPServerConfiguration() {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, checkPermission } = useMetaInfo();
   const queryClient = useQueryClient();
 
+  const canConfigure = checkPermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
+
   return useMutation({
-    mutationFn: (data: MCPServerConfigurationCreate) =>
-      mcpService.configurations.create(accessToken!, data),
+    mutationFn: (data: MCPServerConfigurationCreate) => {
+      if (!canConfigure) {
+        throw new Error('You do not have permission to configure MCP servers');
+      }
+      return mcpService.configurations.create(accessToken!, data);
+    },
     onSuccess: () => {
       // Invalidate configurations list to refetch
       queryClient.invalidateQueries({
@@ -96,14 +113,20 @@ export function useCreateMCPServerConfiguration() {
   });
 }
 
-// Hook to delete an MCP server configuration
+// Hook to delete an MCP server configuration with permission check
 export function useDeleteMCPServerConfiguration() {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, checkPermission } = useMetaInfo();
   const queryClient = useQueryClient();
 
+  const canDelete = checkPermission(PERMISSIONS.MCP_CONFIGURATION_DELETE);
+
   return useMutation({
-    mutationFn: (configurationId: string) =>
-      mcpService.configurations.delete(accessToken!, configurationId),
+    mutationFn: (configurationId: string) => {
+      if (!canDelete) {
+        throw new Error('You do not have permission to delete MCP server configurations');
+      }
+      return mcpService.configurations.delete(accessToken!, configurationId);
+    },
     onSuccess: () => {
       // Invalidate configurations list to refetch
       queryClient.invalidateQueries({
