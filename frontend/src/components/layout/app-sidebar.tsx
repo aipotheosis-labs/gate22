@@ -28,6 +28,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
+import { usePermission } from "@/hooks/use-permissions";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 // Export sidebar items so they can be used in header
 export const sidebarItems = [
@@ -70,6 +72,16 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
+  const canViewMCPConfiguration = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
+
+  // Filter sidebar items based on permissions
+  const filteredSidebarItems = sidebarItems.filter(item => {
+    // Hide MCP Configuration for users without permission
+    if (item.title === "MCP Configuration" && !canViewMCPConfiguration) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <Sidebar collapsible="icon" className="flex flex-col">
@@ -101,7 +113,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sidebarItems.map((item) => {
+              {filteredSidebarItems.map((item) => {
                 const isActive =
                   item.title === "Settings"
                     ? pathname.startsWith("/settings")

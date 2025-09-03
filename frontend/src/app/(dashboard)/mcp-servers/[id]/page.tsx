@@ -11,6 +11,8 @@ import { useState } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
 import { ToolSchemaDrawer } from "@/features/mcp/components/tool-schema-drawer";
 import { MCPToolBasic } from "@/features/mcp/types/mcp.types";
+import { PermissionGuard } from "@/components/rbac/permission-guard";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
@@ -85,10 +87,12 @@ export default function MCPServerDetailPage() {
             </div>
           </div>
         </div>
-        <Button onClick={() => setIsConfigModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Configure Server
-        </Button>
+        <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
+          <Button onClick={() => setIsConfigModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Configure Server
+          </Button>
+        </PermissionGuard>
       </div>
 
       {/* Description */}

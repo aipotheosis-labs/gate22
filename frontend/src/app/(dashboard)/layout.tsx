@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { MetaInfoProvider } from "@/components/context/metainfo";
+import { TokenRefreshOverlay } from "@/components/layout/token-refresh-overlay";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -33,6 +34,7 @@ export default function DashboardLayout({
     <div className="h-full">
       <QueryClientProvider client={queryClient}>
         <MetaInfoProvider>
+          <TokenRefreshOverlay />
           <SidebarProvider className="h-full">
             <AppSidebar />
             <SidebarInset className="flex flex-col h-full overflow-hidden">

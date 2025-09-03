@@ -15,6 +15,8 @@ import { tokenManager } from "@/lib/token-manager";
 import { roleManager } from "@/lib/role-manager";
 import { organizationManager } from "@/lib/organization-manager";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
+import { checkPermission, getPermissionsForRole } from "@/lib/rbac/rbac-service";
+import { Permission } from "@/lib/rbac/permissions";
 
 export interface UserClass {
   userId: string;
@@ -45,6 +47,10 @@ interface MetaInfoContextType {
   activeRole: OrganizationRole | null;
   toggleActiveRole: () => Promise<void>;
   isActingAsRole: boolean;
+  isTokenRefreshing: boolean;
+  // RBAC additions
+  checkPermission: (permission: Permission) => boolean;
+  getPermissions: () => readonly Permission[];
 }
 
 const MetaInfoContext = createContext<MetaInfoContextType | undefined>(
@@ -65,6 +71,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeRole, setActiveRole] = useState<OrganizationRole | null>(null);
   const [isActingAsRole, setIsActingAsRole] = useState(false);
+  const [isTokenRefreshing, setIsTokenRefreshing] = useState(false);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -202,6 +209,33 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     router.push("/");
   }, [router]);
 
+  // Centralized token refresh function to avoid duplication
+  const refreshTokenWithContext = useCallback(async (
+    orgId: string,
+    userRole: OrganizationRole,
+  ) => {
+    setIsTokenRefreshing(true);
+    setAccessToken(""); // Clear immediately to prevent stale token usage
+    
+    try {
+      tokenManager.clearToken();
+      const newToken = await tokenManager.getAccessToken(orgId, userRole);
+      
+      if (newToken) {
+        setAccessToken(newToken);
+        return newToken;
+      }
+      throw new Error("Failed to refresh token");
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      // On error, redirect to login
+      router.push("/login");
+      throw error;
+    } finally {
+      setIsTokenRefreshing(false);
+    }
+  }, [router]);
+
   const switchOrganization = useCallback(async (org: OrgMemberInfoClass) => {
     // Save to localStorage
     organizationManager.setActiveOrganization(
@@ -218,25 +252,16 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     // Update state
     setActiveOrg(org);
 
-    // Clear token to force refresh with new organization context
-    tokenManager.clearToken();
-
-    // Get new token for the new organization
-    const newToken = await tokenManager.getAccessToken(
-      org.orgId,
-      org.userRole as OrganizationRole,
-    );
-
-    if (newToken) {
-      setAccessToken(newToken);
-    }
-  }, []);
+    // Refresh token with loading state
+    await refreshTokenWithContext(org.orgId, org.userRole as OrganizationRole);
+  }, [refreshTokenWithContext]);
 
   const toggleActiveRole = useCallback(async () => {
     if (!activeOrg || activeOrg.userRole !== OrganizationRole.Admin) {
       return; // Only admins can toggle role
     }
 
+    // Update role state optimistically
     if (isActingAsRole) {
       // Switch back to admin
       roleManager.clearActiveRole();
@@ -249,18 +274,30 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       setIsActingAsRole(true);
     }
 
-    // Clear token to force refresh with new role
-    tokenManager.clearToken();
-
-    // Get new token with updated role
-    const newToken = await tokenManager.getAccessToken(
+    // Refresh token with loading state
+    await refreshTokenWithContext(
       activeOrg.orgId,
       activeOrg.userRole as OrganizationRole,
     );
+  }, [activeOrg, isActingAsRole, refreshTokenWithContext]);
 
-    if (newToken) {
-      setAccessToken(newToken);
-    }
+  // RBAC helper functions
+  const checkPermissionCallback = useCallback((permission: Permission): boolean => {
+    if (!activeOrg) return false;
+    // Use the active role if admin is acting as member, otherwise use actual role
+    const roleToCheck = isActingAsRole && activeOrg.userRole === OrganizationRole.Admin 
+      ? OrganizationRole.Member 
+      : activeOrg.userRole;
+    return checkPermission(roleToCheck.toLowerCase(), permission);
+  }, [activeOrg, isActingAsRole]);
+
+  const getPermissionsCallback = useCallback((): readonly Permission[] => {
+    if (!activeOrg) return [];
+    // Use the active role if admin is acting as member, otherwise use actual role
+    const roleToCheck = isActingAsRole && activeOrg.userRole === OrganizationRole.Admin 
+      ? OrganizationRole.Member 
+      : activeOrg.userRole;
+    return getPermissionsForRole(roleToCheck.toLowerCase());
   }, [activeOrg, isActingAsRole]);
 
   useEffect(() => {
@@ -331,6 +368,10 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         activeRole,
         toggleActiveRole,
         isActingAsRole,
+        isTokenRefreshing,
+        // RBAC additions
+        checkPermission: checkPermissionCallback,
+        getPermissions: getPermissionsCallback,
       }}
     >
       {children}

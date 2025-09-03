@@ -1,0 +1,62 @@
+export const PERMISSIONS = {
+  // MCP Server permissions
+  MCP_SERVER_PAGE_VIEW: 'mcp_server:page_view',
+  
+  // MCP Configuration permissions
+  MCP_CONFIGURATION_PAGE_VIEW: 'mcp_configuration:page_view',
+  MCP_CONFIGURATION_CREATE: 'mcp_configuration:create',
+  MCP_CONFIGURATION_DELETE: 'mcp_configuration:delete',
+  
+  // Connected Accounts permissions  
+  CONNECTED_ACCOUNT_PAGE_VIEW: 'connected_account:page_view',
+  CONNECTED_ACCOUNT_CREATE_OWN: 'connected_account:create_own',
+  CONNECTED_ACCOUNT_CREATE_SHARED: 'connected_account:create_shared',
+  CONNECTED_ACCOUNT_DELETE_OWN: 'connected_account:delete_own',
+  
+  // Bundle permissions
+  BUNDLE_PAGE_VIEW: 'bundle:page_view',
+  BUNDLE_CREATE: 'bundle:create',
+  BUNDLE_DELETE_OWN: 'bundle:delete_own',
+  BUNDLE_DELETE_ALL: 'bundle:delete_all',
+} as const;
+
+export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+
+export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
+  admin: [
+    // MCP Server - Admins can see all
+    PERMISSIONS.MCP_SERVER_PAGE_VIEW,
+
+    // MCP Configuration - Admins can view, create and delete configurations
+    PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
+    PERMISSIONS.MCP_CONFIGURATION_CREATE,
+    PERMISSIONS.MCP_CONFIGURATION_DELETE,
+    
+    // Connected Accounts - Admins can see all accounts
+    PERMISSIONS.CONNECTED_ACCOUNT_PAGE_VIEW,
+    PERMISSIONS.CONNECTED_ACCOUNT_CREATE_SHARED,
+    PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OWN,
+    PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN,
+    
+    // Bundles - Admins can see all but NOT create
+    PERMISSIONS.BUNDLE_PAGE_VIEW,
+    // Note: Admins cannot create bundles
+  ],
+  member: [
+    // MCP Server - Members can only view accessible servers
+    PERMISSIONS.MCP_SERVER_PAGE_VIEW,
+    // Note: Members cannot configure MCP servers
+    
+    // Connected Accounts - Members see own and shared only
+    PERMISSIONS.CONNECTED_ACCOUNT_PAGE_VIEW,
+    PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OWN,
+    PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN,
+    
+    // Bundles - Members can create and see own bundles
+    PERMISSIONS.BUNDLE_PAGE_VIEW,
+    PERMISSIONS.BUNDLE_CREATE,
+    PERMISSIONS.BUNDLE_DELETE_OWN,
+  ],
+} as const;
+
+export type Role = keyof typeof ROLE_PERMISSIONS;
