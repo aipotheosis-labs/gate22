@@ -1,4 +1,4 @@
-import { ROLE_PERMISSIONS, Permission } from './permissions';
+import { ROLE_PERMISSIONS, Permission } from "./permissions";
 
 /**
  * Check if a role has a specific permission
@@ -19,14 +19,14 @@ export function checkPermission(role: string, permission: Permission): boolean {
 export function checkMultiplePermissions(
   role: string,
   permissions: Permission[],
-  mode: 'all' | 'any' = 'all'
+  mode: "all" | "any" = "all",
 ): boolean {
   if (permissions.length === 0) return true;
 
-  if (mode === 'all') {
-    return permissions.every(permission => checkPermission(role, permission));
+  if (mode === "all") {
+    return permissions.every((permission) => checkPermission(role, permission));
   } else {
-    return permissions.some(permission => checkPermission(role, permission));
+    return permissions.some((permission) => checkPermission(role, permission));
   }
 }
 
@@ -45,13 +45,19 @@ export function getPermissionsForRole(role: string): readonly Permission[] {
 /**
  * Check if a role has any of the specified permissions
  */
-export function hasAnyPermission(role: string, permissions: Permission[]): boolean {
-  return checkMultiplePermissions(role, permissions, 'any');
+export function hasAnyPermission(
+  role: string,
+  permissions: Permission[],
+): boolean {
+  return checkMultiplePermissions(role, permissions, "any");
 }
 
 /**
  * Check if a role has all of the specified permissions
  */
-export function hasAllPermissions(role: string, permissions: Permission[]): boolean {
-  return checkMultiplePermissions(role, permissions, 'all');
+export function hasAllPermissions(
+  role: string,
+  permissions: Permission[],
+): boolean {
+  return checkMultiplePermissions(role, permissions, "all");
 }

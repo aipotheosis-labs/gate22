@@ -40,7 +40,9 @@ const columnHelper = createColumnHelper<MCPServerConfigurationPublicBasic>();
 
 export default function MCPConfigurationPage() {
   const router = useRouter();
-  const canViewConfigurations = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
+  const canViewConfigurations = usePermission(
+    PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
+  );
   const { data: configurationsResponse, isLoading } =
     useMCPServerConfigurations({ limit: 100 });
   const deleteConfiguration = useDeleteMCPServerConfiguration();
@@ -193,7 +195,9 @@ export default function MCPConfigurationPage() {
                   </Tooltip>
                 </TooltipProvider>
 
-                <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_DELETE}>
+                <PermissionGuard
+                  permission={PERMISSIONS.MCP_CONFIGURATION_DELETE}
+                >
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
@@ -204,30 +208,32 @@ export default function MCPConfigurationPage() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Configuration</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete the configuration for{" "}
-                        {configuration.mcp_server.name}? This action cannot be
-                        undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() =>
-                          handleDelete(
-                            configuration.id,
-                            configuration.mcp_server.name,
-                          )
-                        }
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Delete Configuration
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete the configuration for{" "}
+                          {configuration.mcp_server.name}? This action cannot be
+                          undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            handleDelete(
+                              configuration.id,
+                              configuration.mcp_server.name,
+                            )
+                          }
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
                   </AlertDialog>
                 </PermissionGuard>
               </div>

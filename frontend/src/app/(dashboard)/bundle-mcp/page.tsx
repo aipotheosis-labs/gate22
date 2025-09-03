@@ -41,8 +41,11 @@ const columnHelper = createColumnHelper<MCPServerBundle>();
 
 export default function BundleMCPPage() {
   const router = useRouter();
-  const { data: bundles = [], isLoading: isBundlesLoading, canCreate } =
-    useMCPServerBundles();
+  const {
+    data: bundles = [],
+    isLoading: isBundlesLoading,
+    canCreate,
+  } = useMCPServerBundles();
   const { data: configurationsData, isLoading: isConfigsLoading } =
     useMCPServerConfigurations({ limit: 100 });
   const configurations = configurationsData?.data || [];
@@ -179,24 +182,26 @@ export default function BundleMCPPage() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Bundle?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the bundle &quot;{bundle.name}&quot;.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={() => handleDeleteBundle(bundle.id, bundle.user_id)}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Bundle?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently
+                        delete the bundle &quot;{bundle.name}&quot;.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() =>
+                          handleDeleteBundle(bundle.id, bundle.user_id)
+                        }
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
                 </AlertDialog>
               </PermissionGuard>
             </div>
@@ -293,7 +298,10 @@ export default function BundleMCPPage() {
                       await createBundleMutation(values);
                     }}
                   >
-                    <Button variant="default" disabled={isConfigsLoading || !canCreate}>
+                    <Button
+                      variant="default"
+                      disabled={isConfigsLoading || !canCreate}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Create Bundle
                     </Button>

@@ -62,7 +62,10 @@ export const OrgSelector = () => {
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search organization..." className="h-9" />
+            <CommandInput
+              placeholder="Search organization..."
+              className="h-9"
+            />
             <CommandList>
               <CommandEmpty>No organization found.</CommandEmpty>
               <CommandGroup>
@@ -122,10 +125,10 @@ export const OrgSelector = () => {
               try {
                 await createOrganization(accessToken, name);
                 toast.success("Organization created successfully");
-                
+
                 // Close the dialog
                 setCreateDialogOpen(false);
-                
+
                 // Refresh the page to get updated orgs list
                 router.refresh();
                 window.location.reload();

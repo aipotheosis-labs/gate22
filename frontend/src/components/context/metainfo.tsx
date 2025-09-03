@@ -15,7 +15,10 @@ import { tokenManager } from "@/lib/token-manager";
 import { roleManager } from "@/lib/role-manager";
 import { organizationManager } from "@/lib/organization-manager";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
-import { checkPermission, getPermissionsForRole } from "@/lib/rbac/rbac-service";
+import {
+  checkPermission,
+  getPermissionsForRole,
+} from "@/lib/rbac/rbac-service";
 import { Permission } from "@/lib/rbac/permissions";
 
 export interface UserClass {
@@ -80,12 +83,14 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         // IMPORTANT: Load stored preferences FIRST before requesting token
         // This ensures we have the correct act_as context from the start
         const storedOrg = organizationManager.getActiveOrganization();
-        const storedRole = storedOrg ? roleManager.getActiveRole(storedOrg.orgId) : null;
-        
+        const storedRole = storedOrg
+          ? roleManager.getActiveRole(storedOrg.orgId)
+          : null;
+
         // Get initial token with proper role context if available
         const token = await tokenManager.getAccessToken(
           storedOrg?.orgId,
-          storedOrg?.userRole as OrganizationRole
+          storedOrg?.userRole as OrganizationRole,
         );
 
         if (token) {
@@ -167,7 +172,11 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
           }
 
           // Check if admin is acting as member (we already loaded storedRole above)
-          if (org.userRole === OrganizationRole.Admin && org.orgId && storedRole) {
+          if (
+            org.userRole === OrganizationRole.Admin &&
+            org.orgId &&
+            storedRole
+          ) {
             setActiveRole(storedRole.role);
             setIsActingAsRole(true);
           }
@@ -216,51 +225,57 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   }, [router]);
 
   // Centralized token refresh function to avoid duplication
-  const refreshTokenWithContext = useCallback(async (
-    orgId: string,
-    userRole: OrganizationRole,
-  ) => {
-    setIsTokenRefreshing(true);
-    setAccessToken(""); // Clear immediately to prevent stale token usage
-    
-    try {
-      tokenManager.clearToken();
-      const newToken = await tokenManager.getAccessToken(orgId, userRole);
-      
-      if (newToken) {
-        setAccessToken(newToken);
-        return newToken;
+  const refreshTokenWithContext = useCallback(
+    async (orgId: string, userRole: OrganizationRole) => {
+      setIsTokenRefreshing(true);
+      setAccessToken(""); // Clear immediately to prevent stale token usage
+
+      try {
+        tokenManager.clearToken();
+        const newToken = await tokenManager.getAccessToken(orgId, userRole);
+
+        if (newToken) {
+          setAccessToken(newToken);
+          return newToken;
+        }
+        throw new Error("Failed to refresh token");
+      } catch (error) {
+        console.error("Token refresh error:", error);
+        // On error, redirect to login
+        router.push("/login");
+        throw error;
+      } finally {
+        setIsTokenRefreshing(false);
       }
-      throw new Error("Failed to refresh token");
-    } catch (error) {
-      console.error("Token refresh error:", error);
-      // On error, redirect to login
-      router.push("/login");
-      throw error;
-    } finally {
-      setIsTokenRefreshing(false);
-    }
-  }, [router]);
+    },
+    [router],
+  );
 
-  const switchOrganization = useCallback(async (org: OrgMemberInfoClass) => {
-    // Save to localStorage
-    organizationManager.setActiveOrganization(
-      org.orgId,
-      org.orgName,
-      org.userRole,
-    );
+  const switchOrganization = useCallback(
+    async (org: OrgMemberInfoClass) => {
+      // Save to localStorage
+      organizationManager.setActiveOrganization(
+        org.orgId,
+        org.orgName,
+        org.userRole,
+      );
 
-    // Clear any role switching when changing organizations
-    roleManager.clearActiveRole();
-    setActiveRole(null);
-    setIsActingAsRole(false);
+      // Clear any role switching when changing organizations
+      roleManager.clearActiveRole();
+      setActiveRole(null);
+      setIsActingAsRole(false);
 
-    // Update state
-    setActiveOrg(org);
+      // Update state
+      setActiveOrg(org);
 
-    // Refresh token with loading state
-    await refreshTokenWithContext(org.orgId, org.userRole as OrganizationRole);
-  }, [refreshTokenWithContext]);
+      // Refresh token with loading state
+      await refreshTokenWithContext(
+        org.orgId,
+        org.userRole as OrganizationRole,
+      );
+    },
+    [refreshTokenWithContext],
+  );
 
   const toggleActiveRole = useCallback(async () => {
     if (!activeOrg || activeOrg.userRole !== OrganizationRole.Admin) {
@@ -291,21 +306,26 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   }, [activeOrg, isActingAsRole, refreshTokenWithContext]);
 
   // RBAC helper functions
-  const checkPermissionCallback = useCallback((permission: Permission): boolean => {
-    if (!activeOrg) return false;
-    // Use the active role if admin is acting as member, otherwise use actual role
-    const roleToCheck = isActingAsRole && activeOrg.userRole === OrganizationRole.Admin 
-      ? OrganizationRole.Member 
-      : activeOrg.userRole;
-    return checkPermission(roleToCheck.toLowerCase(), permission);
-  }, [activeOrg, isActingAsRole]);
+  const checkPermissionCallback = useCallback(
+    (permission: Permission): boolean => {
+      if (!activeOrg) return false;
+      // Use the active role if admin is acting as member, otherwise use actual role
+      const roleToCheck =
+        isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
+          ? OrganizationRole.Member
+          : activeOrg.userRole;
+      return checkPermission(roleToCheck.toLowerCase(), permission);
+    },
+    [activeOrg, isActingAsRole],
+  );
 
   const getPermissionsCallback = useCallback((): readonly Permission[] => {
     if (!activeOrg) return [];
     // Use the active role if admin is acting as member, otherwise use actual role
-    const roleToCheck = isActingAsRole && activeOrg.userRole === OrganizationRole.Admin 
-      ? OrganizationRole.Member 
-      : activeOrg.userRole;
+    const roleToCheck =
+      isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
+        ? OrganizationRole.Member
+        : activeOrg.userRole;
     return getPermissionsForRole(roleToCheck.toLowerCase());
   }, [activeOrg, isActingAsRole]);
 

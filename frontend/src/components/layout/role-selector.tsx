@@ -99,7 +99,7 @@ export const RoleSelector = () => {
                     <Check
                       className={cn(
                         "h-4 w-4",
-                        role.active ? "opacity-100" : "opacity-0"
+                        role.active ? "opacity-100" : "opacity-0",
                       )}
                     />
                   </div>

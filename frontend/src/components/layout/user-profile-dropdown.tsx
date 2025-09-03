@@ -16,13 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMetaInfo } from "@/components/context/metainfo";
-import {
-  Settings,
-  LogOut,
-  Sun,
-  Moon,
-  Monitor,
-} from "lucide-react";
+import { Settings, LogOut, Sun, Moon, Monitor } from "lucide-react";
 
 export function UserProfileDropdown() {
   const { user, logout } = useMetaInfo();

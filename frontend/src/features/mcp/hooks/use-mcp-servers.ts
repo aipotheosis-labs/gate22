@@ -100,7 +100,7 @@ export function useCreateMCPServerConfiguration() {
   return useMutation({
     mutationFn: (data: MCPServerConfigurationCreate) => {
       if (!canConfigure) {
-        throw new Error('You do not have permission to configure MCP servers');
+        throw new Error("You do not have permission to configure MCP servers");
       }
       return mcpService.configurations.create(accessToken!, data);
     },
@@ -123,7 +123,9 @@ export function useDeleteMCPServerConfiguration() {
   return useMutation({
     mutationFn: (configurationId: string) => {
       if (!canDelete) {
-        throw new Error('You do not have permission to delete MCP server configurations');
+        throw new Error(
+          "You do not have permission to delete MCP server configurations",
+        );
       }
       return mcpService.configurations.delete(accessToken!, configurationId);
     },

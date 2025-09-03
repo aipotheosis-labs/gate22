@@ -72,10 +72,12 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
-  const canViewMCPConfiguration = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
+  const canViewMCPConfiguration = usePermission(
+    PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
+  );
 
   // Filter sidebar items based on permissions
-  const filteredSidebarItems = sidebarItems.filter(item => {
+  const filteredSidebarItems = sidebarItems.filter((item) => {
     // Hide MCP Configuration for users without permission
     if (item.title === "MCP Configuration" && !canViewMCPConfiguration) {
       return false;
