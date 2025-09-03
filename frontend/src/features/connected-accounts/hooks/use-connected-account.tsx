@@ -4,13 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
   getAllConnectedAccounts,
-  createAPIConnectedAccount,
-  createNoAuthConnectedAccount,
   deleteConnectedAccount,
   updateConnectedAccount,
   getOauth2LinkURL,
-  createOAuth2ConnectedAccount,
-  CreateOAuth2ConnectedAccountRequest,
+  createConnectedAccount,
+  CreateConnectedAccountRequest,
   OAuth2ConnectedAccountResponse,
 } from "@/features/connected-accounts/api/connectedaccount";
 import { useMetaInfo } from "@/components/context/metainfo";
@@ -47,55 +45,35 @@ export const useAppConnectedAccounts = (appName?: string | null) => {
   };
 };
 
-type CreateAPIConnectedAccountParams = {
-  appName: string;
-  connectedAccountOwnerId: string;
-  connectedAPIKey: string;
+// Generic hook for creating connected accounts of any auth type
+type CreateConnectedAccountParams = {
+  mcpServerConfigurationId: string;
+  apiKey?: string; // For API_KEY auth type
+  redirectUrl?: string; // For OAUTH2 auth type
 };
 
-export const useCreateAPIConnectedAccount = () => {
+export const useCreateConnectedAccount = () => {
   const queryClient = useQueryClient();
-
-  return useMutation<ConnectedAccount, Error, CreateAPIConnectedAccountParams>({
-    mutationFn: (params) =>
-      createAPIConnectedAccount(
-        params.appName,
-        params.connectedAccountOwnerId,
-        params.connectedAPIKey,
-      ),
-
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: connectedAccountKeys.all(),
-      }),
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-};
-
-type CreateNoAuthConnectedAccountParams = {
-  appName: string;
-  connectedAccountOwnerId: string;
-};
-
-export const useCreateNoAuthConnectedAccount = () => {
-  const queryClient = useQueryClient();
+  const { accessToken } = useMetaInfo();
 
   return useMutation<
-    ConnectedAccount,
+    OAuth2ConnectedAccountResponse | ConnectedAccount,
     Error,
-    CreateNoAuthConnectedAccountParams
+    CreateConnectedAccountParams
   >({
-    mutationFn: (params) =>
-      createNoAuthConnectedAccount(
-        params.appName,
-        params.connectedAccountOwnerId,
-      ),
-    onSuccess: () =>
+    mutationFn: (params) => {
+      const request: CreateConnectedAccountRequest = {
+        mcp_server_configuration_id: params.mcpServerConfigurationId,
+        api_key: params.apiKey,
+        redirect_url_after_account_creation: params.redirectUrl,
+      };
+      return createConnectedAccount(request, accessToken!);
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: connectedAccountKeys.all(),
-      }),
+      });
+    },
     onError: (error) => {
       toast.error(error.message);
     },
@@ -154,38 +132,6 @@ export const useUpdateConnectedAccount = () => {
       queryClient.invalidateQueries({
         queryKey: connectedAccountKeys.all(),
       }),
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
-};
-
-type CreateOAuth2ConnectedAccountParams = {
-  mcpServerConfigurationId: string;
-  redirectUrl?: string;
-};
-
-export const useCreateOAuth2ConnectedAccount = () => {
-  const queryClient = useQueryClient();
-  const { accessToken } = useMetaInfo();
-
-  return useMutation<
-    OAuth2ConnectedAccountResponse,
-    Error,
-    CreateOAuth2ConnectedAccountParams
-  >({
-    mutationFn: (params) => {
-      const request: CreateOAuth2ConnectedAccountRequest = {
-        mcp_server_configuration_id: params.mcpServerConfigurationId,
-        redirect_url_after_account_creation: params.redirectUrl,
-      };
-      return createOAuth2ConnectedAccount(request, accessToken!);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: connectedAccountKeys.all(),
-      });
-    },
     onError: (error) => {
       toast.error(error.message);
     },

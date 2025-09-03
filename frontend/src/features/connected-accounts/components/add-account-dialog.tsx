@@ -35,18 +35,33 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Plus, ExternalLink, Check, ChevronsUpDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Plus,
+  ExternalLink,
+  Check,
+  ChevronsUpDown,
+  Key,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
-import { useCreateOAuth2ConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
+import {
+  useMCPServerConfigurations,
+  useMCPServerConfiguration,
+} from "@/features/mcp/hooks/use-mcp-servers";
+import { useCreateConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerConfigurationPublicBasic } from "@/features/mcp/types/mcp.types";
+import { AuthType } from "@/features/mcp/types/mcp.types";
+import { OAuth2ConnectedAccountResponse } from "@/features/connected-accounts/api/connectedaccount";
 
 const formSchema = z.object({
   mcpServerConfigurationId: z
     .string()
     .min(1, "MCP Server configuration is required"),
+  apiKey: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,18 +70,24 @@ interface AddAccountDialogProps {
   onSuccess?: () => void;
 }
 
-export function AddAccountDialog({}: AddAccountDialogProps) {
+export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [selectedConfig, setSelectedConfig] =
     useState<MCPServerConfigurationPublicBasic | null>(null);
+  const [authType, setAuthType] = useState<AuthType | null>(null);
 
   const {
     data: mcpConfigurationsResponse,
     isLoading: isLoadingConfigurations,
   } = useMCPServerConfigurations({ limit: 100 });
-  const { mutateAsync: createOAuth2Account, isPending: isCreating } =
-    useCreateOAuth2ConnectedAccount();
+
+  // Fetch full configuration details when a config is selected
+  const { data: fullConfigDetails, isLoading: isLoadingDetails } =
+    useMCPServerConfiguration(selectedConfig?.id || "");
+
+  const { mutateAsync: createAccount, isPending: isCreating } =
+    useCreateConnectedAccount();
 
   const mcpConfigurations = useMemo(
     () => mcpConfigurationsResponse?.data || [],
@@ -77,27 +98,113 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       mcpServerConfigurationId: "",
+      apiKey: "",
     },
   });
 
+  // Update auth type when full config details are loaded
+  useMemo(() => {
+    if (fullConfigDetails?.auth_type) {
+      setAuthType(fullConfigDetails.auth_type);
+      // Clear API key field when switching configurations
+      form.setValue("apiKey", "");
+    }
+  }, [fullConfigDetails, form]);
+
   const handleSubmit = async (values: FormValues) => {
     try {
-      // Automatically generate the redirect URL to return to connected accounts page
-      const currentOrigin = window.location.origin;
-      const redirectUrl = `${currentOrigin}/connected-accounts`;
+      if (!authType) {
+        toast.error("Unable to determine authentication type");
+        return;
+      }
 
-      const result = await createOAuth2Account({
-        mcpServerConfigurationId: values.mcpServerConfigurationId,
-        redirectUrl: redirectUrl,
-      });
+      // Prepare request based on auth type
+      let result;
 
-      if (result.authorization_url) {
-        // Redirect to OAuth provider
-        window.location.href = result.authorization_url;
+      if (authType === AuthType.OAUTH) {
+        // For OAuth, include redirect URL
+        const currentOrigin = window.location.origin;
+        const redirectUrl = `${currentOrigin}/connected-accounts`;
+
+        result = (await createAccount({
+          mcpServerConfigurationId: values.mcpServerConfigurationId,
+          redirectUrl: redirectUrl,
+        })) as OAuth2ConnectedAccountResponse;
+
+        if (result.authorization_url) {
+          // Redirect to OAuth provider
+          window.location.href = result.authorization_url;
+        }
+      } else if (authType === AuthType.API_KEY) {
+        // For API Key, validate and include the key
+        if (!values.apiKey || values.apiKey.trim() === "") {
+          toast.error("API key is required");
+          return;
+        }
+
+        result = await createAccount({
+          mcpServerConfigurationId: values.mcpServerConfigurationId,
+          apiKey: values.apiKey,
+        });
+
+        toast.success("Connected account created successfully");
+        setOpen(false);
+        form.reset();
+        setSelectedConfig(null);
+        setAuthType(null);
+        onSuccess?.();
+      } else if (authType === AuthType.NO_AUTH) {
+        // For No Auth, just create the account
+        result = await createAccount({
+          mcpServerConfigurationId: values.mcpServerConfigurationId,
+        });
+
+        toast.success("Connected account created successfully");
+        setOpen(false);
+        form.reset();
+        setSelectedConfig(null);
+        setAuthType(null);
+        onSuccess?.();
       }
     } catch (error) {
       console.error("Error creating connected account:", error);
-      toast.error("Failed to create connected account");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create connected account",
+      );
+    }
+  };
+
+  const getSubmitButtonText = () => {
+    if (isCreating) return "Processing...";
+    if (!authType) return "Select Configuration";
+
+    switch (authType) {
+      case AuthType.OAUTH:
+        return "Connect Account";
+      case AuthType.API_KEY:
+        return "Confirm";
+      case AuthType.NO_AUTH:
+        return "Confirm";
+      default:
+        return "Submit";
+    }
+  };
+
+  const getSubmitButtonIcon = () => {
+    if (isCreating) return <Loader2 className="mr-2 h-4 w-4 animate-spin" />;
+    if (!authType) return null;
+
+    switch (authType) {
+      case AuthType.OAUTH:
+        return <ExternalLink className="mr-2 h-4 w-4" />;
+      case AuthType.API_KEY:
+        return <Key className="mr-2 h-4 w-4" />;
+      case AuthType.NO_AUTH:
+        return <ShieldCheck className="mr-2 h-4 w-4" />;
+      default:
+        return null;
     }
   };
 
@@ -118,6 +225,7 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4"
           >
+            {/* Configuration Selection */}
             <FormField
               control={form.control}
               name="mcpServerConfigurationId"
@@ -212,28 +320,110 @@ export function AddAccountDialog({}: AddAccountDialogProps) {
                   </Popover>
                   <FormDescription>
                     Select the MCP server configuration to link your account
-                    with. You will be redirected to authenticate with the
-                    provider.
+                    with.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Show loading state while fetching config details */}
+            {selectedConfig && isLoadingDetails && (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Loading configuration details...
+                </span>
+              </div>
+            )}
+
+            {/* Dynamic Auth UI based on auth type */}
+            {authType && !isLoadingDetails && (
+              <>
+                {authType === AuthType.API_KEY && (
+                  <FormField
+                    control={form.control}
+                    name="apiKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>API Key</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="Enter your API key"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Enter the API key for this service. It will be
+                          securely stored.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {authType === AuthType.OAUTH && (
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <div className="flex items-start space-x-2">
+                      <ExternalLink className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">
+                          OAuth Authentication
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          You&apos;ll be redirected to authenticate with the
+                          service provider.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {authType === AuthType.NO_AUTH && (
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <div className="flex items-start space-x-2">
+                      <ShieldCheck className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">
+                          No Authentication Required
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          This service doesn&apos;t require authentication.
+                          Click confirm to connect.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  form.reset();
+                  setSelectedConfig(null);
+                  setAuthType(null);
+                }}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isCreating || !form.watch("mcpServerConfigurationId")}
+                disabled={
+                  isCreating ||
+                  !form.watch("mcpServerConfigurationId") ||
+                  isLoadingDetails ||
+                  (authType === AuthType.API_KEY && !form.watch("apiKey"))
+                }
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                {isCreating ? "Connecting..." : "Connect Account"}
+                {getSubmitButtonIcon()}
+                {getSubmitButtonText()}
               </Button>
             </DialogFooter>
           </form>

@@ -28,19 +28,20 @@ export async function getAllConnectedAccounts(
   return paginatedResponse.data || [];
 }
 
-export interface CreateOAuth2ConnectedAccountRequest {
+export interface CreateConnectedAccountRequest {
   mcp_server_configuration_id: string;
-  redirect_url_after_account_creation?: string;
+  api_key?: string; // For API_KEY auth type
+  redirect_url_after_account_creation?: string; // For OAUTH2 auth type
 }
 
 export interface OAuth2ConnectedAccountResponse {
   authorization_url: string;
 }
 
-export async function createOAuth2ConnectedAccount(
-  request: CreateOAuth2ConnectedAccountRequest,
+export async function createConnectedAccount(
+  request: CreateConnectedAccountRequest,
   accessToken: string,
-): Promise<OAuth2ConnectedAccountResponse> {
+): Promise<OAuth2ConnectedAccountResponse | ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
     `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts`,
@@ -93,80 +94,6 @@ export async function getAppConnectedAccounts(
 
   const connectedAccounts = await response.json();
   return connectedAccounts;
-}
-
-export async function createAPIConnectedAccount(
-  appName: string,
-  connectedAccountOwnerId: string,
-  connectedAPIKey: string,
-): Promise<ConnectedAccount> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/linked-accounts/api-key`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        app_name: appName,
-        linked_account_owner_id: connectedAccountOwnerId,
-        api_key: connectedAPIKey,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    let errorMsg = `Failed to create connected account: ${response.status} ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData && errorData.error) {
-        errorMsg = errorData.error;
-      }
-    } catch (e) {
-      console.error("Error parsing error response:", e);
-    }
-    throw new Error(errorMsg);
-  }
-
-  const connectedAccount = await response.json();
-  return connectedAccount;
-}
-
-export async function createNoAuthConnectedAccount(
-  appName: string,
-  connectedAccountOwnerId: string,
-): Promise<ConnectedAccount> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/linked-accounts/no-auth`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        app_name: appName,
-        linked_account_owner_id: connectedAccountOwnerId,
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    let errorMsg = `Failed to create no auth connected account: ${response.status} ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData && errorData.error) {
-        errorMsg = errorData.error;
-      }
-    } catch (e) {
-      console.error("Error parsing error response:", e);
-    }
-    throw new Error(errorMsg);
-  }
-
-  const connectedAccount = await response.json();
-  return connectedAccount;
 }
 
 export async function getOauth2LinkURL(
