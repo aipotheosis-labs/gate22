@@ -24,7 +24,7 @@ from aci.common.schemas.connected_account import (
 )
 from aci.common.schemas.mcp_auth import APIKeyCredentials, NoAuthCredentials
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import config, rbac, schema_utils
+from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     MCPServerConfigurationNotFound,
@@ -51,10 +51,9 @@ async def create_connected_account(
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
     # check if the MCP server configuration's allowed teams contains team the user belongs to
-    rbac.is_mcp_server_configuration_in_user_team(
+    access_control.check_mcp_server_config_accessibility(
         db_session=context.db_session,
         user_id=context.user_id,
-        act_as_organization_id=context.act_as.organization_id,
         mcp_server_configuration_id=mcp_server_config.id,
         throw_error_if_not_permitted=True,
     )
@@ -380,7 +379,7 @@ async def delete_connected_account(
         raise HTTPException(status_code=404, detail="Connected account not found")
 
     # Check if the user is acted as the organization of the connected account
-    rbac.check_permission(
+    access_control.check_permission(
         context.act_as,
         requested_organization_id=connected_account.mcp_server_configuration.organization_id,
         throw_error_if_not_permitted=True,

@@ -11,8 +11,8 @@ from aci.common.schemas.mcp_server_bundle import (
     MCPServerBundlePublic,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
+from aci.control_plane import access_control, schema_utils
 from aci.control_plane import dependencies as deps
-from aci.control_plane import rbac, schema_utils
 from aci.control_plane.exceptions import NotPermittedError
 
 logger = get_logger(__name__)
@@ -32,10 +32,9 @@ async def create_mcp_server_bundle(
     for mcp_server_configuration_id in body.mcp_server_configuration_ids:
         # make sure mcp_server_configuration_ids are actually in the org and user belongs
         # to a team that has access to the mcp server configuration
-        rbac.is_mcp_server_configuration_in_user_team(
+        access_control.check_mcp_server_config_accessibility(
             db_session=context.db_session,
             user_id=context.user_id,
-            act_as_organization_id=context.act_as.organization_id,
             mcp_server_configuration_id=mcp_server_configuration_id,
             throw_error_if_not_permitted=True,
         )
@@ -113,7 +112,7 @@ async def get_mcp_server_bundle(
         raise HTTPException(status_code=404, detail="MCP server bundle not found")
 
     # check if the MCP server bundle is under the user's org
-    rbac.check_permission(
+    access_control.check_permission(
         context.act_as,
         requested_organization_id=mcp_server_bundle.organization_id,
         throw_error_if_not_permitted=True,
@@ -142,7 +141,7 @@ async def delete_mcp_server_bundle(
         raise HTTPException(status_code=404, detail="MCP server bundle not found")
 
     # check if the MCP server bundle is under the user's org
-    rbac.check_permission(
+    access_control.check_permission(
         context.act_as,
         requested_organization_id=mcp_server_bundle.organization_id,
         throw_error_if_not_permitted=True,

@@ -13,8 +13,8 @@ from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationUpdate,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
+from aci.control_plane import access_control, schema_utils
 from aci.control_plane import dependencies as deps
-from aci.control_plane import rbac, schema_utils
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -27,7 +27,7 @@ async def create_mcp_server_configuration(
 ) -> MCPServerConfigurationPublic:
     # TODO: check allowed_teams are actually in the org
     # TODO: check enabled_tools are actually in the mcp server
-    rbac.check_permission(
+    access_control.check_permission(
         context.act_as,
         requested_organization_id=context.act_as.organization_id,
         required_role=OrganizationRole.ADMIN,
@@ -117,7 +117,7 @@ async def get_mcp_server_configuration(
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
     # Check if the MCP server configuration is under the user's org
-    rbac.check_permission(
+    access_control.check_permission(
         context.act_as,
         requested_organization_id=mcp_server_configuration.organization_id,
         throw_error_if_not_permitted=True,
@@ -126,10 +126,9 @@ async def get_mcp_server_configuration(
     if context.act_as.role == OrganizationRole.MEMBER:
         # If user is member, check if the MCP server configuration's allowed teams contains the
         # user's team
-        rbac.is_mcp_server_configuration_in_user_team(
+        access_control.check_mcp_server_config_accessibility(
             db_session=context.db_session,
             user_id=context.user_id,
-            act_as_organization_id=context.act_as.organization_id,
             mcp_server_configuration_id=mcp_server_configuration_id,
             throw_error_if_not_permitted=True,
         )
@@ -153,7 +152,7 @@ async def update_mcp_server_configuration(
 
     # Check if the MCP server configuration is under the user's org
     # Check if the user is acted as admin
-    rbac.check_permission(
+    access_control.check_permission(
         context.act_as,
         requested_organization_id=mcp_server_configuration.organization_id,
         required_role=OrganizationRole.ADMIN,
@@ -214,10 +213,9 @@ async def update_mcp_server_configuration(
         logger.debug(
             f"Checking if user {connected_account.user_id} has access to the MCP server configuration {mcp_server_configuration_id}"  # noqa: E501
         )
-        has_access = rbac.is_mcp_server_configuration_in_user_team(
+        has_access = access_control.check_mcp_server_config_accessibility(
             db_session=context.db_session,
             user_id=connected_account.user_id,
-            act_as_organization_id=context.act_as.organization_id,
             mcp_server_configuration_id=mcp_server_configuration_id,
             throw_error_if_not_permitted=False,
         )
@@ -250,7 +248,7 @@ async def delete_mcp_server_configuration(
     if mcp_server_configuration is not None:
         # Check if the user is an admin and is acted as the organization_id of the MCP server
         # configuration
-        rbac.check_permission(
+        access_control.check_permission(
             context.act_as,
             requested_organization_id=mcp_server_configuration.organization_id,
             required_role=OrganizationRole.ADMIN,

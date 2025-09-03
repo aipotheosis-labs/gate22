@@ -44,20 +44,19 @@ def check_permission(
     return True
 
 
-def is_mcp_server_configuration_in_user_team(
+def check_mcp_server_config_accessibility(
     db_session: Session,
     user_id: UUID,
-    act_as_organization_id: UUID,
     mcp_server_configuration_id: UUID,
     throw_error_if_not_permitted: bool = True,
 ) -> bool:
     """
     Returns:
-        True if the user belongs to a team that is allowed to use the MCP server configuration
-        False otherwise
+        Whether the user has access to a MCP server configuration.
+        Current rule:
+        - True if user belongs to any team that is allowed by the MCP server configuration
+        - False otherwise
     """
-    # TODO: Should probably rename this module to something like "acl", instead of rbac as this
-    # method is not really about role-based access control.
 
     mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
         db_session, mcp_server_configuration_id, throw_error_if_not_found=False
@@ -65,8 +64,9 @@ def is_mcp_server_configuration_in_user_team(
     if mcp_server_configuration is None:
         return False
 
-    user_teams = crud.teams.get_teams_by_user_id(db_session, act_as_organization_id, user_id)
-
+    user_teams = crud.teams.get_teams_by_user_id(
+        db_session, mcp_server_configuration.organization_id, user_id
+    )
     user_team_ids = [team.id for team in user_teams]
 
     # Check if any of the user's team is allowed by the MCP server configuration
