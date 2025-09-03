@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerBundle, User
 from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
 from aci.common.schemas.pagination import PaginationResponse
@@ -130,6 +131,86 @@ def test_get_mcp_server_bundle(
             assert response.status_code == 200
             mcp_server_bundle = MCPServerBundlePublic.model_validate(response.json())
             assert mcp_server_bundle.id == target_mcp_server_bundle.id
+        else:
+            # Should not see any MCP server bundle
+            assert response.status_code == 403
+            assert response.json()["error"].startswith("Not permitted")
+    else:
+        raise Exception("Untested access token fixture")
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+        "dummy_access_token_another_org",
+    ],
+)
+@pytest.mark.parametrize("is_own_mcp_server_bundle", [True, False])
+def test_delete_mcp_server_bundle(
+    test_client: TestClient,
+    db_session: Session,
+    request: pytest.FixtureRequest,
+    access_token_fixture: str,
+    dummy_user: User,
+    dummy_mcp_server_bundles: list[MCPServerBundle],
+    is_own_mcp_server_bundle: bool,
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    # Find the target MCP server bundle for testing
+    if is_own_mcp_server_bundle:
+        target_mcp_server_bundle = next(
+            mcp_server_bundle
+            for mcp_server_bundle in dummy_mcp_server_bundles
+            if mcp_server_bundle.user_id == dummy_user.id
+        )
+    else:
+        target_mcp_server_bundle = next(
+            mcp_server_bundle
+            for mcp_server_bundle in dummy_mcp_server_bundles
+            if mcp_server_bundle.user_id != dummy_user.id
+        )
+
+    db_session.commit()
+
+    response = test_client.delete(
+        f"{config.ROUTER_PREFIX_MCP_SERVER_BUNDLES}/{target_mcp_server_bundle.id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    if access_token_fixture in ["dummy_access_token_no_orgs", "dummy_access_token_another_org"]:
+        assert response.status_code == 403
+        return
+
+    # Admin can delete any MCP server bundles in the organization
+    elif access_token_fixture == "dummy_access_token_admin":
+        assert response.status_code == 200
+
+        # Check if the MCP server bundle is deleted in db
+        assert (
+            crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+                db_session, target_mcp_server_bundle.id
+            )
+            is None
+        )
+
+    elif access_token_fixture in [
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+    ]:
+        if is_own_mcp_server_bundle:
+            # Member can see their own MCP server bundles only
+            assert response.status_code == 200
+            assert (
+                crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+                    db_session, target_mcp_server_bundle.id
+                )
+                is None
+            )
         else:
             # Should not see any MCP server bundle
             assert response.status_code == 403
