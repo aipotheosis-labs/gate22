@@ -118,18 +118,11 @@ export function useCreateMCPServerBundle() {
 }
 
 export function useDeleteMCPServerBundle() {
-  const { accessToken, user, activeOrg, isActingAsRole, isTokenRefreshing } =
-    useMetaInfo();
+  const { accessToken, isTokenRefreshing } = useMetaInfo();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      bundleId,
-      bundleOwnerId,
-    }: {
-      bundleId: string;
-      bundleOwnerId?: string;
-    }) => {
+    mutationFn: async ({ bundleId }: { bundleId: string }) => {
       // Wait if token is refreshing
       if (isTokenRefreshing) {
         throw new Error("Please wait, updating permissions...");
@@ -137,20 +130,6 @@ export function useDeleteMCPServerBundle() {
 
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
-      }
-
-      // Check if user can delete this bundle
-      // Admin cannot delete bundles (based on backend logic)
-      // Member can only delete their own bundles
-      const currentRole =
-        isActingAsRole && activeOrg?.userRole === "Admin"
-          ? "member"
-          : activeOrg?.userRole?.toLowerCase();
-      const isAdmin = currentRole === "admin";
-      const isOwner = bundleOwnerId === user?.userId;
-
-      if (isAdmin || !isOwner) {
-        throw new Error("You do not have permission to delete this bundle");
       }
 
       try {

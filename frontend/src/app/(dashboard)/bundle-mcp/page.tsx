@@ -54,9 +54,9 @@ export default function BundleMCPPage() {
   const { mutateAsync: deleteBundleMutation } = useDeleteMCPServerBundle();
 
   const handleDeleteBundle = useCallback(
-    async (bundleId: string, bundleOwnerId: string) => {
+    async (bundleId: string) => {
       try {
-        await deleteBundleMutation({ bundleId, bundleOwnerId });
+        await deleteBundleMutation({ bundleId });
       } catch (error) {
         console.error("Failed to delete bundle:", error);
       }
@@ -171,7 +171,13 @@ export default function BundleMCPPage() {
                 </Tooltip>
               </TooltipProvider>
 
-              <PermissionGuard permission={PERMISSIONS.BUNDLE_DELETE_OWN}>
+              <PermissionGuard
+                permission={[
+                  PERMISSIONS.BUNDLE_DELETE_OWN,
+                  PERMISSIONS.BUNDLE_DELETE_ALL,
+                ]}
+                mode="any"
+              >
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
@@ -194,9 +200,7 @@ export default function BundleMCPPage() {
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={() =>
-                          handleDeleteBundle(bundle.id, bundle.user_id)
-                        }
+                        onClick={() => handleDeleteBundle(bundle.id)}
                       >
                         Delete
                       </AlertDialogAction>

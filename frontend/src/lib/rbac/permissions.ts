@@ -38,8 +38,9 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OWN,
     PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN,
 
-    // Bundles - Admins can see all but NOT create
+    // Bundles - Admins can see all and delete any bundle
     PERMISSIONS.BUNDLE_PAGE_VIEW,
+    PERMISSIONS.BUNDLE_DELETE_ALL,
     // Note: Admins cannot create bundles
   ],
   member: [
