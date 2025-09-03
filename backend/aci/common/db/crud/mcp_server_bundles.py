@@ -53,6 +53,18 @@ def get_mcp_server_bundles_by_organization_id(
     return list(db_session.execute(statement).scalars().all())
 
 
+def get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(
+    db_session: Session,
+    organization_id: UUID,
+    mcp_server_configuration_id: UUID,
+) -> list[MCPServerBundle]:
+    statement = select(MCPServerBundle).where(
+        MCPServerBundle.organization_id == organization_id,
+        MCPServerBundle.mcp_server_configuration_ids.contains([mcp_server_configuration_id]),
+    )
+    return list(db_session.execute(statement).scalars().all())
+
+
 def get_mcp_server_bundles_by_user_id_and_organization_id(
     db_session: Session,
     user_id: UUID,
