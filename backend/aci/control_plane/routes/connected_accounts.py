@@ -389,7 +389,11 @@ async def delete_connected_account(
     # Member can only delete their own connected accounts
     if context.act_as.role == OrganizationRole.MEMBER:
         if connected_account.user_id != context.user_id:
+            logger.error(
+                f"Connected account {connected_account_id} is not belongs to the member {context.user_id}"  # noqa: E501
+            )
             raise NotPermittedError(message="Cannot delete others' connected accounts")
+
     # Admin can delete any connected account
     if context.act_as.role == OrganizationRole.ADMIN:
         pass
