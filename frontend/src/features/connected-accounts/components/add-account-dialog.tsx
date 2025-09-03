@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -103,7 +103,7 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
   });
 
   // Update auth type when full config details are loaded
-  useMemo(() => {
+  useEffect(() => {
     if (fullConfigDetails?.auth_type) {
       setAuthType(fullConfigDetails.auth_type);
       // Clear API key field when switching configurations
