@@ -13,6 +13,7 @@ import { ToolSchemaDrawer } from "@/features/mcp/components/tool-schema-drawer";
 import { MCPToolBasic } from "@/features/mcp/types/mcp.types";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { ExpandableText } from "@/components/ui/expandable-text";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
@@ -144,7 +145,11 @@ export default function MCPServerDetailPage() {
                   >
                     <td className="p-2 font-medium text-sm">{tool.name}</td>
                     <td className="p-2 text-xs text-muted-foreground">
-                      {tool.description || "No description available"}
+                      <ExpandableText
+                        text={tool.description || "No description available"}
+                        className="text-xs text-muted-foreground"
+                        maxLines={2}
+                      />
                     </td>
                     <td className="p-2 text-center">
                       <Button

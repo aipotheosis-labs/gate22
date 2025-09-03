@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Trash2, Settings, Eye, ArrowUpDown } from "lucide-react";
+import { Trash2, Settings, ArrowUpDown } from "lucide-react";
 import { formatToLocalTime } from "@/utils/time";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
@@ -20,12 +20,6 @@ import {
   AlertDialogDescription,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   useMCPServerConfigurations,
   useDeleteMCPServerConfiguration,
@@ -176,24 +170,15 @@ export default function MCPConfigurationPage() {
             const configuration = info.getValue();
             return (
               <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          router.push(`/mcp-configuration/${configuration.id}`)
-                        }
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>View Configuration</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    router.push(`/mcp-configuration/${configuration.id}`)
+                  }
+                >
+                  Detail
+                </Button>
 
                 <PermissionGuard
                   permission={PERMISSIONS.MCP_CONFIGURATION_DELETE}

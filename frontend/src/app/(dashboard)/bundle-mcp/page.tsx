@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Plus, Package, Eye, ArrowUpDown } from "lucide-react";
+import { Trash2, Plus, Package, ArrowUpDown, Copy, Check } from "lucide-react";
 import { CreateBundleForm } from "@/features/bundle-mcp/components/create-bundle-form";
 import {
   useCreateMCPServerBundle,
@@ -30,17 +30,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { getMcpBaseUrl } from "@/lib/api-client";
+import { toast } from "sonner";
 
 const columnHelper = createColumnHelper<MCPServerBundle>();
 
 export default function BundleMCPPage() {
   const router = useRouter();
+  const [copiedBundleId, setCopiedBundleId] = useState<string | null>(null);
   const {
     data: bundles = [],
     isLoading: isBundlesLoading,
@@ -63,6 +60,15 @@ export default function BundleMCPPage() {
     },
     [deleteBundleMutation],
   );
+
+  const handleCopyUrl = useCallback((bundleId: string) => {
+    const baseUrl = getMcpBaseUrl();
+    const url = `${baseUrl}/mcp?bundle_id=${bundleId}`;
+    navigator.clipboard.writeText(url);
+    setCopiedBundleId(bundleId);
+    toast.success("URL copied to clipboard");
+    setTimeout(() => setCopiedBundleId(null), 2000);
+  }, []);
 
   const columns: ColumnDef<MCPServerBundle>[] = useMemo(() => {
     return [
@@ -154,22 +160,26 @@ export default function BundleMCPPage() {
           const bundle = info.getValue();
           return (
             <div className="flex items-center justify-end gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/bundle-mcp/${bundle.id}`)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>View Bundle</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleCopyUrl(bundle.id)}
+                title="Copy MCP URL"
+              >
+                {copiedBundleId === bundle.id ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/bundle-mcp/${bundle.id}`)}
+              >
+                Detail
+              </Button>
 
               <PermissionGuard
                 permission={[
@@ -214,13 +224,13 @@ export default function BundleMCPPage() {
         enableGlobalFilter: false,
       }),
     ] as ColumnDef<MCPServerBundle>[];
-  }, [handleDeleteBundle, router]);
+  }, [handleDeleteBundle, handleCopyUrl, copiedBundleId, router]);
 
   if (isBundlesLoading) {
     return (
       <div>
         <div className="px-4 py-3 border-b">
-          <h1 className="text-2xl font-bold">Bundle MCP</h1>
+          <h1 className="text-2xl font-bold">MCP Bundles</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage your MCP server bundles and configurations
           </p>
@@ -239,7 +249,7 @@ export default function BundleMCPPage() {
     <div>
       <div className="px-4 py-3 border-b flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Bundle MCP</h1>
+          <h1 className="text-2xl font-bold">MCP Bundles</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage your MCP server bundles and configurations
           </p>

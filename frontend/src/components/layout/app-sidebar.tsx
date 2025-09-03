@@ -49,7 +49,7 @@ export const sidebarItems = [
     icon: Link2,
   },
   {
-    title: "Bundle MCP",
+    title: "MCP Bundles",
     url: `/bundle-mcp`,
     icon: Package,
   },
