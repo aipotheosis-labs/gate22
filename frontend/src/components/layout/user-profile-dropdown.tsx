@@ -1,13 +1,11 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -16,11 +14,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { Settings, LogOut, Sun, Moon, Monitor } from "lucide-react";
+import { LogOut, Sun, Moon, Monitor } from "lucide-react";
 
 export function UserProfileDropdown() {
   const { user, logout } = useMetaInfo();
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
 
   const handleLogout = async () => {
@@ -31,10 +28,6 @@ export function UserProfileDropdown() {
       console.error("Logout failed:", error);
       toast.error("Failed to logout");
     }
-  };
-
-  const handleNavigation = (path: string) => {
-    router.push(path);
   };
 
   // Get initials from user's first name or email
@@ -129,18 +122,6 @@ export function UserProfileDropdown() {
             </Button>
           </div>
         </div>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={() => handleNavigation("/settings")}
-            className="cursor-pointer hover:bg-accent transition-colors duration-150"
-          >
-            <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Settings</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
