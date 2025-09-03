@@ -130,7 +130,7 @@ async def delete_mcp_server_bundle(
     mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
         context.db_session, mcp_server_bundle_id
     )
-    if mcp_server_bundle is None:
+    if not mcp_server_bundle:
         raise HTTPException(status_code=404, detail="MCP server bundle not found")
 
     # check if the MCP server bundle is under the user's org
@@ -140,17 +140,17 @@ async def delete_mcp_server_bundle(
         throw_error_if_not_permitted=True,
     )
 
+    # Member can only delete their own connected accounts
     if context.act_as.role == OrganizationRole.MEMBER:
-        # If user is member, check if the MCP server bundle is belongs to the member
         if mcp_server_bundle.user_id != context.user_id:
             logger.error(
                 f"MCP server bundle {mcp_server_bundle_id} is not belongs to the member {context.user_id}"  # noqa: E501
             )
             raise NotPermittedError(message="Cannot delete MCP server bundle")
 
-        crud.mcp_server_bundles.delete_mcp_server_bundle(context.db_session, mcp_server_bundle_id)
-        context.db_session.commit()
+    # Admin can delete any connected account
+    if context.act_as.role == OrganizationRole.ADMIN:
+        pass
 
-    else:
-        # Admin cannot delete MCP server bundle
-        raise NotPermittedError(message="Cannot delete MCP server bundle")
+    crud.mcp_server_bundles.delete_mcp_server_bundle(context.db_session, mcp_server_bundle_id)
+    context.db_session.commit()
