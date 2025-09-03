@@ -25,13 +25,21 @@ async def create_mcp_server_bundle(
     body: MCPServerBundleCreate,
 ) -> MCPServerBundlePublic:
     # TODO: acl control
-    if context.act_as is None or context.act_as.role != OrganizationRole.ADMIN:
+    # Only member can create MCP server bundle
+    if context.act_as.role == OrganizationRole.ADMIN:
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    # TODO: make sure mcp_server_configuration_ids are actually in the org and user belongs
-    # to a team that has access to the mcp server configuration
-
     for mcp_server_configuration_id in body.mcp_server_configuration_ids:
+        # make sure mcp_server_configuration_ids are actually in the org and user belongs
+        # to a team that has access to the mcp server configuration
+        rbac.is_mcp_server_configuration_in_user_team(
+            db_session=context.db_session,
+            user_id=context.user_id,
+            act_as_organization_id=context.act_as.organization_id,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+            throw_error_if_not_permitted=True,
+        )
+
         connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
             context.db_session,
             context.user_id,
