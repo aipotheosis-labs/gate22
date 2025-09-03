@@ -373,26 +373,27 @@ async def delete_connected_account(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     connected_account_id: UUID,
 ) -> None:
-    # TODO: Admin can only delete shared accounts. (Shared account is not implemented yet)
-    # If a person is acted as an admin, they cannot do any deletion at this moment.
-    if context.act_as.role != OrganizationRole.MEMBER:
-        raise HTTPException(status_code=403, detail="Forbidden")
-
     connected_account = crud.connected_accounts.get_connected_account_by_id(
         context.db_session, connected_account_id
     )
-    if connected_account is not None:
-        rbac.check_permission(
-            context.act_as,
-            requested_organization_id=connected_account.mcp_server_configuration.organization_id,
-            throw_error_if_not_permitted=True,
-        )
-        if context.user_id != connected_account.user_id:
-            raise NotPermittedError(message="Cannot delete others' connected accounts")
-
-        # Delete the connected account
-        crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
-
-        context.db_session.commit()
-    else:
+    if not connected_account:
         raise HTTPException(status_code=404, detail="Connected account not found")
+
+    # Check if the user is acted as the organization of the connected account
+    rbac.check_permission(
+        context.act_as,
+        requested_organization_id=connected_account.mcp_server_configuration.organization_id,
+        throw_error_if_not_permitted=True,
+    )
+
+    # Member can only delete their own connected accounts
+    if context.act_as.role == OrganizationRole.MEMBER:
+        if connected_account.user_id != context.user_id:
+            raise NotPermittedError(message="Cannot delete others' connected accounts")
+    # Admin can delete any connected account
+    if context.act_as.role == OrganizationRole.ADMIN:
+        pass
+
+    # Delete the connected account
+    crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
+    context.db_session.commit()
