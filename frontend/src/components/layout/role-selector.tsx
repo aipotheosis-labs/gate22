@@ -32,13 +32,13 @@ export const RoleSelector = () => {
   const roles = [
     {
       value: "admin",
-      label: "Admin",
+      label: "View As Admin",
       icon: Shield,
       active: !isActingAsRole,
     },
     {
       value: "member",
-      label: "Member",
+      label: "View As Member",
       icon: Users,
       active: isActingAsRole,
     },
@@ -69,7 +69,7 @@ export const RoleSelector = () => {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between h-9 px-2 text-sm font-medium"
+          className="justify-between h-9 px-3 text-sm font-medium min-w-[140px]"
         >
           <div className="flex items-center gap-2 truncate">
             {currentRoleData && (
@@ -82,7 +82,7 @@ export const RoleSelector = () => {
           <ChevronsUpDown className="h-3 w-3 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-32 p-0" align="end">
+      <PopoverContent className="w-48 p-0" align="end">
         <Command>
           <CommandList>
             <CommandGroup>

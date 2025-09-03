@@ -77,8 +77,16 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Get initial token without role context (will use defaults from backend)
-        const token = await tokenManager.getAccessToken();
+        // IMPORTANT: Load stored preferences FIRST before requesting token
+        // This ensures we have the correct act_as context from the start
+        const storedOrg = organizationManager.getActiveOrganization();
+        const storedRole = storedOrg ? roleManager.getActiveRole(storedOrg.orgId) : null;
+        
+        // Get initial token with proper role context if available
+        const token = await tokenManager.getAccessToken(
+          storedOrg?.orgId,
+          storedOrg?.userRole as OrganizationRole
+        );
 
         if (token) {
           // Get user profile with the new token
@@ -93,9 +101,6 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             username: userProfile.email.split("@")[0],
             pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
           };
-
-          // Check for stored organization preference
-          const storedOrg = organizationManager.getActiveOrganization();
           let org: OrgMemberInfoClass;
 
           if (storedOrg && userProfile.organizations) {
@@ -161,13 +166,10 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             );
           }
 
-          // Check if admin is acting as member
-          if (org.userRole === OrganizationRole.Admin && org.orgId) {
-            const storedRole = roleManager.getActiveRole(org.orgId);
-            if (storedRole) {
-              setActiveRole(storedRole.role);
-              setIsActingAsRole(true);
-            }
+          // Check if admin is acting as member (we already loaded storedRole above)
+          if (org.userRole === OrganizationRole.Admin && org.orgId && storedRole) {
+            setActiveRole(storedRole.role);
+            setIsActingAsRole(true);
           }
         } else {
           // No valid session - this is expected for non-authenticated users
@@ -189,11 +191,15 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       // Continue with logout even if API call fails
     }
 
-    // Clear token from memory
+    // Clear ALL storage to prevent stale data
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+
+    // Also explicitly clear managers (for safety/consistency)
     tokenManager.clearToken();
-    // Clear role preference
     roleManager.clearActiveRole();
-    // Clear organization preference
     organizationManager.clearActiveOrganization();
 
     // Clear all state
@@ -261,20 +267,23 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       return; // Only admins can toggle role
     }
 
-    // Update role state optimistically
-    if (isActingAsRole) {
-      // Switch back to admin
-      roleManager.clearActiveRole();
-      setActiveRole(null);
-      setIsActingAsRole(false);
-    } else {
-      // Switch to member
+    // Determine new role state
+    const newIsActingAsRole = !isActingAsRole;
+    const newActiveRole = newIsActingAsRole ? OrganizationRole.Member : null;
+
+    // Update localStorage first
+    if (newIsActingAsRole) {
       roleManager.setActiveRole(activeOrg.orgId, OrganizationRole.Member);
-      setActiveRole(OrganizationRole.Member);
-      setIsActingAsRole(true);
+    } else {
+      roleManager.clearActiveRole();
     }
 
-    // Refresh token with loading state
+    // Update state optimistically
+    setActiveRole(newActiveRole);
+    setIsActingAsRole(newIsActingAsRole);
+
+    // Refresh token with the correct context
+    // The tokenManager will check roleManager internally for act_as context
     await refreshTokenWithContext(
       activeOrg.orgId,
       activeOrg.userRole as OrganizationRole,
