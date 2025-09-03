@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from "@/lib/api-client";
 import { toast } from "sonner";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 // Request/Response types
 export interface EmailLoginRequest {
@@ -41,7 +42,7 @@ export async function register(
 ): Promise<boolean> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/auth/register/email`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/auth/register/email`,
     {
       method: "POST",
       headers: {
@@ -95,7 +96,7 @@ export async function register(
 
 export async function login(email: string, password: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/control-plane/auth/login/email`, {
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/login/email`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,7 +152,7 @@ export async function issueToken(
   act_as?: IssueTokenRequest["act_as"],
 ): Promise<TokenResponse> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/control-plane/auth/token`, {
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -183,7 +184,7 @@ export async function issueToken(
 
 export async function logout(): Promise<void> {
   const baseUrl = getApiBaseUrl();
-  await fetch(`${baseUrl}/v1/control-plane/auth/logout`, {
+  await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/logout`, {
     method: "POST",
     credentials: "include", // Include cookies
   });
@@ -191,7 +192,7 @@ export async function logout(): Promise<void> {
 
 export async function getProfile(token: string): Promise<UserInfo> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/v1/control-plane/users/me/profile`, {
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/users/me/profile`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -224,12 +225,12 @@ export function getGoogleLoginUrl(): string {
   const baseUrl = getApiBaseUrl();
   const callbackUrl = `${window.location.origin}/callback?provider=google`;
   const redirectUri = encodeURIComponent(callbackUrl);
-  return `${baseUrl}/v1/control-plane/auth/login/google/authorize?redirect_uri=${redirectUri}`;
+  return `${baseUrl}${CONTROL_PLANE_PATH}/auth/login/google/authorize?redirect_uri=${redirectUri}`;
 }
 
 export function getGoogleRegisterUrl(): string {
   const baseUrl = getApiBaseUrl();
   const callbackUrl = `${window.location.origin}/callback?provider=google`;
   const redirectUri = encodeURIComponent(callbackUrl);
-  return `${baseUrl}/v1/control-plane/auth/register/google/authorize?redirect_uri=${redirectUri}`;
+  return `${baseUrl}${CONTROL_PLANE_PATH}/auth/register/google/authorize?redirect_uri=${redirectUri}`;
 }

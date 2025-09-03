@@ -1,5 +1,6 @@
 import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import { getApiBaseUrl } from "@/lib/api-client";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 export async function getAllConnectedAccounts(
   accessToken: string,
@@ -7,7 +8,7 @@ export async function getAllConnectedAccounts(
   const baseUrl = getApiBaseUrl();
   // Fetch with a large limit to get all accounts
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/connected-accounts?limit=100`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts?limit=100`,
     {
       method: "GET",
       headers: {
@@ -42,7 +43,7 @@ export async function createOAuth2ConnectedAccount(
 ): Promise<OAuth2ConnectedAccountResponse> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/connected-accounts`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts`,
     {
       method: "POST",
       headers: {
@@ -78,7 +79,7 @@ export async function getAppConnectedAccounts(
 
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/connected-accounts?${params.toString()}`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts?${params.toString()}`,
     {
       method: "GET",
     },
@@ -101,7 +102,7 @@ export async function createAPIConnectedAccount(
 ): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/linked-accounts/api-key`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/linked-accounts/api-key`,
     {
       method: "POST",
       headers: {
@@ -138,7 +139,7 @@ export async function createNoAuthConnectedAccount(
 ): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/linked-accounts/no-auth`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/linked-accounts/no-auth`,
     {
       method: "POST",
       headers: {
@@ -182,7 +183,7 @@ export async function getOauth2LinkURL(
 
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/linked-accounts/oauth2?${params.toString()}`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/linked-accounts/oauth2?${params.toString()}`,
     {
       method: "GET",
       headers: {
@@ -217,7 +218,7 @@ export async function deleteConnectedAccount(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/connected-accounts/${connectedAccountId}`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts/${connectedAccountId}`,
     {
       method: "DELETE",
       headers: {
@@ -239,7 +240,7 @@ export async function updateConnectedAccount(
 ): Promise<ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/linked-accounts/${connectedAccountId}`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/linked-accounts/${connectedAccountId}`,
     {
       method: "PATCH",
       headers: {

@@ -1,6 +1,7 @@
 import { OrganizationUser } from "@/features/settings/types/organization.types";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { throwApiError } from "@/lib/api-error-handler";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 export async function listOrganizationUsers(
   accessToken: string,
@@ -8,7 +9,7 @@ export async function listOrganizationUsers(
 ): Promise<OrganizationUser[]> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/organizations/${orgId}/members`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/members`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -49,7 +50,7 @@ export async function inviteToOrganization(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/organizations/${orgId}/invite`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invite`,
     {
       method: "POST",
       headers: {
@@ -72,7 +73,7 @@ export async function removeUser(
 ): Promise<void> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}/v1/control-plane/organizations/${orgId}/members/${userId}`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/members/${userId}`,
     {
       method: "DELETE",
       headers: {
