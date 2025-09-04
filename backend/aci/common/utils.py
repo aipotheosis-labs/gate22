@@ -1,10 +1,19 @@
+import datetime
 import os
 import re
 from functools import cache
 from uuid import UUID
 
+import bcrypt
+import jwt
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from aci.common.db.sql_models import User
+from aci.common.schemas.auth import (
+    ActAsInfo,
+    JWTPayload,
+)
 
 
 def check_and_get_env_variable(name: str, default: str | None = None) -> str:
@@ -91,3 +100,37 @@ def is_uuid(value: str | UUID) -> bool:
         return True
     except ValueError:
         return False
+
+
+def hash_user_password(password: str) -> str:
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode(), salt)
+    return hashed.decode()
+
+
+def sign_token(
+    user: User,
+    act_as: ActAsInfo | None,
+    jwt_signing_key: str,
+    jwt_algorithm: str,
+    jwt_access_token_expire_minutes: int,
+) -> str:
+    """
+    Sign a JWT token for the user. It should include act_as information.
+    """
+    now = datetime.datetime.now(datetime.UTC)
+    expired_at = now + datetime.timedelta(minutes=jwt_access_token_expire_minutes)
+    jwt_payload = JWTPayload(
+        sub=str(user.id),
+        exp=int(expired_at.timestamp()),
+        iat=int(now.timestamp()),
+        user_id=user.id,
+        name=user.name,
+        email=user.email,
+        act_as=act_as,
+    )
+    # Sign JWT, with the user's acted as organization and role
+    token = jwt.encode(
+        jwt_payload.model_dump(mode="json"), jwt_signing_key, algorithm=jwt_algorithm
+    )
+    return token

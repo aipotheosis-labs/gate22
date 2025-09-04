@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Inspector, inspect
 from sqlalchemy.orm import Session
 
+from aci.common import utils
 from aci.common.db import crud
 from aci.common.db.sql_models import (
     Base,
@@ -23,12 +24,16 @@ from aci.common.schemas.auth import ActAsInfo
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 from aci.common.test_utils import clear_database, create_test_db_session
+from aci.control_plane import config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.main import app as fastapi_app
-from aci.control_plane.routes.auth import _sign_token
 from aci.control_plane.tests import helper
 
 logger = get_logger(__name__)
+
+test_jwt_signing_key = config.JWT_SIGNING_KEY
+test_jwt_algorithm = config.JWT_ALGORITHM
+test_jwt_access_token_expire_minutes = config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 # call this one time for entire tests because it's slow and costs money (negligible) as it needs
@@ -61,9 +66,14 @@ def dummy_access_token_admin(dummy_admin: User) -> str:
     Access token of `dummy_user` with `admin` role in `dummy_organization`
     """
     org_membership = dummy_admin.organization_memberships[0]
-    return _sign_token(
-        dummy_admin,
-        ActAsInfo(organization_id=org_membership.organization_id, role=OrganizationRole.ADMIN),
+    return utils.sign_token(
+        user=dummy_admin,
+        act_as=ActAsInfo(
+            organization_id=org_membership.organization_id, role=OrganizationRole.ADMIN
+        ),
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
     )
 
 
@@ -73,9 +83,14 @@ def dummy_access_token_admin_act_as_member(dummy_admin: User) -> str:
     Access token of `dummy_user` with `admin` role in `dummy_organization`, but act as `member` role
     """
     org_membership = dummy_admin.organization_memberships[0]
-    return _sign_token(
-        dummy_admin,
-        ActAsInfo(organization_id=org_membership.organization_id, role=OrganizationRole.MEMBER),
+    return utils.sign_token(
+        user=dummy_admin,
+        act_as=ActAsInfo(
+            organization_id=org_membership.organization_id, role=OrganizationRole.MEMBER
+        ),
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
     )
 
 
@@ -85,9 +100,14 @@ def dummy_access_token_member(dummy_member: User) -> str:
     Access token of `dummy_user` with `member` role in `dummy_organization`
     """
     org_membership = dummy_member.organization_memberships[0]
-    return _sign_token(
-        dummy_member,
-        ActAsInfo(organization_id=org_membership.organization_id, role=OrganizationRole.MEMBER),
+    return utils.sign_token(
+        user=dummy_member,
+        act_as=ActAsInfo(
+            organization_id=org_membership.organization_id, role=OrganizationRole.MEMBER
+        ),
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
     )
 
 
@@ -96,7 +116,13 @@ def dummy_access_token_no_orgs(dummy_user_without_org: User) -> str:
     """
     Access token of a user without any organization
     """
-    return _sign_token(dummy_user_without_org, None)
+    return utils.sign_token(
+        user=dummy_user_without_org,
+        act_as=None,
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
+    )
 
 
 @pytest.fixture(scope="function")
@@ -127,9 +153,12 @@ def dummy_access_token_another_org(db_session: Session) -> str:
     )
     db_session.commit()
 
-    return _sign_token(
-        dummy_other_user,
-        ActAsInfo(organization_id=dummy_other_organization.id, role=OrganizationRole.ADMIN),
+    return utils.sign_token(
+        user=dummy_other_user,
+        act_as=ActAsInfo(organization_id=dummy_other_organization.id, role=OrganizationRole.ADMIN),
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
     )
 
 

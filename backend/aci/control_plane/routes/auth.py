@@ -13,8 +13,8 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
+from aci.common import utils
 from aci.common.db import crud
-from aci.common.db.sql_models import User
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import (
@@ -23,7 +23,6 @@ from aci.common.schemas.auth import (
     EmailLoginRequest,
     EmailRegistrationRequest,
     IssueTokenRequest,
-    JWTPayload,
     OAuth2State,
     TokenResponse,
 )
@@ -172,7 +171,7 @@ async def register(
         )
 
     # Hash password
-    hashed = _hash_user_password(request.password)
+    hashed = utils.hash_user_password(request.password)
 
     # Create user
     user = crud.users.create_user(
@@ -294,7 +293,13 @@ async def issue_token(
         )
 
     # Issue a JWT Token
-    token = _sign_token(user, act_as)
+    token = utils.sign_token(
+        user=user,
+        act_as=act_as,
+        jwt_signing_key=config.JWT_SIGNING_KEY,
+        jwt_algorithm=config.JWT_ALGORITHM,
+        jwt_access_token_expire_minutes=config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
+    )
 
     return TokenResponse(token=token)
 
@@ -359,31 +364,3 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
         samesite="lax",
         max_age=60 * 60 * 24 * 30,
     )
-
-
-def _hash_user_password(password: str) -> str:
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode(), salt)
-    return hashed.decode()
-
-
-def _sign_token(user: User, act_as: ActAsInfo | None) -> str:
-    """
-    Sign a JWT token for the user. It should include act_as information.
-    """
-    now = datetime.datetime.now(datetime.UTC)
-    expired_at = now + datetime.timedelta(minutes=config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
-    jwt_payload = JWTPayload(
-        sub=str(user.id),
-        exp=int(expired_at.timestamp()),
-        iat=int(now.timestamp()),
-        user_id=user.id,
-        name=user.name,
-        email=user.email,
-        act_as=act_as,
-    )
-    # Sign JWT, with the user's acted as organization and role
-    token = jwt.encode(
-        jwt_payload.model_dump(mode="json"), config.JWT_SIGNING_KEY, algorithm=config.JWT_ALGORITHM
-    )
-    return token
