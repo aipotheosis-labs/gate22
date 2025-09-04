@@ -49,16 +49,15 @@ export function UserProfileDropdown() {
     return user.email;
   };
 
-  // Get consistent avatar URL with grey background
+  // Get consistent avatar URL with grey background (avoid PII leakage)
   const getAvatarUrl = () => {
     if (user.pictureUrl && !user.pictureUrl.includes("ui-avatars.com")) {
       return user.pictureUrl;
     }
-    // Use UI Avatars with a consistent grey background
-    const name = encodeURIComponent(getDisplayName());
-    return `https://ui-avatars.com/api/?name=${name}&background=e5e7eb&color=111827&bold=true`;
+    // Use initials only to avoid leaking full name/email
+    const initials = encodeURIComponent(getInitials());
+    return `https://ui-avatars.com/api/?name=${initials}&background=e5e7eb&color=111827&bold=true`;
   };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
