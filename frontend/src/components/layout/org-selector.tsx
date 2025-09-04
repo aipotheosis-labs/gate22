@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronsUpDown, Building, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Building /* , Plus */ } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,33 +11,33 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
+  // CommandSeparator,
 } from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { CreateOrganizationForm } from "@/features/auth/components/create-organization-form";
-import { createOrganization } from "@/features/settings/api/organization";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+// import { CreateOrganizationForm } from "@/features/auth/components/create-organization-form";
+// import { createOrganization } from "@/features/settings/api/organization";
+// import { toast } from "sonner";
+// import { useRouter } from "next/navigation";
 
 export const OrgSelector = () => {
-  const { orgs, activeOrg, setActiveOrg, accessToken } = useMetaInfo();
+  const { orgs, activeOrg, setActiveOrg /* , accessToken */ } = useMetaInfo();
   const [open, setOpen] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const router = useRouter();
+  // const [createDialogOpen, setCreateDialogOpen] = useState(false); // Not supported yet
+  // const router = useRouter();
 
   return (
     <>
@@ -94,7 +94,7 @@ export const OrgSelector = () => {
                   </CommandItem>
                 ))}
               </CommandGroup>
-              <CommandSeparator />
+              {/* <CommandSeparator />
               <CommandGroup>
                 <CommandItem
                   onSelect={() => {
@@ -106,13 +106,13 @@ export const OrgSelector = () => {
                   <Plus className="h-4 w-4 text-muted-foreground" />
                   <span>Create new organization</span>
                 </CommandItem>
-              </CommandGroup>
+              </CommandGroup> */}
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
 
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      {/* <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Create New Organization</DialogTitle>
@@ -138,7 +138,7 @@ export const OrgSelector = () => {
             }}
           />
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </>
   );
 };
