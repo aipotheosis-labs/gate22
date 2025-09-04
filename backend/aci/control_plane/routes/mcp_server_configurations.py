@@ -194,7 +194,7 @@ async def update_mcp_server_configuration(
                 raise HTTPException(status_code=400, detail=f"Tool {tool_id} not in the MCP server")
 
     # Perform the update
-    crud.mcp_server_configurations.update_mcp_server_configuration(
+    mcp_server_configuration = crud.mcp_server_configurations.update_mcp_server_configuration(
         db_session=context.db_session,
         mcp_server_configuration_id=mcp_server_configuration_id,
         mcp_server_configuration_update=body,
