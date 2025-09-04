@@ -90,8 +90,8 @@ def create_mock_org_teams_users(
         crud.teams.add_team_member(db_session, organization.id, team2.id, user1.id)
         crud.teams.add_team_member(db_session, organization.id, team2.id, user2.id)
 
-        # Important: not adding the these env vars as these should only be used in local development
-        # These will not be available in the env vars of production
+        # Important: not adding these configs to cli/config.py as these should only be used in local
+        # development. These should not be accessed on production deployment.
         jwt_signing_key = utils.check_and_get_env_variable("JWT_SIGNING_KEY")
         jwt_algorithm = "HS256"
         jwt_access_token_expire_minutes = 1440
