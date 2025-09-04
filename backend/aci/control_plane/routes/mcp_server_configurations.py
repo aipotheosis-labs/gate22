@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerConfiguration
-from aci.common.enums import OrganizationRole
+from aci.common.enums import ConnectedAccountSharability, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server_configuration import (
@@ -210,29 +210,34 @@ async def update_mcp_server_configuration(
 def _check_stale_connected_accounts_and_bundles(
     db_session: Session, mcp_server_configuration: MCPServerConfiguration
 ) -> None:
-    # Check and clean up any connected accounts that are no longer accessible to the
-    # MCPServerConfiguration by the ConnectedAccount's owner.
-    connected_accounts = (
-        crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
-            db_session=db_session,
-            mcp_server_configuration_id=mcp_server_configuration.id,
-        )
-    )
-    for connected_account in connected_accounts:
-        accessible = access_control.check_mcp_server_config_accessibility(
-            db_session=db_session,
-            user_id=connected_account.user_id,
-            mcp_server_configuration_id=mcp_server_configuration.id,
-            throw_error_if_not_permitted=False,
-        )
-        if not accessible:
-            logger.info(
-                f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
-            )
-            crud.connected_accounts.delete_connected_account(
+    # If the MCP server configuration is individual, we need to check for stale connected accounts
+    if (
+        mcp_server_configuration.connected_account_sharability
+        == ConnectedAccountSharability.INDIVIDUAL
+    ):
+        # Check and clean up any connected accounts that are no longer accessible to the
+        # MCPServerConfiguration by the ConnectedAccount's owner.
+        connected_accounts = (
+            crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
                 db_session=db_session,
-                connected_account_id=connected_account.id,
+                mcp_server_configuration_id=mcp_server_configuration.id,
             )
+        )
+        for connected_account in connected_accounts:
+            accessible = access_control.check_mcp_server_config_accessibility(
+                db_session=db_session,
+                user_id=connected_account.user_id,
+                mcp_server_configuration_id=mcp_server_configuration.id,
+                throw_error_if_not_permitted=False,
+            )
+            if not accessible:
+                logger.info(
+                    f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
+                )
+                crud.connected_accounts.delete_connected_account(
+                    db_session=db_session,
+                    connected_account_id=connected_account.id,
+                )
 
     # If the allowed teams are updated, check and remove any MCPServerConfiguration inside the
     # MCPBundles of the organization that is no longer accessible by the MCPBundles's owner.

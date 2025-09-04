@@ -1,7 +1,8 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import and_
 
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration
 from aci.common.enums import ConnectedAccountSharability
@@ -101,6 +102,48 @@ def get_connected_accounts_by_user_id_and_organization_id(
         )
         .order_by(ConnectedAccount.created_at.desc())
     )
+    if offset is not None:
+        statement = statement.offset(offset)
+    if limit is not None:
+        statement = statement.limit(limit)
+
+    return list(db_session.execute(statement).scalars().all())
+
+
+def get_member_accessible_connected_accounts_by_mcp_server_configuration_ids(
+    db_session: Session,
+    user_id: UUID,
+    user_accessible_mcp_server_configuration_ids: list[UUID],
+    offset: int | None = None,
+    limit: int | None = None,
+) -> list[ConnectedAccount]:
+    """
+    Get individual connected accounts by member OR shared connected accounts by Config IDs where
+    the user has access to
+    """
+    if len(user_accessible_mcp_server_configuration_ids) == 0:
+        return []
+
+    statement = (
+        select(ConnectedAccount)
+        .join(ConnectedAccount.mcp_server_configuration)
+        .where(
+            and_(
+                ConnectedAccount.mcp_server_configuration_id.in_(
+                    user_accessible_mcp_server_configuration_ids
+                ),
+                or_(
+                    and_(
+                        ConnectedAccount.sharability == ConnectedAccountSharability.INDIVIDUAL,
+                        ConnectedAccount.user_id == user_id,
+                    ),
+                    ConnectedAccount.sharability == ConnectedAccountSharability.SHARED,
+                ),
+            )
+        )
+        .order_by(ConnectedAccount.created_at.desc())
+    )
+
     if offset is not None:
         statement = statement.offset(offset)
     if limit is not None:

@@ -360,16 +360,32 @@ async def list_connected_accounts(
             limit=pagination_params.limit,
         )
     else:
-        # Member can see connected accounts of the themselves
-        connected_accounts = (
-            crud.connected_accounts.get_connected_accounts_by_user_id_and_organization_id(
-                context.db_session,
-                context.user_id,
-                context.act_as.organization_id,
+        # Get a list of MCP server configurations that the user has access to
+        org_teams = crud.teams.get_teams_by_user_id(
+            context.db_session, context.act_as.organization_id, context.user_id
+        )
+        team_ids = [team.id for team in org_teams]
+        if len(team_ids) == 0:
+            connected_accounts = []
+        else:
+            accessible_configurations = (
+                crud.mcp_server_configurations.get_mcp_server_configurations(
+                    context.db_session, context.act_as.organization_id, team_ids=team_ids
+                )
+            )
+            accessible_mcp_server_configuration_ids = [
+                mcp_server_configuration.id
+                for mcp_server_configuration in accessible_configurations
+            ]
+
+            # Fetch connected accounts that the user has access to
+            connected_accounts = crud.connected_accounts.get_member_accessible_connected_accounts_by_mcp_server_configuration_ids(  # noqa: E501
+                db_session=context.db_session,
+                user_id=context.user_id,
+                user_accessible_mcp_server_configuration_ids=accessible_mcp_server_configuration_ids,
                 offset=pagination_params.offset,
                 limit=pagination_params.limit,
             )
-        )
 
     return PaginationResponse[ConnectedAccountPublic](
         data=[
@@ -400,15 +416,22 @@ async def delete_connected_account(
 
     # Member can only delete their own connected accounts
     if context.act_as.role == OrganizationRole.MEMBER:
-        if connected_account.user_id != context.user_id:
+        if not (
+            connected_account.user_id == context.user_id
+            and connected_account.sharability == ConnectedAccountSharability.INDIVIDUAL
+        ):
             logger.error(
                 f"Connected account {connected_account_id} is not belongs to the member {context.user_id}"  # noqa: E501
             )
             raise NotPermittedError(message="Cannot delete others' connected accounts")
 
     # Admin can delete any connected account
-    if context.act_as.role == OrganizationRole.ADMIN:
-        pass
+    elif context.act_as.role == OrganizationRole.ADMIN:
+        if connected_account.sharability != ConnectedAccountSharability.SHARED:
+            logger.error(
+                f"Connected account {connected_account_id} is not a shared connected account"
+            )
+            raise NotPermittedError(message="Cannot delete shared connected accounts")
 
     # Delete the connected account
     crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
