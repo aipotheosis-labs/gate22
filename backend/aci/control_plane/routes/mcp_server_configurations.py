@@ -2,8 +2,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from aci.common.db import crud
+from aci.common.db.sql_models import MCPServerConfiguration
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
@@ -199,58 +201,69 @@ async def update_mcp_server_configuration(
     )
 
     if body.allowed_teams is not None:
-        # If the allowed teams are updated, check and clean up any connected accounts that are
-        # no longer accessible to the MCPServerConfiguration by the ConnectedAccount's owner.
-        connected_accounts_before_update = (
-            crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
-                db_session=context.db_session,
-                mcp_server_configuration_id=mcp_server_configuration_id,
-            )
-        )
-        for connected_account in connected_accounts_before_update:
-            logger.debug(
-                f"Checking if user {connected_account.user_id} has access to the MCP server configuration {mcp_server_configuration_id}"  # noqa: E501
-            )
-            accessible = access_control.check_mcp_server_config_accessibility(
-                db_session=context.db_session,
-                user_id=context.user_id,
-                mcp_server_configuration_id=mcp_server_configuration_id,
-                throw_error_if_not_permitted=False,
-            )
-            if not accessible:
-                logger.info(
-                    f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration_id}"  # noqa: E501
-                )
-                crud.connected_accounts.delete_connected_account(
-                    db_session=context.db_session,
-                    connected_account_id=connected_account.id,
-                )
-
-        # If the allowed teams are updated, check and remove any MCPServerConfiguration inside the
-        # MCPBundles of the organization that is no longer accessible by the MCPBundles's owner.
-        mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
+        # If the allowed teams are updated, check and clean up any stale connected accounts and
+        # bundles
+        _check_stale_connected_accounts_and_bundles(
             db_session=context.db_session,
-            organization_id=mcp_server_configuration.organization_id,
-            mcp_server_configuration_id=mcp_server_configuration_id,
+            mcp_server_configuration=mcp_server_configuration,
         )
-        for mcp_server_bundle in mcp_server_bundles:
-            accessible = access_control.check_mcp_server_config_accessibility(
-                db_session=context.db_session,
-                user_id=mcp_server_bundle.user_id,
-                mcp_server_configuration_id=mcp_server_configuration_id,
-                throw_error_if_not_permitted=False,
-            )
-            if not accessible:
-                crud.mcp_server_bundles.delete_mcp_server_bundle(
-                    db_session=context.db_session,
-                    mcp_server_bundle_id=mcp_server_bundle.id,
-                )
 
     context.db_session.commit()
 
     return schema_utils.construct_mcp_server_configuration_public(
         context.db_session, mcp_server_configuration
     )
+
+
+def _check_stale_connected_accounts_and_bundles(
+    db_session: Session, mcp_server_configuration: MCPServerConfiguration
+) -> None:
+    # Check and clean up any connected accounts that are no longer accessible to the
+    # MCPServerConfiguration by the ConnectedAccount's owner.
+    connected_accounts = (
+        crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+            db_session=db_session,
+            mcp_server_configuration_id=mcp_server_configuration.id,
+        )
+    )
+    for connected_account in connected_accounts:
+        logger.debug(
+            f"Checking if Connected Account {connected_account.id}'s user {connected_account.user_id} has access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
+        )
+        accessible = access_control.check_mcp_server_config_accessibility(
+            db_session=db_session,
+            user_id=connected_account.user_id,
+            mcp_server_configuration_id=mcp_server_configuration.id,
+            throw_error_if_not_permitted=False,
+        )
+        if not accessible:
+            logger.info(
+                f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
+            )
+            crud.connected_accounts.delete_connected_account(
+                db_session=db_session,
+                connected_account_id=connected_account.id,
+            )
+
+    # If the allowed teams are updated, check and remove any MCPServerConfiguration inside the
+    # MCPBundles of the organization that is no longer accessible by the MCPBundles's owner.
+    mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
+        db_session=db_session,
+        organization_id=mcp_server_configuration.organization_id,
+        mcp_server_configuration_id=mcp_server_configuration.id,
+    )
+    for mcp_server_bundle in mcp_server_bundles:
+        accessible = access_control.check_mcp_server_config_accessibility(
+            db_session=db_session,
+            user_id=mcp_server_bundle.user_id,
+            mcp_server_configuration_id=mcp_server_configuration.id,
+            throw_error_if_not_permitted=False,
+        )
+        if not accessible:
+            crud.mcp_server_bundles.delete_mcp_server_bundle(
+                db_session=db_session,
+                mcp_server_bundle_id=mcp_server_bundle.id,
+            )
 
 
 @router.delete("/{mcp_server_configuration_id}", status_code=status.HTTP_200_OK)
