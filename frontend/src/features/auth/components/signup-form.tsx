@@ -28,7 +28,8 @@ const formSchema = z
       .min(8, "Password must be at least 8 characters")
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+      .regex(/[0-9]/, "Password must contain at least one number")
+      .regex(/[@$!%*?&]/, "Password must contain a special character (@$!%*?&)"),
     confirmPassword: z.string(),
     agreeToTerms: z.boolean().refine((val) => val === true, {
       message: "You must agree to the terms and conditions",
@@ -184,14 +185,14 @@ export function SignupForm({ onSignup }: SignupFormProps) {
                   <FormLabel className="text-sm font-normal cursor-pointer">
                     I agree to the{" "}
                     <Link
-                      href="/terms"
+                      href="https://www.aci.dev/terms"
                       className="text-primary hover:underline"
                     >
                       Terms of Service
                     </Link>{" "}
                     and{" "}
                     <Link
-                      href="/privacy"
+                      href="https://www.aci.dev/privacy"
                       className="text-primary hover:underline"
                     >
                       Privacy Policy
