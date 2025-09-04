@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from aci.common.enums import AuthType
 from aci.common.schemas.mcp_server import MCPServerPublic
@@ -36,7 +36,9 @@ class MCPServerConfigurationCreate(BaseModel):
         return self
 
 
-class MCPServerConfigurationUpdate(BaseModel, extra="forbid"):
+class MCPServerConfigurationUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str | None = Field(default=None)
     description: str | None = Field(default=None, max_length=512)
     all_tools_enabled: bool | None = None
