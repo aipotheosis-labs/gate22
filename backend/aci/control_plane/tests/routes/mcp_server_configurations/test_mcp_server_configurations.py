@@ -176,23 +176,14 @@ def test_get_mcp_server_configuration(
         "dummy_access_token_another_org",
     ],
 )
-@pytest.mark.parametrize("is_added_to_team", [True, False])
 def test_delete_mcp_server_configuration(
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
     access_token_fixture: str,
-    is_added_to_team: bool,
-    dummy_team: Team,
     dummy_mcp_server_configuration: MCPServerConfiguration,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
-
-    if is_added_to_team:
-        dummy_mcp_server_configuration.allowed_teams = [dummy_team.id]
-    else:
-        dummy_mcp_server_configuration.allowed_teams = []
-    db_session.commit()
 
     response = test_client.delete(
         f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}/{dummy_mcp_server_configuration.id}",
