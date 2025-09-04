@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { usePermission } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import {
@@ -33,15 +34,16 @@ export default function MCPServersPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [page, setPage] = useState(0);
   const pageSize = 100;
-  const isAdmin = usePermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
+  const canView = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
+  const { activeOrg } = useMetaInfo();
 
   // Redirect members to Available MCP Servers page
   useEffect(() => {
-    if (!isAdmin) {
+    if (activeOrg && !canView) {
       router.push("/available-mcp-servers");
       toast.error("Access restricted to administrators only");
     }
-  }, [isAdmin, router]);
+  }, [activeOrg, canView, router]);
 
   // Fetch MCP servers using the new hook
   const {
@@ -81,8 +83,8 @@ export default function MCPServersPage() {
     });
   }, [searchQuery, selectedCategory, servers]);
 
-  // Show access denied for non-admins
-  if (!isAdmin) {
+  // Show access denied for non-admins only after org context is loaded
+  if (activeOrg && !canView) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <Shield className="h-12 w-12 text-muted-foreground mb-4" />
