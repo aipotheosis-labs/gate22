@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown, Shield, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 
 export const RoleSelector = () => {
   const { activeOrg, toggleActiveRole, isActingAsRole } = useMetaInfo();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
 
@@ -60,6 +62,13 @@ export const RoleSelector = () => {
     const newRole = roleValue === "admin" ? "Admin" : "Member";
     toast.success(`Switched to ${newRole} view`);
     setOpen(false);
+
+    // Navigate to the appropriate first tab based on the new role
+    if (roleValue === "admin") {
+      router.push("/mcp-servers");
+    } else {
+      router.push("/available-mcp-servers");
+    }
   };
 
   return (

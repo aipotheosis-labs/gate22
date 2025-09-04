@@ -63,21 +63,6 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
     return name.slice(0, 2).toUpperCase();
   };
 
-  const getAvatarColor = (teamId: string) => {
-    const colors = [
-      "bg-pink-500",
-      "bg-green-500",
-      "bg-blue-500",
-      "bg-purple-500",
-      "bg-orange-500",
-    ];
-    if (!teamId || teamId.length === 0) {
-      return colors[0]; // Return first color as default
-    }
-    const index = teamId.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -128,9 +113,7 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
               >
                 <div className="flex items-center gap-4 flex-1">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback
-                      className={`${getAvatarColor(team.team_id)} text-white`}
-                    >
+                    <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium">
                       {getInitials(team.name)}
                     </AvatarFallback>
                   </Avatar>

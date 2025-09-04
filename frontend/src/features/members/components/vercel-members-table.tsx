@@ -88,21 +88,6 @@ export function VercelMembersTable({
     return "??";
   };
 
-  const getAvatarColor = (userId?: string) => {
-    const colors = [
-      "bg-pink-500",
-      "bg-green-500",
-      "bg-blue-500",
-      "bg-purple-500",
-      "bg-orange-500",
-    ];
-    if (!userId || userId.length === 0) {
-      return colors[0]; // Default to first color if no userId
-    }
-    const index = userId.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -151,9 +136,7 @@ export function VercelMembersTable({
               >
                 <div className="flex items-center gap-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback
-                      className={`${getAvatarColor(member.user_id)} text-white`}
-                    >
+                    <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium">
                       {getInitials(
                         member.first_name,
                         member.last_name,

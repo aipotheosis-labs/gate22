@@ -1,20 +1,24 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMCPServerConfiguration } from "@/features/mcp/hooks/use-mcp-servers";
+import {
+  useMCPServerConfiguration,
+  useMCPServer,
+} from "@/features/mcp/hooks/use-mcp-servers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, Copy, Check, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
-import { toast } from "sonner";
+import { ToolsTable } from "@/features/mcp/components/tools-table";
+import { useRole } from "@/hooks/use-permissions";
 
 export default function MCPConfigurationDetailPage() {
   const params = useParams();
   const router = useRouter();
   const configurationId = params.id as string;
-  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const { isAdmin, isActingAsMember } = useRole();
+  const shouldShowAdminLink = isAdmin && !isActingAsMember;
 
   const {
     data: configuration,
@@ -22,12 +26,10 @@ export default function MCPConfigurationDetailPage() {
     error,
   } = useMCPServerConfiguration(configurationId);
 
-  const handleCopy = (text: string, fieldName: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(fieldName);
-    toast.success(`Copied to clipboard`);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
+  // Fetch full server data when all_tools_enabled is true to get the tools list
+  const { data: serverData } = useMCPServer(
+    configuration?.all_tools_enabled ? configuration.mcp_server_id : "",
+  );
 
   if (isLoading) {
     return (
@@ -76,19 +78,36 @@ export default function MCPConfigurationDetailPage() {
         </Badge>
       </div>
 
-      {/* Unified Configuration and MCP Server Overview */}
+      {/* Configuration Overview */}
       <Card>
         <CardHeader>
           <div className="flex items-start gap-4">
-            {configuration.mcp_server.logo && (
-              <Image
-                src={configuration.mcp_server.logo}
-                alt={configuration.mcp_server.name}
-                width={48}
-                height={48}
-                className="rounded"
-              />
-            )}
+            <div className="flex flex-col items-center gap-2">
+              {configuration.mcp_server.logo && (
+                <Image
+                  src={configuration.mcp_server.logo}
+                  alt={configuration.mcp_server.name}
+                  width={48}
+                  height={48}
+                  className="rounded"
+                />
+              )}
+              {shouldShowAdminLink ? (
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-xs"
+                  onClick={() =>
+                    router.push(`/mcp-servers/${configuration.mcp_server_id}`)
+                  }
+                >
+                  {configuration.mcp_server.name}
+                </Button>
+              ) : (
+                <span className="text-xs text-center">
+                  {configuration.mcp_server.name}
+                </span>
+              )}
+            </div>
             <div className="flex-1">
               <CardTitle className="text-2xl">{configuration.name}</CardTitle>
               {configuration.description && (
@@ -96,162 +115,87 @@ export default function MCPConfigurationDetailPage() {
                   {configuration.description}
                 </p>
               )}
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  MCP Server:
-                </span>
-                <Button
-                  variant="link"
-                  className="h-auto p-0 text-sm font-medium"
-                  onClick={() =>
-                    router.push(`/mcp-servers/${configuration.mcp_server_id}`)
-                  }
-                >
-                  {configuration.mcp_server.name}
-                </Button>
-              </div>
             </div>
           </div>
         </CardHeader>
-      </Card>
-
-      {/* Configuration Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuration Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Configuration ID
-                </label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="text-sm">{configuration.id}</code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleCopy(configuration.id, "config-id")}
-                  >
-                    {copiedField === "config-id" ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Organization ID
-                </label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="text-sm">
-                    {configuration.organization_id}
-                  </code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() =>
-                      handleCopy(configuration.organization_id, "org-id")
-                    }
-                  >
-                    {copiedField === "org-id" ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  MCP Server ID
-                </label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="text-sm">{configuration.mcp_server_id}</code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() =>
-                      handleCopy(configuration.mcp_server_id, "server-id")
-                    }
-                  >
-                    {copiedField === "server-id" ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Authentication Type
-                </label>
-                <p className="text-sm mt-1">{configuration.auth_type}</p>
-              </div>
+        <CardContent className="border-t pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                Authentication Type
+              </label>
+              <p className="text-sm mt-1 font-medium">
+                {configuration.auth_type}
+              </p>
             </div>
 
-            <div className="border-t pt-4 grid grid-cols-2 gap-4">
-              {configuration.created_at && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Created At
-                  </label>
-                  <p className="text-sm mt-1">
-                    {new Date(configuration.created_at).toLocaleString()}
-                  </p>
-                </div>
-              )}
-              {configuration.updated_at && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Updated At
-                  </label>
-                  <p className="text-sm mt-1">
-                    {new Date(configuration.updated_at).toLocaleString()}
-                  </p>
-                </div>
-              )}
-            </div>
+            {configuration.created_at && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Created At
+                </label>
+                <p className="text-sm mt-1">
+                  {new Date(configuration.created_at).toLocaleString()}
+                </p>
+              </div>
+            )}
+
+            {configuration.updated_at && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Updated At
+                </label>
+                <p className="text-sm mt-1">
+                  {new Date(configuration.updated_at).toLocaleString()}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Teams Access */}
+      {/* Enabled Teams */}
       {configuration.allowed_teams &&
         configuration.allowed_teams.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Team Access</CardTitle>
+              <CardTitle>Enabled Teams</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {configuration.allowed_teams.map((team) => (
-                  <div key={team.team_id} className="border rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{team.name}</p>
-                        {team.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {team.description}
-                          </p>
-                        )}
-                      </div>
-                      <code className="text-xs text-muted-foreground">
-                        ID: {team.team_id}
-                      </code>
-                    </div>
-                  </div>
-                ))}
+              <div className="border rounded-lg">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 text-sm font-medium">
+                        Team Name
+                      </th>
+                      <th className="text-center p-3 text-sm font-medium w-20">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {configuration.allowed_teams.map((team) => (
+                      <tr key={team.team_id} className="border-b last:border-0">
+                        <td className="p-3">
+                          <code className="text-sm">{team.name}</code>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs"
+                            onClick={() =>
+                              router.push(`/settings/teams/${team.team_id}`)
+                            }
+                          >
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
@@ -271,38 +215,23 @@ export default function MCPConfigurationDetailPage() {
         </CardHeader>
         <CardContent>
           {configuration.all_tools_enabled ? (
-            <p className="text-sm text-muted-foreground">
-              This configuration has access to all available tools from the MCP
-              server.
-            </p>
+            serverData?.tools && serverData.tools.length > 0 ? (
+              <ToolsTable
+                tools={serverData.tools}
+                emptyMessage="This configuration has access to all available tools from the MCP server."
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This configuration has access to all available tools from the
+                MCP server.
+              </p>
+            )
           ) : configuration.enabled_tools &&
             configuration.enabled_tools.length > 0 ? (
-            <div className="border rounded-lg">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 text-sm font-medium">
-                      Tool Name
-                    </th>
-                    <th className="text-left p-3 text-sm font-medium">
-                      Description
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {configuration.enabled_tools.map((tool) => (
-                    <tr key={tool.id} className="border-b last:border-0">
-                      <td className="p-3">
-                        <code className="text-sm">{tool.name}</code>
-                      </td>
-                      <td className="p-3 text-sm text-muted-foreground">
-                        {tool.description || "No description available"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ToolsTable
+              tools={configuration.enabled_tools}
+              emptyMessage="No specific tools are enabled for this configuration."
+            />
           ) : (
             <p className="text-sm text-muted-foreground">
               No specific tools are enabled for this configuration.

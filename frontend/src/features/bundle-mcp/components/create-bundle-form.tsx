@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,8 @@ interface CreateBundleFormProps {
   availableConfigurations: Array<{ id: string; name: string; icon?: string }>;
   onSubmit: (values: CreateMCPServerBundleInput) => Promise<void>;
   children: React.ReactNode;
+  selectedIds?: string[];
+  onSelectionChange?: (ids: string[]) => void;
 }
 
 export function CreateBundleForm({
@@ -29,14 +31,27 @@ export function CreateBundleForm({
   availableConfigurations,
   onSubmit,
   children,
+  selectedIds,
+  onSelectionChange,
 }: CreateBundleFormProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CreateMCPServerBundleInput>({
     name: "",
     description: "",
-    mcp_server_configuration_ids: [],
+    mcp_server_configuration_ids: selectedIds || [],
   });
+
+  // Update formData when dialog opens or selectedIds change
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        name: "",
+        description: "",
+        mcp_server_configuration_ids: selectedIds || [],
+      });
+    }
+  }, [open, selectedIds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +80,10 @@ export function CreateBundleForm({
       ...formData,
       mcp_server_configuration_ids: selectedIds,
     });
+    // Notify parent component about selection change
+    if (onSelectionChange) {
+      onSelectionChange(selectedIds);
+    }
   };
 
   const multiSelectOptions = availableConfigurations.map((config) => ({

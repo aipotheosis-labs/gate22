@@ -49,16 +49,26 @@ export function UserProfileDropdown() {
     return user.email;
   };
 
+  // Get consistent avatar URL with grey background
+  const getAvatarUrl = () => {
+    if (user.pictureUrl && !user.pictureUrl.includes("ui-avatars.com")) {
+      return user.pictureUrl;
+    }
+    // Use UI Avatars with a consistent grey background
+    const name = encodeURIComponent(getDisplayName());
+    return `https://ui-avatars.com/api/?name=${name}&background=e5e7eb&color=111827&bold=true`;
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-9 w-9 rounded-full hover:ring-2 hover:ring-primary/20 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="relative h-9 w-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-600"
         >
-          <Avatar className="h-9 w-9 transition-transform hover:scale-105">
-            <AvatarImage src={user.pictureUrl} alt={getDisplayName()} />
-            <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground font-semibold text-sm">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={getAvatarUrl()} alt={getDisplayName()} />
+            <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold text-sm">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
@@ -69,8 +79,8 @@ export function UserProfileDropdown() {
           <div className="flex flex-col space-y-2">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={user.pictureUrl} alt={getDisplayName()} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground font-semibold">
+                <AvatarImage src={getAvatarUrl()} alt={getDisplayName()} />
+                <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>

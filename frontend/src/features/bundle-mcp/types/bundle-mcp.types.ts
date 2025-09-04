@@ -13,6 +13,7 @@ export interface MCPServerBundle {
 
 export interface MCPServerConfiguration {
   id: string;
+  name: string;
   mcp_server_id: string;
   organization_id: string;
   auth_type: string;

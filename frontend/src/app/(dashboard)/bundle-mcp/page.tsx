@@ -32,12 +32,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { getMcpBaseUrl } from "@/lib/api-client";
 import { toast } from "sonner";
+import { useMetaInfo } from "@/components/context/metainfo";
+import { OrganizationRole } from "@/features/settings/types/organization.types";
+import { Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const columnHelper = createColumnHelper<MCPServerBundle>();
 
 export default function BundleMCPPage() {
   const router = useRouter();
   const [copiedBundleId, setCopiedBundleId] = useState<string | null>(null);
+  const { activeOrg, isActingAsRole } = useMetaInfo();
+  const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
+  const isAdminViewingAsAdmin = isAdmin && !isActingAsRole;
   const {
     data: bundles = [],
     isLoading: isBundlesLoading,
@@ -92,16 +99,35 @@ export default function BundleMCPPage() {
       }),
 
       columnHelper.accessor("id", {
-        id: "bundle_id",
+        id: "mcp_url",
         header: () => (
           <div className="flex items-center justify-start">
-            <span className="text-left font-normal">BUNDLE ID</span>
+            <span className="text-left font-normal">MCP URL</span>
           </div>
         ),
         cell: (info) => {
           const id = info.getValue();
+          const baseUrl = getMcpBaseUrl();
+          const url = `${baseUrl}/mcp?bundle_id=${id}`;
           return (
-            <div className="font-mono text-xs text-muted-foreground">{id}</div>
+            <div className="flex items-center gap-2">
+              <div className="font-mono text-xs text-muted-foreground truncate max-w-md">
+                {url}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleCopyUrl(id)}
+                className="h-6 w-6 p-0"
+                title="Copy MCP URL"
+              >
+                {copiedBundleId === id ? (
+                  <Check className="h-3 w-3 text-green-600" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
           );
         },
         enableGlobalFilter: true,
@@ -160,19 +186,6 @@ export default function BundleMCPPage() {
           const bundle = info.getValue();
           return (
             <div className="flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleCopyUrl(bundle.id)}
-                title="Copy MCP URL"
-              >
-                {copiedBundleId === bundle.id ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-
               <Button
                 variant="outline"
                 size="sm"
@@ -275,6 +288,14 @@ export default function BundleMCPPage() {
       </div>
 
       <div className="p-4 space-y-4">
+        {isAdminViewingAsAdmin && (
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              Switch to member view to create your own bundle
+            </AlertDescription>
+          </Alert>
+        )}
         {bundles && bundles.length > 0 ? (
           <EnhancedDataTable
             columns={columns}

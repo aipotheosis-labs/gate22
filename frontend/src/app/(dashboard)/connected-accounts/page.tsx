@@ -105,29 +105,7 @@ export default function ConnectedAccountsPage() {
       }),
 
       columnHelper.accessor("mcp_server_configuration_id", {
-        id: "configuration_name",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">CONFIGURATION NAME</span>
-          </div>
-        ),
-        cell: (info) => {
-          const configId = info.getValue();
-          const config = mcpConfigMap[configId];
-          return (
-            <Link
-              href={`/mcp-configuration/${configId}`}
-              className="text-primary hover:underline font-medium"
-            >
-              {config?.configName || "Unknown"}
-            </Link>
-          );
-        },
-        enableGlobalFilter: true,
-      }),
-
-      columnHelper.accessor("mcp_server_configuration_id", {
-        id: "mcp_server",
+        id: "configured_mcp_server",
         header: () => (
           <div className="flex items-center justify-start">
             <span className="text-left font-normal">MCP SERVER</span>
@@ -148,7 +126,17 @@ export default function ConnectedAccountsPage() {
                   />
                 </div>
               )}
-              <div className="font-medium">{config?.name || "Unknown"}</div>
+              <div className="flex items-center gap-1">
+                <span className="font-medium">{config?.name || "Unknown"}</span>
+                <span className="text-muted-foreground">(</span>
+                <Link
+                  href={`/mcp-configuration/${configId}`}
+                  className="text-primary hover:underline"
+                >
+                  {config?.configName || "Unknown"}
+                </Link>
+                <span className="text-muted-foreground">)</span>
+              </div>
             </div>
           );
         },

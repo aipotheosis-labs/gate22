@@ -186,7 +186,7 @@ export function AddTeamMemberDialog({
                   {selectedMember ? (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarFallback className="text-xs">
+                        <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-xs font-medium">
                           {getInitials(selectedMember.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -252,7 +252,7 @@ export function AddTeamMemberDialog({
                             >
                               <div className="flex items-center gap-3 flex-1">
                                 <Avatar className="h-7 w-7">
-                                  <AvatarFallback className="text-xs">
+                                  <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-xs font-medium">
                                     {getInitials(member.name)}
                                   </AvatarFallback>
                                 </Avatar>

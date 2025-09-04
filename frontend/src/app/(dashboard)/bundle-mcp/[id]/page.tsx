@@ -95,7 +95,9 @@ export default function BundleDetailPage() {
               <Package className="h-8 w-8 text-primary" />
             </div>
             <div className="flex-1">
-              <CardTitle className="text-xl">{bundle.name}</CardTitle>
+              <CardTitle className="text-2xl font-bold">
+                {bundle.name}
+              </CardTitle>
               {bundle.description && (
                 <p className="text-sm text-muted-foreground mt-1">
                   {bundle.description}
@@ -104,119 +106,64 @@ export default function BundleDetailPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Bundle ID
-              </label>
-              <div className="flex items-center gap-2 mt-1">
-                <code className="text-sm">{bundle.id}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => handleCopy(bundle.id, "bundle-id")}
-                >
-                  {copiedField === "bundle-id" ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                MCP URL
-              </label>
-              <div className="flex items-center gap-2 mt-1">
-                <code className="text-sm break-all">{mcpUrl}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={() => handleCopy(mcpUrl, "mcp-url")}
-                >
-                  {copiedField === "mcp-url" ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Organization ID
-              </label>
-              <div className="flex items-center gap-2 mt-1">
-                <code className="text-sm">{bundle.organization_id}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => handleCopy(bundle.organization_id, "org-id")}
-                >
-                  {copiedField === "org-id" ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                User ID
-              </label>
-              <div className="flex items-center gap-2 mt-1">
-                <code className="text-sm">{bundle.user_id}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => handleCopy(bundle.user_id, "user-id")}
-                >
-                  {copiedField === "user-id" ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+        <CardContent className="space-y-6">
+          {/* MCP URL - Primary Focus */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">
+              MCP URL
+            </label>
+            <div className="flex items-center gap-3">
+              <code className="flex-1 text-sm font-mono px-3 py-2 rounded border bg-muted/20">
+                {mcpUrl}
+              </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleCopy(mcpUrl, "mcp-url")}
+                className="flex-shrink-0"
+              >
+                {copiedField === "mcp-url" ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2 text-green-600" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
-          <div className="border-t pt-4 mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Configurations
-              </label>
-              <p className="text-sm mt-1">
-                {bundle.mcp_server_configurations.length} MCP server
-                {bundle.mcp_server_configurations.length !== 1 ? "s" : ""}
-              </p>
+          {/* Additional Details */}
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">Bundle ID</span>
+              <div className="flex items-center gap-2">
+                <code className="font-mono text-xs">{bundle.id}</code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => handleCopy(bundle.id, "bundle-id")}
+                >
+                  {copiedField === "bundle-id" ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </Button>
+              </div>
             </div>
-            <div></div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Created At
-              </label>
-              <p className="text-sm mt-1">
-                {new Date(bundle.created_at).toLocaleString()}
-              </p>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">Created</span>
+              <span>{new Date(bundle.created_at).toLocaleDateString()}</span>
             </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Updated At
-              </label>
-              <p className="text-sm mt-1">
-                {new Date(bundle.updated_at).toLocaleString()}
-              </p>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-muted-foreground">Last Updated</span>
+              <span>{new Date(bundle.updated_at).toLocaleDateString()}</span>
             </div>
           </div>
         </CardContent>
@@ -224,45 +171,47 @@ export default function BundleDetailPage() {
 
       {/* MCP Server Configurations */}
       <Card>
-        <CardHeader>
-          <CardTitle>MCP Server Configurations</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">MCP Server Configurations</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="pt-0">
+          <div className="divide-y">
             {bundle.mcp_server_configurations.map((config) => (
-              <Card key={config.id} className="border">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {config.mcp_server.logo && (
-                        <Image
-                          src={config.mcp_server.logo}
-                          alt={config.mcp_server.name}
-                          width={32}
-                          height={32}
-                          className="rounded"
-                        />
-                      )}
-                      <div>
-                        <h3 className="font-medium">
-                          {config.mcp_server.name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          Configuration ID: {config.id}
-                        </p>
-                      </div>
+              <div
+                key={config.id}
+                className="py-3 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  {config.mcp_server.logo ? (
+                    <Image
+                      src={config.mcp_server.logo}
+                      alt={config.mcp_server.name}
+                      width={24}
+                      height={24}
+                      className="rounded"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
+                      <Package className="h-3 w-3 text-muted-foreground" />
                     </div>
-                    <Button
-                      variant="default"
-                      onClick={() =>
-                        router.push(`/mcp-configuration/${config.id}`)
-                      }
-                    >
-                      View Configuration
-                    </Button>
+                  )}
+                  <div>
+                    <h3 className="text-sm font-medium">
+                      {config.name || config.mcp_server.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {config.mcp_server.name}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push(`/mcp-configuration/${config.id}`)}
+                >
+                  View →
+                </Button>
+              </div>
             ))}
           </div>
         </CardContent>

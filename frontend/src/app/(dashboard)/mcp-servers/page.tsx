@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { usePermission } from "@/hooks/use-permissions";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { toast } from "sonner";
+import { Shield } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -29,6 +33,15 @@ export default function MCPServersPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [page, setPage] = useState(0);
   const pageSize = 100;
+  const isAdmin = usePermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
+
+  // Redirect members to Available MCP Servers page
+  useEffect(() => {
+    if (!isAdmin) {
+      router.push("/available-mcp-servers");
+      toast.error("Access restricted to administrators only");
+    }
+  }, [isAdmin, router]);
 
   // Fetch MCP servers using the new hook
   const {
@@ -67,6 +80,20 @@ export default function MCPServersPage() {
       return matchesSearch && matchesCategory;
     });
   }, [searchQuery, selectedCategory, servers]);
+
+  // Show access denied for non-admins
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <Shield className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
+        <p className="text-muted-foreground max-w-md">
+          This page is restricted to administrators only. Redirecting to
+          Available MCP Servers...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>

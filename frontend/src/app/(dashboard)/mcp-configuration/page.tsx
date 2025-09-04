@@ -246,7 +246,7 @@ export default function MCPConfigurationPage() {
   return (
     <div>
       <div className="px-4 py-3 border-b">
-        <h1 className="text-2xl font-bold">MCP Configurations</h1>
+        <h1 className="text-2xl font-bold">Configured MCP Servers</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage your organization&apos;s MCP server configurations
         </p>

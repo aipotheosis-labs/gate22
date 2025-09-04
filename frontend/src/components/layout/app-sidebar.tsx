@@ -37,9 +37,17 @@ export const sidebarItems = [
     title: "MCP Servers",
     url: `/mcp-servers`,
     icon: HiOutlineServerStack,
+    permission: PERMISSIONS.MCP_SERVER_PAGE_VIEW,
+    adminOnly: true,
   },
   {
-    title: "MCP Configuration",
+    title: "Available MCP Servers",
+    url: `/available-mcp-servers`,
+    icon: HiOutlineServerStack,
+    memberOnly: true,
+  },
+  {
+    title: "Configured MCP Servers",
     url: `/mcp-configuration`,
     icon: Settings2,
   },
@@ -75,11 +83,20 @@ export function AppSidebar() {
   const canViewMCPConfiguration = usePermission(
     PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
   );
+  const isAdmin = usePermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
 
   // Filter sidebar items based on permissions
   const filteredSidebarItems = sidebarItems.filter((item) => {
-    // Hide MCP Configuration for users without permission
-    if (item.title === "MCP Configuration" && !canViewMCPConfiguration) {
+    // Hide Configured MCP Servers for users without permission
+    if (item.title === "Configured MCP Servers" && !canViewMCPConfiguration) {
+      return false;
+    }
+    // Hide admin-only items from members
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+    // Hide member-only items from admins
+    if (item.memberOnly && isAdmin) {
       return false;
     }
     return true;

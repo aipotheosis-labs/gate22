@@ -130,7 +130,9 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
     >
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+          <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium">
+            {getInitials(member.name)}
+          </AvatarFallback>
         </Avatar>
         <div>
           <p className="font-medium">{member.name}</p>

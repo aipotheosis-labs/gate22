@@ -9,19 +9,15 @@ import Image from "next/image";
 import { useMCPServer } from "@/features/mcp/hooks/use-mcp-servers";
 import { useState } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
-import { ToolSchemaDrawer } from "@/features/mcp/components/tool-schema-drawer";
-import { MCPToolBasic } from "@/features/mcp/types/mcp.types";
+import { ToolsTable } from "@/features/mcp/components/tools-table";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
-import { ExpandableText } from "@/components/ui/expandable-text";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const serverId = params.id as string;
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [selectedTool, setSelectedTool] = useState<MCPToolBasic | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Fetch server data using the new hook
   const { data: server, isLoading, error } = useMCPServer(serverId);
@@ -123,62 +119,10 @@ export default function MCPServerDetailPage() {
             Available Tools ({server.tools?.length || 0})
           </h2>
         </div>
-        <div className="rounded-lg border">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left p-2 font-medium text-sm">Name</th>
-                <th className="text-left p-2 font-medium text-sm">
-                  Description
-                </th>
-                <th className="text-center p-2 font-medium text-sm w-20">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {server.tools && server.tools.length > 0 ? (
-                server.tools.map((tool) => (
-                  <tr
-                    key={tool.id}
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="p-2 font-medium text-sm">{tool.name}</td>
-                    <td className="p-2 text-xs text-muted-foreground">
-                      <ExpandableText
-                        text={tool.description || "No description available"}
-                        className="text-xs text-muted-foreground"
-                        maxLines={2}
-                      />
-                    </td>
-                    <td className="p-2 text-center">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => {
-                          setSelectedTool(tool);
-                          setIsDrawerOpen(true);
-                        }}
-                      >
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="p-4 text-center text-muted-foreground"
-                  >
-                    No tools available for this server
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ToolsTable
+          tools={server.tools || []}
+          emptyMessage="No tools available for this server"
+        />
       </div>
 
       {/* Configuration Stepper */}
@@ -189,16 +133,6 @@ export default function MCPServerDetailPage() {
           server={server}
         />
       )}
-
-      {/* Tool Schema Drawer */}
-      <ToolSchemaDrawer
-        tool={selectedTool}
-        isOpen={isDrawerOpen}
-        onClose={() => {
-          setIsDrawerOpen(false);
-          setSelectedTool(null);
-        }}
-      />
     </div>
   );
 }
