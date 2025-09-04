@@ -168,8 +168,12 @@ Teams:
                 soft_wrap=True,
             )
 
+            console.print("You can create mock configuration by:")
+
             console.print(
-                "You can create mock configuration by:\n"
                 "docker compose exec runner python -m aci.cli create-mock-mcp-configuration "
-                f"--mcp-server NOTION --user-id {admin.id} --team-id {team1.id}"
+                f"--mcp-server NOTION --user-id {admin.id} --team-id {team1.id}",
+                style="bold yellow",
+                overflow="ignore",
+                soft_wrap=True,
             )

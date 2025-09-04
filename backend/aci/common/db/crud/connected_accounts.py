@@ -4,6 +4,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration
+from aci.common.enums import ConnectedAccountSharability
 from aci.common.logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -69,11 +70,13 @@ def create_connected_account(
     user_id: UUID,
     mcp_server_configuration_id: UUID,
     auth_credentials: dict,
+    sharability: ConnectedAccountSharability,
 ) -> ConnectedAccount:
     connected_account = ConnectedAccount(
         user_id=user_id,
         mcp_server_configuration_id=mcp_server_configuration_id,
         auth_credentials=auth_credentials,
+        sharability=sharability,
     )
 
     db_session.add(connected_account)

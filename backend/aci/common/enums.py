@@ -23,6 +23,11 @@ class AuthType(StrEnum):
     OAUTH2 = "oauth2"
 
 
+class ConnectedAccountSharability(StrEnum):
+    INDIVIDUAL = "individual"
+    SHARED = "shared"
+
+
 class HttpLocation(StrEnum):
     PATH = "path"
     QUERY = "query"

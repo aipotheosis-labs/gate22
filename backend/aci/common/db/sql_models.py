@@ -22,6 +22,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 
 from aci.common.enums import (
     AuthType,
+    ConnectedAccountSharability,
     MCPServerTransportType,
     OrganizationRole,
     TeamRole,
@@ -364,6 +365,11 @@ class MCPServerConfiguration(Base):
     auth_type: Mapped[AuthType] = mapped_column(
         SQLEnum(AuthType, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
     )
+    connected_account_sharability: Mapped[ConnectedAccountSharability] = mapped_column(
+        SQLEnum(ConnectedAccountSharability, native_enum=False, length=MAX_ENUM_LENGTH),
+        nullable=False,
+    )
+
     # TODO: add whitelabel overrides?
     all_tools_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
     # A list of tool ids
@@ -407,6 +413,11 @@ class ConnectedAccount(Base):
         nullable=False,
     )
     auth_credentials: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    sharability: Mapped[ConnectedAccountSharability] = mapped_column(
+        SQLEnum(ConnectedAccountSharability, native_enum=False, length=MAX_ENUM_LENGTH),
+        nullable=False,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False

@@ -18,7 +18,7 @@ from aci.common.db.sql_models import (
     Team,
     User,
 )
-from aci.common.enums import OrganizationRole, UserIdentityProvider
+from aci.common.enums import ConnectedAccountSharability, OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
@@ -356,6 +356,7 @@ def dummy_mcp_server_configurations(
                 description=f"Dummy MCP Server Configuration {dummy_mcp_server.name} Description",
                 mcp_server_id=dummy_mcp_server.id,
                 auth_type=dummy_mcp_server.auth_configs[0]["type"],
+                connected_account_sharability=ConnectedAccountSharability.INDIVIDUAL,
                 all_tools_enabled=True,
                 enabled_tools=[],
                 allowed_teams=[dummy_team.id],
@@ -436,6 +437,7 @@ def dummy_connected_accounts(
             user_id=dummy_user.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
             auth_credentials={},
+            sharability=ConnectedAccountSharability.INDIVIDUAL,
         )
     )
     connected_accounts.append(
@@ -444,6 +446,7 @@ def dummy_connected_accounts(
             user_id=dummy_user.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_notion.id,
             auth_credentials={},
+            sharability=ConnectedAccountSharability.INDIVIDUAL,
         )
     )
     connected_accounts.append(
@@ -452,6 +455,7 @@ def dummy_connected_accounts(
             user_id=dummy_another_org_member.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
             auth_credentials={},
+            sharability=ConnectedAccountSharability.INDIVIDUAL,
         )
     )
     return connected_accounts

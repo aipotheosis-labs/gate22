@@ -25,6 +25,7 @@ def create_mcp_server_configuration(
         all_tools_enabled=mcp_server_configuration.all_tools_enabled,
         enabled_tools=mcp_server_configuration.enabled_tools,
         allowed_teams=mcp_server_configuration.allowed_teams,
+        connected_account_sharability=mcp_server_configuration.connected_account_sharability,
     )
     db_session.add(db_mcp_server_configuration)
     db_session.flush()

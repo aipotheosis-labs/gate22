@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from aci.cli import config
 from aci.common import utils
 from aci.common.db import crud
-from aci.common.enums import AuthType
+from aci.common.enums import AuthType, ConnectedAccountSharability
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 
@@ -82,12 +82,17 @@ def create_mock_mcp_configuration_helper(
             all_tools_enabled=True,
             enabled_tools=[],
             allowed_teams=[team.id],
+            connected_account_sharability=ConnectedAccountSharability.INDIVIDUAL,
         ),
     )
 
     # Create Connected Account
     connected_account = crud.connected_accounts.create_connected_account(
-        db_session, user.id, mcp_server_configuration.id, {}
+        db_session,
+        user.id,
+        mcp_server_configuration.id,
+        {},
+        ConnectedAccountSharability.INDIVIDUAL,
     )
 
     # Create MCP Server Bundle

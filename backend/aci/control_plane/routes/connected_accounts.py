@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from aci.common import auth_credentials_manager as acm
 from aci.common.db import crud
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration
-from aci.common.enums import AuthType, OrganizationRole
+from aci.common.enums import AuthType, ConnectedAccountSharability, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.connected_account import (
@@ -57,6 +57,17 @@ async def create_connected_account(
         mcp_server_configuration_id=mcp_server_config.id,
         throw_error_if_not_permitted=True,
     )
+
+    if mcp_server_config.connected_account_sharability == ConnectedAccountSharability.SHARED:
+        # Only admin can create shared connected accounts
+        if context.act_as.role != OrganizationRole.ADMIN:
+            logger.error("Cannot create individual connected accounts as user not acted as admin")
+            raise NotPermittedError("Only admin can create shared connected accounts")
+    else:
+        # Otherwise, must act as member to create individual connected accounts
+        if context.act_as.role != OrganizationRole.MEMBER:
+            logger.error("Cannot create individual connected accounts as user not acted as member")
+            raise NotPermittedError("Only member can create individual connected accounts")
 
     try:
         match mcp_server_config.auth_type:
@@ -142,6 +153,7 @@ async def _create_connected_account(
             context.user_id,
             mcp_server_config.id,
             auth_credentials,
+            mcp_server_config.connected_account_sharability,
         )
 
     return connected_account
@@ -322,6 +334,7 @@ async def oauth2_callback(
             state.user_id,
             mcp_server_configuration.id,
             auth_credentials.model_dump(mode="json"),
+            mcp_server_configuration.connected_account_sharability,
         )
     db_session.commit()
 
