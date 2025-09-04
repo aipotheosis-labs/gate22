@@ -36,7 +36,8 @@ def test_list_mcp_server_configurations(
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
-    # dummy_mcp_server_configurations has 2 dummy MCP server configurations, both without team
+    # dummy_mcp_server_configurations has 2 dummy MCP server configurations,
+    # both allowed [dummy_team]
     config_added_to_team = dummy_mcp_server_configurations[0]
     if is_added_to_team:
         config_added_to_team.allowed_teams = [dummy_team.id]
@@ -81,15 +82,20 @@ def test_list_mcp_server_configurations(
             # Should only see the MCP server configuration that the user belongs to
             assert response.status_code == 200
             if is_added_to_team:
-                # Should see only 1 mcp server configuration as it is added to the user's teams
-                assert len(paginated_response.data) == 1
-                assert paginated_response.data[0].id == config_added_to_team.id
-                assert (
-                    paginated_response.data[0].mcp_server.id == config_added_to_team.mcp_server.id
-                )
+                # Should see 2 mcp server configuration as both have allowed dummy_team
+                assert len(paginated_response.data) == 2
+                assert config_added_to_team.id in [
+                    response_item.id for response_item in paginated_response.data
+                ]
+                assert config_added_to_team.mcp_server.id in [
+                    response_item.mcp_server.id for response_item in paginated_response.data
+                ]
             else:
-                # Should not see any MCP server configuration
-                assert len(paginated_response.data) == 0
+                # Should only see 1 mcp server configuration as the other one has no allowed_teams
+                assert len(paginated_response.data) == 1
+                assert config_added_to_team.id not in [
+                    response_item.id for response_item in paginated_response.data
+                ]
         else:
             raise Exception("Untested access token fixture")
 

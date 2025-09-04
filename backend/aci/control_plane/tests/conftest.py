@@ -315,6 +315,7 @@ def dummy_mcp_server_configurations(
     db_session: Session,
     dummy_organization: Organization,
     dummy_mcp_servers: list[MCPServer],
+    dummy_team: Team,
 ) -> list[MCPServerConfiguration]:
     dummy_mcp_server_configurations = []
     for dummy_mcp_server in dummy_mcp_servers:
@@ -328,7 +329,7 @@ def dummy_mcp_server_configurations(
                 auth_type=dummy_mcp_server.auth_configs[0]["type"],
                 all_tools_enabled=True,
                 enabled_tools=[],
-                allowed_teams=[],
+                allowed_teams=[dummy_team.id],
             ),
         )
         dummy_mcp_server_configurations.append(dummy_mcp_server_configuration)
