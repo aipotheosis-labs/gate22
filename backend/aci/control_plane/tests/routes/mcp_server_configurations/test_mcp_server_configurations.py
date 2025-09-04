@@ -7,7 +7,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServer, MCPServerConfiguration, Team
+from aci.common.db.sql_models import (
+    ConnectedAccount,
+    MCPServer,
+    MCPServerBundle,
+    MCPServerConfiguration,
+    Team,
+    User,
+)
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationPublic,
@@ -293,7 +300,7 @@ def test_update_mcp_server_configuration_input_validation(
         # Check there response is correct
         _assert_mcp_server_configuration_changes(
             original,
-            MCPServerConfigurationUpdate.model_validate(**body),
+            MCPServerConfigurationUpdate.model_validate(body),
             new_config,
         )
 
@@ -307,7 +314,7 @@ def test_update_mcp_server_configuration_input_validation(
 
         _assert_mcp_server_configuration_changes(
             original,
-            MCPServerConfigurationUpdate.model_validate(**body),
+            MCPServerConfigurationUpdate.model_validate(body),
             db_config_after_update,
         )
 
@@ -353,6 +360,115 @@ def _assert_mcp_server_configuration_changes(
             assert [team.team_id for team in new.allowed_teams] == original.allowed_teams
         else:
             assert new.allowed_teams == original.allowed_teams
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+        "dummy_access_token_another_org",
+    ],
+)
+@pytest.mark.parametrize("has_stale", [True, False])
+def test_update_mcp_server_configuration(
+    test_client: TestClient,
+    db_session: Session,
+    request: pytest.FixtureRequest,
+    access_token_fixture: str,
+    dummy_mcp_server_configuration: MCPServerConfiguration,
+    dummy_team: Team,
+    has_stale: bool,
+    dummy_user: User,
+    dummy_connected_accounts: list[ConnectedAccount],
+    dummy_mcp_server_bundles: list[MCPServerBundle],
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    # Originally:
+    # - dummy_mcp_server_configuration has allowed_teams [dummy_team]
+    # - dummy_user is under dummy_team, and has ConnectedAccount to dummy_mcp_server_configuration
+    #
+    # we add one more new team to dummy_mcp_server_configuration.allowed_teams
+    # and add dummy_user to that new team for testing.
+    #
+    # If we remove new_team, dummy_user still has access to dummy_mcp_server_configuration
+    # because dummy_team is still inside allowed_teams
+
+    # If we remove both teams, dummy_user's will not have access to dummy_mcp_server_configuration.
+    # Then the connected account will be considered as stale.
+    # And any bundle should remove the dummy_mcp_server_configuration.
+
+    new_team = crud.teams.create_team(
+        db_session=db_session,
+        name="New Team",
+        organization_id=dummy_mcp_server_configuration.organization_id,
+    )
+    crud.teams.add_team_member(
+        db_session=db_session,
+        organization_id=dummy_mcp_server_configuration.organization_id,
+        team_id=new_team.id,
+        user_id=dummy_user.id,
+    )
+    dummy_mcp_server_configuration.allowed_teams = [dummy_team.id, new_team.id]
+    db_session.commit()
+
+    input = MCPServerConfigurationUpdate(
+        allowed_teams=[] if has_stale else [dummy_team.id],
+    )
+
+    response = test_client.patch(
+        f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}/{dummy_mcp_server_configuration.id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+        json=input.model_dump(mode="json"),
+    )
+
+    if access_token_fixture != "dummy_access_token_admin":
+        assert response.status_code == 403
+        return
+
+    assert response.status_code == 200
+
+    # Find the affected connected account
+    affected_connected_accounts = [
+        connected_account
+        for connected_account in dummy_connected_accounts
+        if connected_account.user_id == dummy_user.id
+        and connected_account.mcp_server_configuration_id == dummy_mcp_server_configuration.id
+    ]
+
+    affected_bundles = [
+        bundle
+        for bundle in dummy_mcp_server_bundles
+        if bundle.user_id == dummy_user.id
+        and dummy_mcp_server_configuration.id in bundle.mcp_server_configuration_ids
+    ]
+
+    for affected_connected_account in affected_connected_accounts:
+        db_account_record = crud.connected_accounts.get_connected_account_by_id(
+            db_session=db_session, connected_account_id=affected_connected_account.id
+        )
+        if has_stale:
+            assert db_account_record is None
+        else:
+            assert db_account_record is not None
+
+    for affected_bundle in affected_bundles:
+        db_bundle_record = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+            db_session=db_session, mcp_server_bundle_id=affected_bundle.id
+        )
+        assert db_bundle_record is not None
+        if has_stale:
+            assert (
+                dummy_mcp_server_configuration.id
+                not in db_bundle_record.mcp_server_configuration_ids
+            )
+        else:
+            assert (
+                dummy_mcp_server_configuration.id in db_bundle_record.mcp_server_configuration_ids
+            )
 
 
 @pytest.mark.parametrize(

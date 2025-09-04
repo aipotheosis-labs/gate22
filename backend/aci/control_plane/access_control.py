@@ -57,11 +57,15 @@ def check_mcp_server_config_accessibility(
         - True if user belongs to any team that is allowed by the MCP server configuration
         - False otherwise
     """
+    logger.debug(
+        f"Checking if User {user_id} has access to the MCPServerConfiguration {mcp_server_configuration_id}"  # noqa: E501
+    )
 
     mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
         db_session, mcp_server_configuration_id, throw_error_if_not_found=False
     )
     if mcp_server_configuration is None:
+        logger.debug("MCP Server Configuration not found.")
         return False
 
     user_teams = crud.teams.get_teams_by_user_id(
@@ -69,8 +73,14 @@ def check_mcp_server_config_accessibility(
     )
     user_team_ids = [team.id for team in user_teams]
 
+    logger.debug(f"User teams: {user_team_ids}")
+    logger.debug(f"Config allowed_teams: {mcp_server_configuration.allowed_teams}")
+
     # Check if any of the user's team is allowed by the MCP server configuration
     if any(team_id in user_team_ids for team_id in mcp_server_configuration.allowed_teams):
+        logger.debug(
+            f"User {user_id} has access to MCP Server Configuration {mcp_server_configuration_id}"
+        )
         return True
     else:
         if throw_error_if_not_permitted:

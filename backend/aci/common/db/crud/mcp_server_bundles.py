@@ -102,3 +102,16 @@ def get_mcp_server_configurations_of_mcp_server_bundle(
         MCPServerConfiguration.id.in_(mcp_server_bundle.mcp_server_configuration_ids)
     )
     return list(db_session.execute(statement).scalars().all())
+
+
+def update_mcp_server_bundle_configuration_ids(
+    db_session: Session,
+    mcp_server_bundle_id: UUID,
+    update_mcp_server_bundle_configuration_ids: list[UUID],
+) -> MCPServerBundle:
+    statement = select(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
+    mcp_server_bundle = db_session.execute(statement).scalar_one()
+    mcp_server_bundle.mcp_server_configuration_ids = update_mcp_server_bundle_configuration_ids
+    db_session.flush()
+    db_session.refresh(mcp_server_bundle)
+    return mcp_server_bundle

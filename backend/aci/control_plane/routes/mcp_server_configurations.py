@@ -227,9 +227,6 @@ def _check_stale_connected_accounts_and_bundles(
         )
     )
     for connected_account in connected_accounts:
-        logger.debug(
-            f"Checking if Connected Account {connected_account.id}'s user {connected_account.user_id} has access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
-        )
         accessible = access_control.check_mcp_server_config_accessibility(
             db_session=db_session,
             user_id=connected_account.user_id,
@@ -260,9 +257,13 @@ def _check_stale_connected_accounts_and_bundles(
             throw_error_if_not_permitted=False,
         )
         if not accessible:
-            crud.mcp_server_bundles.delete_mcp_server_bundle(
+            updated_config_ids = list(mcp_server_bundle.mcp_server_configuration_ids)
+            updated_config_ids.remove(mcp_server_configuration.id)
+
+            crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
                 db_session=db_session,
                 mcp_server_bundle_id=mcp_server_bundle.id,
+                update_mcp_server_bundle_configuration_ids=updated_config_ids,
             )
 
 
