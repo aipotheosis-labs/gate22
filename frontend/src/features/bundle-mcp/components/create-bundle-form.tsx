@@ -51,17 +51,17 @@ export function CreateBundleForm({
         mcp_server_configuration_ids: selectedIds || [],
       });
     }
-  }, [open]);
+  }, [open, selectedIds]);
 
   // Update only mcp_server_configuration_ids when selectedIds change while dialog is open
   useEffect(() => {
     if (open) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         mcp_server_configuration_ids: selectedIds || [],
       }));
     }
-  }, [selectedIds]);
+  }, [open, selectedIds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
