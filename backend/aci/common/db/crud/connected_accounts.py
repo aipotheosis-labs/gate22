@@ -44,8 +44,10 @@ def get_connected_accounts_by_mcp_server_configuration_id(
     db_session: Session,
     mcp_server_configuration_id: UUID,
 ) -> list[ConnectedAccount]:
-    statement = select(ConnectedAccount).where(
-        ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration_id
+    statement = (
+        select(ConnectedAccount)
+        .where(ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration_id)
+        .order_by(ConnectedAccount.created_at.desc())
     )
     connected_accounts = db_session.execute(statement).scalars().all()
     return list(connected_accounts)
