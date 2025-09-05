@@ -17,7 +17,7 @@ class MCPServerConfigurationCreate(BaseModel):
     """
 
     # TODO: allow white-labeling by providingthe redirect url
-    name: str
+    name: str = Field(min_length=1, max_length=100)
     # TODO: put magic number in constants
     description: str | None = Field(default=None, max_length=512)
     mcp_server_id: UUID
@@ -39,7 +39,7 @@ class MCPServerConfigurationCreate(BaseModel):
 class MCPServerConfigurationUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: str | None = Field(default=None)
+    name: str | None = Field(default=None, min_length=1, max_length=100)
     description: str | None = Field(default=None, max_length=512)
     all_tools_enabled: bool | None = None
     enabled_tools: list[UUID] | None = None
