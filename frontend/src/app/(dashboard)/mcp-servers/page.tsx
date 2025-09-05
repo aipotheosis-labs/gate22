@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { usePermission } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import {
   Card,
@@ -41,7 +40,7 @@ export default function MCPServersPage() {
   useEffect(() => {
     if (activeOrg && !canView) {
       router.push("/available-mcp-servers");
-      toast.error("Access restricted to administrators only");
+      // Don't show error toast - this redirect might be due to intentional role switching
     }
   }, [activeOrg, canView, router]);
 
@@ -59,7 +58,6 @@ export default function MCPServersPage() {
     () => serversResponse?.data || [],
     [serversResponse?.data],
   );
-  const totalServers = serversResponse?.total || 0;
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -136,7 +134,7 @@ export default function MCPServersPage() {
 
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
-          Showing {filteredServers.length} of {totalServers} MCP servers
+          Showing {filteredServers.length} of {servers.length} MCP servers
         </div>
 
         {/* Loading state */}
@@ -211,7 +209,7 @@ export default function MCPServersPage() {
         )}
 
         {/* Pagination */}
-        {totalServers > pageSize && (
+        {servers.length > pageSize && (
           <div className="flex justify-center gap-2 mt-6">
             <Button
               variant="outline"
@@ -221,12 +219,12 @@ export default function MCPServersPage() {
               Previous
             </Button>
             <span className="flex items-center px-3 text-sm text-muted-foreground">
-              Page {page + 1} of {Math.ceil(totalServers / pageSize)}
+              Page {page + 1} of {Math.ceil(servers.length / pageSize)}
             </span>
             <Button
               variant="outline"
               onClick={() => setPage(page + 1)}
-              disabled={(page + 1) * pageSize >= totalServers}
+              disabled={(page + 1) * pageSize >= servers.length}
             >
               Next
             </Button>

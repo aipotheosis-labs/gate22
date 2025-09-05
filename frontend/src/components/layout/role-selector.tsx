@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown, Shield, Users } from "lucide-react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,6 @@ import { toast } from "sonner";
 export const RoleSelector = () => {
   const { activeOrg, toggleActiveRole, isActingAsRole } = useMetaInfo();
   const router = useRouter();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
 
@@ -59,29 +58,18 @@ export const RoleSelector = () => {
       return;
     }
 
-    // Check if we're currently on a restricted page
-    const isOnRestrictedPage =
-      pathname === "/mcp-servers" || pathname.startsWith("/mcp-servers/");
-
-    // If switching to member and on a restricted page, navigate away FIRST
-    if (roleValue === "member" && isOnRestrictedPage) {
-      router.push("/available-mcp-servers");
-      // Wait for navigation to complete
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-
-    // Toggle the role after navigation (if needed)
-    await toggleActiveRole();
+    // Toggle the role
+    const newRoleState = await toggleActiveRole();
     const newRole = roleValue === "admin" ? "Admin" : "Member";
     toast.success(`Switched to ${newRole} view`);
     setOpen(false);
 
-    // Only navigate if we haven't already navigated
-    if (roleValue === "admin") {
-      // Switching to admin - always navigate to mcp-servers
+    // Navigate to the appropriate page for the new role
+    if (!newRoleState.isActingAsRole) {
+      // Now viewing as admin
       router.push("/mcp-servers");
-    } else if (!isOnRestrictedPage) {
-      // Switching to member but wasn't on restricted page - navigate to available-mcp-servers
+    } else {
+      // Now viewing as member
       router.push("/available-mcp-servers");
     }
   };
