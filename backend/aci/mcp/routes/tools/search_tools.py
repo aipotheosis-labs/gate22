@@ -92,7 +92,7 @@ async def handle_search_tools(
 
     return JSONRPCSuccessResponse(
         id=jsonrpc_tools_call_request.id,
-        result=tool_call_result.model_dump(),
+        result=tool_call_result.model_dump(exclude_none=True),
     )
 
 

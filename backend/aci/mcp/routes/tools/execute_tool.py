@@ -127,7 +127,7 @@ async def handle_execute_tool(
         )
         return JSONRPCSuccessResponse(
             id=jsonrpc_tools_call_request.id,
-            result=tool_call_result.model_dump(),
+            result=tool_call_result.model_dump(exclude_none=True),
         )
     except Exception as e:
         logger.exception(f"Error forwarding tool call: {e}")
