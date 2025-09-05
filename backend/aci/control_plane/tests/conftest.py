@@ -41,6 +41,7 @@ test_jwt_access_token_expire_minutes = config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
 dummy_mcp_servers_to_be_inserted = helper.prepare_mcp_servers()
 DUMMY_MCP_SERVER_NAME_NOTION = "NOTION"
 DUMMY_MCP_SERVER_NAME_GITHUB = "GITHUB"
+DUMMY_MCP_SERVER_NAME_GMAIL = "GMAIL"
 
 
 @pytest.fixture(scope="function")
@@ -362,6 +363,14 @@ def dummy_mcp_server_configurations(
                 allowed_teams=[dummy_team.id],
             ),
         )
+
+        # set GMAIL configuration to shared for testing.
+        if dummy_mcp_server.name == DUMMY_MCP_SERVER_NAME_GMAIL:
+            dummy_mcp_server_configuration.connected_account_sharability = (
+                ConnectedAccountSharability.SHARED
+            )
+            db_session.commit()
+
         dummy_mcp_server_configurations.append(dummy_mcp_server_configuration)
 
     return dummy_mcp_server_configurations
@@ -408,6 +417,20 @@ def dummy_mcp_server_configuration_github(
     return dummy_mcp_server_configuration
 
 
+@pytest.fixture(scope="function")
+def dummy_mcp_server_configuration_gmail_shared(
+    dummy_mcp_server_configurations: list[MCPServerConfiguration],
+) -> MCPServerConfiguration:
+    dummy_mcp_server_configuration = next(
+        dummy_mcp_server_configuration
+        for dummy_mcp_server_configuration in dummy_mcp_server_configurations
+        if dummy_mcp_server_configuration.connected_account_sharability
+        == ConnectedAccountSharability.SHARED
+    )
+    assert dummy_mcp_server_configuration is not None
+    return dummy_mcp_server_configuration
+
+
 # ------------------------------------------------------------
 #
 # Dummy Connected Accounts
@@ -422,12 +445,14 @@ def dummy_connected_accounts(
     dummy_another_org_member: User,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration_notion: MCPServerConfiguration,
+    dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
 ) -> list[ConnectedAccount]:
     """
     Test settings:
     - dummy_user connected to dummy_mcp_server_configuration_github
     - dummy_user connected to dummy_mcp_server_configuration_notion
     - dummy_another_org_member connected to dummy_mcp_server_configuration_github
+    - dummy_another_org_member connected to dummy_mcp_server_configuration_shared as shared account
     """
 
     connected_accounts = []
@@ -457,6 +482,15 @@ def dummy_connected_accounts(
             mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
             auth_credentials={},
             sharability=ConnectedAccountSharability.INDIVIDUAL,
+        )
+    )
+    connected_accounts.append(
+        crud.connected_accounts.create_connected_account(
+            db_session=db_session,
+            user_id=dummy_another_org_member.id,
+            mcp_server_configuration_id=dummy_mcp_server_configuration_gmail_shared.id,
+            auth_credentials={},
+            sharability=ConnectedAccountSharability.SHARED,
         )
     )
     return connected_accounts
@@ -521,18 +555,6 @@ def dummy_mcp_server_bundles(
     )
     db_session.commit()
     return mcp_server_bundles
-
-
-@pytest.fixture(scope="function")
-def dummy_mcp_server_configuration_shared(
-    db_session: Session,
-    dummy_mcp_server_configuration: MCPServerConfiguration,
-) -> MCPServerConfiguration:
-    dummy_mcp_server_configuration.connected_account_sharability = (
-        ConnectedAccountSharability.SHARED
-    )
-    db_session.commit()
-    return dummy_mcp_server_configuration
 
 
 # ------------------------------------------------------------

@@ -1,3 +1,5 @@
+import enum
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -7,7 +9,9 @@ from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration, T
 from aci.common.enums import AuthType, ConnectedAccountSharability
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.connected_account import (
+    ConnectedAccountAPIKeyCreate,
     ConnectedAccountPublic,
+    OAuth2ConnectedAccountCreateResponse,
 )
 from aci.common.schemas.pagination import PaginationResponse
 from aci.control_plane import config
@@ -77,6 +81,12 @@ def test_create_connected_account(
         # assert input check
         if should_succeed:
             assert response.status_code == 200
+            if auth_type == AuthType.API_KEY or auth_type == AuthType.NO_AUTH:
+                assert ConnectedAccountPublic.model_validate(response.json()) is not None
+            elif auth_type == AuthType.OAUTH2:
+                assert (
+                    OAuth2ConnectedAccountCreateResponse.model_validate(response.json()) is not None
+                )
         else:
             assert response.status_code == 400
 
@@ -103,6 +113,7 @@ def test_create_connected_account_sharability(
     connected_account_sharability: ConnectedAccountSharability,
 ) -> None:
     dummy_mcp_server_configuration.connected_account_sharability = connected_account_sharability
+    dummy_mcp_server_configuration.auth_type = AuthType.API_KEY
     db_session.commit()
 
     access_token = request.getfixturevalue(access_token_fixture)
@@ -110,30 +121,32 @@ def test_create_connected_account_sharability(
     response = test_client.post(
         config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"mcp_server_configuration_id": str(dummy_mcp_server_configuration.id)},
+        json=ConnectedAccountAPIKeyCreate(
+            mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+            api_key="dummy_api_key",
+        ).model_dump(mode="json"),
     )
 
-    if access_token_fixture == "dummy_access_token_no_orgs":
-        assert response.status_code == 403
-        return
-
-    elif access_token_fixture == "dummy_access_token_admin":
-        # Admin can only create shared connected accounts
-        if connected_account_sharability == ConnectedAccountSharability.SHARED:
-            assert response.status_code == 200
-        else:
-            assert response.status_code == 403
-    elif access_token_fixture in [
-        "dummy_access_token_member",
-        "dummy_access_token_admin_act_as_member",
-    ]:
-        # Member can only create individual connected accounts
-        if connected_account_sharability == ConnectedAccountSharability.INDIVIDUAL:
-            assert response.status_code == 200
-        else:
-            assert response.status_code == 403
+    if (
+        access_token_fixture == "dummy_access_token_admin"
+        and connected_account_sharability == ConnectedAccountSharability.SHARED
+    ):
+        assert response.status_code == 200
+        connected_account = ConnectedAccountPublic.model_validate(response.json())
+        assert connected_account.sharability == ConnectedAccountSharability.SHARED
+    elif (
+        access_token_fixture
+        in [
+            "dummy_access_token_member",
+            "dummy_access_token_admin_act_as_member",
+        ]
+        and connected_account_sharability == ConnectedAccountSharability.INDIVIDUAL
+    ):
+        assert response.status_code == 200
+        connected_account = ConnectedAccountPublic.model_validate(response.json())
+        assert connected_account.sharability == ConnectedAccountSharability.INDIVIDUAL
     else:
-        raise Exception("Untested access token fixture")
+        assert response.status_code == 403
 
 
 @pytest.mark.parametrize(
@@ -176,6 +189,13 @@ def test_list_connected_accounts(
 
     assert paginated_response.offset == (offset if offset is not None else 0)
 
+    """
+    - dummy_user connected to dummy_mcp_server_configuration_github
+    - dummy_user connected to dummy_mcp_server_configuration_notion
+    - dummy_another_org_member connected to dummy_mcp_server_configuration_github
+    - dummy_another_org_member connected to dummy_mcp_server_configuration_shared as shared account
+    """
+
     if offset is None or offset == 0:
         if access_token_fixture == "dummy_access_token_admin":
             # Should see all the connected accounts in the organization
@@ -186,17 +206,24 @@ def test_list_connected_accounts(
             "dummy_access_token_member",
             "dummy_access_token_admin_act_as_member",
         ]:
-            # Should only see the connected accounts that the user has
+            # Should only see the 2 connected accounts + 1 shared account
             assert response.status_code == 200
-            assert len(paginated_response.data) == 2
-            assert all(
-                response_item.user_id == dummy_user.id for response_item in paginated_response.data
-            )
+            assert len(paginated_response.data) == 3
+            for response_item in paginated_response.data:
+                assert (
+                    response_item.user_id == dummy_user.id
+                    or response_item.sharability == ConnectedAccountSharability.SHARED
+                )
         else:
             raise Exception("Untested access token fixture")
     else:
         # shows nothing because offset should be larger than the total test MCP server configs
         assert len(paginated_response.data) == 0
+
+
+DeleteAccountTestType = enum.Enum(
+    "DeleteAccountTestType", ["individual_self", "individual_others", "shared"]
+)
 
 
 @pytest.mark.parametrize(
@@ -209,31 +236,48 @@ def test_list_connected_accounts(
         "dummy_access_token_another_org",
     ],
 )
-@pytest.mark.parametrize("delete_own_connected_account", [True, False])
+@pytest.mark.parametrize(
+    "delete_account_type",
+    [
+        DeleteAccountTestType.individual_self,
+        DeleteAccountTestType.individual_others,
+        DeleteAccountTestType.shared,
+    ],
+)
 def test_delete_connected_account(
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
     access_token_fixture: str,
     dummy_connected_accounts: list[ConnectedAccount],
-    delete_own_connected_account: bool,
+    delete_account_type: DeleteAccountTestType,
     dummy_user: User,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
     # Find the target connected account for testing
-    if delete_own_connected_account:
-        target_connected_account = next(
-            connected_account
-            for connected_account in dummy_connected_accounts
-            if connected_account.user_id == dummy_user.id
-        )
-    else:
-        target_connected_account = next(
-            connected_account
-            for connected_account in dummy_connected_accounts
-            if connected_account.user_id != dummy_user.id
-        )
+    target_connected_account: ConnectedAccount | None = None
+    match delete_account_type:
+        case DeleteAccountTestType.individual_self:
+            target_connected_account = next(
+                connected_account
+                for connected_account in dummy_connected_accounts
+                if connected_account.user_id == dummy_user.id
+                and connected_account.sharability == ConnectedAccountSharability.INDIVIDUAL
+            )
+        case DeleteAccountTestType.individual_others:
+            target_connected_account = next(
+                connected_account
+                for connected_account in dummy_connected_accounts
+                if connected_account.user_id != dummy_user.id
+                and connected_account.sharability == ConnectedAccountSharability.INDIVIDUAL
+            )
+        case DeleteAccountTestType.shared:
+            target_connected_account = next(
+                connected_account
+                for connected_account in dummy_connected_accounts
+                if connected_account.sharability == ConnectedAccountSharability.SHARED
+            )
 
     db_session.commit()
 
@@ -246,7 +290,7 @@ def test_delete_connected_account(
         assert response.status_code == 403
         return
 
-    # Admin can delete anyone's connected account
+    # Admin can delete any connected account
     elif access_token_fixture == "dummy_access_token_admin":
         assert response.status_code == 200
 
@@ -257,12 +301,12 @@ def test_delete_connected_account(
         assert connected_account is None
         return
 
-    # Member can delete their own connected account
+    # Member can delete their own individual connected account
     elif access_token_fixture in [
         "dummy_access_token_member",
         "dummy_access_token_admin_act_as_member",
     ]:
-        if delete_own_connected_account:
+        if delete_account_type == DeleteAccountTestType.individual_self:
             assert response.status_code == 200
 
             # Check if the connected account is deleted
