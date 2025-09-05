@@ -9,6 +9,7 @@ import {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProfile, logout as apiLogout } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
@@ -20,6 +21,7 @@ import {
   getPermissionsForRole,
 } from "@/lib/rbac/rbac-service";
 import { Permission } from "@/lib/rbac/permissions";
+import { mcpQueryKeys } from "@/features/mcp/hooks/use-mcp-servers";
 
 export interface UserClass {
   userId: string;
@@ -66,6 +68,7 @@ interface MetaInfoProviderProps {
 
 export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<UserClass | null>(null);
   const [orgs, setOrgs] = useState<OrgMemberInfoClass[]>([]);
   const [activeOrg, setActiveOrg] = useState<OrgMemberInfoClass | null>(null);
@@ -273,8 +276,13 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         org.orgId,
         org.userRole as OrganizationRole,
       );
+
+      // Invalidate MCP configuration queries to force refetch with new token
+      queryClient.invalidateQueries({
+        queryKey: mcpQueryKeys.configurations.all,
+      });
     },
-    [refreshTokenWithContext],
+    [refreshTokenWithContext, queryClient],
   );
 
   const toggleActiveRole = useCallback(async () => {
@@ -303,7 +311,12 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       activeOrg.orgId,
       activeOrg.userRole as OrganizationRole,
     );
-  }, [activeOrg, isActingAsRole, refreshTokenWithContext]);
+
+    // Invalidate MCP configuration queries to force refetch with new token
+    queryClient.invalidateQueries({
+      queryKey: mcpQueryKeys.configurations.all,
+    });
+  }, [activeOrg, isActingAsRole, refreshTokenWithContext, queryClient]);
 
   // RBAC helper functions
   const checkPermissionCallback = useCallback(

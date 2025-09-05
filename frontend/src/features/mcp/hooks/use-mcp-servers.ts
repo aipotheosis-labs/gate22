@@ -19,9 +19,10 @@ export const mcpQueryKeys = {
   },
   configurations: {
     all: ["mcp", "configurations"] as const,
-    list: (params?: PaginationParams) =>
-      ["mcp", "configurations", "list", params] as const,
-    detail: (id: string) => ["mcp", "configurations", "detail", id] as const,
+    list: (params?: PaginationParams, accessToken?: string) =>
+      ["mcp", "configurations", "list", params, accessToken] as const,
+    detail: (id: string, accessToken?: string) => 
+      ["mcp", "configurations", "detail", id, accessToken] as const,
   },
   tools: {
     all: ["mcp", "tools"] as const,
@@ -62,7 +63,7 @@ export function useMCPServerConfigurations(params?: PaginationParams) {
   const { accessToken, checkPermission } = useMetaInfo();
 
   const query = useQuery({
-    queryKey: mcpQueryKeys.configurations.list(params),
+    queryKey: mcpQueryKeys.configurations.list(params, accessToken),
     queryFn: () => mcpService.configurations.list(accessToken!, params),
     enabled: !!accessToken,
   });
@@ -83,7 +84,7 @@ export function useMCPServerConfiguration(configurationId: string) {
   const { accessToken } = useMetaInfo();
 
   return useQuery({
-    queryKey: mcpQueryKeys.configurations.detail(configurationId),
+    queryKey: mcpQueryKeys.configurations.detail(configurationId, accessToken),
     queryFn: () =>
       mcpService.configurations.getById(accessToken!, configurationId),
     enabled: !!accessToken && !!configurationId,
