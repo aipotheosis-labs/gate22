@@ -427,11 +427,7 @@ async def delete_connected_account(
 
     # Admin can delete any connected account
     elif context.act_as.role == OrganizationRole.ADMIN:
-        if connected_account.sharability != ConnectedAccountSharability.SHARED:
-            logger.error(
-                f"Connected account {connected_account_id} is not a shared connected account"
-            )
-            raise NotPermittedError(message="Cannot delete shared connected accounts")
+        pass
 
     # Delete the connected account
     crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
