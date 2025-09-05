@@ -21,7 +21,7 @@ export const mcpQueryKeys = {
     all: ["mcp", "configurations"] as const,
     list: (params?: PaginationParams, accessToken?: string) =>
       ["mcp", "configurations", "list", params, accessToken] as const,
-    detail: (id: string, accessToken?: string) => 
+    detail: (id: string, accessToken?: string) =>
       ["mcp", "configurations", "detail", id, accessToken] as const,
   },
   tools: {

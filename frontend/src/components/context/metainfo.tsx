@@ -50,7 +50,10 @@ interface MetaInfoContextType {
   accessToken: string;
   logout: () => Promise<void>;
   activeRole: OrganizationRole | null;
-  toggleActiveRole: () => Promise<void>;
+  toggleActiveRole: () => Promise<{
+    isActingAsRole: boolean;
+    activeRole: OrganizationRole | null;
+  }>;
   isActingAsRole: boolean;
   isTokenRefreshing: boolean;
   // RBAC additions
@@ -287,7 +290,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
   const toggleActiveRole = useCallback(async () => {
     if (!activeOrg || activeOrg.userRole !== OrganizationRole.Admin) {
-      return; // Only admins can toggle role
+      return { isActingAsRole: false, activeRole: null }; // Only admins can toggle role
     }
 
     // Determine new role state
@@ -316,6 +319,9 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     queryClient.invalidateQueries({
       queryKey: mcpQueryKeys.configurations.all,
     });
+
+    // Return the new state so callers can use it immediately
+    return { isActingAsRole: newIsActingAsRole, activeRole: newActiveRole };
   }, [activeOrg, isActingAsRole, refreshTokenWithContext, queryClient]);
 
   // RBAC helper functions
