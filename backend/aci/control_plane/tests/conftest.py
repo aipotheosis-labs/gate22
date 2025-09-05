@@ -363,6 +363,7 @@ def dummy_mcp_server_configurations(
             ),
         )
         dummy_mcp_server_configurations.append(dummy_mcp_server_configuration)
+
     return dummy_mcp_server_configurations
 
 
@@ -520,6 +521,18 @@ def dummy_mcp_server_bundles(
     )
     db_session.commit()
     return mcp_server_bundles
+
+
+@pytest.fixture(scope="function")
+def dummy_mcp_server_configuration_shared(
+    db_session: Session,
+    dummy_mcp_server_configuration: MCPServerConfiguration,
+) -> MCPServerConfiguration:
+    dummy_mcp_server_configuration.connected_account_sharability = (
+        ConnectedAccountSharability.SHARED
+    )
+    db_session.commit()
+    return dummy_mcp_server_configuration
 
 
 # ------------------------------------------------------------

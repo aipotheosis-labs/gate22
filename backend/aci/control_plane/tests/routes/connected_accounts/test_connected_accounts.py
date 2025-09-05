@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration, Team, User
-from aci.common.enums import AuthType
+from aci.common.enums import AuthType, ConnectedAccountSharability
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.connected_account import (
     ConnectedAccountPublic,
@@ -79,6 +79,61 @@ def test_create_connected_account(
             assert response.status_code == 200
         else:
             assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+    ],
+)
+@pytest.mark.parametrize(
+    "connected_account_sharability",
+    [ConnectedAccountSharability.SHARED, ConnectedAccountSharability.INDIVIDUAL],
+)
+def test_create_connected_account_sharability(
+    test_client: TestClient,
+    db_session: Session,
+    request: pytest.FixtureRequest,
+    access_token_fixture: str,
+    dummy_mcp_server_configuration: MCPServerConfiguration,
+    connected_account_sharability: ConnectedAccountSharability,
+) -> None:
+    dummy_mcp_server_configuration.connected_account_sharability = connected_account_sharability
+    db_session.commit()
+
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    response = test_client.post(
+        config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={"mcp_server_configuration_id": str(dummy_mcp_server_configuration.id)},
+    )
+
+    if access_token_fixture == "dummy_access_token_no_orgs":
+        assert response.status_code == 403
+        return
+
+    elif access_token_fixture == "dummy_access_token_admin":
+        # Admin can only create shared connected accounts
+        if connected_account_sharability == ConnectedAccountSharability.SHARED:
+            assert response.status_code == 200
+        else:
+            assert response.status_code == 403
+    elif access_token_fixture in [
+        "dummy_access_token_member",
+        "dummy_access_token_admin_act_as_member",
+    ]:
+        # Member can only create individual connected accounts
+        if connected_account_sharability == ConnectedAccountSharability.INDIVIDUAL:
+            assert response.status_code == 200
+        else:
+            assert response.status_code == 403
+    else:
+        raise Exception("Untested access token fixture")
 
 
 @pytest.mark.parametrize(
