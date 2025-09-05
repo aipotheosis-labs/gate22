@@ -46,12 +46,24 @@ class MCPServerConfigurationUpdate(BaseModel):
     allowed_teams: list[UUID] | None = None
 
     # when all_tools_enabled is True, enabled_tools provided by user should be empty
+    #
+    # To ensure integrity, `all_tools_enabled` and `enabled_tools` must either both provided or both
+    # not provided. Otherwise the update to database may cause inconsistency.
+    #
     @model_validator(mode="after")
     def check_all_tools_enabled(self) -> "MCPServerConfigurationUpdate":
         if self.all_tools_enabled and self.enabled_tools:
             raise ValueError(
                 "all_tools_enabled and enabled_tools cannot be both True and non-empty"
             )
+
+        if (self.all_tools_enabled is None and self.enabled_tools is not None) or (
+            self.all_tools_enabled is not None and self.enabled_tools is None
+        ):
+            raise ValueError(
+                "all_tools_enabled and enabled_tools must either both provided or both not provided"
+            )
+
         return self
 
 
