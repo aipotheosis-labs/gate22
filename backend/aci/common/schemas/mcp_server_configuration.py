@@ -52,11 +52,6 @@ class MCPServerConfigurationUpdate(BaseModel):
     #
     @model_validator(mode="after")
     def check_all_tools_enabled(self) -> "MCPServerConfigurationUpdate":
-        if self.all_tools_enabled and self.enabled_tools:
-            raise ValueError(
-                "all_tools_enabled and enabled_tools cannot be both True and non-empty"
-            )
-
         if (self.all_tools_enabled is None and self.enabled_tools is not None) or (
             self.all_tools_enabled is not None and self.enabled_tools is None
         ):
@@ -64,6 +59,10 @@ class MCPServerConfigurationUpdate(BaseModel):
                 "all_tools_enabled and enabled_tools must either both provided or both not provided"
             )
 
+        if self.all_tools_enabled and self.enabled_tools:
+            raise ValueError(
+                "all_tools_enabled and enabled_tools cannot be both True and non-empty"
+            )
         return self
 
 
