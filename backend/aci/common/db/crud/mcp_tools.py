@@ -98,6 +98,13 @@ def update_mcp_tools(
     return mcp_tools
 
 
+def get_mcp_tool_by_id(
+    db_session: Session,
+    mcp_tool_id: UUID,
+) -> MCPTool | None:
+    return db_session.query(MCPTool).filter(MCPTool.id == mcp_tool_id).first()
+
+
 def get_mcp_tools_by_ids(
     db_session: Session,
     mcp_tool_ids: list[UUID],

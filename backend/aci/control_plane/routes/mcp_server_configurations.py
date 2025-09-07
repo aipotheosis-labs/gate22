@@ -163,17 +163,12 @@ async def update_mcp_server_configuration(
 
     # Check if all team exists in the organization
     if body.allowed_teams is not None:
-        org_teams = crud.teams.get_teams_by_ids(
-            db_session=context.db_session,
-            team_ids=body.allowed_teams,
-        )
-        org_team_map = {team.id: team for team in org_teams}
-
         for team_id in body.allowed_teams:
-            if team_id not in org_team_map:
+            team = crud.teams.get_team_by_id(context.db_session, team_id)
+            if team is None:
                 logger.error(f"Team {team_id} not found")
                 raise HTTPException(status_code=400, detail=f"Team {team_id} not found")
-            if org_team_map[team_id].organization_id != mcp_server_configuration.organization_id:
+            elif team.organization_id != mcp_server_configuration.organization_id:
                 logger.error(f"Team {team_id} not in the organization")
                 raise HTTPException(
                     status_code=400, detail=f"Team {team_id} not in the organization"
@@ -181,16 +176,13 @@ async def update_mcp_server_configuration(
 
     # Check if all tool exists in the MCP server
     if body.enabled_tools is not None:
-        mcp_tools = crud.mcp_tools.get_mcp_tools_by_ids(
-            db_session=context.db_session,
-            mcp_tool_ids=body.enabled_tools,
-        )
-        mcp_tool_map = {tool.id: tool for tool in mcp_tools}
         for tool_id in body.enabled_tools:
-            if tool_id not in mcp_tool_map:
+            tool = crud.mcp_tools.get_mcp_tool_by_id(context.db_session, tool_id)
+            if tool is None:
                 logger.error(f"Tool {tool_id} not found")
                 raise HTTPException(status_code=400, detail=f"Tool {tool_id} not found")
-            if mcp_tool_map[tool_id].mcp_server_id != mcp_server_configuration.mcp_server_id:
+            if tool.mcp_server_id != mcp_server_configuration.mcp_server_id:
+                logger.error(f"Tool {tool_id} not in the MCP server")
                 raise HTTPException(status_code=400, detail=f"Tool {tool_id} not in the MCP server")
 
     # Perform the update
