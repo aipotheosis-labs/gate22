@@ -62,11 +62,8 @@ def check_mcp_server_config_accessibility(
     )
 
     mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
-        db_session, mcp_server_configuration_id, throw_error_if_not_found=False
+        db_session, mcp_server_configuration_id, throw_error_if_not_found=True
     )
-    if mcp_server_configuration is None:
-        logger.debug("MCP Server Configuration not found.")
-        return False
 
     user_teams = crud.teams.get_teams_by_user_id(
         db_session, mcp_server_configuration.organization_id, user_id
