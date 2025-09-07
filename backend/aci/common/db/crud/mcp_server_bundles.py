@@ -18,7 +18,9 @@ def create_mcp_server_bundle(
         description=mcp_server_bundle_create.description,
         user_id=user_id,
         organization_id=organization_id,
-        mcp_server_configuration_ids=mcp_server_bundle_create.mcp_server_configuration_ids,
+        mcp_server_configuration_ids=list(
+            dict.fromkeys(mcp_server_bundle_create.mcp_server_configuration_ids)
+        ),
     )
     db_session.add(mcp_server_bundle)
     db_session.flush()

@@ -257,7 +257,7 @@ def _check_stale_connected_accounts_and_bundles(
             throw_error_if_not_permitted=False,
         )
         if not accessible:
-            updated_config_ids = list(mcp_server_bundle.mcp_server_configuration_ids)
+            updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
             updated_config_ids.remove(mcp_server_configuration.id)
 
             crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
