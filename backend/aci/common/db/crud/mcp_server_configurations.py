@@ -141,7 +141,7 @@ def update_mcp_server_configuration(
     )
     mcp_server_configuration = db_session.execute(statement).scalar_one()
 
-    for field, value in mcp_server_configuration_update.model_dump(exclude_none=True).items():
+    for field, value in mcp_server_configuration_update.model_dump(exclude_unset=True).items():
         setattr(mcp_server_configuration, field, value)
 
     db_session.flush()
