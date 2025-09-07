@@ -68,13 +68,15 @@ def check_mcp_server_config_accessibility(
     user_teams = crud.teams.get_teams_by_user_id(
         db_session, mcp_server_configuration.organization_id, user_id
     )
-    user_team_ids = [team.id for team in user_teams]
+    user_team_ids: set[UUID] = {team.id for team in user_teams}
+    allowed_team_ids: set[UUID] = set(mcp_server_configuration.allowed_teams or [])
 
     logger.debug(f"User teams: {user_team_ids}")
-    logger.debug(f"Config allowed_teams: {mcp_server_configuration.allowed_teams}")
+    logger.debug(f"Config allowed_teams: {allowed_team_ids}")
 
     # Check if any of the user's team is allowed by the MCP server configuration
-    if any(team_id in user_team_ids for team_id in mcp_server_configuration.allowed_teams):
+    # (if any overlap between user_team_ids and allowed_team_ids)
+    if user_team_ids.intersection(allowed_team_ids):
         logger.debug(
             f"User {user_id} has access to MCP Server Configuration {mcp_server_configuration_id}"
         )
