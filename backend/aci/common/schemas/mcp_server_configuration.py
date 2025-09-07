@@ -4,9 +4,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from aci.common.enums import AuthType
+from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server import MCPServerPublic
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
 from aci.common.schemas.organization import TeamInfo
+
+logger = get_logger(__name__)
 
 
 class MCPServerConfigurationCreate(BaseModel):
@@ -63,6 +66,25 @@ class MCPServerConfigurationUpdate(BaseModel):
             raise ValueError(
                 "all_tools_enabled and enabled_tools cannot be both True and non-empty"
             )
+        return self
+
+    @model_validator(mode="after")
+    def check_non_nullable_fields(self) -> "MCPServerConfigurationUpdate":
+        """
+        We want to allow users to not provide some fields if they don't want to update them.
+        But we want to prevent users from setting some non-nullable fields to None.
+
+        However, seems it's not possible to achieve this constraint correctly with only field
+        definitions in pydantic model. (Can't differentiate between None and not provided)
+        We must use a custom validator to check for this case.
+        """
+        # TODO: Further study on how to achieve this constraint correctly with pydantic model.
+        non_nullable_fields = ["name", "all_tools_enabled", "allowed_teams", "enabled_tools"]
+
+        for field in self.model_fields_set:
+            if field in non_nullable_fields and getattr(self, field) is None:
+                logger.error(f"{field} cannot be None")
+                raise ValueError(f"{field} cannot be None")
         return self
 
 
