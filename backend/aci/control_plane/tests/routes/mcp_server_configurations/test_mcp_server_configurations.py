@@ -415,14 +415,10 @@ def test_update_mcp_server_configuration(
     dummy_mcp_server_configuration.allowed_teams = [dummy_team.id, new_team.id]
     db_session.commit()
 
-    input = MCPServerConfigurationUpdate(
-        allowed_teams=[] if has_stale else [dummy_team.id],
-    )
-
     response = test_client.patch(
         f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}/{dummy_mcp_server_configuration.id}",
         headers={"Authorization": f"Bearer {access_token}"},
-        json=input.model_dump(mode="json"),
+        json={"allowed_teams": [] if has_stale else [str(dummy_team.id)]},
     )
 
     if access_token_fixture != "dummy_access_token_admin":
