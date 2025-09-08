@@ -324,42 +324,36 @@ def _assert_mcp_server_configuration_changes(
     update: MCPServerConfigurationUpdate,
     new: MCPServerConfiguration | MCPServerConfigurationPublic,
 ) -> None:
-    if update.name is not None:
-        assert new.name == update.name
-    else:
-        assert new.name == original.name
+    assert new.name == (original.name if update.name is None else update.name)
+    assert new.description == (
+        original.description if update.description is None else update.description
+    )
+    assert new.all_tools_enabled == (
+        original.all_tools_enabled if update.all_tools_enabled is None else update.all_tools_enabled
+    )
 
-    if update.description is not None:
-        assert new.description == update.description
-    else:
-        assert new.description == original.description
+    def assert_sorted_ids(ids: list[UUID], expected: list[UUID]) -> None:
+        assert sorted(ids, key=str) == sorted(expected, key=str)
 
-    if update.all_tools_enabled is not None:
-        assert new.all_tools_enabled == update.all_tools_enabled
-    else:
-        assert new.all_tools_enabled == original.all_tools_enabled
+    if isinstance(new, MCPServerConfigurationPublic):
+        assert_sorted_ids(
+            [tool.id for tool in new.enabled_tools],
+            update.enabled_tools if update.enabled_tools is not None else original.enabled_tools,
+        )
+        assert_sorted_ids(
+            [team.team_id for team in new.allowed_teams],
+            update.allowed_teams if update.allowed_teams is not None else original.allowed_teams,
+        )
 
-    if update.enabled_tools is not None:
-        if isinstance(new, MCPServerConfigurationPublic):
-            assert [tool.id for tool in new.enabled_tools] == update.enabled_tools
-        else:
-            assert new.enabled_tools == update.enabled_tools
     else:
-        if isinstance(new, MCPServerConfigurationPublic):
-            assert [tool.id for tool in new.enabled_tools] == original.enabled_tools
-        else:
-            assert new.enabled_tools == original.enabled_tools
-
-    if update.allowed_teams is not None:
-        if isinstance(new, MCPServerConfigurationPublic):
-            assert [team.team_id for team in new.allowed_teams] == update.allowed_teams
-        else:
-            assert new.allowed_teams == update.allowed_teams
-    else:
-        if isinstance(new, MCPServerConfigurationPublic):
-            assert [team.team_id for team in new.allowed_teams] == original.allowed_teams
-        else:
-            assert new.allowed_teams == original.allowed_teams
+        assert_sorted_ids(
+            new.enabled_tools,
+            update.enabled_tools if update.enabled_tools is not None else original.enabled_tools,
+        )
+        assert_sorted_ids(
+            new.allowed_teams,
+            update.allowed_teams if update.allowed_teams is not None else original.allowed_teams,
+        )
 
 
 @pytest.mark.parametrize(
