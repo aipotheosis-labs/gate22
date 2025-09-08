@@ -131,3 +131,13 @@ def delete_connected_account(
 ) -> None:
     statement = delete(ConnectedAccount).where(ConnectedAccount.id == connected_account_id)
     db_session.execute(statement)
+
+
+def delete_connected_accounts_by_mcp_server_configuration_id(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+) -> None:
+    statement = delete(ConnectedAccount).where(
+        ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration_id
+    )
+    db_session.execute(statement)

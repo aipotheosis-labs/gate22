@@ -477,8 +477,27 @@ def test_delete_mcp_server_configuration(
     request: pytest.FixtureRequest,
     access_token_fixture: str,
     dummy_mcp_server_configuration: MCPServerConfiguration,
+    dummy_connected_accounts: list[ConnectedAccount],
+    dummy_mcp_server_bundles: list[MCPServerBundle],
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
+
+    # Double check that originally there are associated ConnectedAccount
+    stale_connected_accounts = (
+        crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+            db_session=db_session,
+            mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+        )
+    )
+    assert len(stale_connected_accounts) > 0
+
+    # Double check that originally there are associated MCPServerBundle
+    stale_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
+        db_session=db_session,
+        organization_id=dummy_mcp_server_configuration.organization_id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+    )
+    assert len(stale_bundles) > 0
 
     response = test_client.delete(
         f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}/{dummy_mcp_server_configuration.id}",
@@ -498,6 +517,23 @@ def test_delete_mcp_server_configuration(
             )
             is None
         )
+
+        # Check if the associated ConnectedAccount is deleted
+        stale_connected_accounts = (
+            crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+                db_session=db_session,
+                mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+            )
+        )
+        assert len(stale_connected_accounts) == 0
+
+        # Check if it is also removed from any associated MCPServerBundle
+        stale_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
+            db_session=db_session,
+            organization_id=dummy_mcp_server_configuration.organization_id,
+            mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+        )
+        assert len(stale_bundles) == 0
 
     else:
         # Should not be able to delete the MCP server configuration

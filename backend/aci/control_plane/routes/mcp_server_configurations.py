@@ -282,9 +282,89 @@ async def delete_mcp_server_configuration(
             context.db_session, mcp_server_configuration_id
         )
 
+        # Remove all ConnectedAccount under this MCP server configuration
+        crud.connected_accounts.delete_connected_accounts_by_mcp_server_configuration_id(
+            db_session=context.db_session,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+        )
+
+        # Remove all MCPServerBundle under this MCP server configuration
+        mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
+            db_session=context.db_session,
+            organization_id=mcp_server_configuration.organization_id,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+        )
+        for mcp_server_bundle in mcp_server_bundles:
+            updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
+            updated_config_ids.remove(mcp_server_configuration_id)
+
+            crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
+                db_session=context.db_session,
+                mcp_server_bundle_id=mcp_server_bundle.id,
+                update_mcp_server_bundle_configuration_ids=updated_config_ids,
+            )
+
         context.db_session.commit()
     else:
         raise HTTPException(
             status_code=404,
             detail=f"MCP Server Configuration {mcp_server_configuration_id} not found",
         )
+
+
+def _check_stale_configuration_inside_bundles(
+    db_session: Session, organization_id: UUID, mcp_server_configuration_id: UUID
+) -> None:
+    """
+    Check and remove any MCPServerConfiguration inside the
+    MCPBundles of the organization that is no longer accessible by the MCPBundles's owner.
+    """
+    mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
+        db_session=db_session,
+        organization_id=organization_id,
+        mcp_server_configuration_id=mcp_server_configuration_id,
+    )
+    for mcp_server_bundle in mcp_server_bundles:
+        accessible = access_control.check_mcp_server_config_accessibility(
+            db_session=db_session,
+            user_id=mcp_server_bundle.user_id,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+            throw_error_if_not_permitted=False,
+        )
+        if not accessible:
+            updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
+            updated_config_ids.remove(mcp_server_configuration_id)
+
+            crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
+                db_session=db_session,
+                mcp_server_bundle_id=mcp_server_bundle.id,
+                update_mcp_server_bundle_configuration_ids=updated_config_ids,
+            )
+
+
+def _check_stale_connected_accounts(db_session: Session, mcp_server_configuration_id: UUID) -> None:
+    """
+    Check and clean up any connected accounts that are no longer accessible to the
+    MCPServerConfiguration by the ConnectedAccount's owner.
+    """
+    connected_accounts = (
+        crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+            db_session=db_session,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+        )
+    )
+    for connected_account in connected_accounts:
+        accessible = access_control.check_mcp_server_config_accessibility(
+            db_session=db_session,
+            user_id=connected_account.user_id,
+            mcp_server_configuration_id=mcp_server_configuration_id,
+            throw_error_if_not_permitted=False,
+        )
+        if not accessible:
+            logger.info(
+                f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration_id}"  # noqa: E501
+            )
+            crud.connected_accounts.delete_connected_account(
+                db_session=db_session,
+                connected_account_id=connected_account.id,
+            )
