@@ -118,7 +118,9 @@ def update_mcp_server_bundle_configuration_ids(
 ) -> MCPServerBundle:
     statement = select(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
     mcp_server_bundle = db_session.execute(statement).scalar_one()
-    mcp_server_bundle.mcp_server_configuration_ids = update_mcp_server_bundle_configuration_ids
+    mcp_server_bundle.mcp_server_configuration_ids = list(
+        dict.fromkeys(update_mcp_server_bundle_configuration_ids)
+    )
     db_session.flush()
     db_session.refresh(mcp_server_bundle)
     return mcp_server_bundle
