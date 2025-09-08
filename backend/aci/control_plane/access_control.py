@@ -11,19 +11,20 @@ from aci.control_plane.exceptions import NotPermittedError
 logger = get_logger(__name__)
 
 
-def check_permission(
+def check_act_as_organization_role(
     act_as: ActAsInfo,
     requested_organization_id: UUID | None = None,
     required_role: OrganizationRole = OrganizationRole.MEMBER,
     throw_error_if_not_permitted: bool = True,
 ) -> bool:
     """
+    Check based on user's act_as information, verify if the user's act as:
+    - Matches the requested organization_id
+    - The role has permission to the requested role. (Admin is eligible to act as member role)
+
     This function throws an NotPermittedError if the user is not permitted to act as the requested
     organization and role.
     """
-    # TODO: Extend this function to check authorization of other entities
-    # E.g., MCPServerConfiguration, MCPServerBundle, ConnectedAccount, etc.
-
     try:
         if requested_organization_id and act_as.organization_id != requested_organization_id:
             raise NotPermittedError(

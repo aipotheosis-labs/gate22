@@ -112,7 +112,7 @@ async def get_mcp_server_bundle(
         raise HTTPException(status_code=404, detail="MCP server bundle not found")
 
     # check if the MCP server bundle is under the user's org
-    access_control.check_permission(
+    access_control.check_act_as_organization_role(
         context.act_as,
         requested_organization_id=mcp_server_bundle.organization_id,
         throw_error_if_not_permitted=True,
@@ -141,7 +141,7 @@ async def delete_mcp_server_bundle(
         raise HTTPException(status_code=404, detail="MCP server bundle not found")
 
     # check if the MCP server bundle is under the user's org
-    access_control.check_permission(
+    access_control.check_act_as_organization_role(
         context.act_as,
         requested_organization_id=mcp_server_bundle.organization_id,
         throw_error_if_not_permitted=True,

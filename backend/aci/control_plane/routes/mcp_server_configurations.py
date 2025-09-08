@@ -29,7 +29,7 @@ async def create_mcp_server_configuration(
 ) -> MCPServerConfigurationPublic:
     # TODO: check allowed_teams are actually in the org
     # TODO: check enabled_tools are actually in the mcp server
-    access_control.check_permission(
+    access_control.check_act_as_organization_role(
         context.act_as,
         requested_organization_id=context.act_as.organization_id,
         required_role=OrganizationRole.ADMIN,
@@ -119,7 +119,7 @@ async def get_mcp_server_configuration(
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
     # Check if the MCP server configuration is under the user's org
-    access_control.check_permission(
+    access_control.check_act_as_organization_role(
         context.act_as,
         requested_organization_id=mcp_server_configuration.organization_id,
         throw_error_if_not_permitted=True,
@@ -154,7 +154,7 @@ async def update_mcp_server_configuration(
 
     # Check if the MCP server configuration is under the user's org
     # Check if the user is acted as admin
-    access_control.check_permission(
+    access_control.check_act_as_organization_role(
         context.act_as,
         requested_organization_id=mcp_server_configuration.organization_id,
         required_role=OrganizationRole.ADMIN,
@@ -271,7 +271,7 @@ async def delete_mcp_server_configuration(
     if mcp_server_configuration is not None:
         # Check if the user is an admin and is acted as the organization_id of the MCP server
         # configuration
-        access_control.check_permission(
+        access_control.check_act_as_organization_role(
             context.act_as,
             requested_organization_id=mcp_server_configuration.organization_id,
             required_role=OrganizationRole.ADMIN,

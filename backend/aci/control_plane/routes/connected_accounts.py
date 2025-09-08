@@ -379,7 +379,7 @@ async def delete_connected_account(
         raise HTTPException(status_code=404, detail="Connected account not found")
 
     # Check if the user is acted as the organization of the connected account
-    access_control.check_permission(
+    access_control.check_act_as_organization_role(
         context.act_as,
         requested_organization_id=connected_account.mcp_server_configuration.organization_id,
         throw_error_if_not_permitted=True,
