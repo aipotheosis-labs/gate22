@@ -57,6 +57,14 @@ export interface MCPServerConfigurationCreate {
   allowed_teams: string[];
 }
 
+export interface MCPServerConfigurationUpdate {
+  name?: string;
+  description?: string;
+  all_tools_enabled?: boolean;
+  enabled_tools?: string[];
+  allowed_teams?: string[];
+}
+
 export interface MCPServerConfigurationPublic {
   id: string;
   mcp_server_id: string;

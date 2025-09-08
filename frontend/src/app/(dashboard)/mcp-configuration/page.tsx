@@ -45,7 +45,6 @@ export default function MCPConfigurationPage() {
   useEffect(() => {
     if (!isLoading && !canViewConfigurations) {
       router.push("/mcp-servers");
-      toast.error("You don't have permission to view configurations");
     }
   }, [isLoading, canViewConfigurations, router]);
 
