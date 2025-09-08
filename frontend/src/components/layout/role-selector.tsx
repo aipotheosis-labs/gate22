@@ -22,7 +22,7 @@ import { OrganizationRole } from "@/features/settings/types/organization.types";
 import { toast } from "sonner";
 
 export const RoleSelector = () => {
-  const { activeOrg, toggleActiveRole, isActingAsRole } = useMetaInfo();
+  const { activeOrg, toggleActiveRole, activeRole } = useMetaInfo();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
@@ -36,36 +36,37 @@ export const RoleSelector = () => {
       value: "admin",
       label: "View As Admin",
       icon: Shield,
-      active: !isActingAsRole,
+      active: activeRole === OrganizationRole.Admin,
     },
     {
       value: "member",
       label: "View As Member",
       icon: Users,
-      active: isActingAsRole,
+      active: activeRole === OrganizationRole.Member,
     },
   ];
 
-  const currentRole = isActingAsRole ? "member" : "admin";
+  const currentRole =
+    activeRole === OrganizationRole.Member ? "member" : "admin";
   const currentRoleData = roles.find((role) => role.value === currentRole);
 
   const handleRoleChange = async (roleValue: string) => {
     if (
-      (roleValue === "admin" && !isActingAsRole) ||
-      (roleValue === "member" && isActingAsRole)
+      (roleValue === "admin" && activeRole === OrganizationRole.Admin) ||
+      (roleValue === "member" && activeRole === OrganizationRole.Member)
     ) {
       setOpen(false);
       return;
     }
 
     // Toggle the role
-    const newRoleState = await toggleActiveRole();
+    const newActiveRole = await toggleActiveRole();
     const newRole = roleValue === "admin" ? "Admin" : "Member";
     toast.success(`Switched to ${newRole} view`);
     setOpen(false);
 
     // Navigate to the appropriate page for the new role
-    if (!newRoleState.isActingAsRole) {
+    if (newActiveRole === OrganizationRole.Admin) {
       // Now viewing as admin
       router.push("/mcp-servers");
     } else {

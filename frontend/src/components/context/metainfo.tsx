@@ -49,12 +49,8 @@ interface MetaInfoContextType {
   switchOrganization: (org: OrgMemberInfoClass) => Promise<void>;
   accessToken: string;
   logout: () => Promise<void>;
-  activeRole: OrganizationRole | null;
-  toggleActiveRole: () => Promise<{
-    isActingAsRole: boolean;
-    activeRole: OrganizationRole | null;
-  }>;
-  isActingAsRole: boolean;
+  activeRole: OrganizationRole;
+  toggleActiveRole: () => Promise<OrganizationRole>;
   isTokenRefreshing: boolean;
   // RBAC additions
   checkPermission: (permission: Permission) => boolean;
@@ -78,8 +74,9 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   const [accessToken, setAccessToken] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeRole, setActiveRole] = useState<OrganizationRole | null>(null);
-  const [isActingAsRole, setIsActingAsRole] = useState(false);
+  const [activeRole, setActiveRole] = useState<OrganizationRole>(
+    OrganizationRole.Admin,
+  );
   const [isTokenRefreshing, setIsTokenRefreshing] = useState(false);
 
   // Check for existing session on mount
@@ -177,14 +174,15 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             );
           }
 
-          // Check if admin is acting as member (we already loaded storedRole above)
+          // Set the active role - either from storage or user's actual role
           if (
             org.userRole === OrganizationRole.Admin &&
             org.orgId &&
             storedRole
           ) {
             setActiveRole(storedRole.role);
-            setIsActingAsRole(true);
+          } else {
+            setActiveRole(org.userRole as OrganizationRole);
           }
         } else {
           // No valid session - this is expected for non-authenticated users
@@ -223,8 +221,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     setOrgs([]);
     setActiveOrg(null);
     setIsAuthenticated(false);
-    setActiveRole(null);
-    setIsActingAsRole(false);
+    setActiveRole(OrganizationRole.Admin);
 
     // Redirect to home page after logout
     router.push("/");
@@ -268,8 +265,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
       // Clear any role switching when changing organizations
       roleManager.clearActiveRole();
-      setActiveRole(null);
-      setIsActingAsRole(false);
+      setActiveRole(org.userRole as OrganizationRole);
 
       // Update state
       setActiveOrg(org);
@@ -290,15 +286,17 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
   const toggleActiveRole = useCallback(async () => {
     if (!activeOrg || activeOrg.userRole !== OrganizationRole.Admin) {
-      return { isActingAsRole: false, activeRole: null }; // Only admins can toggle role
+      return activeRole; // Only admins can toggle role
     }
 
-    // Determine new role state
-    const newIsActingAsRole = !isActingAsRole;
-    const newActiveRole = newIsActingAsRole ? OrganizationRole.Member : null;
+    // Determine new role state - toggle between Admin and Member
+    const newActiveRole =
+      activeRole === OrganizationRole.Admin
+        ? OrganizationRole.Member
+        : OrganizationRole.Admin;
 
     // Update localStorage first
-    if (newIsActingAsRole) {
+    if (newActiveRole === OrganizationRole.Member) {
       roleManager.setActiveRole(activeOrg.orgId, OrganizationRole.Member);
     } else {
       roleManager.clearActiveRole();
@@ -306,7 +304,6 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Update state optimistically
     setActiveRole(newActiveRole);
-    setIsActingAsRole(newIsActingAsRole);
 
     // Refresh token with the correct context
     // The tokenManager will check roleManager internally for act_as context
@@ -321,32 +318,26 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     });
 
     // Return the new state so callers can use it immediately
-    return { isActingAsRole: newIsActingAsRole, activeRole: newActiveRole };
-  }, [activeOrg, isActingAsRole, refreshTokenWithContext, queryClient]);
+    return newActiveRole;
+  }, [activeOrg, activeRole, refreshTokenWithContext, queryClient]);
 
   // RBAC helper functions
   const checkPermissionCallback = useCallback(
     (permission: Permission): boolean => {
       if (!activeOrg) return false;
-      // Use the active role if admin is acting as member, otherwise use actual role
-      const roleToCheck =
-        isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
-          ? OrganizationRole.Member
-          : activeOrg.userRole;
+      // Use the active role for permission checking
+      const roleToCheck = activeRole;
       return checkPermission(roleToCheck.toLowerCase(), permission);
     },
-    [activeOrg, isActingAsRole],
+    [activeOrg, activeRole],
   );
 
   const getPermissionsCallback = useCallback((): readonly Permission[] => {
     if (!activeOrg) return [];
-    // Use the active role if admin is acting as member, otherwise use actual role
-    const roleToCheck =
-      isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
-        ? OrganizationRole.Member
-        : activeOrg.userRole;
+    // Use the active role for permission checking
+    const roleToCheck = activeRole;
     return getPermissionsForRole(roleToCheck.toLowerCase());
-  }, [activeOrg, isActingAsRole]);
+  }, [activeOrg, activeRole]);
 
   useEffect(() => {
     if (orgs.length > 0 && !activeOrg) {
@@ -415,7 +406,6 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         logout: handleLogout,
         activeRole,
         toggleActiveRole,
-        isActingAsRole,
         isTokenRefreshing,
         // RBAC additions
         checkPermission: checkPermissionCallback,

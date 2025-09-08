@@ -52,11 +52,6 @@ class RoleManager {
     if (typeof window === "undefined") return;
     localStorage.removeItem(this.STORAGE_KEY);
   }
-
-  isActingAsRole(organizationId: string): boolean {
-    const activeRole = this.getActiveRole(organizationId);
-    return activeRole !== null;
-  }
 }
 
 export const roleManager = RoleManager.getInstance();

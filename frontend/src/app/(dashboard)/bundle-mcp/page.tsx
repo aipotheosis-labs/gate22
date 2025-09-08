@@ -42,9 +42,10 @@ const columnHelper = createColumnHelper<MCPServerBundle>();
 export default function BundleMCPPage() {
   const router = useRouter();
   const [copiedBundleId, setCopiedBundleId] = useState<string | null>(null);
-  const { activeOrg, isActingAsRole } = useMetaInfo();
+  const { activeOrg, activeRole } = useMetaInfo();
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
-  const isAdminViewingAsAdmin = isAdmin && !isActingAsRole;
+  const isAdminViewingAsAdmin =
+    isAdmin && activeRole === OrganizationRole.Admin;
   const {
     data: bundles = [],
     isLoading: isBundlesLoading,

@@ -19,10 +19,10 @@ export const mcpQueryKeys = {
   },
   configurations: {
     all: ["mcp", "configurations"] as const,
-    list: (params?: PaginationParams, accessToken?: string) =>
-      ["mcp", "configurations", "list", params, accessToken] as const,
-    detail: (id: string, accessToken?: string) =>
-      ["mcp", "configurations", "detail", id, accessToken] as const,
+    list: (params?: PaginationParams, authContextKey?: string) =>
+      ["mcp", "configurations", "list", params, authContextKey] as const,
+    detail: (id: string, authContextKey?: string) =>
+      ["mcp", "configurations", "detail", id, authContextKey] as const,
   },
   tools: {
     all: ["mcp", "tools"] as const,
@@ -60,10 +60,15 @@ export function useMCPServerByName(serverName: string) {
 
 // Hook to list MCP server configurations for the current organization
 export function useMCPServerConfigurations(params?: PaginationParams) {
-  const { accessToken, checkPermission } = useMetaInfo();
+  const { accessToken, checkPermission, activeOrg, activeRole } = useMetaInfo();
+
+  // Create auth context key for cache separation without exposing token
+  const authContextKey = activeOrg
+    ? `${activeOrg.orgId}:${activeRole}`
+    : undefined;
 
   const query = useQuery({
-    queryKey: mcpQueryKeys.configurations.list(params, accessToken),
+    queryKey: mcpQueryKeys.configurations.list(params, authContextKey),
     queryFn: () => mcpService.configurations.list(accessToken!, params),
     enabled: !!accessToken,
   });
@@ -81,10 +86,18 @@ export function useMCPServerConfigurations(params?: PaginationParams) {
 
 // Hook to get a specific MCP server configuration
 export function useMCPServerConfiguration(configurationId: string) {
-  const { accessToken } = useMetaInfo();
+  const { accessToken, activeOrg, activeRole } = useMetaInfo();
+
+  // Create auth context key for cache separation without exposing token
+  const authContextKey = activeOrg
+    ? `${activeOrg.orgId}:${activeRole}`
+    : undefined;
 
   return useQuery({
-    queryKey: mcpQueryKeys.configurations.detail(configurationId, accessToken),
+    queryKey: mcpQueryKeys.configurations.detail(
+      configurationId,
+      authContextKey,
+    ),
     queryFn: () =>
       mcpService.configurations.getById(accessToken!, configurationId),
     enabled: !!accessToken && !!configurationId,

@@ -12,19 +12,16 @@ import { OrganizationRole } from "@/features/settings/types/organization.types";
  * Hook to check if current user has a specific permission
  */
 export function usePermission(permission: Permission): boolean {
-  const { activeOrg, isActingAsRole } = useMetaInfo();
+  const { activeOrg, activeRole } = useMetaInfo();
 
   return useMemo(() => {
     if (!activeOrg) return false;
 
-    // Use member role if admin is acting as member
-    const roleToCheck =
-      isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
-        ? OrganizationRole.Member
-        : activeOrg.userRole;
+    // Use the active role for permission checking
+    const roleToCheck = activeRole;
 
     return checkPermission(roleToCheck.toLowerCase(), permission);
-  }, [activeOrg, isActingAsRole, permission]);
+  }, [activeOrg, activeRole, permission]);
 }
 
 /**
@@ -34,23 +31,20 @@ export function usePermissions(
   permissions: Permission[],
   mode: "all" | "any" = "all",
 ): boolean {
-  const { activeOrg, isActingAsRole } = useMetaInfo();
+  const { activeOrg, activeRole } = useMetaInfo();
 
   return useMemo(() => {
     if (!activeOrg) return false;
 
-    // Use member role if admin is acting as member
-    const roleToCheck =
-      isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
-        ? OrganizationRole.Member
-        : activeOrg.userRole;
+    // Use the active role for permission checking
+    const roleToCheck = activeRole;
 
     return checkMultiplePermissions(
       roleToCheck.toLowerCase(),
       permissions,
       mode,
     );
-  }, [activeOrg, isActingAsRole, permissions, mode]);
+  }, [activeOrg, activeRole, permissions, mode]);
 }
 
 /**
@@ -63,42 +57,40 @@ export function useRole(): {
   isMember: boolean;
   isActingAsMember: boolean;
 } {
-  const { activeOrg, isActingAsRole } = useMetaInfo();
+  const { activeOrg, activeRole } = useMetaInfo();
 
   return useMemo(() => {
     const userRole = activeOrg?.userRole || "";
-    const activeRole =
-      isActingAsRole && userRole === OrganizationRole.Admin
-        ? OrganizationRole.Member.toLowerCase()
-        : userRole.toLowerCase();
+    const effectiveRole = activeRole
+      ? activeRole.toLowerCase()
+      : userRole.toLowerCase();
 
     return {
       role: userRole.toLowerCase(),
-      activeRole,
+      activeRole: effectiveRole,
       isAdmin: userRole === OrganizationRole.Admin,
       isMember: userRole === OrganizationRole.Member,
-      isActingAsMember: userRole === OrganizationRole.Admin && isActingAsRole,
+      isActingAsMember:
+        userRole === OrganizationRole.Admin &&
+        activeRole === OrganizationRole.Member,
     };
-  }, [activeOrg, isActingAsRole]);
+  }, [activeOrg, activeRole]);
 }
 
 /**
  * Hook to get all permissions for the current user
  */
 export function useUserPermissions(): readonly Permission[] {
-  const { activeOrg, isActingAsRole } = useMetaInfo();
+  const { activeOrg, activeRole } = useMetaInfo();
 
   return useMemo(() => {
     if (!activeOrg) return [];
 
-    // Use member role if admin is acting as member
-    const roleToCheck =
-      isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
-        ? OrganizationRole.Member
-        : activeOrg.userRole;
+    // Use the active role for permission checking
+    const roleToCheck = activeRole;
 
     return getPermissionsForRole(roleToCheck.toLowerCase());
-  }, [activeOrg, isActingAsRole]);
+  }, [activeOrg, activeRole]);
 }
 
 /**
@@ -109,16 +101,13 @@ export function useCanPerformAction(
   action: Permission,
   resourceOwnerId?: string,
 ): boolean {
-  const { activeOrg, isActingAsRole, user } = useMetaInfo();
+  const { activeOrg, activeRole, user } = useMetaInfo();
 
   return useMemo(() => {
     if (!activeOrg || !user) return false;
 
-    // Use member role if admin is acting as member
-    const roleToCheck =
-      isActingAsRole && activeOrg.userRole === OrganizationRole.Admin
-        ? OrganizationRole.Member
-        : activeOrg.userRole;
+    // Use the active role for permission checking
+    const roleToCheck = activeRole;
 
     // Check base permission first
     const hasPermission = checkPermission(roleToCheck.toLowerCase(), action);
@@ -133,5 +122,5 @@ export function useCanPerformAction(
     }
 
     return hasPermission;
-  }, [activeOrg, isActingAsRole, user, action, resourceOwnerId]);
+  }, [activeOrg, activeRole, user, action, resourceOwnerId]);
 }
