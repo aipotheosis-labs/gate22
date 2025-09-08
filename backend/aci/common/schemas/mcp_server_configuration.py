@@ -8,6 +8,7 @@ from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server import MCPServerPublic
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
 from aci.common.schemas.organization import TeamInfo
+from aci.control_plane import config
 
 logger = get_logger(__name__)
 
@@ -20,9 +21,9 @@ class MCPServerConfigurationCreate(BaseModel):
     """
 
     # TODO: allow white-labeling by providingthe redirect url
-    name: str = Field(min_length=1, max_length=100)
+    name: str = Field(min_length=1, max_length=config.FIELD_NAME_MAX_LENGTH)
     # TODO: put magic number in constants
-    description: str | None = Field(default=None, max_length=512)
+    description: str | None = Field(default=None, max_length=config.FIELD_DESCRIPTION_MAX_LENGTH)
     mcp_server_id: UUID
     auth_type: AuthType
     all_tools_enabled: bool = Field(default=True)
@@ -42,8 +43,8 @@ class MCPServerConfigurationCreate(BaseModel):
 class MCPServerConfigurationUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: str | None = Field(default=None, min_length=1, max_length=100)
-    description: str | None = Field(default=None, max_length=512)
+    name: str | None = Field(default=None, min_length=1, max_length=config.FIELD_NAME_MAX_LENGTH)
+    description: str | None = Field(default=None, max_length=config.FIELD_DESCRIPTION_MAX_LENGTH)
     all_tools_enabled: bool | None = None
     enabled_tools: list[UUID] | None = None
     allowed_teams: list[UUID] | None = None

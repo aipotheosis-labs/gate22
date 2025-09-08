@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from aci.common.enums import OrganizationRole
+from aci.control_plane import config
 
 
 class ActAsInfo(BaseModel):
@@ -35,9 +36,15 @@ class OAuth2State(BaseModel):
 
 
 class EmailRegistrationRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=100, description="User name")
-    email: EmailStr = Field(min_length=1, max_length=255, description="User email")
-    password: str = Field(min_length=1, max_length=255, description="User password")
+    name: str = Field(
+        min_length=1, max_length=config.FIELD_NAME_MAX_LENGTH, description="User name"
+    )
+    email: EmailStr = Field(
+        min_length=1, max_length=config.FIELD_EMAIL_MAX_LENGTH, description="User email"
+    )
+    password: str = Field(
+        min_length=1, max_length=config.FIELD_PASSWORD_MAX_LENGTH, description="User password"
+    )
 
     # TODO: Define password strength requirements
     @field_validator("password")
@@ -57,8 +64,12 @@ class EmailRegistrationRequest(BaseModel):
 
 
 class EmailLoginRequest(BaseModel):
-    email: str = Field(min_length=1, max_length=255, description="User email")
-    password: str = Field(min_length=1, max_length=255, description="User password")
+    email: str = Field(
+        min_length=1, max_length=config.FIELD_EMAIL_MAX_LENGTH, description="User email"
+    )
+    password: str = Field(
+        min_length=1, max_length=config.FIELD_PASSWORD_MAX_LENGTH, description="User password"
+    )
 
 
 class TokenResponse(BaseModel):

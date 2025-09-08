@@ -4,12 +4,18 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from aci.common.enums import OrganizationRole, TeamRole
+from aci.control_plane import config
 
 
 class CreateOrganizationRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=100, description="Organization name")
+    name: str = Field(
+        min_length=1, max_length=config.FIELD_NAME_MAX_LENGTH, description="Organization name"
+    )
     description: str | None = Field(
-        default=None, min_length=1, max_length=255, description="Organization description"
+        default=None,
+        min_length=1,
+        max_length=config.FIELD_DESCRIPTION_MAX_LENGTH,
+        description="Organization description",
     )
 
 
@@ -32,9 +38,14 @@ class UpdateOrganizationMemberRoleRequest(BaseModel):
 
 
 class CreateOrganizationTeamRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=100, description="Team name")
+    name: str = Field(
+        min_length=1, max_length=config.FIELD_NAME_MAX_LENGTH, description="Team name"
+    )
     description: str | None = Field(
-        default=None, min_length=1, max_length=255, description="Team description"
+        default=None,
+        min_length=1,
+        max_length=config.FIELD_DESCRIPTION_MAX_LENGTH,
+        description="Team description",
     )
 
 
