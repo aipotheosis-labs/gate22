@@ -96,7 +96,7 @@ def test_list_mcp_server_configurations(
             assert response.status_code == 200
             if all_added_to_team:
                 # Should see 3 mcp server configuration as all have allowed dummy_team
-                assert len(paginated_response.data) == 3
+                assert len(paginated_response.data) == len(dummy_mcp_server_configurations)
                 assert target_config.id in [
                     response_item.id for response_item in paginated_response.data
                 ]
@@ -104,8 +104,8 @@ def test_list_mcp_server_configurations(
                     response_item.mcp_server.id for response_item in paginated_response.data
                 ]
             else:
-                # Should only see 2 mcp server configuration as the other one has no allowed_teams
-                assert len(paginated_response.data) == 2
+                # One config had its allowed_teams cleared
+                assert len(paginated_response.data) == len(dummy_mcp_server_configurations) - 1
                 assert target_config.id not in [
                     response_item.id for response_item in paginated_response.data
                 ]
