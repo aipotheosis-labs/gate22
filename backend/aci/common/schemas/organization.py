@@ -9,7 +9,7 @@ from aci.common.enums import OrganizationRole, TeamRole
 class CreateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100, description="Organization name")
     description: str | None = Field(
-        default=None, min_length=1, max_length=255, description="Organization description"
+        default=None, max_length=255, description="Organization description"
     )
 
 
@@ -33,9 +33,7 @@ class UpdateOrganizationMemberRoleRequest(BaseModel):
 
 class CreateOrganizationTeamRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100, description="Team name")
-    description: str | None = Field(
-        default=None, min_length=1, max_length=255, description="Team description"
-    )
+    description: str | None = Field(default=None, max_length=255, description="Team description")
 
 
 class TeamInfo(BaseModel):
