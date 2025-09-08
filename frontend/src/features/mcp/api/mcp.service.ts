@@ -8,6 +8,7 @@ import {
   MCPServerConfigurationPublic,
   MCPServerConfigurationPublicBasic,
   MCPServerConfigurationCreate,
+  MCPServerConfigurationUpdate,
   MCPToolPublic,
   PaginationParams,
   PaginationResponse,
@@ -110,6 +111,18 @@ export const mcpService = {
       const api = createAuthenticatedRequest(token);
       return api.post<MCPServerConfigurationPublic>(
         API_ENDPOINTS.CONFIGURATIONS,
+        data,
+      );
+    },
+
+    update: async (
+      token: string,
+      configurationId: string,
+      data: MCPServerConfigurationUpdate,
+    ): Promise<MCPServerConfigurationPublic> => {
+      const api = createAuthenticatedRequest(token);
+      return api.patch<MCPServerConfigurationPublic>(
+        `${API_ENDPOINTS.CONFIGURATIONS}/${configurationId}`,
         data,
       );
     },

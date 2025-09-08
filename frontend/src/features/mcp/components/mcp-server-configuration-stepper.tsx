@@ -15,10 +15,17 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  ChevronRight,
+  ChevronLeft,
+  Search,
+} from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import {
   MCPServerPublic,
@@ -89,6 +96,7 @@ export function MCPServerConfigurationStepper({
   );
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
+  const [toolSearchQuery, setToolSearchQuery] = useState("");
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsLoading, setTeamsLoading] = useState(false);
@@ -105,6 +113,7 @@ export function MCPServerConfigurationStepper({
       setNameError("");
       setDescription("");
       setSelectedTools(new Set());
+      setToolSearchQuery("");
       setSelectedTeams(new Set());
       setAllToolsEnabled(true);
       setSelectedAuthType(
@@ -332,24 +341,22 @@ export function MCPServerConfigurationStepper({
 
                   <div className="px-1">
                     <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
+                      <div className="flex-1 space-y-0.5">
                         <Label
                           htmlFor="all-tools"
-                          className="text-sm font-medium cursor-pointer"
+                          className="text-sm font-medium"
                         >
                           Enable all tools
                         </Label>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground">
                           Grant access to all {server?.tools?.length || 0}{" "}
                           available tools
                         </p>
                       </div>
-                      <Checkbox
+                      <Switch
                         id="all-tools"
                         checked={allToolsEnabled}
-                        onCheckedChange={(checked) =>
-                          setAllToolsEnabled(!!checked)
-                        }
+                        onCheckedChange={setAllToolsEnabled}
                       />
                     </div>
                   </div>
@@ -357,36 +364,71 @@ export function MCPServerConfigurationStepper({
                   {!allToolsEnabled &&
                     server?.tools &&
                     server.tools.length > 0 && (
-                      <div className="space-y-2 px-1">
-                        <Label className="text-xs font-medium text-muted-foreground">
-                          Select specific tools:
-                        </Label>
-                        <div className="grid gap-1.5 max-h-[250px] overflow-y-auto pr-2">
-                          {server?.tools?.map((tool) => (
-                            <label
-                              key={tool.id}
-                              className="flex items-start space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
-                            >
-                              <Checkbox
-                                id={tool.id}
-                                checked={selectedTools.has(tool.id)}
-                                onCheckedChange={() =>
-                                  handleToolToggle(tool.id)
-                                }
-                                className="mt-0.5"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium">
-                                  {tool.name}
-                                </div>
-                                {tool.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-1">
-                                    {tool.description}
+                      <div className="space-y-3 px-1">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Search tools..."
+                            value={toolSearchQuery}
+                            onChange={(e) => setToolSearchQuery(e.target.value)}
+                            className="pl-9"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground">
+                            Select specific tools:
+                          </Label>
+                          <div className="grid gap-1.5 max-h-[250px] overflow-y-auto pr-2 border rounded-lg p-2">
+                            {(() => {
+                              const filteredTools = server.tools.filter(
+                                (tool) =>
+                                  tool.name
+                                    .toLowerCase()
+                                    .includes(toolSearchQuery.toLowerCase()) ||
+                                  tool.description
+                                    ?.toLowerCase()
+                                    .includes(toolSearchQuery.toLowerCase()),
+                              );
+
+                              if (filteredTools.length === 0) {
+                                return (
+                                  <p className="text-sm text-muted-foreground text-center py-8">
+                                    {toolSearchQuery
+                                      ? "No tools match your search"
+                                      : "No tools available"}
                                   </p>
-                                )}
-                              </div>
-                            </label>
-                          ))}
+                                );
+                              }
+
+                              return filteredTools.map((tool) => (
+                                <label
+                                  key={tool.id}
+                                  className="flex items-start space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                                >
+                                  <Checkbox
+                                    id={tool.id}
+                                    checked={selectedTools.has(tool.id)}
+                                    onCheckedChange={() =>
+                                      handleToolToggle(tool.id)
+                                    }
+                                    className="mt-0.5"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium">
+                                      {tool.name}
+                                    </div>
+                                    {tool.description && (
+                                      <p className="text-xs text-muted-foreground line-clamp-1">
+                                        {tool.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </label>
+                              ));
+                            })()}
+                          </div>
                         </div>
                       </div>
                     )}
