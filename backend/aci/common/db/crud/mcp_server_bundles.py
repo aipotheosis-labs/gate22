@@ -68,6 +68,7 @@ def get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configurat
         )
         .order_by(MCPServerBundle.created_at.desc())
     )
+    # TODO: Consider add a GIN index on mcp_server_configuration_ids
     return list(db_session.execute(statement).scalars().all())
 
 
