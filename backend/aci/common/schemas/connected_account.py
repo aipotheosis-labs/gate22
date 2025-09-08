@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationPublic,
 )
+from aci.common.schemas.user import UserPublic
 
 
 class ConnectedAccountAPIKeyCreate(BaseModel, extra="forbid"):
@@ -50,3 +51,4 @@ class ConnectedAccountPublic(BaseModel):
     updated_at: datetime
 
     mcp_server_configuration: MCPServerConfigurationPublic
+    user: UserPublic

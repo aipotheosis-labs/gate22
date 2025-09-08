@@ -14,6 +14,7 @@ from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
 from aci.common.schemas.organization import TeamInfo
+from aci.common.schemas.user import UserPublic
 
 
 def construct_mcp_server_public(mcp_server: MCPServer) -> MCPServerPublic:
@@ -98,6 +99,7 @@ def construct_mcp_server_bundle_public(
             construct_mcp_server_configuration_public(db_session, mcp_server_configuration)
             for mcp_server_configuration in mcp_server_configurations
         ],
+        user=UserPublic.model_validate(mcp_server_bundle.user, from_attributes=True),
         created_at=mcp_server_bundle.created_at,
         updated_at=mcp_server_bundle.updated_at,
     )
@@ -115,4 +117,5 @@ def construct_connected_account_public(
         mcp_server_configuration=construct_mcp_server_configuration_public(
             db_session, connected_account.mcp_server_configuration
         ),
+        user=UserPublic.model_validate(connected_account.user, from_attributes=True),
     )

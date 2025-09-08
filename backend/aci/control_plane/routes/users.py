@@ -4,24 +4,24 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.user import UserInfo, UserOrganizationInfo
+from aci.common.schemas.user import UserOrganizationInfo, UserSelfProfile
 from aci.control_plane import dependencies as deps
 
 logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.get("/me/profile", response_model=UserInfo, status_code=status.HTTP_200_OK)
+@router.get("/me/profile", response_model=UserSelfProfile, status_code=status.HTTP_200_OK)
 async def profile(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context_no_orgs)],
-) -> UserInfo:
+) -> UserSelfProfile:
     user = crud.users.get_user_by_id(context.db_session, context.user_id)
 
     # Should never happen as the user_id is validated in the JWT payload
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    return UserInfo(
+    return UserSelfProfile(
         user_id=user.id,
         name=user.name,
         email=user.email,

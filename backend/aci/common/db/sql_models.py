@@ -423,6 +423,8 @@ class ConnectedAccount(Base):
         "MCPServerConfiguration", init=False
     )
 
+    user: Mapped[User] = relationship("User", init=False)
+
     # TODO: consider composite key instead
     __table_args__ = (
         UniqueConstraint(
@@ -454,6 +456,7 @@ class MCPServerBundle(Base):
     mcp_server_configuration_ids: Mapped[list[UUID]] = mapped_column(
         ARRAY(PGUUID(as_uuid=True)), nullable=False
     )
+    user: Mapped[User] = relationship("User", init=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False

@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import User
-from aci.common.schemas.user import UserInfo
+from aci.common.schemas.user import UserSelfProfile
 from aci.control_plane import config
 
 
@@ -29,7 +29,7 @@ def test_get_profile(
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert response.status_code == 200
-    userinfo = UserInfo.model_validate(response.json())
+    userinfo = UserSelfProfile.model_validate(response.json())
 
     if access_token_fixture in ["dummy_access_token_no_orgs"]:
         assert len(userinfo.organizations) == 0

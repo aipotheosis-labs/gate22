@@ -11,8 +11,15 @@ class UserOrganizationInfo(BaseModel):
     role: OrganizationRole
 
 
-class UserInfo(BaseModel):
+# Only used in getting own user profile, which discloses organization information
+class UserSelfProfile(BaseModel):
     user_id: UUID
     name: str
     email: str
     organizations: list[UserOrganizationInfo]
+
+
+class UserPublic(BaseModel):
+    id: UUID
+    name: str
+    email: str

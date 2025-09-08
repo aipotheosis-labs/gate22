@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
+from aci.common.schemas.user import UserPublic
 
 
 class MCPServerBundleCreate(BaseModel):
@@ -19,6 +20,7 @@ class MCPServerBundlePublic(BaseModel):
     user_id: UUID
     organization_id: UUID
     mcp_server_configurations: list[MCPServerConfigurationPublic]
+    user: UserPublic
 
     created_at: datetime
     updated_at: datetime
