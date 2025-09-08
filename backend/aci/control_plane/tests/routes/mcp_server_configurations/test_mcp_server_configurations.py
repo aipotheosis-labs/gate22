@@ -35,7 +35,7 @@ logger = get_logger(__name__)
         "dummy_access_token_admin_act_as_member",
     ],
 )
-@pytest.mark.parametrize("is_added_to_team", [True, False])
+@pytest.mark.parametrize("all_added_to_team", [True, False])
 @pytest.mark.parametrize("offset", [None, 0, 10])
 def test_list_mcp_server_configurations(
     test_client: TestClient,
@@ -45,18 +45,17 @@ def test_list_mcp_server_configurations(
     dummy_mcp_server_configurations: list[MCPServerConfiguration],
     dummy_mcp_server: MCPServer,
     dummy_team: Team,
-    is_added_to_team: bool,
+    all_added_to_team: bool,
     offset: int | None,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
-    # dummy_mcp_server_configurations has 2 dummy MCP server configurations,
-    # both allowed [dummy_team]
-    config_added_to_team = dummy_mcp_server_configurations[0]
-    if is_added_to_team:
-        config_added_to_team.allowed_teams = [dummy_team.id]
-    else:
-        config_added_to_team.allowed_teams = []
+    # dummy_mcp_server_configurations has 3 dummy MCP server configurations,
+    # all allowed [dummy_team]
+    target_config = dummy_mcp_server_configurations[0]
+    if not all_added_to_team:
+        # Remove dummy_team from one of the configurations
+        target_config.allowed_teams = []
     db_session.commit()
 
     params = {}
@@ -95,19 +94,19 @@ def test_list_mcp_server_configurations(
         ]:
             # Should only see the MCP server configuration that the user belongs to
             assert response.status_code == 200
-            if is_added_to_team:
-                # Should see 2 mcp server configuration as both have allowed dummy_team
-                assert len(paginated_response.data) == 2
-                assert config_added_to_team.id in [
+            if all_added_to_team:
+                # Should see 3 mcp server configuration as all have allowed dummy_team
+                assert len(paginated_response.data) == 3
+                assert target_config.id in [
                     response_item.id for response_item in paginated_response.data
                 ]
-                assert config_added_to_team.mcp_server.id in [
+                assert target_config.mcp_server.id in [
                     response_item.mcp_server.id for response_item in paginated_response.data
                 ]
             else:
-                # Should only see 1 mcp server configuration as the other one has no allowed_teams
-                assert len(paginated_response.data) == 1
-                assert config_added_to_team.id not in [
+                # Should only see 2 mcp server configuration as the other one has no allowed_teams
+                assert len(paginated_response.data) == 2
+                assert target_config.id not in [
                     response_item.id for response_item in paginated_response.data
                 ]
         else:
