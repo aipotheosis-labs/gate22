@@ -157,7 +157,7 @@ def search_mcp_tools(
             statement = statement.where(MCPTool.mcp_server_id.in_(mcp_server_ids))
     # Filter by excluded tool IDs if provided
     if excluded_tool_ids:
-        statement = statement.where(MCPTool.id.not_in(excluded_tool_ids))
+        statement = statement.where(MCPTool.id.notin_(excluded_tool_ids))
     # Rank by similarity to intent embedding if provided, else default order by tool name
     if intent_embedding is not None:
         similarity_score = MCPTool.embedding.cosine_distance(intent_embedding)
