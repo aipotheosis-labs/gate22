@@ -242,9 +242,7 @@ export default function AvailableMCPServersPage() {
                             <Check className="h-3 w-3 text-primary" />
                           )}
                         </div>
-                        <span className="text-sm font-semibold">
-                          Bundle
-                        </span>
+                        <span className="text-sm font-semibold">Bundle</span>
                       </button>
                     </div>
 
@@ -300,7 +298,6 @@ export default function AvailableMCPServersPage() {
                             <div className="h-[22px]" />
                           )}
                         </div>
-
                       </div>
                     </CardContent>
                   </div>

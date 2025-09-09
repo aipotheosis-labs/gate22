@@ -5,13 +5,21 @@ import { useParams, useRouter } from "next/navigation";
 import {
   useMCPServerConfiguration,
   useMCPServer,
+  useDeleteMCPServerConfiguration,
 } from "@/features/mcp/hooks/use-mcp-servers";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2, AlertCircle, Edit2, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  Edit2,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import Image from "next/image";
 import { ToolsTable } from "@/features/mcp/components/tools-table";
 import { useRole } from "@/hooks/use-permissions";
@@ -21,6 +29,7 @@ import { mcpService } from "@/features/mcp/api/mcp.service";
 import { toast } from "sonner";
 import { ManageTeamsDialog } from "@/features/mcp/components/manage-teams-dialog";
 import { ManageToolsDialog } from "@/features/mcp/components/manage-tools-dialog";
+import { DeleteConfigurationDialog } from "@/features/mcp/components/delete-configuration-dialog";
 
 export default function MCPConfigurationDetailPage() {
   const params = useParams();
@@ -36,6 +45,7 @@ export default function MCPConfigurationDetailPage() {
   const [editedDescription, setEditedDescription] = useState("");
   const [showManageTeams, setShowManageTeams] = useState(false);
   const [showManageTools, setShowManageTools] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const {
     data: configuration,
@@ -52,6 +62,8 @@ export default function MCPConfigurationDetailPage() {
   const authContextKey = activeOrg
     ? `${activeOrg.orgId}:${activeRole}`
     : undefined;
+
+  const deleteConfiguration = useDeleteMCPServerConfiguration();
 
   const updateConfigMutation = useMutation({
     mutationFn: async (data: { name?: string; description?: string }) => {
@@ -113,6 +125,17 @@ export default function MCPConfigurationDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      await deleteConfiguration.mutateAsync(configurationId);
+      toast.success("Configuration deleted successfully");
+      router.push("/mcp-configuration");
+    } catch (error) {
+      console.error("Failed to delete configuration:", error);
+      toast.error("Failed to delete configuration");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -163,92 +186,105 @@ export default function MCPConfigurationDetailPage() {
       {/* Configuration Overview */}
       <Card>
         <CardHeader>
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center gap-2">
-              {configuration.mcp_server.logo && (
-                <Image
-                  src={configuration.mcp_server.logo}
-                  alt={configuration.mcp_server.name}
-                  width={48}
-                  height={48}
-                  className="rounded"
-                />
-              )}
-              {shouldShowAdminLink ? (
-                <Button
-                  variant="link"
-                  className="h-auto p-0 text-xs"
-                  onClick={() =>
-                    router.push(`/mcp-servers/${configuration.mcp_server_id}`)
-                  }
-                >
-                  {configuration.mcp_server.name}
-                </Button>
-              ) : (
-                <span className="text-xs text-center">
-                  {configuration.mcp_server.name}
-                </span>
-              )}
-            </div>
-            <div className="flex-1">
-              {isEditingName ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      className="text-2xl font-semibold h-auto py-1"
-                      placeholder="Configuration name"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleSaveNameDescription}
-                      disabled={updateConfigMutation.isPending}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsEditingName(false)}
-                      disabled={updateConfigMutation.isPending}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={editedDescription}
-                    onChange={(e) => setEditedDescription(e.target.value)}
-                    className="text-sm resize-none"
-                    placeholder="Configuration description (optional)"
-                    rows={2}
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex flex-col items-center gap-2">
+                {configuration.mcp_server.logo && (
+                  <Image
+                    src={configuration.mcp_server.logo}
+                    alt={configuration.mcp_server.name}
+                    width={48}
+                    height={48}
+                    className="rounded"
                   />
-                </div>
-              ) : (
-                <div className="group">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-2xl">
-                      {configuration.name}
-                    </CardTitle>
-                    {isAdmin && !isActingAsMember && (
+                )}
+                {shouldShowAdminLink ? (
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-xs"
+                    onClick={() =>
+                      router.push(`/mcp-servers/${configuration.mcp_server_id}`)
+                    }
+                  >
+                    {configuration.mcp_server.name}
+                  </Button>
+                ) : (
+                  <span className="text-xs text-center">
+                    {configuration.mcp_server.name}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                {isEditingName ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        className="text-2xl font-semibold h-auto py-1"
+                        placeholder="Configuration name"
+                      />
                       <Button
-                        size="icon"
-                        variant="ghost"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={startEditingName}
+                        size="sm"
+                        onClick={handleSaveNameDescription}
+                        disabled={updateConfigMutation.isPending}
                       >
-                        <Edit2 className="h-4 w-4" />
+                        Save
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditingName(false)}
+                        disabled={updateConfigMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <Textarea
+                      value={editedDescription}
+                      onChange={(e) => setEditedDescription(e.target.value)}
+                      className="text-sm resize-none"
+                      placeholder="Configuration description (optional)"
+                      rows={2}
+                    />
+                  </div>
+                ) : (
+                  <div className="group">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-2xl">
+                        {configuration.name}
+                      </CardTitle>
+                      {isAdmin && !isActingAsMember && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={startEditingName}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {configuration.description && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {configuration.description}
+                      </p>
                     )}
                   </div>
-                  {configuration.description && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {configuration.description}
-                    </p>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
             </div>
+            {/* Delete Configuration Button - Top Right */}
+            {isAdmin && !isActingAsMember && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="border-t pt-6">
@@ -421,6 +457,13 @@ export default function MCPConfigurationDetailPage() {
                 queryKey: ["mcp-server-configuration", configurationId],
               });
             }}
+          />
+          <DeleteConfigurationDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            configurationName={configuration.name}
+            onConfirm={handleDelete}
+            isPending={deleteConfiguration.isPending}
           />
         </>
       )}

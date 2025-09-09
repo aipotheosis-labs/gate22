@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -10,17 +10,6 @@ import { formatToLocalTime } from "@/utils/time";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
   useMCPServerConfigurations,
   useDeleteMCPServerConfiguration,
 } from "@/features/mcp/hooks/use-mcp-servers";
@@ -29,6 +18,7 @@ import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { usePermission } from "@/hooks/use-permissions";
 import { Shield } from "lucide-react";
+import { DeleteConfigurationDialog } from "@/features/mcp/components/delete-configuration-dialog";
 
 const columnHelper = createColumnHelper<MCPServerConfigurationPublicBasic>();
 
@@ -40,6 +30,11 @@ export default function MCPConfigurationPage() {
   const { data: configurationsResponse, isLoading } =
     useMCPServerConfigurations({ limit: 100 });
   const deleteConfiguration = useDeleteMCPServerConfiguration();
+  const [deleteDialogState, setDeleteDialogState] = useState<{
+    open: boolean;
+    configurationId: string;
+    configurationName: string;
+  }>({ open: false, configurationId: "", configurationName: "" });
 
   // Redirect members who don't have permission
   useEffect(() => {
@@ -48,18 +43,26 @@ export default function MCPConfigurationPage() {
     }
   }, [isLoading, canViewConfigurations, router]);
 
-  const handleDelete = useCallback(
-    async (configurationId: string, serverName: string) => {
-      try {
-        await deleteConfiguration.mutateAsync(configurationId);
-        toast.success(`Configuration for ${serverName} deleted successfully`);
-      } catch (error) {
-        console.error("Failed to delete configuration:", error);
-        toast.error("Failed to delete configuration");
-      }
-    },
-    [deleteConfiguration],
-  );
+  const handleDelete = useCallback(async () => {
+    try {
+      await deleteConfiguration.mutateAsync(deleteDialogState.configurationId);
+      toast.success(
+        `Configuration "${deleteDialogState.configurationName}" deleted successfully`,
+      );
+      setDeleteDialogState({
+        open: false,
+        configurationId: "",
+        configurationName: "",
+      });
+    } catch (error) {
+      console.error("Failed to delete configuration:", error);
+      toast.error("Failed to delete configuration");
+    }
+  }, [
+    deleteConfiguration,
+    deleteDialogState.configurationId,
+    deleteDialogState.configurationName,
+  ]);
 
   const columns: ColumnDef<MCPServerConfigurationPublicBasic>[] =
     useMemo(() => {
@@ -182,43 +185,20 @@ export default function MCPConfigurationPage() {
                 <PermissionGuard
                   permission={PERMISSIONS.MCP_CONFIGURATION_DELETE}
                 >
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Delete Configuration
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete the configuration for{" "}
-                          {configuration.mcp_server.name}? This action cannot be
-                          undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() =>
-                            handleDelete(
-                              configuration.id,
-                              configuration.mcp_server.name,
-                            )
-                          }
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive"
+                    onClick={() =>
+                      setDeleteDialogState({
+                        open: true,
+                        configurationId: configuration.id,
+                        configurationName: configuration.name,
+                      })
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </PermissionGuard>
               </div>
             );
@@ -226,7 +206,7 @@ export default function MCPConfigurationPage() {
           enableGlobalFilter: false,
         }),
       ] as ColumnDef<MCPServerConfigurationPublicBasic>[];
-    }, [handleDelete, router]);
+    }, [router]);
 
   // Show permission denied message for members
   if (!canViewConfigurations) {
@@ -288,6 +268,17 @@ export default function MCPConfigurationPage() {
           />
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfigurationDialog
+        open={deleteDialogState.open}
+        onOpenChange={(open) =>
+          setDeleteDialogState((prev) => ({ ...prev, open }))
+        }
+        configurationName={deleteDialogState.configurationName}
+        onConfirm={handleDelete}
+        isPending={deleteConfiguration.isPending}
+      />
     </div>
   );
 }

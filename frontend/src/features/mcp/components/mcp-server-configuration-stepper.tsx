@@ -169,12 +169,6 @@ export function MCPServerConfigurationStepper({
       return;
     }
 
-    if (selectedTeams.size === 0) {
-      toast.error("Please select at least one team");
-      stepper.goTo("teams"); // Go to teams step
-      return;
-    }
-
     const configurationData: MCPServerConfigurationCreate = {
       mcp_server_id: server.id,
       name: name.trim(),
@@ -213,7 +207,7 @@ export function MCPServerConfigurationStepper({
       case "tools":
         return allToolsEnabled || selectedTools.size > 0;
       case "teams":
-        return selectedTeams.size > 0; // Must select at least one team
+        return true; // Team selection is optional
       default:
         return false;
     }
@@ -225,8 +219,8 @@ export function MCPServerConfigurationStepper({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] max-w-[95vw] max-h-[80vh] p-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+        <DialogContent className="sm:max-w-[500px] max-w-[95vw] h-[80vh] p-0 flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
             <DialogTitle>Configure {server?.name}</DialogTitle>
             <DialogDescription>
               Set up authentication and access permissions for this MCP server
@@ -234,294 +228,296 @@ export function MCPServerConfigurationStepper({
           </DialogHeader>
 
           {/* Main Content */}
-          <ScrollArea className="flex-1 px-5">
-            <div className="space-y-6 pb-4">
-              {stepper.current.id === "general" && (
-                <div className="space-y-4">
-                  <div className="px-1">
-                    <h3 className="text-sm font-medium mb-1">
-                      General Information
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Provide a name and description for this configuration
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="px-1 space-y-2">
-                      <Label htmlFor="config-name">Configuration Name *</Label>
-                      <Input
-                        id="config-name"
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value);
-                          if (nameError) setNameError("");
-                        }}
-                        placeholder="Enter a name for this configuration"
-                        className={nameError ? "border-red-500" : ""}
-                        maxLength={100}
-                        required
-                      />
-                      {nameError && (
-                        <p className="text-xs text-red-500">{nameError}</p>
-                      )}
-                    </div>
-                    <div className="px-1 space-y-2">
-                      <Label htmlFor="config-description">Description</Label>
-                      <Textarea
-                        id="config-description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Optional description for this configuration"
-                        rows={3}
-                        maxLength={500}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {stepper.current.id === "account" && (
-                <div className="space-y-4">
-                  <div className="px-1">
-                    <h3 className="text-sm font-medium mb-1">Authentication</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Choose how users will authenticate with this server
-                    </p>
-                  </div>
-
-                  {!server?.supported_auth_types ||
-                  server.supported_auth_types.length === 0 ? (
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full w-full">
+              <div className="space-y-6 px-6 py-4">
+                {stepper.current.id === "general" && (
+                  <div className="space-y-4">
                     <div className="px-1">
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          No authentication methods available for this server.
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  ) : (
-                    <RadioGroup
-                      value={selectedAuthType}
-                      onValueChange={(value) =>
-                        setSelectedAuthType(value as AuthType)
-                      }
-                      className="space-y-1.5 px-1"
-                    >
-                      {server.supported_auth_types.map((authType) => (
-                        <label
-                          key={authType}
-                          htmlFor={authType}
-                          className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
-                        >
-                          <RadioGroupItem value={authType} id={authType} />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">
-                              {getAuthTypeLabel(authType)}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {getAuthTypeDescription(authType)}
-                            </p>
-                          </div>
-                        </label>
-                      ))}
-                    </RadioGroup>
-                  )}
-                </div>
-              )}
-
-              {stepper.current.id === "tools" && (
-                <div className="space-y-4">
-                  <div className="px-1">
-                    <h3 className="text-sm font-medium mb-1">Select Tools</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Choose which tools should be available
-                    </p>
-                  </div>
-
-                  <div className="px-1">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1 space-y-0.5">
-                        <Label
-                          htmlFor="all-tools"
-                          className="text-sm font-medium"
-                        >
-                          Enable all tools
-                        </Label>
-                        <p className="text-xs text-muted-foreground">
-                          Grant access to all {server?.tools?.length || 0}{" "}
-                          available tools
-                        </p>
-                      </div>
-                      <Switch
-                        id="all-tools"
-                        checked={allToolsEnabled}
-                        onCheckedChange={setAllToolsEnabled}
-                      />
-                    </div>
-                  </div>
-
-                  {!allToolsEnabled &&
-                    server?.tools &&
-                    server.tools.length > 0 && (
-                      <div className="space-y-3 px-1">
-                        {/* Search Input */}
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            placeholder="Search tools..."
-                            value={toolSearchQuery}
-                            onChange={(e) => setToolSearchQuery(e.target.value)}
-                            className="pl-9"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-xs font-medium text-muted-foreground">
-                            Select specific tools:
-                          </Label>
-                          <div className="grid gap-1.5 max-h-[250px] overflow-y-auto pr-2 border rounded-lg p-2">
-                            {(() => {
-                              const filteredTools = server.tools.filter(
-                                (tool) =>
-                                  tool.name
-                                    .toLowerCase()
-                                    .includes(toolSearchQuery.toLowerCase()) ||
-                                  tool.description
-                                    ?.toLowerCase()
-                                    .includes(toolSearchQuery.toLowerCase()),
-                              );
-
-                              if (filteredTools.length === 0) {
-                                return (
-                                  <p className="text-sm text-muted-foreground text-center py-8">
-                                    {toolSearchQuery
-                                      ? "No tools match your search"
-                                      : "No tools available"}
-                                  </p>
-                                );
-                              }
-
-                              return filteredTools.map((tool) => (
-                                <label
-                                  key={tool.id}
-                                  className="flex items-start space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
-                                >
-                                  <Checkbox
-                                    id={tool.id}
-                                    checked={selectedTools.has(tool.id)}
-                                    onCheckedChange={() =>
-                                      handleToolToggle(tool.id)
-                                    }
-                                    className="mt-0.5"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium">
-                                      {tool.name}
-                                    </div>
-                                    {tool.description && (
-                                      <p className="text-xs text-muted-foreground line-clamp-1">
-                                        {tool.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </label>
-                              ));
-                            })()}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                  {!allToolsEnabled && selectedTools.size === 0 && (
-                    <div className="px-1">
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          Please select at least one tool or enable all tools
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {stepper.current.id === "teams" && (
-                <div className="space-y-4">
-                  <div className="px-1 flex items-start justify-between">
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Assign Teams</h3>
+                      <h3 className="text-sm font-medium mb-1">
+                        General Information
+                      </h3>
                       <p className="text-xs text-muted-foreground">
-                        Select which teams can access this server
+                        Provide a name and description for this configuration
                       </p>
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setCreateTeamDialogOpen(true)}
-                      className="gap-1"
-                    >
-                      <Plus className="h-3 w-3" />
-                      Create Team
-                    </Button>
-                  </div>
 
-                  {teamsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                      <span className="text-sm text-muted-foreground">
-                        Loading teams...
-                      </span>
-                    </div>
-                  ) : teams.length === 0 ? (
-                    <div className="px-1">
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          No teams found. Create teams in your organization
-                          settings first.
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 px-1">
-                      <MultiSelect
-                        options={teams.map((team) => ({
-                          value: team.team_id,
-                          label: `${team.name}${team.member_count !== undefined ? ` (${team.member_count} member${team.member_count !== 1 ? "s" : ""})` : ""}`,
-                        }))}
-                        selected={Array.from(selectedTeams)}
-                        onChange={(selected) =>
-                          setSelectedTeams(new Set(selected))
-                        }
-                        placeholder="Select teams..."
-                        searchPlaceholder="Search teams..."
-                        emptyText="No teams found."
-                        className="w-full"
-                      />
-                      {selectedTeams.size > 0 && (
-                        <p className="text-xs text-muted-foreground">
-                          {selectedTeams.size} team
-                          {selectedTeams.size !== 1 ? "s" : ""} selected
-                        </p>
-                      )}
-                      {selectedTeams.size === 0 &&
-                        !teamsLoading &&
-                        teams.length > 0 && (
-                          <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription className="text-xs">
-                              Please select at least one team to proceed
-                            </AlertDescription>
-                          </Alert>
+                    <div className="space-y-3">
+                      <div className="px-1 space-y-2">
+                        <Label htmlFor="config-name">
+                          Configuration Name *
+                        </Label>
+                        <Input
+                          id="config-name"
+                          value={name}
+                          onChange={(e) => {
+                            setName(e.target.value);
+                            if (nameError) setNameError("");
+                          }}
+                          placeholder="Enter a name for this configuration"
+                          className={nameError ? "border-red-500" : ""}
+                          maxLength={100}
+                          required
+                        />
+                        {nameError && (
+                          <p className="text-xs text-red-500">{nameError}</p>
                         )}
+                      </div>
+                      <div className="px-1 space-y-2">
+                        <Label htmlFor="config-description">Description</Label>
+                        <Textarea
+                          id="config-description"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Optional description for this configuration"
+                          rows={3}
+                          maxLength={500}
+                        />
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+                  </div>
+                )}
+
+                {stepper.current.id === "account" && (
+                  <div className="space-y-4">
+                    <div className="px-1">
+                      <h3 className="text-sm font-medium mb-1">
+                        Authentication
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Choose how users will authenticate with this server
+                      </p>
+                    </div>
+
+                    {!server?.supported_auth_types ||
+                    server.supported_auth_types.length === 0 ? (
+                      <div className="px-1">
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            No authentication methods available for this server.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    ) : (
+                      <RadioGroup
+                        value={selectedAuthType}
+                        onValueChange={(value) =>
+                          setSelectedAuthType(value as AuthType)
+                        }
+                        className="space-y-1.5 px-1"
+                      >
+                        {server.supported_auth_types.map((authType) => (
+                          <label
+                            key={authType}
+                            htmlFor={authType}
+                            className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                          >
+                            <RadioGroupItem value={authType} id={authType} />
+                            <div className="flex-1">
+                              <div className="text-sm font-medium">
+                                {getAuthTypeLabel(authType)}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {getAuthTypeDescription(authType)}
+                              </p>
+                            </div>
+                          </label>
+                        ))}
+                      </RadioGroup>
+                    )}
+                  </div>
+                )}
+
+                {stepper.current.id === "tools" && (
+                  <div className="space-y-4">
+                    <div className="px-1">
+                      <h3 className="text-sm font-medium mb-1">Select Tools</h3>
+                      <p className="text-xs text-muted-foreground">
+                        Choose which tools should be available
+                      </p>
+                    </div>
+
+                    <div className="px-1">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1 space-y-0.5">
+                          <Label
+                            htmlFor="all-tools"
+                            className="text-sm font-medium"
+                          >
+                            Enable all tools
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Grant access to all {server?.tools?.length || 0}{" "}
+                            available tools
+                          </p>
+                        </div>
+                        <Switch
+                          id="all-tools"
+                          checked={allToolsEnabled}
+                          onCheckedChange={setAllToolsEnabled}
+                        />
+                      </div>
+                    </div>
+
+                    {!allToolsEnabled &&
+                      server?.tools &&
+                      server.tools.length > 0 && (
+                        <div className="space-y-3 px-1">
+                          {/* Search Input */}
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              placeholder="Search tools..."
+                              value={toolSearchQuery}
+                              onChange={(e) =>
+                                setToolSearchQuery(e.target.value)
+                              }
+                              className="pl-9"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs font-medium text-muted-foreground">
+                              Select specific tools:
+                            </Label>
+                            <div className="grid gap-1.5 border rounded-lg p-2 max-h-[400px] overflow-y-auto">
+                              {(() => {
+                                const filteredTools = server.tools.filter(
+                                  (tool) =>
+                                    tool.name
+                                      .toLowerCase()
+                                      .includes(
+                                        toolSearchQuery.toLowerCase(),
+                                      ) ||
+                                    tool.description
+                                      ?.toLowerCase()
+                                      .includes(toolSearchQuery.toLowerCase()),
+                                );
+
+                                if (filteredTools.length === 0) {
+                                  return (
+                                    <p className="text-sm text-muted-foreground text-center py-8">
+                                      {toolSearchQuery
+                                        ? "No tools match your search"
+                                        : "No tools available"}
+                                    </p>
+                                  );
+                                }
+
+                                return filteredTools.map((tool) => (
+                                  <label
+                                    key={tool.id}
+                                    className="flex items-start space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                                  >
+                                    <Checkbox
+                                      id={tool.id}
+                                      checked={selectedTools.has(tool.id)}
+                                      onCheckedChange={() =>
+                                        handleToolToggle(tool.id)
+                                      }
+                                      className="mt-0.5"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium">
+                                        {tool.name}
+                                      </div>
+                                      {tool.description && (
+                                        <p className="text-xs text-muted-foreground line-clamp-1">
+                                          {tool.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </label>
+                                ));
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    {!allToolsEnabled && selectedTools.size === 0 && (
+                      <div className="px-1">
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            Please select at least one tool or enable all tools
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {stepper.current.id === "teams" && (
+                  <div className="space-y-4">
+                    <div className="px-1 flex items-start justify-between">
+                      <div>
+                        <h3 className="text-sm font-medium mb-1">
+                          Assign Teams
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Select which teams can access this server
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setCreateTeamDialogOpen(true)}
+                        className="gap-1"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Create Team
+                      </Button>
+                    </div>
+
+                    {teamsLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                        <span className="text-sm text-muted-foreground">
+                          Loading teams...
+                        </span>
+                      </div>
+                    ) : teams.length === 0 ? (
+                      <div className="px-1">
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="text-xs">
+                            No teams found. Create teams in your organization
+                            settings first.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 px-1">
+                        <MultiSelect
+                          options={teams.map((team) => ({
+                            value: team.team_id,
+                            label: `${team.name}${team.member_count !== undefined ? ` (${team.member_count} member${team.member_count !== 1 ? "s" : ""})` : ""}`,
+                          }))}
+                          selected={Array.from(selectedTeams)}
+                          onChange={(selected) =>
+                            setSelectedTeams(new Set(selected))
+                          }
+                          placeholder="Select teams..."
+                          searchPlaceholder="Search teams..."
+                          emptyText="No teams found."
+                          className="w-full"
+                        />
+                        {selectedTeams.size > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {selectedTeams.size} team
+                            {selectedTeams.size !== 1 ? "s" : ""} selected
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
 
           {/* Footer with navigation */}
           <div className="border-t px-6 py-3 flex-shrink-0">

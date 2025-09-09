@@ -13,17 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
@@ -32,14 +22,12 @@ import { listOrganizationUsers } from "@/features/settings/api/organization";
 import { Team } from "@/features/teams/types/team.types";
 import { OrganizationUser } from "@/features/settings/types/organization.types";
 import {
-  Check,
   UserPlus,
   Users,
   ChevronRight,
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface CreateTeamWithMembersDialogProps {
   open: boolean;
@@ -67,9 +55,7 @@ export function CreateTeamWithMembersDialog({
 
   // Member selection
   const [orgMembers, setOrgMembers] = useState<OrganizationUser[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
-    new Set(),
-  );
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
 
   // Load organization members when moving to add-members step
@@ -118,7 +104,7 @@ export function CreateTeamWithMembersDialog({
   const handleAddMembers = async () => {
     if (!createdTeam) return;
 
-    if (selectedMembers.size === 0) {
+    if (selectedMembers.length === 0) {
       // Skip member addition and complete
       handleComplete();
       return;
@@ -146,9 +132,9 @@ export function CreateTeamWithMembersDialog({
 
     if (errors.length > 0) {
       toast.error(`Failed to add some members: ${errors.join(", ")}`);
-    } else if (selectedMembers.size > 0) {
+    } else if (selectedMembers.length > 0) {
       toast.success(
-        `Added ${selectedMembers.size} member${selectedMembers.size > 1 ? "s" : ""} to the team`,
+        `Added ${selectedMembers.length} member${selectedMembers.length > 1 ? "s" : ""} to the team`,
       );
     }
 
@@ -168,31 +154,11 @@ export function CreateTeamWithMembersDialog({
     if (!isLoading) {
       setCurrentStep("create-team");
       setTeamFormData({ name: "", description: "" });
-      setSelectedMembers(new Set());
+      setSelectedMembers([]);
       setCreatedTeam(null);
       setOrgMembers([]);
       onOpenChange(false);
     }
-  };
-
-  // Toggle member selection
-  const toggleMemberSelection = (userId: string) => {
-    const newSelection = new Set(selectedMembers);
-    if (newSelection.has(userId)) {
-      newSelection.delete(userId);
-    } else {
-      newSelection.add(userId);
-    }
-    setSelectedMembers(newSelection);
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (
@@ -301,70 +267,26 @@ export function CreateTeamWithMembersDialog({
                 <>
                   <div className="space-y-2">
                     <Label>Select Members</Label>
-                    <Command className="border rounded-md">
-                      <CommandInput
-                        placeholder="Search members by name or email..."
-                        className="h-9"
-                      />
-                      <CommandList>
-                        <CommandEmpty>No members found.</CommandEmpty>
-                        <CommandGroup>
-                          <ScrollArea className="h-[200px]">
-                            {orgMembers.map((member) => (
-                              <CommandItem
-                                key={member.user_id}
-                                value={member.user_id}
-                                keywords={[member.name, member.email]}
-                                onSelect={() =>
-                                  toggleMemberSelection(member.user_id)
-                                }
-                                className="cursor-pointer"
-                              >
-                                <div className="flex items-center gap-3 flex-1">
-                                  <Avatar className="h-7 w-7">
-                                    <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-xs font-medium">
-                                      {getInitials(member.name)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-medium">
-                                      {member.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {member.email}
-                                    </span>
-                                  </div>
-                                  {member.role && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="ml-auto"
-                                    >
-                                      {member.role}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <Check
-                                  className={cn(
-                                    "ml-2 h-4 w-4",
-                                    selectedMembers.has(member.user_id)
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                              </CommandItem>
-                            ))}
-                          </ScrollArea>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
+                    <MultiSelect
+                      options={orgMembers.map((member) => ({
+                        value: member.user_id,
+                        label: `${member.name} (${member.email})`,
+                      }))}
+                      selected={selectedMembers}
+                      onChange={setSelectedMembers}
+                      placeholder="Select members to add..."
+                      searchPlaceholder="Search members by name or email..."
+                      emptyText="No members found."
+                      className="w-full"
+                    />
                   </div>
 
-                  {selectedMembers.size > 0 && (
+                  {selectedMembers.length > 0 && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
                       <span>
-                        {selectedMembers.size} member
-                        {selectedMembers.size !== 1 ? "s" : ""} selected
+                        {selectedMembers.length} member
+                        {selectedMembers.length !== 1 ? "s" : ""} selected
                       </span>
                     </div>
                   )}
@@ -387,11 +309,11 @@ export function CreateTeamWithMembersDialog({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Adding Members...
                   </>
-                ) : selectedMembers.size > 0 ? (
+                ) : selectedMembers.length > 0 ? (
                   <>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Add {selectedMembers.size} Member
-                    {selectedMembers.size !== 1 ? "s" : ""}
+                    Add {selectedMembers.length} Member
+                    {selectedMembers.length !== 1 ? "s" : ""}
                   </>
                 ) : (
                   "Complete"
