@@ -288,61 +288,65 @@ export default function MCPConfigurationDetailPage() {
       </Card>
 
       {/* Enabled Teams */}
-      {configuration.allowed_teams &&
-        configuration.allowed_teams.length > 0 && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Enabled Teams</CardTitle>
-              {isAdmin && !isActingAsMember && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowManageTeams(true)}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manage Teams
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="border rounded-lg">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left p-3 text-sm font-medium">
-                        Team Name
-                      </th>
-                      <th className="text-center p-3 text-sm font-medium w-20">
-                        Action
-                      </th>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Enabled Teams</CardTitle>
+          {isAdmin && !isActingAsMember && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowManageTeams(true)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Teams
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {configuration.allowed_teams &&
+          configuration.allowed_teams.length > 0 ? (
+            <div className="border rounded-lg">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-3 text-sm font-medium">
+                      Team Name
+                    </th>
+                    <th className="text-center p-3 text-sm font-medium w-20">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {configuration.allowed_teams.map((team) => (
+                    <tr key={team.team_id} className="border-b last:border-0">
+                      <td className="p-3">
+                        <code className="text-sm">{team.name}</code>
+                      </td>
+                      <td className="p-3 text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-xs"
+                          onClick={() =>
+                            router.push(`/settings/teams/${team.team_id}`)
+                          }
+                        >
+                          View
+                        </Button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {configuration.allowed_teams.map((team) => (
-                      <tr key={team.team_id} className="border-b last:border-0">
-                        <td className="p-3">
-                          <code className="text-sm">{team.name}</code>
-                        </td>
-                        <td className="p-3 text-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-xs"
-                            onClick={() =>
-                              router.push(`/settings/teams/${team.team_id}`)
-                            }
-                          >
-                            View
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No teams are assigned to this configuration.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Enabled Tools */}
       <Card>
