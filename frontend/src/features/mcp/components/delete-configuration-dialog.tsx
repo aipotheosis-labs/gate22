@@ -77,15 +77,18 @@ export function DeleteConfigurationDialog({
               placeholder=""
               className="font-mono shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               autoComplete="off"
+              disabled={isPending}
+              aria-disabled={isPending}
             />
           </div>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={deleteConfirmText !== expectedDeleteText || isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            aria-busy={isPending}
           >
             {isPending ? (
               <>
