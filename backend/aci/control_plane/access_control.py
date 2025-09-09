@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
+from aci.common.db.sql_models import ConnectedAccount
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
@@ -88,3 +89,29 @@ def check_mcp_server_config_accessibility(
                 f"Configuration {mcp_server_configuration_id}"
             )
         return False
+
+
+def check_and_remove_stale_connected_accounts(
+    db_session: Session,
+    connected_accounts: list[ConnectedAccount],
+) -> None:
+    """
+    Given a list of connected accounts, check and remove any stale connected accounts that are no
+    longer accessible to the user
+    """
+    for connected_account in connected_accounts:
+        # TODO: do not remove shared connected accounts
+        accessible = check_mcp_server_config_accessibility(
+            db_session=db_session,
+            user_id=connected_account.user_id,
+            mcp_server_configuration_id=connected_account.mcp_server_configuration_id,
+            throw_error_if_not_permitted=False,
+        )
+        if not accessible:
+            logger.info(
+                f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {connected_account.mcp_server_configuration_id}"  # noqa: E501
+            )
+            crud.connected_accounts.delete_connected_account(
+                db_session=db_session,
+                connected_account_id=connected_account.id,
+            )

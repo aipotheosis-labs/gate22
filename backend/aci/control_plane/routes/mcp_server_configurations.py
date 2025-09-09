@@ -218,21 +218,10 @@ def _check_stale_connected_accounts_and_bundles(
             mcp_server_configuration_id=mcp_server_configuration.id,
         )
     )
-    for connected_account in connected_accounts:
-        accessible = access_control.check_mcp_server_config_accessibility(
-            db_session=db_session,
-            user_id=connected_account.user_id,
-            mcp_server_configuration_id=mcp_server_configuration.id,
-            throw_error_if_not_permitted=False,
-        )
-        if not accessible:
-            logger.info(
-                f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
-            )
-            crud.connected_accounts.delete_connected_account(
-                db_session=db_session,
-                connected_account_id=connected_account.id,
-            )
+    access_control.check_and_remove_stale_connected_accounts(
+        db_session=db_session,
+        connected_accounts=connected_accounts,
+    )
 
     # If the allowed teams are updated, check and remove any MCPServerConfiguration inside the
     # MCPBundles of the organization that is no longer accessible by the MCPBundles's owner.
@@ -249,13 +238,10 @@ def _check_stale_connected_accounts_and_bundles(
             throw_error_if_not_permitted=False,
         )
         if not accessible:
-            updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
-            updated_config_ids.remove(mcp_server_configuration.id)
-
-            crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
+            crud.mcp_server_bundles.remove_mcp_server_configuration_id_from_mcp_server_bundle(
                 db_session=db_session,
                 mcp_server_bundle_id=mcp_server_bundle.id,
-                update_mcp_server_bundle_configuration_ids=updated_config_ids,
+                mcp_server_configuration_id=mcp_server_configuration.id,
             )
 
 

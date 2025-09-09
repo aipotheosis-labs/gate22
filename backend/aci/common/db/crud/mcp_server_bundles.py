@@ -111,16 +111,18 @@ def get_mcp_server_configurations_of_mcp_server_bundle(
     return list(db_session.execute(statement).scalars().all())
 
 
-def update_mcp_server_bundle_configuration_ids(
+def remove_mcp_server_configuration_id_from_mcp_server_bundle(
     db_session: Session,
     mcp_server_bundle_id: UUID,
-    update_mcp_server_bundle_configuration_ids: list[UUID],
+    mcp_server_configuration_id: UUID,
 ) -> MCPServerBundle:
     statement = select(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
     mcp_server_bundle = db_session.execute(statement).scalar_one()
-    mcp_server_bundle.mcp_server_configuration_ids = list(
-        dict.fromkeys(update_mcp_server_bundle_configuration_ids)
-    )
+
+    updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
+    updated_config_ids.remove(mcp_server_configuration_id)
+
+    mcp_server_bundle.mcp_server_configuration_ids = updated_config_ids
     db_session.flush()
     db_session.refresh(mcp_server_bundle)
     return mcp_server_bundle

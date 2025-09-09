@@ -372,6 +372,42 @@ async def remove_team_member(
         user_id=user_id,
     )
 
+    # Check and remove any stale connected accounts under the user being removed
+    connected_accounts = (
+        crud.connected_accounts.get_connected_accounts_by_user_id_and_organization_id(
+            db_session=context.db_session,
+            user_id=user_id,
+            organization_id=organization_id,
+        )
+    )
+    access_control.check_and_remove_stale_connected_accounts(
+        db_session=context.db_session,
+        connected_accounts=connected_accounts,
+    )
+
+    # Check and remove any stale configuration inside the bundles that belong to the user
+    mcp_server_bundles = (
+        crud.mcp_server_bundles.get_mcp_server_bundles_by_user_id_and_organization_id(
+            db_session=context.db_session,
+            user_id=user_id,
+            organization_id=organization_id,
+        )
+    )
+    for mcp_server_bundle in mcp_server_bundles:
+        for mcp_server_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
+            accessible = access_control.check_mcp_server_config_accessibility(
+                db_session=context.db_session,
+                user_id=user_id,
+                mcp_server_configuration_id=mcp_server_configuration_id,
+                throw_error_if_not_permitted=False,
+            )
+            if not accessible:
+                crud.mcp_server_bundles.remove_mcp_server_configuration_id_from_mcp_server_bundle(
+                    db_session=context.db_session,
+                    mcp_server_bundle_id=mcp_server_bundle.id,
+                    mcp_server_configuration_id=mcp_server_configuration_id,
+                )
+
     context.db_session.commit()
 
     return None
