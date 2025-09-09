@@ -22,3 +22,4 @@ class UserSelfProfile(BaseModel):
 class UserPublic(BaseModel):
     id: UUID
     name: str
+    email: str
