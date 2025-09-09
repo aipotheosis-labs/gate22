@@ -210,25 +210,42 @@ export default function AvailableMCPServersPage() {
                 <Card
                   key={config.id}
                   className={cn(
-                    "relative group hover:shadow-lg transition-all cursor-pointer h-[240px]",
+                    "relative group hover:shadow-lg transition-all cursor-pointer min-h-[240px]",
                     isSelected && "ring-1 ring-primary bg-primary/5",
                   )}
-                  onClick={() => handleCardToggle(config.id)}
+                  onClick={() => router.push(`/mcp-configuration/${config.id}`)}
                 >
                   <div className="flex flex-col h-full">
-                    {/* View Button - absolute positioned */}
+                    {/* Bundle selector - absolute positioned */}
                     <div className="absolute top-6 right-6 z-10">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 text-sm bg-background/95 backdrop-blur-sm"
+                      <button
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all h-[34px] shrink-0",
+                          isSelected
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                            : "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-input",
+                        )}
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/mcp-configuration/${config.id}`);
+                          handleCardToggle(config.id);
                         }}
                       >
-                        View
-                      </Button>
+                        <div
+                          className={cn(
+                            "h-5 w-5 rounded border flex items-center justify-center transition-all",
+                            isSelected
+                              ? "bg-primary-foreground border-primary-foreground"
+                              : "bg-background border-gray-400",
+                          )}
+                        >
+                          {isSelected && (
+                            <Check className="h-3 w-3 text-primary" />
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold">
+                          Bundle
+                        </span>
+                      </button>
                     </div>
 
                     {/* Header content */}
@@ -264,74 +281,26 @@ export default function AvailableMCPServersPage() {
                     <div className="flex-1" />
 
                     {/* Bottom content - fixed height for alignment */}
-                    <CardContent className="pt-0 px-6">
+                    <CardContent className="pt-0 px-6 pb-0">
                       <div className="flex items-end justify-between gap-2 min-h-[28px]">
                         {/* Categories - fixed height container */}
                         <div className="flex flex-wrap gap-1 flex-1 min-w-0 items-end">
                           {config.mcp_server?.categories &&
                           config.mcp_server.categories.length > 0 ? (
-                            <>
-                              {config.mcp_server.categories
-                                .slice(0, 2)
-                                .map((category) => (
-                                  <Badge
-                                    key={category}
-                                    variant="secondary"
-                                    className="text-xs h-[22px]"
-                                  >
-                                    {category}
-                                  </Badge>
-                                ))}
-                              {config.mcp_server.categories.length > 2 && (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-xs h-[22px]"
-                                >
-                                  +{config.mcp_server.categories.length - 2}
-                                </Badge>
-                              )}
-                            </>
+                            config.mcp_server.categories.map((category) => (
+                              <Badge
+                                key={category}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {category}
+                              </Badge>
+                            ))
                           ) : (
                             <div className="h-[22px]" />
                           )}
                         </div>
 
-                        {/* Bundle selector - fixed height */}
-                        <button
-                          className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-background/95 backdrop-blur-sm transition-all hover:border-primary/50 h-[28px] shrink-0",
-                            isSelected
-                              ? "border-primary bg-primary/10"
-                              : "border-gray-300",
-                          )}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCardToggle(config.id);
-                          }}
-                        >
-                          <div
-                            className={cn(
-                              "h-4 w-4 rounded border-2 flex items-center justify-center transition-all",
-                              isSelected
-                                ? "bg-primary border-primary"
-                                : "bg-background border-gray-400",
-                            )}
-                          >
-                            {isSelected && (
-                              <Check className="h-2.5 w-2.5 text-white" />
-                            )}
-                          </div>
-                          <span
-                            className={cn(
-                              "text-sm font-medium",
-                              isSelected
-                                ? "text-primary"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            Bundle
-                          </span>
-                        </button>
                       </div>
                     </CardContent>
                   </div>

@@ -159,7 +159,7 @@ export default function MCPServersPage() {
             {filteredServers.map((server) => (
               <Card
                 key={server.id}
-                className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer h-[180px]"
+                className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer min-h-[180px]"
                 onClick={() => router.push(`/mcp-servers/${server.id}`)}
               >
                 <CardHeader className="flex flex-col flex-1 pb-2">
@@ -180,7 +180,7 @@ export default function MCPServersPage() {
                     {server.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0 pb-4">
+                <CardContent className="pt-0 pb-0">
                   {/* Categories */}
                   <div className="flex flex-wrap gap-1">
                     {server.categories.map((category) => (
