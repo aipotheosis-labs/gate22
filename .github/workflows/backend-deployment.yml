@@ -2,8 +2,10 @@ name: Backend ECS Deployment
 on:
   workflow_dispatch: # For manual deployment
   push:
-    tags:
-      - "*.*.*"
+    branches:
+      - chore/adding-cicd-for-ecs-deployment
+    # tags:
+    #   - "*.*.*"
     # TODO: consider only trigger on main branch?
 
 jobs:
@@ -11,7 +13,7 @@ jobs:
     name: Build and Push Control Plane
     uses: ./.github/workflows/ecs-build.yml
     with:
-      ecr_repository_url: ${{ vars.ECR_REPOSITORY_URL_CONTROL_PLANE }}
+      ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_CONTROL_PLANE }}
       image_tag: ${{ github.ref_name || github.sha }}
       dockerfile: Dockerfile.control_plane
 
