@@ -79,6 +79,7 @@ jobs:
 
       # Run DB migration with the same network configuration
       - name: Run Database Migration Task
+        id: run-migration-task
         run: |
           TASK_ARN=$(aws ecs run-task \
             --task-definition ${{ inputs.ecs_task_definition }} \
