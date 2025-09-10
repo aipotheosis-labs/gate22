@@ -39,37 +39,14 @@ jobs:
   db-migration:
     name: Database Migration
     needs: [build-control-plane, build-mcp, build-migration] # Make sure all images are prepared before running migrations
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.CICD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CICD_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.CICD_AWS_REGION }}
-
-      # Obtain the network configuration from Control Plane Service.
-      - name: Obtain Control Plane Service Network Configuration
-        id: get-network-config
-        run: |
-          NETWORK_CONFIG=$(aws ecs describe-services \
-          --cluster ${{ vars.CICD_ECS_CLUSTER }} \
-          --services ${{ vars.CICD_ECS_SERVICE_CONTROL_PLANE }} \
-          --output json \
-          | jq -r '.services[0].networkConfiguration | @json')
-          echo "NETWORK_CONFIG=${NETWORK_CONFIG}" >> $GITHUB_OUTPUT
-
-      # Run DB migration with the same network configuration
-      - name: Deploy Migration Task
-        uses: ./.github/workflows/ecs-db-migration.yml
-        secrets: inherit
-        with:
-          ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_MIGRATION }}
-          ecs_cluster: ${{ vars.CICD_ECS_CLUSTER }}
-          ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_MIGRATION }}
-          image_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
-          run_task_security_groups: ${{ vars.CICD_ECS_RUN_TASK_SECURITY_GROUPS }}
-          run_task_subnets: ${{ vars.CICD_ECS_RUN_TASK_SUBNETS }}
+    uses: ./.github/workflows/ecs-db-migration.yml
+    secrets: inherit
+    with:
+      ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_MIGRATION }}
+      ecs_cluster: ${{ vars.CICD_ECS_CLUSTER }}
+      ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_CONTROL_PLANE }}
+      image_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
+      referenced_network_config_ecs_service: ${{ vars.CICD_ECS_SERVICE_CONTROL_PLANE }} # Use Contorol Plane Service network configuration for DB Migration Task
 
   deploy-control-plane:
     name: Deploy Control Plane

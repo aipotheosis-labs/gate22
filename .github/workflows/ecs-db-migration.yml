@@ -18,13 +18,9 @@ on:
         type: string
         description: The ECS cluster to deploy to
         required: true
-      run_task_security_groups:
+      referenced_network_config_ecs_service:
         type: string
-        description: The security groups to use for the task
-        required: true
-      run_task_subnets:
-        type: string
-        description: The subnets to use for the task
+        description: The ECS service to reference for the network configuration
         required: true
 
 jobs:
@@ -62,14 +58,26 @@ jobs:
           container-name: ${{ steps.get-task-definition-container-name.outputs.CONTAINER_NAME }}
           image: "${{ inputs.ecr_repository_url }}:${{ inputs.image_tag }}"
 
-      - name: Deploy Migration Task
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.update-task-definition.outputs.task-definition }}
-          cluster: ${{ inputs.ecs_cluster }}
-          run-task: true
-          run-task-security-groups: ${{ inputs.run_task_security_groups }}
-          run-task-subnets: ${{ inputs.run_task_subnets }}
+      # Obtain the network configuration from referenced ECS service.
+      - name: Obtain Referenced Service Network Configuration
+        id: get-network-config
+        run: |
+          NETWORK_CONFIG=$(aws ecs describe-services \
+          --cluster ${{ inputs.ecs_cluster }} \
+          --services ${{ inputs.referenced_network_config_ecs_service }} \
+          --output json \
+          | jq -r '.services[0].networkConfiguration | @json')
+          echo "NETWORK_CONFIG=${NETWORK_CONFIG}" >> $GITHUB_OUTPUT
+
+      # Run DB migration with the same network configuration
+      - name: Run database migrations
+        run: |
+          aws ecs run-task \
+          --task-definition ${{ steps.update-task-definition.outputs.task-definition }} \
+          --cluster ${{ inputs.ecs_cluster }} \
+          --launch-type="FARGATE" \
+          --network-configuration "{{ steps.get-network-config.outputs.NETWORK_CONFIG }}" \
+          --count 1
 
       - name: Wait for migration task to finish
         run: aws ecs wait tasks-stopped --cluster ${{ inputs.ecs_cluster }} --tasks $(aws ecs list-tasks --cluster ${{ inputs.ecs_cluster }} --family ${{ inputs.ecs_task_definition }} --query 'taskArns' --output text)
