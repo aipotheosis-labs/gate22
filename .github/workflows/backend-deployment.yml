@@ -51,6 +51,7 @@ jobs:
     name: Deploy MCP
     needs: [build-mcp]
     uses: ./.github/workflows/ecs-deploy.yml
+    secrets: inherit
     with:
       ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_MCP }}
       ecs_service: ${{ vars.CICD_ECS_SERVICE_MCP }}
