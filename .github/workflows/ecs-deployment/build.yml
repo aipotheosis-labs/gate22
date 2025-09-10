@@ -5,14 +5,16 @@ on:
       ecr_repository_url:
         type: string
         description: The ECR repository URL to use
+        required: true
       image_tag:
         type: string
         description: The image tag to use
+        required: true
       dockerfile:
         type: string
         description: The Dockerfile to use
         default: Dockerfile.control_plane
-
+        required: true
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

@@ -5,18 +5,23 @@ on:
       ecr_repository_url:
         type: string
         description: The ECR repository URL to use
+        required: true
       image_tag:
         type: string
         description: The image tag to use
+        required: true
       ecs_task_definition:
         type: string
         description: The ECS task definition to use
+        required: true
       ecs_service:
         type: string
         description: The ECS service to deploy to
+        required: true
       ecs_cluster:
         type: string
         description: The ECS cluster to deploy to
+        required: true
 
 jobs:
   deploy:

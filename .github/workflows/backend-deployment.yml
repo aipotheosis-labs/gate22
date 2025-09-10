@@ -3,7 +3,7 @@ on:
   workflow_dispatch: # For manual deployment
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - "*.*.*"
     # TODO: consider only trigger on main branch?
 
 env:
@@ -44,17 +44,17 @@ jobs:
       image_tag: ${{ env.IMAGE_TAG }}
       dockerfile: Dockerfile.mcp
 
-  build-runner:
-    name: Build and Push Runner
-    uses: ./.github/workflows/ecs-deployment/build.yml
-    with:
-      ecr_repository_url: ${{ env.ECR_REPOSITORY_URL_RUNNER }}
-      image_tag: ${{ env.IMAGE_TAG }}
-      dockerfile: Dockerfile.runner
+  # build-runner:
+  #   name: Build and Push Runner
+  #   uses: ./.github/workflows/ecs-deployment/build.yml
+  #   with:
+  #     ecr_repository_url: ${{ env.ECR_REPOSITORY_URL_RUNNER }}
+  #     image_tag: ${{ env.IMAGE_TAG }}
+  #     dockerfile: Dockerfile.runner
 
   deploy-control-plane:
     name: Deploy Control Plane
-    needs: [db-migrations, build-control-plane]
+    needs: [build-control-plane]
     uses: ./.github/workflows/ecs-deployment/deploy.yml
     with:
       ecs_task_definition: ${{ env.ECS_TASK_DEFINITION_CONTROL_PLANE }}
@@ -65,7 +65,7 @@ jobs:
 
   deploy-mcp:
     name: Deploy MCP
-    needs: [db-migrations, build-mcp]
+    needs: [build-mcp]
     uses: ./.github/workflows/ecs-deployment/deploy.yml
     with:
       ecs_task_definition: ${{ env.ECS_TASK_DEFINITION_MCP }}

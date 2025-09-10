@@ -5,15 +5,19 @@ on:
       ecs_task_definition:
         type: string
         description: The ECS task definition to use for migrations
+        required: true
       ecs_cluster:
         type: string
         description: The ECS cluster to use for migrations
+        required: true
       ecs_migration_subnets:
         type: string
         description: The ECS subnets to use for migrations
+        required: true
       ecs_migration_security_groups:
         type: string
         description: The ECS security groups to use for migrations
+        required: true
 
 jobs:
   run-migrations:
