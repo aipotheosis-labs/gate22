@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-control-plane:
-    name: Build and Push Control Plane
+    name: Build Control Plane
     uses: ./.github/workflows/ecs-build-image.yml
     secrets: inherit
     with:
@@ -19,7 +19,7 @@ jobs:
       dockerfile: Dockerfile.control_plane
 
   build-mcp:
-    name: Build and Push MCP
+    name: Build MCP
     uses: ./.github/workflows/ecs-build-image.yml
     secrets: inherit
     with:
@@ -28,7 +28,7 @@ jobs:
       dockerfile: Dockerfile.mcp
 
   build-migration:
-    name: Build and Push Migration
+    name: Build Migration
     uses: ./.github/workflows/ecs-build-image.yml
     secrets: inherit
     with:

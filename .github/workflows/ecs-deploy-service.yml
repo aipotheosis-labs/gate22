@@ -54,7 +54,7 @@ jobs:
         id: update-task-definition
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition-family: ${{ inputs.ecs_task_definition }}
           container-name: ${{ steps.get-task-definition-container-name.outputs.CONTAINER_NAME }}
           image: "${{ inputs.ecr_repository_url }}:${{ inputs.image_tag }}"
 
