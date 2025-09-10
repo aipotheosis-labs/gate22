@@ -107,7 +107,7 @@ async def google_callback(
 
     # Get user by email (automatically excludes deleted users)
     user = crud.users.get_user_by_email(db_session, google_userinfo.email)
-    
+
     # Create new user if doesn't exist
     if not user:
         user = crud.users.create_user(

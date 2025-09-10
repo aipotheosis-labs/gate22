@@ -1,5 +1,4 @@
 import re
-from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator

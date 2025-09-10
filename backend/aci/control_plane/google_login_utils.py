@@ -60,9 +60,7 @@ async def generate_google_auth_url(post_oauth_redirect_uri: str) -> str:
     return auth_url
 
 
-async def exchange_google_userinfo(
-    code: str, oauth2_state: OAuth2State
-) -> GoogleUserInfo:
+async def exchange_google_userinfo(code: str, oauth2_state: OAuth2State) -> GoogleUserInfo:
     """
     This function is used to get the user info from Google.
     It exchanges the code for the access token and then verifies the token.
