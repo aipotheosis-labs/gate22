@@ -9,7 +9,7 @@ on:
 jobs:
   build-control-plane:
     name: Build and Push Control Plane
-    uses: ./.github/workflows/ecs-deployment/build.yml
+    uses: ./.github/workflows/ecs-build.yml
     with:
       ecr_repository_url: ${{ vars.ECR_REPOSITORY_URL_CONTROL_PLANE }}
       image_tag: ${{ github.ref_name || github.sha }}
@@ -34,7 +34,7 @@ jobs:
   deploy-control-plane:
     name: Deploy Control Plane
     needs: [build-control-plane]
-    uses: ./.github/workflows/ecs-deployment/deploy.yml
+    uses: ./.github/workflows/ecs-deploy.yml
     with:
       ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_CONTROL_PLANE }}
       ecs_service: ${{ vars.CICD_ECS_SERVICE_CONTROL_PLANE }}
