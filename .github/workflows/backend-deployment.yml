@@ -6,34 +6,13 @@ on:
       - "*.*.*"
     # TODO: consider only trigger on main branch?
 
-env:
-  AWS_REGION: ${{ vars.CICD_AWS_REGION }}
-  ECS_CLUSTER: ${{ vars.CICD_ECS_CLUSTER }}
-
-  # Control Plane
-  ECR_REPOSITORY_URL_CONTROL_PLANE: ${{ vars.CICD_ECR_REPOSITORY_URL_CONTROL_PLANE }}
-  ECS_SERVICE_CONTROL_PLANE: ${{ vars.CICD_ECS_SERVICE_CONTROL_PLANE }}
-  ECS_TASK_DEFINITION_CONTROL_PLANE: ${{ vars.CICD_ECS_TASK_DEFINITION_CONTROL_PLANE }}
-
-  # MCP
-  # ECR_REPOSITORY_URL_MCP: ${{ vars.CICD_ECR_REPOSITORY_URL_MCP }}
-  # ECS_SERVICE_MCP: ${{ vars.CICD_ECS_SERVICE_MCP }}
-  # ECS_TASK_DEFINITION_MCP: ${{ vars.CICD_ECS_TASK_DEFINITION_MCP }}
-
-  # # DB Migrations
-  # ECS_TASK_DEFINITION_DB_MIGRATIONS: ${{ vars.CICD_ECS_TASK_DEFINITION_DB_MIGRATIONS }}
-  # ECS_DB_MIGRATION_SUBNETS: ${{ vars.CICD_ECS_DB_MIGRATION_SUBNETS }}
-  # ECS_DB_MIGRATION_SECURITY_GROUPS: ${{ vars.CICD_ECS_DB_MIGRATION_SECURITY_GROUPS }}
-
-  IMAGE_TAG: ${{ github.ref_name || github.sha }}
-
 jobs:
   build-control-plane:
     name: Build and Push Control Plane
     uses: ./.github/workflows/ecs-deployment/build.yml
     with:
-      ecr_repository_url: ${{ env.ECR_REPOSITORY_URL_CONTROL_PLANE }}
-      image_tag: ${{ env.IMAGE_TAG }}
+      ecr_repository_url: ${{ vars.ECR_REPOSITORY_URL_CONTROL_PLANE }}
+      image_tag: ${{ github.ref_name || github.sha }}
       dockerfile: Dockerfile.control_plane
 
   # build-mcp:
@@ -57,11 +36,11 @@ jobs:
     needs: [build-control-plane]
     uses: ./.github/workflows/ecs-deployment/deploy.yml
     with:
-      ecs_task_definition: ${{ env.ECS_TASK_DEFINITION_CONTROL_PLANE }}
-      ecs_service: ${{ env.ECS_SERVICE_CONTROL_PLANE }}
-      ecs_cluster: ${{ env.ECS_CLUSTER }}
-      ecr_repository_url: ${{ env.ECR_REPOSITORY_URL_CONTROL_PLANE }}
-      image_tag: ${{ env.IMAGE_TAG }}
+      ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_CONTROL_PLANE }}
+      ecs_service: ${{ vars.CICD_ECS_SERVICE_CONTROL_PLANE }}
+      ecs_cluster: ${{ vars.CICD_ECS_CLUSTER }}
+      ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_CONTROL_PLANE }}
+      image_tag: ${{ github.ref_name || github.sha }}
 
   # deploy-mcp:
   #   name: Deploy MCP
