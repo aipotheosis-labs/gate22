@@ -12,6 +12,7 @@ jobs:
   build-control-plane:
     name: Build and Push Control Plane
     uses: ./.github/workflows/ecs-build.yml
+    secrets: inherit
     with:
       ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_CONTROL_PLANE }}
       image_tag: ${{ github.ref_name || github.sha }}
@@ -37,6 +38,7 @@ jobs:
     name: Deploy Control Plane
     needs: [build-control-plane]
     uses: ./.github/workflows/ecs-deploy.yml
+    secrets: inherit
     with:
       ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_CONTROL_PLANE }}
       ecs_service: ${{ vars.CICD_ECS_SERVICE_CONTROL_PLANE }}
