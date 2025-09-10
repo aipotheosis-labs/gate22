@@ -50,7 +50,7 @@ jobs:
 
   deploy-control-plane:
     name: Deploy Control Plane
-    needs: [build-control-plane]
+    needs: [build-control-plane, db-migration]
     uses: ./.github/workflows/ecs-deploy-service.yml
     secrets: inherit
     with:
@@ -62,7 +62,7 @@ jobs:
 
   deploy-mcp:
     name: Deploy MCP
-    needs: [build-mcp]
+    needs: [build-mcp, db-migration]
     uses: ./.github/workflows/ecs-deploy-service.yml
     secrets: inherit
     with:
