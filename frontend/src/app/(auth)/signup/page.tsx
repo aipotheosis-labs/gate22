@@ -10,7 +10,7 @@ import {
   register,
   issueToken,
   getProfile,
-  getGoogleRegisterUrl,
+  getGoogleAuthUrl,
 } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
@@ -60,7 +60,7 @@ export default function SignupPage() {
     // Redirect to the backend OAuth endpoint
     // The backend will handle the redirect to Google
     // Use callback page which will redirect to onboarding for new users
-    window.location.href = getGoogleRegisterUrl();
+    window.location.href = getGoogleAuthUrl();
   };
 
   return (

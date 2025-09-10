@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from aci.common.logging_setup import get_logger
 from aci.common.oauth2_manager import OAuth2Manager
-from aci.common.schemas.auth import AuthOperation, OAuth2State
+from aci.common.schemas.auth import OAuth2State
 from aci.control_plane import config
 from aci.control_plane.exceptions import OAuth2Error
 
@@ -29,12 +29,12 @@ class GoogleUserInfo(BaseModel):
     email: str
 
 
-def _get_google_redirect_uri(operation: AuthOperation) -> str:
-    url = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/{operation.value}/google/callback"  # noqa: E501
+def _get_google_redirect_uri() -> str:
+    url = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/google/callback"  # noqa: E501
     return url
 
 
-async def generate_google_auth_url(operation: AuthOperation, post_oauth_redirect_uri: str) -> str:
+async def generate_google_auth_url(post_oauth_redirect_uri: str) -> str:
     # State is a JWT that contains the code verifier, redirect URI, and client ID.
     # After the user authorizes the app, the frontend should pass the state back to the backend.
     # Then we should verify the JWT and decode the state & code verifier and fetch the access token.
@@ -43,7 +43,7 @@ async def generate_google_auth_url(operation: AuthOperation, post_oauth_redirect
     oauth2_state_jwt = jwt.encode(
         OAuth2State(
             code_verifier=code_verifier,
-            redirect_uri=_get_google_redirect_uri(operation),
+            redirect_uri=_get_google_redirect_uri(),
             client_id=config.GOOGLE_CLIENT_ID,
             post_oauth_redirect_uri=post_oauth_redirect_uri,
         ).model_dump(mode="json"),
@@ -52,7 +52,7 @@ async def generate_google_auth_url(operation: AuthOperation, post_oauth_redirect
     )
 
     auth_url = await google_oauth2_manager.create_authorization_url(
-        redirect_uri=_get_google_redirect_uri(operation),
+        redirect_uri=_get_google_redirect_uri(),
         state=oauth2_state_jwt,
         code_verifier=code_verifier,
     )
@@ -61,7 +61,7 @@ async def generate_google_auth_url(operation: AuthOperation, post_oauth_redirect
 
 
 async def exchange_google_userinfo(
-    operation: AuthOperation, code: str, oauth2_state: OAuth2State
+    code: str, oauth2_state: OAuth2State
 ) -> GoogleUserInfo:
     """
     This function is used to get the user info from Google.
@@ -71,7 +71,7 @@ async def exchange_google_userinfo(
     # Verify the info
     if (
         oauth2_state.client_id != config.GOOGLE_CLIENT_ID
-        or oauth2_state.redirect_uri != _get_google_redirect_uri(operation)
+        or oauth2_state.redirect_uri != _get_google_redirect_uri()
     ):
         raise OAuth2Error(message="Error during OAuth2 flow")
 

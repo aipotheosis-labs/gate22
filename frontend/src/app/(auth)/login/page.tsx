@@ -6,7 +6,7 @@ import { LoginForm } from "@/features/auth/components/login-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { login, issueToken, getGoogleLoginUrl } from "@/features/auth/api/auth";
+import { login, issueToken, getGoogleAuthUrl } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
 export default function LoginPage() {
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
     // Redirect to the backend OAuth endpoint
     // The backend will handle the entire OAuth flow and redirect back to /callback
-    window.location.href = getGoogleLoginUrl();
+    window.location.href = getGoogleAuthUrl();
   };
 
   return (

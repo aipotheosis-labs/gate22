@@ -15,18 +15,6 @@ const ERROR_MESSAGES: Record<
   string,
   { message: string; redirectPath: string }
 > = {
-  user_already_exists: {
-    message: "This email is already registered. Please try logging in instead.",
-    redirectPath: "/login",
-  },
-  user_not_found: {
-    message: "No account found with this email. Please sign up first.",
-    redirectPath: "/signup",
-  },
-  email_already_exists: {
-    message: "This email is already registered. Please try logging in instead.",
-    redirectPath: "/login",
-  },
   oauth_error: {
     message: "Authentication failed. Please try again.",
     redirectPath: "/login",
@@ -97,31 +85,11 @@ function CallbackContent() {
         console.error("OAuth callback error:", error);
 
         // Parse error message for better user feedback
-        let errorMessage = "Failed to complete sign in. Please try again.";
-        let path = "/login";
+        const errorMessage = "Failed to complete sign in. Please try again.";
+        const path = "/login";
 
-        if (
-          error &&
-          typeof error === "object" &&
-          "message" in error &&
-          typeof error.message === "string"
-        ) {
-          // Check if the error message contains any of our error codes
-          const errorCode = error.message.toLowerCase();
-
-          if (
-            errorCode.includes("email_already_exists") ||
-            errorCode.includes("user_already_exists")
-          ) {
-            const errorInfo = ERROR_MESSAGES.email_already_exists;
-            errorMessage = errorInfo.message;
-            path = errorInfo.redirectPath;
-          } else if (errorCode.includes("user_not_found")) {
-            const errorInfo = ERROR_MESSAGES.user_not_found;
-            errorMessage = errorInfo.message;
-            path = errorInfo.redirectPath;
-          }
-        }
+        // No need to check for specific error codes anymore since
+        // Google OAuth now handles both new and existing users
 
         setError(errorMessage);
         setRedirectPath(path);

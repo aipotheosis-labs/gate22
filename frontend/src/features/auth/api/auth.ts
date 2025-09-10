@@ -226,17 +226,10 @@ export async function getProfile(token: string): Promise<UserInfo> {
   return response.json();
 }
 
-// Google OAuth helper functions
-export function getGoogleLoginUrl(): string {
+// Google OAuth helper function
+export function getGoogleAuthUrl(): string {
   const baseUrl = getApiBaseUrl();
   const callbackUrl = `${window.location.origin}/callback?provider=google`;
   const redirectUri = encodeURIComponent(callbackUrl);
-  return `${baseUrl}${CONTROL_PLANE_PATH}/auth/login/google/authorize?redirect_uri=${redirectUri}`;
-}
-
-export function getGoogleRegisterUrl(): string {
-  const baseUrl = getApiBaseUrl();
-  const callbackUrl = `${window.location.origin}/callback?provider=google`;
-  const redirectUri = encodeURIComponent(callbackUrl);
-  return `${baseUrl}${CONTROL_PLANE_PATH}/auth/register/google/authorize?redirect_uri=${redirectUri}`;
+  return `${baseUrl}${CONTROL_PLANE_PATH}/auth/google/authorize?redirect_uri=${redirectUri}`;
 }

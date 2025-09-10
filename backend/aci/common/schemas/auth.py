@@ -22,11 +22,6 @@ class JWTPayload(BaseModel):
     act_as: ActAsInfo | None
 
 
-class AuthOperation(Enum):
-    REGISTER = "register"
-    LOGIN = "login"
-
-
 class OAuth2State(BaseModel):
     code_verifier: str
     redirect_uri: str

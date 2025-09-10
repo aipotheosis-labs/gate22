@@ -19,7 +19,6 @@ from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import (
     ActAsInfo,
-    AuthOperation,
     EmailLoginRequest,
     EmailRegistrationRequest,
     IssueTokenRequest,
@@ -39,7 +38,7 @@ router = APIRouter()
 
 
 @router.get(
-    "/{operation}/google/authorize",
+    "/google/authorize",
     response_model=str,
     status_code=status.HTTP_200_OK,
     description="""
@@ -48,16 +47,13 @@ router = APIRouter()
     """,
 )
 async def get_google_oauth2_url(
-    operation: AuthOperation,
     redirect_uri: str = Query(
         default=config.FRONTEND_URL,
         description="The redirect URI to redirect to after the OAuth2 flow (e.g. `/dashboard`)",
     ),
 ) -> RedirectResponse:
     return RedirectResponse(
-        url=await generate_google_auth_url(
-            AuthOperation(operation), post_oauth_redirect_uri=redirect_uri
-        ),
+        url=await generate_google_auth_url(post_oauth_redirect_uri=redirect_uri),
         status_code=status.HTTP_302_FOUND,
     )
 
@@ -77,7 +73,7 @@ def _construct_error_url(post_oauth_redirect_uri: str, error_msg: str) -> str:
 
 
 @router.get(
-    "/{operation}/google/callback",
+    "/google/callback",
     status_code=status.HTTP_200_OK,
     description="""
     This endpoint is expected to be used in oauth flow as redirect URI.
@@ -87,7 +83,6 @@ def _construct_error_url(post_oauth_redirect_uri: str, error_msg: str) -> str:
 )
 async def google_callback(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
-    operation: AuthOperation,
     error: str | None = None,
     code: str | None = None,
     state: str | None = None,
@@ -108,18 +103,13 @@ async def google_callback(
     except ValidationError as e:
         raise OAuth2Error(message="Invalid state parameter during OAuth2 flow") from e
 
-    google_userinfo = await exchange_google_userinfo(operation, code, oauth_info)
+    google_userinfo = await exchange_google_userinfo(code, oauth_info)
 
-    if operation == AuthOperation.REGISTER:
-        # Check if email already been used
-        user = crud.users.get_user_by_email(db_session, google_userinfo.email)
-        if user:
-            return RedirectResponse(
-                _construct_error_url(oauth_info.post_oauth_redirect_uri, "user_already_exists"),
-                status_code=status.HTTP_302_FOUND,
-            )
-
-        # Create user
+    # Get user by email (automatically excludes deleted users)
+    user = crud.users.get_user_by_email(db_session, google_userinfo.email)
+    
+    # Create new user if doesn't exist
+    if not user:
         user = crud.users.create_user(
             db_session=db_session,
             name=google_userinfo.name,
@@ -127,19 +117,6 @@ async def google_callback(
             password_hash=None,
             identity_provider=UserIdentityProvider.GOOGLE,
         )
-
-    elif operation == AuthOperation.LOGIN:
-        user = crud.users.get_user_by_email(db_session, google_userinfo.email)
-
-        # User not found or deleted
-        if not user or user.deleted_at:
-            return RedirectResponse(
-                _construct_error_url(oauth_info.post_oauth_redirect_uri, "user_not_found"),
-                status_code=status.HTTP_302_FOUND,
-            )
-
-    else:
-        raise OAuth2Error(message="Invalid operation parameter during OAuth2 flow")
 
     # Issue a refresh token, store in secure cookie
     response = RedirectResponse(
@@ -203,8 +180,8 @@ async def login(
 ) -> None:
     user = crud.users.get_user_by_email(db_session, request.email)
 
-    # User not found or deleted
-    if not user or user.deleted_at:
+    # User not found
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
         )
