@@ -2,10 +2,8 @@ name: Backend ECS Deployment
 on:
   workflow_dispatch: # For manual deployment
   push:
-    branches:
-      - chore/adding-cicd-for-ecs-deployment
-    # tags:
-    #   - "*.*.*"
+    tags:
+      - "*.*.*"
     # TODO: consider only trigger on main branch?
 
 jobs:
