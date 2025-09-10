@@ -76,7 +76,7 @@ jobs:
           --task-definition ${{ steps.update-task-definition.outputs.task-definition }} \
           --cluster ${{ inputs.ecs_cluster }} \
           --launch-type="FARGATE" \
-          --network-configuration "${{ steps.get-network-config.outputs.NETWORK_CONFIG }}" \
+          --network-configuration '${{ steps.get-network-config.outputs.NETWORK_CONFIG }}' \
           --count 1
 
       - name: Wait for migration task to finish
