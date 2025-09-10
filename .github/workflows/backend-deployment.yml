@@ -11,7 +11,7 @@ on:
 jobs:
   build-control-plane:
     name: Build and Push Control Plane
-    uses: ./.github/workflows/ecs-build.yml
+    uses: ./.github/workflows/ecs-build-image.yml
     secrets: inherit
     with:
       ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_CONTROL_PLANE }}
@@ -20,7 +20,7 @@ jobs:
 
   build-mcp:
     name: Build and Push MCP
-    uses: ./.github/workflows/ecs-build.yml
+    uses: ./.github/workflows/ecs-build-image.yml
     secrets: inherit
     with:
       ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_MCP }}
@@ -29,7 +29,7 @@ jobs:
 
   build-migration:
     name: Build and Push Migration
-    uses: ./.github/workflows/ecs-build.yml
+    uses: ./.github/workflows/ecs-build-image.yml
     secrets: inherit
     with:
       ecr_repository_url: ${{ vars.CICD_ECR_REPOSITORY_URL_MIGRATION }}
@@ -51,7 +51,7 @@ jobs:
   deploy-control-plane:
     name: Deploy Control Plane
     needs: [build-control-plane]
-    uses: ./.github/workflows/ecs-deploy.yml
+    uses: ./.github/workflows/ecs-deploy-service.yml
     secrets: inherit
     with:
       ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_CONTROL_PLANE }}
@@ -63,7 +63,7 @@ jobs:
   deploy-mcp:
     name: Deploy MCP
     needs: [build-mcp]
-    uses: ./.github/workflows/ecs-deploy.yml
+    uses: ./.github/workflows/ecs-deploy-service.yml
     secrets: inherit
     with:
       ecs_task_definition: ${{ vars.CICD_ECS_TASK_DEFINITION_MCP }}
