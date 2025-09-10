@@ -97,8 +97,8 @@ jobs:
           aws ecs wait tasks-stopped --cluster ${{ inputs.ecs_cluster }} --tasks ${{ steps.run-migration-task.outputs.TASK_ARN }}
 
           EXIT_CODE=$(aws ecs describe-tasks \
-            --cluster "$CLUSTER" \
-            --tasks "$TASK_ARN" \
+            --cluster ${{ inputs.ecs_cluster }} \
+            --tasks ${{ steps.run-migration-task.outputs.TASK_ARN }} \
             --query "tasks[0].containers[0].exitCode" \
             --output text)
 
