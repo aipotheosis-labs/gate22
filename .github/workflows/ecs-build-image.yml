@@ -1,4 +1,4 @@
-name: Build and Push Image
+name: Build Image
 on:
   workflow_call:
     inputs:
@@ -16,7 +16,7 @@ on:
         default: Dockerfile.control_plane
         required: true
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

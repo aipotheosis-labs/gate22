@@ -1,4 +1,4 @@
-name: Deploy ECS
+name: Deploy Service
 on:
   workflow_call:
     inputs:
@@ -14,13 +14,13 @@ on:
         type: string
         description: The ECS task definition to use
         required: true
-      ecs_service:
-        type: string
-        description: The ECS service to deploy to
-        required: true
       ecs_cluster:
         type: string
         description: The ECS cluster to deploy to
+        required: true
+      ecs_service:
+        type: string
+        description: The ECS service to deploy to
         required: true
 
 jobs:
@@ -38,25 +38,30 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # This is so we don't need to store the task definition in the repo
+      # Get the container name from the task definition
+      # Note, modify this if we have more than one container
       - name: Get current task definition from ECS
+        id: get-task-definition-container-name
         run: |
-          aws ecs describe-task-definition \
+          CONTAINER_NAME=$(aws ecs describe-task-definition \
             --task-definition ${{ inputs.ecs_task_definition }} \
-            --query taskDefinition \
-            --output json > task-definition.json
+            --query taskDefinition.containerDefinitions[0].name \
+            --output text)
+          echo "CONTAINER_NAME=${CONTAINER_NAME}" >> $GITHUB_OUTPUT
 
+      # Update the task definition with the new image
       - name: Replace new Image to Task Definition JSON
-        run: |
-          jq --arg IMAGE "${{ inputs.ecr_repository_url }}:${{ inputs.image_tag }}" \
-            'del(.registeredBy, .registeredAt, .status, .revision, .requiresAttributes, .compatibilities, .taskDefinitionArn)
-            | .containerDefinitions[0].image = $IMAGE' \
-            task-definition.json > updated-task-definition.json
+        id: update-task-definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ steps.get-task-definition-container-name.outputs.CONTAINER_NAME }}
+          image: "${{ inputs.ecr_repository_url }}:${{ inputs.image_tag }}"
 
-      - name: Deploy task definition
+      - name: Deploy Service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: updated-task-definition.json
+          task-definition: ${{ steps.update-task-definition.outputs.task-definition }}
           service: ${{ inputs.ecs_service }}
           cluster: ${{ inputs.ecs_cluster }}
           wait-for-service-stability: true
