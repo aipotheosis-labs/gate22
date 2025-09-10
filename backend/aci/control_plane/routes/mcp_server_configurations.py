@@ -288,7 +288,7 @@ async def delete_mcp_server_configuration(
             mcp_server_configuration_id=mcp_server_configuration_id,
         )
 
-        # Remove all MCPServerBundle under this MCP server configuration
+        # Remove the MCP server configuration from all MCPServerBundle in the organization
         mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
             db_session=context.db_session,
             organization_id=mcp_server_configuration.organization_id,
