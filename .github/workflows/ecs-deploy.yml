@@ -49,7 +49,8 @@ jobs:
       - name: Replace new Image to Task Definition JSON
         run: |
           jq --arg IMAGE "${{ inputs.ecr_repository_url }}:${{ inputs.image_tag }}" \
-            '.containerDefinitions[0].image = $IMAGE' \
+            'del(.registeredBy, .registeredAt, .status, .revision, .requiresAttributes, .compatibilities, .taskDefinitionArn)
+            | .containerDefinitions[0].image = $IMAGE' \
             task-definition.json > updated-task-definition.json
 
       - name: Deploy task definition
