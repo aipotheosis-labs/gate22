@@ -1,0 +1,35 @@
+name: Database Migrations
+on:
+  workflow_call:
+    inputs:
+      ecs_task_definition:
+        type: string
+        description: The ECS task definition to use for migrations
+      ecs_cluster:
+        type: string
+        description: The ECS cluster to use for migrations
+      ecs_migration_subnets:
+        type: string
+        description: The ECS subnets to use for migrations
+      ecs_migration_security_groups:
+        type: string
+        description: The ECS security groups to use for migrations
+
+jobs:
+  run-migrations:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run database migrations
+        run: |
+          aws ecs run-task --task-definition ${{ inputs.ecs_task_definition }} --cluster ${{ inputs.ecs_cluster }} --launch-type="FARGATE" --network-configuration "awsvpcConfiguration={subnets=[${{ inputs.ecs_migration_subnets }}],securityGroups=[${{ inputs.ecs_migration_security_groups }}],assignPublicIp=ENABLED}" --count 1
+
+      - name: Wait for migrations run to finish
+        run: aws ecs wait tasks-stopped --cluster ${{ inputs.ecs_cluster }} --tasks $(aws ecs list-tasks --cluster ${{ inputs.ecs_cluster }} --family ${{ inputs.ecs_task_definition }} --query 'taskArns' --output text)

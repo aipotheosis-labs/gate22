@@ -1,0 +1,58 @@
+name: Deploy ECS
+on:
+  workflow_call:
+    inputs:
+      ecr_repository_url:
+        type: string
+        description: The ECR repository URL to use
+      image_tag:
+        type: string
+        description: The image tag to use
+      ecs_task_definition:
+        type: string
+        description: The ECS task definition to use
+      ecs_service:
+        type: string
+        description: The ECS service to deploy to
+      ecs_cluster:
+        type: string
+        description: The ECS cluster to deploy to
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # This is so we don't need to store the task definition in the repo
+      - name: Get current task definition from ECS
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ inputs.ecs_task_definition }} \
+            --query taskDefinition \
+            --output json > task-definition.json
+
+      - name: Replace new Image to Task Definition JSON
+        run: |
+          jq --arg IMAGE "${{ inputs.ecr_repository_url }}:${{ inputs.image_tag }}" \
+            '.containerDefinitions[0].image = $IMAGE' \
+            task-definition.json > updated-task-definition.json
+
+      - name: Deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: updated-task-definition.json
+          service: ${{ inputs.ecs_service }}
+          cluster: ${{ inputs.ecs_cluster }}
+          wait-for-service-stability: true
+          wait-for-minutes: 5
+          force-new-deployment: true
