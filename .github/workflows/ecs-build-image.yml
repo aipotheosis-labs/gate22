@@ -13,7 +13,6 @@ on:
       dockerfile:
         type: string
         description: The Dockerfile to use
-        default: Dockerfile.control_plane
         required: true
 jobs:
   build:
