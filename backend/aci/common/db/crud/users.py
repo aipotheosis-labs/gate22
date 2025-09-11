@@ -28,9 +28,7 @@ def create_user(
 
 
 def get_user_by_email(db_session: Session, email: str) -> User | None:
-    return (
-        db_session.query(User).filter(User.email == email).filter(User.deleted_at.is_(None)).first()
-    )
+    return db_session.query(User).filter(User.email == email).first()
 
 
 def get_user_by_id(db_session: Session, user_id: UUID) -> User | None:

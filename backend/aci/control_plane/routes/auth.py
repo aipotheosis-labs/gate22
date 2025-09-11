@@ -105,11 +105,24 @@ async def google_callback(
 
     google_userinfo = await exchange_google_userinfo(code, oauth_info)
 
-    # Get user by email (automatically excludes deleted users)
+    # Get user by email (now includes deleted users)
     user = crud.users.get_user_by_email(db_session, google_userinfo.email)
 
-    # Create new user if doesn't exist
-    if not user:
+    # Handle existing users
+    if user:
+        if user.deleted_at is not None:
+            # Redirect with error for soft-deleted account
+            error_msg = (
+                "This account is under deletion process. "
+                "Please contact support if you need assistance."
+            )
+            error_url = _construct_error_url(
+                oauth_info.post_oauth_redirect_uri,
+                error_msg,
+            )
+            return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
+    else:
+        # Create new user if doesn't exist
         user = crud.users.create_user(
             db_session=db_session,
             name=google_userinfo.name,
@@ -143,6 +156,14 @@ async def register(
     # Check if user already exists
     user = crud.users.get_user_by_email(db_session, request.email)
     if user:
+        if user.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "This account is under deletion process. "
+                    "Please contact support if you need assistance."
+                ),
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
         )
@@ -184,6 +205,16 @@ async def login(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
+        )
+
+    # Check if account is deleted
+    if user.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "This account is under deletion process. "
+                "Please contact support if you need assistance."
+            ),
         )
 
     # Password not set or doesn't match
