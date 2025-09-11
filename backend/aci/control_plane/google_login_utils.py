@@ -30,7 +30,10 @@ class GoogleUserInfo(BaseModel):
 
 
 # Google OAuth redirect URL constant
-GOOGLE_REDIRECT_URI = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/google/callback"
+GOOGLE_REDIRECT_URI = (
+    f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}"
+    f"{config.ROUTER_PREFIX_AUTH}/google/callback"
+)
 
 
 async def generate_google_auth_url(post_oauth_redirect_uri: str) -> str:
