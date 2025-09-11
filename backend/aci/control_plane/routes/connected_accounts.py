@@ -414,7 +414,8 @@ async def delete_connected_account(
         throw_error_if_not_permitted=True,
     )
 
-    # Member can only delete their own connected accounts
+    # Member can only delete their own connected accounts.
+    # Admin can delete any connected account, so no need to check here.
     if context.act_as.role == OrganizationRole.MEMBER:
         if not (
             connected_account.user_id == context.user_id
@@ -424,10 +425,6 @@ async def delete_connected_account(
                 f"Connected account {connected_account_id} is not belongs to the member {context.user_id}"  # noqa: E501
             )
             raise NotPermittedError(message="Cannot delete others' connected accounts")
-
-    # Admin can delete any connected account
-    elif context.act_as.role == OrganizationRole.ADMIN:
-        pass
 
     # Delete the connected account
     crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
