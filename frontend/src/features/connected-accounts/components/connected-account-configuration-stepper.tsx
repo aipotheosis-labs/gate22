@@ -165,7 +165,7 @@ export function ConnectedAccountConfigurationStepper({
             authCredentials.clientId.trim() !== "" &&
             authCredentials.clientSecret.trim() !== ""
           );
-        } else if (securityScheme === "apikey") {
+        } else if (securityScheme === "api_key") {
           return authCredentials.apiKey.trim() !== "";
         }
         return true;
@@ -281,11 +281,11 @@ export function ConnectedAccountConfigurationStepper({
                             </div>
                           </div>
                           <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                            <RadioGroupItem value="apikey" id="apikey" />
+                            <RadioGroupItem value="api_key" id="api_key" />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <Label
-                                  htmlFor="apikey"
+                                  htmlFor="api_key"
                                   className="font-medium cursor-pointer"
                                 >
                                   {getAuthTypeLabel("api_key")}
@@ -470,7 +470,7 @@ export function ConnectedAccountConfigurationStepper({
                         </div>
                       )}
 
-                      {securityScheme === "apikey" && (
+                      {securityScheme === "api_key" && (
                         <div className="space-y-2">
                           <Label htmlFor="api-key">API Key</Label>
                           <Input
