@@ -361,10 +361,10 @@ async def list_connected_accounts(
         )
     else:
         # Get a list of MCP server configurations that the user has access to
-        org_teams = crud.teams.get_teams_by_user_id(
+        teams = crud.teams.get_teams_by_user_id(
             context.db_session, context.act_as.organization_id, context.user_id
         )
-        team_ids = [team.id for team in org_teams]
+        team_ids = [team.id for team in teams]
         if len(team_ids) == 0:
             connected_accounts = []
         else:

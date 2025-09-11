@@ -106,12 +106,12 @@ def get_mcp_server_configurations(
         select_team_statement = select(Team).where(
             Team.id.in_(team_ids), Team.organization_id == organization_id
         )
-        org_teams = list(db_session.execute(select_team_statement).scalars().all())
+        teams = list(db_session.execute(select_team_statement).scalars().all())
 
         # overlap() is not type hinted but is available.
         # Make sure the field is Column of PostgreSQL array (import sqlalchemy.dialects.postgresql)
         statement = statement.where(
-            MCPServerConfiguration.allowed_teams.overlap([team.id for team in org_teams]),
+            MCPServerConfiguration.allowed_teams.overlap([team.id for team in teams]),
         )
 
     statement = statement.order_by(MCPServerConfiguration.created_at.desc())
