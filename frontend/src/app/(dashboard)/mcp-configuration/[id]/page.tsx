@@ -18,7 +18,7 @@ import {
   AlertCircle,
   Edit2,
   Settings,
-  Trash2,
+  HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { ToolsTable } from "@/features/mcp/components/tools-table";
@@ -30,6 +30,12 @@ import { toast } from "sonner";
 import { ManageTeamsDialog } from "@/features/mcp/components/manage-teams-dialog";
 import { ManageToolsDialog } from "@/features/mcp/components/manage-tools-dialog";
 import { DeleteConfigurationDialog } from "@/features/mcp/components/delete-configuration-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getAuthTypeLabel, getAuthTypeDetailedInfo } from "@/utils/auth-labels";
 
 export default function MCPConfigurationDetailPage() {
   const params = useParams();
@@ -278,7 +284,6 @@ export default function MCPConfigurationDetailPage() {
                 size="sm"
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
                 Delete
               </Button>
             )}
@@ -290,9 +295,19 @@ export default function MCPConfigurationDetailPage() {
               <label className="text-sm font-medium text-muted-foreground">
                 Authentication Type
               </label>
-              <p className="text-sm mt-1 font-medium">
-                {configuration.auth_type}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm font-medium">
+                  {getAuthTypeLabel(configuration.auth_type)}
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>{getAuthTypeDetailedInfo(configuration.auth_type)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
 
             {configuration.created_at && (

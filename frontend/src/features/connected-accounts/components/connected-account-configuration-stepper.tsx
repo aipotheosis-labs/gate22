@@ -17,12 +17,24 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Loader2, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  Loader2,
+  AlertCircle,
+  ChevronRight,
+  ChevronLeft,
+  HelpCircle,
+} from "lucide-react";
 import { ConnectedAccount } from "../types/connectedaccount.types";
 import { toast } from "sonner";
 import { listTeams } from "@/features/teams/api/team";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { Team } from "@/features/teams/types/team.types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getAuthTypeDetailedInfo } from "@/utils/auth-labels";
 
 interface ConnectedAccountConfigurationStepperProps {
   isOpen: boolean;
@@ -242,12 +254,22 @@ export function ConnectedAccountConfigurationStepper({
                           <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                             <RadioGroupItem value="oauth2" id="oauth2" />
                             <div className="flex-1">
-                              <Label
-                                htmlFor="oauth2"
-                                className="font-medium cursor-pointer"
-                              >
-                                OAuth 2.0
-                              </Label>
+                              <div className="flex items-center gap-2">
+                                <Label
+                                  htmlFor="oauth2"
+                                  className="font-medium cursor-pointer"
+                                >
+                                  OAuth 2.0
+                                </Label>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <p>{getAuthTypeDetailedInfo("oauth2")}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
                               <p className="text-sm text-muted-foreground mt-1">
                                 Connect using OAuth 2.0 flow with client
                                 credentials
@@ -257,12 +279,22 @@ export function ConnectedAccountConfigurationStepper({
                           <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
                             <RadioGroupItem value="apikey" id="apikey" />
                             <div className="flex-1">
-                              <Label
-                                htmlFor="apikey"
-                                className="font-medium cursor-pointer"
-                              >
-                                API Key
-                              </Label>
+                              <div className="flex items-center gap-2">
+                                <Label
+                                  htmlFor="apikey"
+                                  className="font-medium cursor-pointer"
+                                >
+                                  API Key
+                                </Label>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <p>{getAuthTypeDetailedInfo("api_key")}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
                               <p className="text-sm text-muted-foreground mt-1">
                                 Authenticate using an API key
                               </p>

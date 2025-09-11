@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Plus, Package, ArrowUpDown, Copy, Check } from "lucide-react";
+import { Plus, Package, ArrowUpDown, Copy, Check } from "lucide-react";
 import { CreateBundleForm } from "@/features/bundle-mcp/components/create-bundle-form";
 import {
   useCreateMCPServerBundle,
@@ -99,6 +99,24 @@ export default function BundleMCPPage() {
         enableGlobalFilter: true,
       }),
 
+      columnHelper.accessor("user", {
+        id: "user",
+        header: () => (
+          <div className="flex items-center justify-start">
+            <span className="text-left font-normal">USER</span>
+          </div>
+        ),
+        cell: (info) => {
+          const user = info.getValue();
+          return (
+            <div className="text-sm text-muted-foreground">
+              {user?.name || "-"}
+            </div>
+          );
+        },
+        enableGlobalFilter: true,
+      }),
+
       columnHelper.accessor("id", {
         id: "mcp_url",
         header: () => (
@@ -182,7 +200,11 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor((row) => row, {
         id: "actions",
-        header: "",
+        header: () => (
+          <div className="flex items-center justify-end">
+            <span className="text-left font-normal">ACTIONS</span>
+          </div>
+        ),
         cell: (info) => {
           const bundle = info.getValue();
           return (
@@ -204,12 +226,8 @@ export default function BundleMCPPage() {
               >
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="destructive" size="sm">
+                      Delete
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>

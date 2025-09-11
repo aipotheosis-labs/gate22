@@ -40,13 +40,17 @@ export default function BundleDetailPage() {
   // Generate configuration for different editors
   const generateConfig = (url: string, bundleName: string, editor: string) => {
     const configKey = editor === "vscode" ? "mcp.servers" : "mcpServers";
-    return JSON.stringify({
-      [configKey]: {
-        [bundleName]: {
-          "url": url
-        }
-      }
-    }, null, 2);
+    return JSON.stringify(
+      {
+        [configKey]: {
+          [bundleName]: {
+            url: url,
+          },
+        },
+      },
+      null,
+      2,
+    );
   };
 
   // Editor configuration data
@@ -54,22 +58,34 @@ export default function BundleDetailPage() {
     {
       id: "cursor",
       name: "Cursor",
-      instructions: ["Add this configuration to your Cursor settings:", "Settings → Features → MCP → Edit Config"],
+      instructions: [
+        "Add this configuration to your Cursor settings:",
+        "Settings → Features → MCP → Edit Config",
+      ],
     },
     {
       id: "windsurf",
       name: "Windsurf",
-      instructions: ["Add this configuration to your Windsurf settings:", "Settings → AI → Manage MCP servers → Add custom server"],
+      instructions: [
+        "Add this configuration to your Windsurf settings:",
+        "Settings → AI → Manage MCP servers → Add custom server",
+      ],
     },
     {
       id: "claude-code",
       name: "Claude Code",
-      instructions: ["Add this configuration to your .mcp.json file in your project root:", ""],
+      instructions: [
+        "Add this configuration to your .mcp.json file in your project root:",
+        "",
+      ],
     },
     {
       id: "vscode",
       name: "VS Code",
-      instructions: ["Add this configuration to your VS Code settings:", "Settings → Extensions → MCP → Server Configuration"],
+      instructions: [
+        "Add this configuration to your VS Code settings:",
+        "Settings → Extensions → MCP → Server Configuration",
+      ],
     },
   ];
 
@@ -209,14 +225,17 @@ export default function BundleDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Terminal className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Quick Setup for Code Editors</CardTitle>
+              <CardTitle className="text-lg">
+                Quick Setup for Code Editors
+              </CardTitle>
             </div>
             <Badge variant="secondary" className="text-xs">
               HTTP Streaming MCP Server
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            Copy and paste the configuration below into your preferred code editor to use this MCP server
+            Copy and paste the configuration below into your preferred code
+            editor to use this MCP server
           </p>
         </CardHeader>
         <CardContent>
@@ -232,18 +251,30 @@ export default function BundleDetailPage() {
             {editorConfigs.map((editor) => {
               const config = generateConfig(mcpUrl, bundle.name, editor.id);
               const configId = `${editor.id}-config`;
-              
+
               return (
-                <TabsContent key={editor.id} value={editor.id} className="space-y-3">
+                <TabsContent
+                  key={editor.id}
+                  value={editor.id}
+                  className="space-y-3"
+                >
                   <div className="text-sm text-muted-foreground">
                     <p>
                       {editor.id === "claude-code" ? (
-                        <>Add this configuration to your <code className="text-xs bg-muted px-1 py-0.5 rounded">.mcp.json</code> file in your project root:</>
+                        <>
+                          Add this configuration to your{" "}
+                          <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                            .mcp.json
+                          </code>{" "}
+                          file in your project root:
+                        </>
                       ) : (
                         editor.instructions[0]
                       )}
                     </p>
-                    {editor.instructions[1] && <p className="mt-1">{editor.instructions[1]}</p>}
+                    {editor.instructions[1] && (
+                      <p className="mt-1">{editor.instructions[1]}</p>
+                    )}
                   </div>
                   <div className="relative">
                     <pre className="bg-muted/50 border rounded-lg p-4 overflow-x-auto text-xs">

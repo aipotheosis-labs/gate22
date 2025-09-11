@@ -25,8 +25,14 @@ import {
   ChevronRight,
   ChevronLeft,
   Search,
+  HelpCircle,
 } from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   MCPServerPublic,
   MCPServerConfigurationCreate,
@@ -39,6 +45,11 @@ import { useMetaInfo } from "@/components/context/metainfo";
 import { Team } from "@/features/teams/types/team.types";
 import { CreateTeamWithMembersDialog } from "@/features/teams/components/create-team-with-members-dialog";
 import { Plus } from "lucide-react";
+import {
+  getAuthTypeLabel,
+  getAuthTypeDescription,
+  getAuthTypeDetailedInfo,
+} from "@/utils/auth-labels";
 
 interface MCPServerConfigurationStepperProps {
   isOpen: boolean;
@@ -53,33 +64,6 @@ const { useStepper, steps } = defineStepper(
   { id: "tools", label: "Tools" },
   { id: "teams", label: "Teams" },
 );
-
-// Helper functions for auth type display
-const getAuthTypeLabel = (authType: string): string => {
-  switch (authType) {
-    case "no_auth":
-      return "No Authentication";
-    case "api_key":
-      return "API Key";
-    case "oauth2":
-      return "OAuth 2.0";
-    default:
-      return authType;
-  }
-};
-
-const getAuthTypeDescription = (authType: string): string => {
-  switch (authType) {
-    case "no_auth":
-      return "No authentication required";
-    case "api_key":
-      return "Use an API key for authentication";
-    case "oauth2":
-      return "Authenticate via OAuth 2.0 flow";
-    default:
-      return "";
-  }
-};
 
 export function MCPServerConfigurationStepper({
   isOpen,
@@ -315,8 +299,21 @@ export function MCPServerConfigurationStepper({
                           >
                             <RadioGroupItem value={authType} id={authType} />
                             <div className="flex-1">
-                              <div className="text-sm font-medium">
-                                {getAuthTypeLabel(authType)}
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                  {getAuthTypeLabel(authType)}
+                                </span>
+                                {(authType === "no_auth" ||
+                                  authType === "api_key") && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <p>{getAuthTypeDetailedInfo(authType)}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {getAuthTypeDescription(authType)}

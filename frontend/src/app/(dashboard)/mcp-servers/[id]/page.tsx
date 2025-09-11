@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Shield, Wrench, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Wrench, Loader2, Plus, HelpCircle } from "lucide-react";
 import Image from "next/image";
 import { useMCPServer } from "@/features/mcp/hooks/use-mcp-servers";
 import { useState } from "react";
@@ -12,6 +12,12 @@ import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-ser
 import { ToolsTable } from "@/features/mcp/components/tools-table";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getAuthTypeLabel, getAuthTypeDetailedInfo } from "@/utils/auth-labels";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
@@ -73,15 +79,28 @@ export default function MCPServerDetailPage() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold">{server.name}</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {server.supported_auth_types &&
-                server.supported_auth_types.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    <span>{server.supported_auth_types.join(", ")}</span>
-                  </div>
-                )}
-            </div>
+            {server.supported_auth_types &&
+              server.supported_auth_types.length > 0 && (
+                <div className="flex gap-1.5 mt-2">
+                  {server.supported_auth_types.map((authType) => (
+                    <div key={authType} className="flex items-center gap-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {getAuthTypeLabel(authType)}
+                      </Badge>
+                      {(authType === "no_auth" || authType === "api_key") && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>{getAuthTypeDetailedInfo(authType)}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
         </div>
         <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>

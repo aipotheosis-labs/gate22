@@ -8,4 +8,9 @@ export type ConnectedAccount = {
   updated_at: string;
   last_used_at?: string;
   mcp_server_configuration: MCPServerConfigurationBasic;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 };

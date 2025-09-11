@@ -54,7 +54,11 @@ export function useOrgMembersTableColumns({
         }),
         columnHelper.display({
           id: "actions",
-          header: "",
+          header: () => (
+            <div className="flex items-center justify-end">
+              <span className="text-left font-normal">ACTIONS</span>
+            </div>
+          ),
           cell: (info) => {
             const member = info.row.original;
             const isCurrentUser = member.user_id === user.userId;

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import { Trash2, Plus, ArrowUpDown } from "lucide-react";
+import { Plus, ArrowUpDown } from "lucide-react";
 import { AddAccountDialog } from "@/features/connected-accounts/components/add-account-dialog";
 import {
   useConnectedAccounts,
@@ -99,6 +99,24 @@ export default function ConnectedAccountsPage() {
           const id = info.getValue();
           return (
             <div className="font-mono text-xs text-muted-foreground">{id}</div>
+          );
+        },
+        enableGlobalFilter: true,
+      }),
+
+      columnHelper.accessor("user", {
+        id: "user",
+        header: () => (
+          <div className="flex items-center justify-start">
+            <span className="text-left font-normal">USER</span>
+          </div>
+        ),
+        cell: (info) => {
+          const user = info.getValue();
+          return (
+            <div className="text-sm text-muted-foreground">
+              {user?.name || "-"}
+            </div>
           );
         },
         enableGlobalFilter: true,
@@ -199,7 +217,11 @@ export default function ConnectedAccountsPage() {
 
       columnHelper.accessor((row) => row, {
         id: "actions",
-        header: "",
+        header: () => (
+          <div className="flex items-center justify-end">
+            <span className="text-left font-normal">ACTIONS</span>
+          </div>
+        ),
         cell: (info) => {
           const account = info.getValue();
           const config = mcpConfigMap[account.mcp_server_configuration_id];
@@ -207,12 +229,8 @@ export default function ConnectedAccountsPage() {
             <div className="flex items-center justify-end">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
+                  <Button variant="destructive" size="sm">
+                    Delete
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

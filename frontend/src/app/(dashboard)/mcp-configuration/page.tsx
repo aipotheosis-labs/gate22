@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
-import { Trash2, Settings, ArrowUpDown } from "lucide-react";
+import { Settings, ArrowUpDown } from "lucide-react";
 import { formatToLocalTime } from "@/utils/time";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
@@ -167,11 +167,15 @@ export default function MCPConfigurationPage() {
 
         columnHelper.accessor((row) => row, {
           id: "actions",
-          header: "",
+          header: () => (
+            <div className="flex items-center justify-end">
+              <span className="text-left font-normal">ACTIONS</span>
+            </div>
+          ),
           cell: (info) => {
             const configuration = info.getValue();
             return (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -186,9 +190,8 @@ export default function MCPConfigurationPage() {
                   permission={PERMISSIONS.MCP_CONFIGURATION_DELETE}
                 >
                   <Button
-                    variant="ghost"
+                    variant="destructive"
                     size="sm"
-                    className="text-destructive"
                     onClick={() =>
                       setDeleteDialogState({
                         open: true,
@@ -197,7 +200,7 @@ export default function MCPConfigurationPage() {
                       })
                     }
                   >
-                    <Trash2 className="h-4 w-4" />
+                    Delete
                   </Button>
                 </PermissionGuard>
               </div>

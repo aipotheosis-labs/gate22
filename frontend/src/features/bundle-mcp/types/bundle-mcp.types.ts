@@ -7,6 +7,11 @@ export interface MCPServerBundle {
   user_id: string;
   organization_id: string;
   mcp_server_configurations: MCPServerConfiguration[];
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   created_at: string;
   updated_at: string;
 }
