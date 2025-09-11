@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from aci.common import auth_credentials_manager as acm
 from aci.common.db import crud
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration
-from aci.common.enums import AuthType, ConnectedAccountSharability, OrganizationRole
+from aci.common.enums import AuthType, ConnectedAccountOwnership, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.connected_account import (
@@ -58,7 +58,7 @@ async def create_connected_account(
         throw_error_if_not_permitted=True,
     )
 
-    if mcp_server_config.connected_account_sharability == ConnectedAccountSharability.SHARED:
+    if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED:
         # Only admin can create shared connected accounts
         if context.act_as.role != OrganizationRole.ADMIN:
             logger.error("Cannot create shared connected accounts when not acting as admin")
@@ -153,7 +153,7 @@ async def _create_connected_account(
             context.user_id,
             mcp_server_config.id,
             auth_credentials,
-            mcp_server_config.connected_account_sharability,
+            mcp_server_config.connected_account_ownership,
         )
 
     return connected_account
@@ -334,7 +334,7 @@ async def oauth2_callback(
             state.user_id,
             mcp_server_configuration.id,
             auth_credentials.model_dump(mode="json"),
-            mcp_server_configuration.connected_account_sharability,
+            mcp_server_configuration.connected_account_ownership,
         )
     db_session.commit()
 
@@ -419,7 +419,7 @@ async def delete_connected_account(
     if context.act_as.role == OrganizationRole.MEMBER:
         if not (
             connected_account.user_id == context.user_id
-            and connected_account.sharability == ConnectedAccountSharability.INDIVIDUAL
+            and connected_account.ownership == ConnectedAccountOwnership.INDIVIDUAL
         ):
             logger.error(
                 f"Connected account {connected_account_id} is not belongs to the member {context.user_id}"  # noqa: E501

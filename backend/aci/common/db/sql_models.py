@@ -22,7 +22,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_co
 
 from aci.common.enums import (
     AuthType,
-    ConnectedAccountSharability,
+    ConnectedAccountOwnership,
     MCPServerTransportType,
     OrganizationRole,
     TeamRole,
@@ -365,8 +365,8 @@ class MCPServerConfiguration(Base):
     auth_type: Mapped[AuthType] = mapped_column(
         SQLEnum(AuthType, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
     )
-    connected_account_sharability: Mapped[ConnectedAccountSharability] = mapped_column(
-        SQLEnum(ConnectedAccountSharability, native_enum=False, length=MAX_ENUM_LENGTH),
+    connected_account_ownership: Mapped[ConnectedAccountOwnership] = mapped_column(
+        SQLEnum(ConnectedAccountOwnership, native_enum=False, length=MAX_ENUM_LENGTH),
         nullable=False,
     )
 
@@ -414,8 +414,8 @@ class ConnectedAccount(Base):
     )
     auth_credentials: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
-    sharability: Mapped[ConnectedAccountSharability] = mapped_column(
-        SQLEnum(ConnectedAccountSharability, native_enum=False, length=MAX_ENUM_LENGTH),
+    ownership: Mapped[ConnectedAccountOwnership] = mapped_column(
+        SQLEnum(ConnectedAccountOwnership, native_enum=False, length=MAX_ENUM_LENGTH),
         nullable=False,
     )
 

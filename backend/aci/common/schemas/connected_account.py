@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from aci.common.enums import ConnectedAccountSharability
+from aci.common.enums import ConnectedAccountOwnership
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationPublic,
 )
@@ -45,7 +45,7 @@ class ConnectedAccountPublic(BaseModel):
     id: UUID
     user_id: UUID
     mcp_server_configuration_id: UUID
-    sharability: ConnectedAccountSharability
+    ownership: ConnectedAccountOwnership
     # TODO: add auth credentials (with access token, refresh token removed)
 
     created_at: datetime

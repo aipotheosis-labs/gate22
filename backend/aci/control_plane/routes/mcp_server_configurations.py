@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerConfiguration
-from aci.common.enums import ConnectedAccountSharability, OrganizationRole
+from aci.common.enums import ConnectedAccountOwnership, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server_configuration import (
@@ -211,10 +211,7 @@ def _check_stale_connected_accounts_and_bundles(
     db_session: Session, mcp_server_configuration: MCPServerConfiguration
 ) -> None:
     # If the MCP server configuration is individual, we need to check for stale connected accounts
-    if (
-        mcp_server_configuration.connected_account_sharability
-        == ConnectedAccountSharability.INDIVIDUAL
-    ):
+    if mcp_server_configuration.connected_account_ownership == ConnectedAccountOwnership.INDIVIDUAL:
         # Check and clean up any connected accounts that are no longer accessible to the
         # MCPServerConfiguration by the ConnectedAccount's owner.
         connected_accounts = (

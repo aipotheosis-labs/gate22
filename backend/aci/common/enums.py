@@ -23,7 +23,7 @@ class AuthType(StrEnum):
     OAUTH2 = "oauth2"
 
 
-class ConnectedAccountSharability(StrEnum):
+class ConnectedAccountOwnership(StrEnum):
     INDIVIDUAL = "individual"
     SHARED = "shared"
 

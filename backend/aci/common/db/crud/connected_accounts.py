@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import and_
 
 from aci.common.db.sql_models import ConnectedAccount, MCPServerConfiguration
-from aci.common.enums import ConnectedAccountSharability
+from aci.common.enums import ConnectedAccountOwnership
 from aci.common.logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -71,13 +71,13 @@ def create_connected_account(
     user_id: UUID,
     mcp_server_configuration_id: UUID,
     auth_credentials: dict,
-    sharability: ConnectedAccountSharability,
+    ownership: ConnectedAccountOwnership,
 ) -> ConnectedAccount:
     connected_account = ConnectedAccount(
         user_id=user_id,
         mcp_server_configuration_id=mcp_server_configuration_id,
         auth_credentials=auth_credentials,
-        sharability=sharability,
+        ownership=ownership,
     )
 
     db_session.add(connected_account)
@@ -138,10 +138,10 @@ def get_org_member_accessible_connected_accounts_by_mcp_server_configuration_ids
                 ),
                 or_(
                     and_(
-                        ConnectedAccount.sharability == ConnectedAccountSharability.INDIVIDUAL,
+                        ConnectedAccount.ownership == ConnectedAccountOwnership.INDIVIDUAL,
                         ConnectedAccount.user_id == user_id,
                     ),
-                    ConnectedAccount.sharability == ConnectedAccountSharability.SHARED,
+                    ConnectedAccount.ownership == ConnectedAccountOwnership.SHARED,
                 ),
             )
         )

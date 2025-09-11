@@ -57,7 +57,7 @@ def construct_mcp_server_configuration_public(
         mcp_server_id=mcp_server_configuration.mcp_server_id,
         organization_id=mcp_server_configuration.organization_id,
         auth_type=mcp_server_configuration.auth_type,
-        connected_account_sharability=mcp_server_configuration.connected_account_sharability,
+        connected_account_ownership=mcp_server_configuration.connected_account_ownership,
         all_tools_enabled=mcp_server_configuration.all_tools_enabled,
         enabled_tools=[
             MCPToolPublicWithoutSchema.model_validate(tool, from_attributes=True)
@@ -111,7 +111,7 @@ def construct_connected_account_public(
         id=connected_account.id,
         user_id=connected_account.user_id,
         mcp_server_configuration_id=connected_account.mcp_server_configuration_id,
-        sharability=connected_account.sharability,
+        ownership=connected_account.ownership,
         created_at=connected_account.created_at,
         updated_at=connected_account.updated_at,
         mcp_server_configuration=construct_mcp_server_configuration_public(

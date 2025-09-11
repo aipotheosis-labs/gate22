@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from aci.common.enums import AuthType, ConnectedAccountSharability
+from aci.common.enums import AuthType, ConnectedAccountOwnership
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server import MCPServerPublic
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
@@ -25,7 +25,7 @@ class MCPServerConfigurationCreate(BaseModel):
     description: str | None = Field(default=None, max_length=512)
     mcp_server_id: UUID
     auth_type: AuthType
-    connected_account_sharability: ConnectedAccountSharability
+    connected_account_ownership: ConnectedAccountOwnership
     all_tools_enabled: bool = Field(default=True)
     enabled_tools: list[UUID] = Field(default_factory=list)
     allowed_teams: list[UUID] = Field(default_factory=list)
@@ -96,7 +96,7 @@ class MCPServerConfigurationPublic(BaseModel):
     mcp_server_id: UUID
     organization_id: UUID
     auth_type: AuthType
-    connected_account_sharability: ConnectedAccountSharability
+    connected_account_ownership: ConnectedAccountOwnership
     all_tools_enabled: bool
     enabled_tools: list[MCPToolPublicWithoutSchema]
     allowed_teams: list[TeamInfo]
