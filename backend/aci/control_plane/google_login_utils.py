@@ -29,9 +29,8 @@ class GoogleUserInfo(BaseModel):
     email: str
 
 
-def _get_google_redirect_uri() -> str:
-    url = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/google/callback"  # noqa: E501
-    return url
+# Google OAuth redirect URL constant
+GOOGLE_REDIRECT_URI = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/google/callback"
 
 
 async def generate_google_auth_url(post_oauth_redirect_uri: str) -> str:
@@ -43,7 +42,7 @@ async def generate_google_auth_url(post_oauth_redirect_uri: str) -> str:
     oauth2_state_jwt = jwt.encode(
         OAuth2State(
             code_verifier=code_verifier,
-            redirect_uri=_get_google_redirect_uri(),
+            redirect_uri=GOOGLE_REDIRECT_URI,
             client_id=config.GOOGLE_CLIENT_ID,
             post_oauth_redirect_uri=post_oauth_redirect_uri,
         ).model_dump(mode="json"),
@@ -52,7 +51,7 @@ async def generate_google_auth_url(post_oauth_redirect_uri: str) -> str:
     )
 
     auth_url = await google_oauth2_manager.create_authorization_url(
-        redirect_uri=_get_google_redirect_uri(),
+        redirect_uri=GOOGLE_REDIRECT_URI,
         state=oauth2_state_jwt,
         code_verifier=code_verifier,
     )
@@ -69,7 +68,7 @@ async def exchange_google_userinfo(code: str, oauth2_state: OAuth2State) -> Goog
     # Verify the info
     if (
         oauth2_state.client_id != config.GOOGLE_CLIENT_ID
-        or oauth2_state.redirect_uri != _get_google_redirect_uri()
+        or oauth2_state.redirect_uri != GOOGLE_REDIRECT_URI
     ):
         raise OAuth2Error(message="Error during OAuth2 flow")
 
