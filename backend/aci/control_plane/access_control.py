@@ -52,9 +52,10 @@ def check_mcp_server_config_accessibility(
 ) -> bool:
     """
     Returns:
-        Whether the member has access to a MCP server configuration.
+        Whether the organization member has access to a MCP server configuration.
         Current rule:
-        - True if member belongs to any team that is allowed by the MCP server configuration
+        - True if the organization member belongs to any team that is allowed by the MCP server
+        configuration
         - False otherwise
     """
     logger.debug(
