@@ -109,9 +109,6 @@ def get_mcp_tools_by_ids(
     db_session: Session,
     mcp_tool_ids: list[UUID],
 ) -> list[MCPTool]:
-    if len(mcp_tool_ids) == 0:
-        return []
-
     statement = select(MCPTool).where(MCPTool.id.in_(mcp_tool_ids))
 
     # make sure the results are in the same order as the mcp_tool_ids
