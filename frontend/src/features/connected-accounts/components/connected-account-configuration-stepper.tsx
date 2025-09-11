@@ -34,7 +34,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getAuthTypeDetailedInfo } from "@/utils/auth-labels";
+import {
+  getAuthTypeDetailedInfo,
+  getAuthTypeLabel,
+  getAuthTypeDescription,
+} from "@/utils/auth-labels";
 
 interface ConnectedAccountConfigurationStepperProps {
   isOpen: boolean;
@@ -163,11 +167,6 @@ export function ConnectedAccountConfigurationStepper({
           );
         } else if (securityScheme === "apikey") {
           return authCredentials.apiKey.trim() !== "";
-        } else if (securityScheme === "basic") {
-          return (
-            authCredentials.username.trim() !== "" &&
-            authCredentials.password.trim() !== ""
-          );
         }
         return true;
       default:
@@ -259,11 +258,17 @@ export function ConnectedAccountConfigurationStepper({
                                   htmlFor="oauth2"
                                   className="font-medium cursor-pointer"
                                 >
-                                  OAuth 2.0
+                                  {getAuthTypeLabel("oauth2")}
                                 </Label>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                    <button
+                                      type="button"
+                                      className="inline-flex items-center justify-center rounded-sm hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                                      aria-label="More information about OAuth 2.0 authentication"
+                                    >
+                                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                    </button>
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs">
                                     <p>{getAuthTypeDetailedInfo("oauth2")}</p>
@@ -271,8 +276,7 @@ export function ConnectedAccountConfigurationStepper({
                                 </Tooltip>
                               </div>
                               <p className="text-sm text-muted-foreground mt-1">
-                                Connect using OAuth 2.0 flow with client
-                                credentials
+                                {getAuthTypeDescription("oauth2")}
                               </p>
                             </div>
                           </div>
@@ -284,11 +288,17 @@ export function ConnectedAccountConfigurationStepper({
                                   htmlFor="apikey"
                                   className="font-medium cursor-pointer"
                                 >
-                                  API Key
+                                  {getAuthTypeLabel("api_key")}
                                 </Label>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                    <button
+                                      type="button"
+                                      className="inline-flex items-center justify-center rounded-sm hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                                      aria-label="More information about API Key authentication"
+                                    >
+                                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                    </button>
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs">
                                     <p>{getAuthTypeDetailedInfo("api_key")}</p>
@@ -296,21 +306,7 @@ export function ConnectedAccountConfigurationStepper({
                                 </Tooltip>
                               </div>
                               <p className="text-sm text-muted-foreground mt-1">
-                                Authenticate using an API key
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-                            <RadioGroupItem value="basic" id="basic" />
-                            <div className="flex-1">
-                              <Label
-                                htmlFor="basic"
-                                className="font-medium cursor-pointer"
-                              >
-                                Basic Auth
-                              </Label>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Authenticate using username and password
+                                {getAuthTypeDescription("api_key")}
                               </p>
                             </div>
                           </div>
@@ -492,41 +488,6 @@ export function ConnectedAccountConfigurationStepper({
                           <p className="text-sm text-muted-foreground">
                             Your API key will be securely stored and encrypted
                           </p>
-                        </div>
-                      )}
-
-                      {securityScheme === "basic" && (
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                              id="username"
-                              type="text"
-                              placeholder="Enter your username"
-                              value={authCredentials.username}
-                              onChange={(e) =>
-                                setAuthCredentials({
-                                  ...authCredentials,
-                                  username: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                              id="password"
-                              type="password"
-                              placeholder="Enter your password"
-                              value={authCredentials.password}
-                              onChange={(e) =>
-                                setAuthCredentials({
-                                  ...authCredentials,
-                                  password: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
                         </div>
                       )}
 

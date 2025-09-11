@@ -303,17 +303,20 @@ export function MCPServerConfigurationStepper({
                                 <span className="text-sm font-medium">
                                   {getAuthTypeLabel(authType)}
                                 </span>
-                                {(authType === "no_auth" ||
-                                  authType === "api_key") && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="inline-flex items-center justify-center rounded-sm hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                                      aria-label={`More information about ${getAuthTypeLabel(authType)} authentication`}
+                                    >
                                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-xs">
-                                      <p>{getAuthTypeDetailedInfo(authType)}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    <p>{getAuthTypeDetailedInfo(authType)}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 {getAuthTypeDescription(authType)}
