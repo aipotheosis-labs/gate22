@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createTeam } from "@/features/teams/api/team";
+import { listOrganizationUsers } from "@/features/settings/api/organization";
+import { OrganizationUser } from "@/features/settings/types/organization.types";
+import { Loader2, Users } from "lucide-react";
 
 interface CreateTeamDialogProps {
   open: boolean;
@@ -36,6 +40,29 @@ export function CreateTeamDialog({
     name: "",
     description: "",
   });
+  const [orgMembers, setOrgMembers] = useState<OrganizationUser[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+
+  // Load organization members when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadOrganizationMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const loadOrganizationMembers = async () => {
+    setMembersLoading(true);
+    try {
+      const members = await listOrganizationUsers(accessToken, activeOrg.orgId);
+      setOrgMembers(members);
+    } catch {
+      toast.error("Failed to load organization members");
+    } finally {
+      setMembersLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +74,24 @@ export function CreateTeamDialog({
 
     setIsLoading(true);
     try {
-      const newTeam = await createTeam(accessToken, activeOrg.orgId, formData);
-      toast.success(`Team "${formData.name}" created successfully`);
+      const createTeamData = {
+        ...formData,
+        member_user_ids: selectedMembers.length > 0 ? selectedMembers : undefined,
+      };
+      
+      const newTeam = await createTeam(accessToken, activeOrg.orgId, createTeamData);
+      
+      const successMessage = selectedMembers.length > 0
+        ? `Team "${formData.name}" created with ${selectedMembers.length} member${selectedMembers.length > 1 ? 's' : ''}`
+        : `Team "${formData.name}" created successfully`;
+      toast.success(successMessage);
 
       // Reset form
       setFormData({
         name: "",
         description: "",
       });
+      setSelectedMembers([]);
 
       onOpenChange(false);
       onSuccess?.();
@@ -76,6 +113,7 @@ export function CreateTeamDialog({
         name: "",
         description: "",
       });
+      setSelectedMembers([]);
       onOpenChange(false);
     }
   };
@@ -121,6 +159,43 @@ export function CreateTeamDialog({
                 disabled={isLoading}
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Team Members (Optional)</Label>
+              {membersLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span className="text-sm text-muted-foreground">
+                    Loading members...
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <MultiSelect
+                    options={orgMembers.map((member) => ({
+                      value: member.user_id,
+                      label: `${member.name} (${member.email})`,
+                    }))}
+                    selected={selectedMembers}
+                    onChange={setSelectedMembers}
+                    placeholder="Select members to add..."
+                    searchPlaceholder="Search members by name or email..."
+                    emptyText="No members found."
+                    className="w-full"
+                    disabled={isLoading}
+                  />
+                  {selectedMembers.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>
+                        {selectedMembers.length} member
+                        {selectedMembers.length !== 1 ? "s" : ""} selected
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

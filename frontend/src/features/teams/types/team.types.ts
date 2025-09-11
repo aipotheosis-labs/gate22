@@ -18,4 +18,5 @@ export interface Team {
 export interface CreateTeamRequest {
   name: string;
   description?: string;
+  member_user_ids?: string[];
 }

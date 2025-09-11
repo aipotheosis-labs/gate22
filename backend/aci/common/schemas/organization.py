@@ -34,6 +34,9 @@ class UpdateOrganizationMemberRoleRequest(BaseModel):
 class CreateOrganizationTeamRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100, description="Team name")
     description: str | None = Field(default=None, max_length=255, description="Team description")
+    member_user_ids: list[UUID] | None = Field(
+        default=None, description="List of user IDs to add as initial team members"
+    )
 
 
 class TeamInfo(BaseModel):

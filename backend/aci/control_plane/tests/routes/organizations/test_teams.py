@@ -75,6 +75,96 @@ def test_create_team(
 @pytest.mark.parametrize(
     "access_token_fixture",
     [
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+        "dummy_access_token_another_org",
+    ],
+)
+@pytest.mark.parametrize("include_invalid_members", [True, False])
+def test_create_team_with_members(
+    request: pytest.FixtureRequest,
+    db_session: Session,
+    test_client: TestClient,
+    access_token_fixture: str,
+    dummy_organization: Organization,
+    dummy_user: User,
+    include_invalid_members: bool,
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    # Create additional users for the organization
+    member1 = crud.users.create_user(
+        db_session, "Member One", "member1@example.com", None, UserIdentityProvider.EMAIL
+    )
+    member2 = crud.users.create_user(
+        db_session, "Member Two", "member2@example.com", None, UserIdentityProvider.EMAIL
+    )
+
+    # Add them to the organization
+    crud.organizations.add_user_to_organization(
+        db_session, dummy_organization.id, member1.id, OrganizationRole.MEMBER
+    )
+    crud.organizations.add_user_to_organization(
+        db_session, dummy_organization.id, member2.id, OrganizationRole.MEMBER
+    )
+
+    # Create a non-org member for invalid test
+    non_org_member = crud.users.create_user(
+        db_session, "Non Org Member", "nonorg@example.com", None, UserIdentityProvider.EMAIL
+    )
+
+    db_session.commit()
+
+    # Prepare member IDs list
+    member_user_ids = [member1.id, member2.id]
+    if include_invalid_members:
+        member_user_ids.append(non_org_member.id)
+
+    test_input = CreateOrganizationTeamRequest(
+        name="Team With Members",
+        description="Test team with initial members",
+        member_user_ids=member_user_ids,
+    )
+
+    response = test_client.post(
+        f"{config.ROUTER_PREFIX_ORGANIZATIONS}/{dummy_organization.id}/teams",
+        json=test_input.model_dump(mode="json"),
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    # Only admin can create a team
+    if access_token_fixture != "dummy_access_token_admin":
+        assert response.status_code == 403
+        return
+
+    if include_invalid_members:
+        assert response.status_code == 400
+        assert "not members of the organization" in response.json()["detail"]
+        return
+
+    # Check if the team is created
+    assert response.status_code == 201
+    team_info = TeamInfo.model_validate(response.json())
+    assert team_info.name == test_input.name
+    assert team_info.description == test_input.description
+
+    # Check if the team and members are created in database
+    db_team = crud.teams.get_team_by_id(db_session, team_info.team_id)
+    assert db_team is not None
+    assert db_team.name == test_input.name
+    assert db_team.description == test_input.description
+
+    # Check team members
+    team_members = crud.teams.get_team_members(db_session, team_info.team_id)
+    assert len(team_members) == 2
+    member_ids = {member.user_id for member in team_members}
+    assert member1.id in member_ids
+    assert member2.id in member_ids
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
         "dummy_access_token_no_orgs",
         "dummy_access_token_admin",
         "dummy_access_token_member",

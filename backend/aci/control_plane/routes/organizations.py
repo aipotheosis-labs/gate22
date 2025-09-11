@@ -214,6 +214,26 @@ async def create_team(
             detail="Team name already exists",
         )
 
+    # Validate member IDs if provided
+    if request.member_user_ids:
+        # Check that all users exist and are members of the organization
+        org_members = crud.organizations.get_organization_members(
+            db_session=context.db_session,
+            organization_id=organization_id,
+        )
+        org_member_ids = {member.user_id for member in org_members}
+
+        invalid_user_ids = [
+            user_id for user_id in request.member_user_ids if user_id not in org_member_ids
+        ]
+
+        if invalid_user_ids:
+            logger.error(f"Invalid user IDs: {invalid_user_ids}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Some users are not members of the organization: {invalid_user_ids}",
+            )
+
     # Create team
     team = crud.teams.create_team(
         db_session=context.db_session,
@@ -221,6 +241,16 @@ async def create_team(
         name=request.name,
         description=request.description,
     )
+
+    # Add initial members if provided
+    if request.member_user_ids:
+        for user_id in request.member_user_ids:
+            crud.teams.add_team_member(
+                db_session=context.db_session,
+                organization_id=organization_id,
+                team_id=team.id,
+                user_id=user_id,
+            )
 
     context.db_session.commit()
 
