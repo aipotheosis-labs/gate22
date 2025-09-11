@@ -87,10 +87,16 @@ export default function MCPServerDetailPage() {
                       <Badge variant="secondary" className="text-xs">
                         {getAuthTypeLabel(authType)}
                       </Badge>
-                      {(authType === "no_auth" || authType === "api_key") && (
+                      {getAuthTypeDetailedInfo(authType) && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                            <button
+                              type="button"
+                              aria-label={`About ${getAuthTypeLabel(authType)}`}
+                              className="inline-flex p-0 m-0"
+                            >
+                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                            </button>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p>{getAuthTypeDetailedInfo(authType)}</p>
