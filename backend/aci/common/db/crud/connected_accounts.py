@@ -110,7 +110,7 @@ def get_connected_accounts_by_user_id_and_organization_id(
     return list(db_session.execute(statement).scalars().all())
 
 
-def get_member_accessible_connected_accounts_by_mcp_server_configuration_ids(
+def get_org_member_accessible_connected_accounts_by_mcp_server_configuration_ids(
     db_session: Session,
     user_id: UUID,
     user_accessible_mcp_server_configuration_ids: list[UUID],
@@ -118,8 +118,12 @@ def get_member_accessible_connected_accounts_by_mcp_server_configuration_ids(
     limit: int | None = None,
 ) -> list[ConnectedAccount]:
     """
-    Get individual connected accounts by member OR shared connected accounts by Config IDs where
-    the user has access to
+    Get accessible connected accounts to a organization member.
+
+    Returns:
+        List of connected accounts meeting one of following criteria:
+        - The individual connected accounts owned by the member itself
+        - The shared connected accounts under MCPServerConfigurations that the user has access to
     """
     if len(user_accessible_mcp_server_configuration_ids) == 0:
         return []

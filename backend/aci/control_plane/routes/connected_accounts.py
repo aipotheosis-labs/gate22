@@ -379,7 +379,7 @@ async def list_connected_accounts(
             ]
 
             # Fetch connected accounts that the user has access to
-            connected_accounts = crud.connected_accounts.get_member_accessible_connected_accounts_by_mcp_server_configuration_ids(  # noqa: E501
+            connected_accounts = crud.connected_accounts.get_org_member_accessible_connected_accounts_by_mcp_server_configuration_ids(  # noqa: E501
                 db_session=context.db_session,
                 user_id=context.user_id,
                 user_accessible_mcp_server_configuration_ids=accessible_mcp_server_configuration_ids,
