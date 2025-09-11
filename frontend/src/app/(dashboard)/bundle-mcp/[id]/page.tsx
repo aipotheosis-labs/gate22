@@ -6,6 +6,7 @@ import { getMcpBaseUrl } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   Loader2,
@@ -13,6 +14,7 @@ import {
   Check,
   AlertCircle,
   Package,
+  Terminal,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useMemo } from "react";
@@ -34,6 +36,42 @@ export default function BundleDetailPage() {
     }
     return "";
   }, [bundle]);
+
+  // Generate configuration for different editors
+  const generateConfig = (url: string, bundleName: string, editor: string) => {
+    const configKey = editor === "vscode" ? "mcp.servers" : "mcpServers";
+    return JSON.stringify({
+      [configKey]: {
+        [bundleName]: {
+          "url": url
+        }
+      }
+    }, null, 2);
+  };
+
+  // Editor configuration data
+  const editorConfigs = [
+    {
+      id: "cursor",
+      name: "Cursor",
+      instructions: ["Add this configuration to your Cursor settings:", "Settings → Features → MCP → Edit Config"],
+    },
+    {
+      id: "windsurf",
+      name: "Windsurf",
+      instructions: ["Add this configuration to your Windsurf settings:", "Settings → AI → Manage MCP servers → Add custom server"],
+    },
+    {
+      id: "claude-code",
+      name: "Claude Code",
+      instructions: ["Add this configuration to your .mcp.json file in your project root:", ""],
+    },
+    {
+      id: "vscode",
+      name: "VS Code",
+      instructions: ["Add this configuration to your VS Code settings:", "Settings → Extensions → MCP → Server Configuration"],
+    },
+  ];
 
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
@@ -81,10 +119,6 @@ export default function BundleDetailPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Bundles
         </Button>
-        <Badge variant="outline" className="text-sm">
-          <Package className="h-3 w-3 mr-1" />
-          Active Bundle
-        </Badge>
       </div>
 
       {/* Bundle Information */}
@@ -166,6 +200,78 @@ export default function BundleDetailPage() {
               <span>{new Date(bundle.updated_at).toLocaleDateString()}</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* MCP Configuration for Different Editors */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Terminal className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">Quick Setup for Code Editors</CardTitle>
+            </div>
+            <Badge variant="secondary" className="text-xs">
+              HTTP Streaming MCP Server
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Copy and paste the configuration below into your preferred code editor to use this MCP server
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="cursor" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              {editorConfigs.map((editor) => (
+                <TabsTrigger key={editor.id} value={editor.id}>
+                  {editor.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {editorConfigs.map((editor) => {
+              const config = generateConfig(mcpUrl, bundle.name, editor.id);
+              const configId = `${editor.id}-config`;
+              
+              return (
+                <TabsContent key={editor.id} value={editor.id} className="space-y-3">
+                  <div className="text-sm text-muted-foreground">
+                    <p>
+                      {editor.id === "claude-code" ? (
+                        <>Add this configuration to your <code className="text-xs bg-muted px-1 py-0.5 rounded">.mcp.json</code> file in your project root:</>
+                      ) : (
+                        editor.instructions[0]
+                      )}
+                    </p>
+                    {editor.instructions[1] && <p className="mt-1">{editor.instructions[1]}</p>}
+                  </div>
+                  <div className="relative">
+                    <pre className="bg-muted/50 border rounded-lg p-4 overflow-x-auto text-xs">
+                      <code>{config}</code>
+                    </pre>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => handleCopy(config, configId)}
+                    >
+                      {copiedField === configId ? (
+                        <>
+                          <Check className="h-3 w-3 mr-1 text-green-600" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </TabsContent>
+              );
+            })}
+          </Tabs>
         </CardContent>
       </Card>
 

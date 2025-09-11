@@ -178,9 +178,6 @@ export default function MCPConfigurationDetailPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Configurations
         </Button>
-        <Badge variant="outline" className="text-sm">
-          Active Configuration
-        </Badge>
       </div>
 
       {/* Configuration Overview */}
