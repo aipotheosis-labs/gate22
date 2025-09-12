@@ -351,6 +351,9 @@ async def list_connected_accounts(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
     config_id: Annotated[list[UUID] | None, Query()] = None,
+    # Now used `config_id` for shorter query string. Can rename it back to
+    # `mcp_server_configuration_id` later.
+    # Used Singular key form instead of plural as a common practice for array type query parameters.
 ) -> PaginationResponse[ConnectedAccountPublic]:
     input_mcp_server_configuration_ids = config_id
     if context.act_as.role == OrganizationRole.ADMIN:
