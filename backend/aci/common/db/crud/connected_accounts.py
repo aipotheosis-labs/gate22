@@ -159,6 +159,7 @@ def get_org_member_accessible_connected_accounts_by_mcp_server_configuration_ids
 def get_connected_accounts_by_organization_id(
     db_session: Session,
     organization_id: UUID,
+    mcp_server_configuration_ids: list[UUID] | None = None,
     offset: int | None = None,
     limit: int | None = None,
 ) -> list[ConnectedAccount]:
@@ -168,6 +169,10 @@ def get_connected_accounts_by_organization_id(
         .where(MCPServerConfiguration.organization_id == organization_id)
         .order_by(ConnectedAccount.created_at.desc())
     )
+    if mcp_server_configuration_ids is not None:
+        statement = statement.where(
+            ConnectedAccount.mcp_server_configuration_id.in_(mcp_server_configuration_ids)
+        )
     if offset is not None:
         statement = statement.offset(offset)
     if limit is not None:

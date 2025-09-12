@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from authlib.jose import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -350,12 +350,15 @@ async def oauth2_callback(
 async def list_connected_accounts(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
+    config_id: Annotated[list[UUID] | None, Query()] = None,
 ) -> PaginationResponse[ConnectedAccountPublic]:
+    input_mcp_server_configuration_ids = config_id
     if context.act_as.role == OrganizationRole.ADMIN:
         # Admin can see all connected accounts of the organization
         connected_accounts = crud.connected_accounts.get_connected_accounts_by_organization_id(
             context.db_session,
             context.act_as.organization_id,
+            mcp_server_configuration_ids=input_mcp_server_configuration_ids,
             offset=pagination_params.offset,
             limit=pagination_params.limit,
         )
@@ -377,6 +380,15 @@ async def list_connected_accounts(
                 mcp_server_configuration.id
                 for mcp_server_configuration in accessible_configurations
             ]
+
+            # If user provided `config_ids` to filter for, intersect it with
+            # accessible_mcp_server_configuration_ids to get the actual effective
+            # mcp_server_configuration_ids
+            if input_mcp_server_configuration_ids is not None:
+                accessible_mcp_server_configuration_ids = list(
+                    set(accessible_mcp_server_configuration_ids)
+                    & set(input_mcp_server_configuration_ids)
+                )
 
             # Fetch connected accounts that the user has access to
             connected_accounts = crud.connected_accounts.get_org_member_accessible_connected_accounts_by_mcp_server_configuration_ids(  # noqa: E501

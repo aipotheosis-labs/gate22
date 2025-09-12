@@ -1,4 +1,6 @@
 import enum
+from typing import Any
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -158,18 +160,37 @@ def test_create_connected_account_ownership(
         "dummy_access_token_admin_act_as_member",
     ],
 )
+@pytest.mark.parametrize("with_config_id", [True, False])
 @pytest.mark.parametrize("offset", [None, 0, 10])
 def test_list_connected_accounts(
     test_client: TestClient,
     request: pytest.FixtureRequest,
     access_token_fixture: str,
+    with_config_id: bool,
     dummy_user: User,
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
+    dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
     dummy_connected_accounts: list[ConnectedAccount],
     offset: int | None,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
 
-    params = {}
+    """
+    - dummy_user connected to dummy_mcp_server_configuration_github
+    - dummy_user connected to dummy_mcp_server_configuration_notion
+    - dummy_another_org_member connected to dummy_mcp_server_configuration_github
+    - dummy_another_org_member connected to dummy_mcp_server_configuration_shared as shared account
+    """
+
+    requested_config_ids = [
+        dummy_mcp_server_configuration_github.id,
+        dummy_mcp_server_configuration_gmail_shared.id,
+        uuid4(),  # random config_id
+    ]
+
+    params: dict[str, Any] = {}
+    if with_config_id:
+        params["config_id"] = requested_config_ids
     if offset is not None:
         params["offset"] = offset
 
@@ -189,31 +210,40 @@ def test_list_connected_accounts(
 
     assert paginated_response.offset == (offset if offset is not None else 0)
 
-    """
-    - dummy_user connected to dummy_mcp_server_configuration_github
-    - dummy_user connected to dummy_mcp_server_configuration_notion
-    - dummy_another_org_member connected to dummy_mcp_server_configuration_github
-    - dummy_another_org_member connected to dummy_mcp_server_configuration_shared as shared account
-    """
-
     if offset is None or offset == 0:
         if access_token_fixture == "dummy_access_token_admin":
-            # Should see all the connected accounts in the organization
-            assert response.status_code == 200
-            assert len(paginated_response.data) == len(dummy_connected_accounts)
+            if with_config_id:
+                # Should filter by valid requested config_ids
+                assert response.status_code == 200
+                assert len(paginated_response.data) == 3  # 1 shared account + 2 github accounts
+            else:
+                # Should see all the connected accounts in the organization
+                assert response.status_code == 200
+                assert len(paginated_response.data) == len(dummy_connected_accounts)
 
         elif access_token_fixture in [
             "dummy_access_token_member",
             "dummy_access_token_admin_act_as_member",
         ]:
-            # Should only see the 2 connected accounts + 1 shared account
-            assert response.status_code == 200
-            assert len(paginated_response.data) == 3
-            for response_item in paginated_response.data:
-                assert (
-                    response_item.user_id == dummy_user.id
-                    or response_item.ownership == ConnectedAccountOwnership.SHARED
-                )
+            if with_config_id:
+                # Should see 1 own connected github account + 1 shared account
+                assert response.status_code == 200
+                assert len(paginated_response.data) == 2  #
+                for response_item in paginated_response.data:
+                    assert (
+                        response_item.user_id == dummy_user.id
+                        or response_item.ownership == ConnectedAccountOwnership.SHARED
+                    )
+
+            else:
+                # Should see 2 own connected accounts + 1 shared account
+                assert response.status_code == 200
+                assert len(paginated_response.data) == 3
+                for response_item in paginated_response.data:
+                    assert (
+                        response_item.user_id == dummy_user.id
+                        or response_item.ownership == ConnectedAccountOwnership.SHARED
+                    )
         else:
             raise Exception("Untested access token fixture")
     else:
