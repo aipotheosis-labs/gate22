@@ -216,8 +216,14 @@ export function CreateMCPConfigurationDialog() {
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(currentStep)) {
-      toast.error("Please complete all required fields");
+    // Validate all required steps regardless of current step
+    if (!validateStep(ConfigurationStep.BASIC_INFO)) {
+      toast.error("Please complete Basic Info step");
+      return;
+    }
+
+    if (!validateStep(ConfigurationStep.AUTHENTICATION)) {
+      toast.error("Please complete Authentication step");
       return;
     }
 
@@ -296,6 +302,22 @@ export function CreateMCPConfigurationDialog() {
       setSelectedAuthType(selectedServer.supported_auth_types[0]);
     }
   }, [selectedServer, selectedAuthType]);
+
+  // Reconcile tool selection when server changes
+  useEffect(() => {
+    if (selectedServer) {
+      // Filter out tools that don't exist on the new server
+      setSelectedTools((prev) =>
+        prev.filter((id) =>
+          (selectedServer.tools ?? []).some((t) => t.id === id),
+        ),
+      );
+      // If the server has no tools, force-enable "all tools"
+      if ((selectedServer.tools?.length ?? 0) === 0) {
+        setAllToolsEnabled(true);
+      }
+    }
+  }, [selectedServer]);
 
   const renderStepContent = () => {
     switch (currentStep) {
