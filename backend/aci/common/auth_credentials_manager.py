@@ -8,6 +8,7 @@ from aci.common.db.sql_models import (
     MCPServer,
     MCPServerConfiguration,
 )
+from aci.common.enums import ConnectedAccountOwnership
 from aci.common.exceptions import AuthCredentialsManagerError
 from aci.common.logging_setup import get_logger
 from aci.common.oauth2_manager import OAuth2Manager
@@ -215,6 +216,7 @@ async def get_auth_credentials(
     db_session: Session,
     user_id: UUID,
     mcp_server_configuration_id: UUID,
+    connected_account_ownership: ConnectedAccountOwnership,
 ) -> AuthCredentials:
     """
     Get the auth credentials. (part of the connected account)
@@ -223,16 +225,22 @@ async def get_auth_credentials(
     logger.info(
         f"Getting auth credentials, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
     )
-    connected_account = (
-        crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(
+    if connected_account_ownership == ConnectedAccountOwnership.SHARED:
+        connected_account = (
+            crud.connected_accounts.get_shared_connected_account_by_mcp_server_configuration_id(
+                db_session,
+                mcp_server_configuration_id,
+            )
+        )
+    elif connected_account_ownership == ConnectedAccountOwnership.INDIVIDUAL:
+        connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
             db_session,
             user_id,
             mcp_server_configuration_id,
         )
-    )
     if connected_account is None:
         logger.error(
-            f"Connected account not found, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
+            f"Connected account not found, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}, ownership={connected_account_ownership}"  # noqa: E501
         )
         raise AuthCredentialsManagerError("Connected account not found")
 

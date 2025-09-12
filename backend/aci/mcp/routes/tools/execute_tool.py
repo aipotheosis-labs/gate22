@@ -102,6 +102,7 @@ async def handle_execute_tool(
             db_session,
             mcp_server_bundle.user_id,
             mcp_server_configuration.id,
+            mcp_server_configuration.connected_account_ownership,
         )
         # TODO: need to commit because get_auth_credentials might update the auth credentials
         # consider making the logic here more explicit?
