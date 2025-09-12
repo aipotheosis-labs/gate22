@@ -74,6 +74,7 @@ jobs:
       # Register Task Definition in AWS
       - name: Register Task Definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        id: register-task-definition
         with:
           task-definition: ${{ steps.update-task-definition.outputs.task-definition }} # Path to the task definition JSON file
 
@@ -82,7 +83,7 @@ jobs:
         id: run-migration-task
         run: |
           TASK_ARN=$(aws ecs run-task \
-            --task-definition ${{ inputs.ecs_task_definition }} \
+            --task-definition ${{ steps.register-task-definition.outputs.task-definition-arn }} \
             --cluster ${{ inputs.ecs_cluster }} \
             --launch-type="FARGATE" \
             --network-configuration '${{ steps.get-network-config.outputs.NETWORK_CONFIG }}' \
