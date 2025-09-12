@@ -42,10 +42,6 @@ class ConnectedAccountOAuth2CreateState(BaseModel):
     # TODO: add expires at?
 
 
-class ConnectedAccountListRequest(BaseModel):
-    mcp_server_configuration_ids: list[UUID] | None = None
-
-
 class ConnectedAccountPublic(BaseModel):
     id: UUID
     user_id: UUID
