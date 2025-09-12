@@ -71,7 +71,7 @@ async def _generate_tools_async(mcp_server_name: str) -> None:
             db_session,
             connected_account.user_id,
             mcp_server_configuration.id,
-            mcp_server_configuration.connected_account_ownership,
+            connected_account.ownership,  # Use the ownership type of whatever account we retrieved
         )
         db_session.commit()
 
