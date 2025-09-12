@@ -82,14 +82,21 @@ jobs:
       - name: Run Database Migration Task
         id: run-migration-task
         run: |
-          TASK_ARN=$(aws ecs run-task \
+          RESP_JSON=$(aws ecs run-task \
             --task-definition ${{ steps.register-task-definition.outputs.task-definition-arn }} \
             --cluster ${{ inputs.ecs_cluster }} \
             --launch-type="FARGATE" \
             --network-configuration '${{ steps.get-network-config.outputs.NETWORK_CONFIG }}' \
             --count 1 \
-            --query 'tasks[0].taskArn' \
-            --output text)
+            --output json)
+
+          echo "$RESP_JSON" | jq -e '.failures | length == 0' >/dev/null || {
+            echo "ECS run-task failed:"
+            echo "$RESP_JSON" | jq '.failures'
+            exit 1
+          }
+
+          TASK_ARN=$(echo $RESP_JSON | jq -r '.tasks[0].taskArn')
           echo "TASK_ARN=${TASK_ARN}" >> $GITHUB_OUTPUT
 
       # Wait for migration task to finish successfully
