@@ -31,3 +31,6 @@ DB_FULL_URL = construct_db_url(DB_SCHEME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 # LLM
 OPENAI_API_KEY = check_and_get_env_variable("MCP_OPENAI_API_KEY")
+
+# 8KB
+MAX_LOG_FIELD_SIZE = 8 * 1024

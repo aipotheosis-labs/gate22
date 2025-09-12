@@ -7,6 +7,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from aci.common.logging_setup import get_logger
+from aci.mcp import config
 from aci.mcp.context import request_id_ctx_var
 
 logger = get_logger(__name__)
@@ -34,6 +35,7 @@ class InterceptorMiddleware(BaseHTTPMiddleware):
                 "url": str(request.url),
                 "url_schema": request.url.scheme,
                 "query_params": dict(request.query_params),
+                "body": await self._get_request_body(request),
                 "client_ip": self._get_client_ip(
                     request
                 ),  # TODO: get from request.client.host if request.client else "unknown"
@@ -78,6 +80,24 @@ class InterceptorMiddleware(BaseHTTPMiddleware):
 
         else:
             return request.client.host if request.client else "unknown"
+
+    async def _get_request_body(self, request: Request) -> str | None:
+        if request.method != "POST":
+            return None
+        try:
+            request_body_bytes = await request.body()
+            # TODO: reconsider size limit
+            if len(request_body_bytes) > config.MAX_LOG_FIELD_SIZE:
+                return (
+                    request_body_bytes[: config.MAX_LOG_FIELD_SIZE - 100].decode(
+                        "utf-8", errors="replace"
+                    )
+                    + f"... [truncated, size={len(request_body_bytes)}]"
+                )
+            return request_body_bytes.decode("utf-8", errors="replace")
+        except Exception:
+            logger.exception("Error decoding request body")
+            return "error decoding request body"
 
 
 class RequestContextFilter(logging.Filter):
