@@ -2,11 +2,9 @@ name: Backend ECS Deployment
 on:
   workflow_dispatch: # For manual deployment
   push:
-    branches:
-      - chore/adding-cicd-for-ecs-deployment
-    # tags:
-    #   - "[0-9]+.[0-9]+.[0-9]+" # 1.2.3
-    #   - "[0-9]+.[0-9]+.[0-9]+-*" # 1.2.3-beta.1 / -hotfix
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+" # 1.2.3
+      - "[0-9]+.[0-9]+.[0-9]+-*" # 1.2.3-beta.1 / -hotfix
     # TODO: consider only trigger on main branch?
 
 jobs:
