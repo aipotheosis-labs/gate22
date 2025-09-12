@@ -29,6 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
 
 const columnHelper = createColumnHelper<ConnectedAccount>();
 
@@ -88,27 +90,11 @@ export default function ConnectedAccountsPage() {
 
   const columns: ColumnDef<ConnectedAccount>[] = useMemo(() => {
     return [
-      columnHelper.accessor("id", {
-        id: "account_id",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">CONNECTED ACCOUNT ID</span>
-          </div>
-        ),
-        cell: (info) => {
-          const id = info.getValue();
-          return (
-            <div className="font-mono text-xs text-muted-foreground">{id}</div>
-          );
-        },
-        enableGlobalFilter: true,
-      }),
-
       columnHelper.accessor("user", {
         id: "user",
         header: () => (
           <div className="flex items-center justify-start">
-            <span className="text-left font-normal">USER</span>
+            <span className="text-left font-normal">ACCOUNT USER</span>
           </div>
         ),
         cell: (info) => {
@@ -117,6 +103,30 @@ export default function ConnectedAccountsPage() {
             <div className="text-sm text-muted-foreground">
               {user?.name || "-"}
             </div>
+          );
+        },
+        enableGlobalFilter: true,
+      }),
+
+      columnHelper.accessor("ownership", {
+        id: "ownership_type",
+        header: () => (
+          <div className="flex items-center justify-start">
+            <span className="text-left font-normal whitespace-nowrap">
+              ACCOUNT TYPE
+            </span>
+          </div>
+        ),
+        cell: (info) => {
+          const ownership = info.getValue() as ConnectedAccountOwnership;
+          if (!ownership) return null;
+
+          return (
+            <Badge variant="outline">
+              {ownership === ConnectedAccountOwnership.INDIVIDUAL
+                ? "Individual"
+                : "Shared"}
+            </Badge>
           );
         },
         enableGlobalFilter: true,
@@ -170,7 +180,7 @@ export default function ConnectedAccountsPage() {
               onClick={() =>
                 column.toggleSorting(column.getIsSorted() === "asc")
               }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
+              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0 whitespace-nowrap"
             >
               CREATED
               <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -197,9 +207,9 @@ export default function ConnectedAccountsPage() {
               onClick={() =>
                 column.toggleSorting(column.getIsSorted() === "asc")
               }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
+              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0 whitespace-nowrap"
             >
-              LAST UPDATED
+              UPDATED
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </div>

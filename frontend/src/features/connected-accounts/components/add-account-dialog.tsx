@@ -54,8 +54,12 @@ import {
 } from "@/features/mcp/hooks/use-mcp-servers";
 import { useCreateConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerConfigurationPublicBasic } from "@/features/mcp/types/mcp.types";
-import { AuthType } from "@/features/mcp/types/mcp.types";
+import {
+  AuthType,
+  ConnectedAccountOwnership,
+} from "@/features/mcp/types/mcp.types";
 import { OAuth2ConnectedAccountResponse } from "@/features/connected-accounts/api/connectedaccount";
+import { useRole } from "@/hooks/use-permissions";
 
 const formSchema = z.object({
   mcpServerConfigurationId: z
@@ -89,10 +93,33 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
   const { mutateAsync: createAccount, isPending: isCreating } =
     useCreateConnectedAccount();
 
-  const mcpConfigurations = useMemo(
-    () => mcpConfigurationsResponse?.data || [],
-    [mcpConfigurationsResponse],
-  );
+  const { activeRole } = useRole();
+  const isActingAsAdmin = activeRole === "admin";
+  const isActingAsMember = activeRole === "member";
+
+  const mcpConfigurations = useMemo(() => {
+    const allConfigurations = mcpConfigurationsResponse?.data || [];
+
+    // Filter configurations based on active role (considering "view as" functionality)
+    return allConfigurations.filter((config) => {
+      // Admin role: Can only create Shared ConnectedAccounts
+      if (isActingAsAdmin) {
+        return (
+          config.connected_account_ownership ===
+          ConnectedAccountOwnership.SHARED
+        );
+      }
+      // Member role: Can only create Individual ConnectedAccounts
+      if (isActingAsMember) {
+        return (
+          config.connected_account_ownership ===
+          ConnectedAccountOwnership.INDIVIDUAL
+        );
+      }
+      // Default: show all if role is not determined
+      return true;
+    });
+  }, [mcpConfigurationsResponse, isActingAsAdmin, isActingAsMember]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -275,7 +302,13 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                           className="h-9"
                         />
                         <CommandList>
-                          <CommandEmpty>No configuration found.</CommandEmpty>
+                          <CommandEmpty>
+                            {isActingAsAdmin
+                              ? "No shared configurations found."
+                              : isActingAsMember
+                                ? "No individual configurations found."
+                                : "No configuration found."}
+                          </CommandEmpty>
                           <CommandGroup>
                             {mcpConfigurations?.map((config) => (
                               <CommandItem

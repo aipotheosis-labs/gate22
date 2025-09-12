@@ -19,6 +19,8 @@ import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { usePermission } from "@/hooks/use-permissions";
 import { Shield } from "lucide-react";
 import { DeleteConfigurationDialog } from "@/features/mcp/components/delete-configuration-dialog";
+import { Badge } from "@/components/ui/badge";
+import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
 
 const columnHelper = createColumnHelper<MCPServerConfigurationPublicBasic>();
 
@@ -67,24 +69,6 @@ export default function MCPConfigurationPage() {
   const columns: ColumnDef<MCPServerConfigurationPublicBasic>[] =
     useMemo(() => {
       return [
-        columnHelper.accessor("id", {
-          id: "configuration_id",
-          header: () => (
-            <div className="flex items-center justify-start">
-              <span className="text-left font-normal">CONFIGURATION ID</span>
-            </div>
-          ),
-          cell: (info) => {
-            const id = info.getValue();
-            return (
-              <div className="font-mono text-xs text-muted-foreground">
-                {id}
-              </div>
-            );
-          },
-          enableGlobalFilter: true,
-        }),
-
         columnHelper.accessor("name", {
           id: "configuration_name",
           header: () => (
@@ -133,6 +117,28 @@ export default function MCPConfigurationPage() {
                 )}
                 <div className="font-medium">{name}</div>
               </div>
+            );
+          },
+          enableGlobalFilter: true,
+        }),
+
+        columnHelper.accessor("connected_account_ownership", {
+          id: "configuration_type",
+          header: () => (
+            <div className="flex items-center justify-start">
+              <span className="text-left font-normal">TYPE</span>
+            </div>
+          ),
+          cell: (info) => {
+            const type = info.getValue() as ConnectedAccountOwnership;
+            if (!type) return null;
+
+            return (
+              <Badge variant="outline">
+                {type === ConnectedAccountOwnership.INDIVIDUAL
+                  ? "Individual"
+                  : "Shared"}
+              </Badge>
             );
           },
           enableGlobalFilter: true,

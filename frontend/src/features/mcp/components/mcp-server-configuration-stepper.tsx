@@ -37,6 +37,7 @@ import {
   MCPServerPublic,
   MCPServerConfigurationCreate,
   AuthType,
+  ConnectedAccountOwnership,
 } from "../types/mcp.types";
 import { useCreateMCPServerConfiguration } from "../hooks/use-mcp-servers";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ import {
   getAuthTypeDescription,
   getAuthTypeDetailedInfo,
 } from "@/utils/auth-labels";
+import { getConfigurationTypeDetailedInfo } from "@/utils/configuration-labels";
 
 interface MCPServerConfigurationStepperProps {
   isOpen: boolean;
@@ -60,7 +62,8 @@ interface MCPServerConfigurationStepperProps {
 // Define the stepper outside the component
 const { useStepper, steps } = defineStepper(
   { id: "general", label: "General" },
-  { id: "account", label: "Authentication" },
+  { id: "authentication", label: "Authentication" },
+  { id: "type", label: "Type" },
   { id: "tools", label: "Tools" },
   { id: "teams", label: "Teams" },
 );
@@ -78,6 +81,8 @@ export function MCPServerConfigurationStepper({
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
     server?.supported_auth_types?.[0] || AuthType.NO_AUTH,
   );
+  const [configurationType, setConfigurationType] =
+    useState<ConnectedAccountOwnership>(ConnectedAccountOwnership.INDIVIDUAL);
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [toolSearchQuery, setToolSearchQuery] = useState("");
@@ -96,6 +101,7 @@ export function MCPServerConfigurationStepper({
       setName("");
       setNameError("");
       setDescription("");
+      setConfigurationType(ConnectedAccountOwnership.INDIVIDUAL);
       setSelectedTools(new Set());
       setToolSearchQuery("");
       setSelectedTeams(new Set());
@@ -158,6 +164,7 @@ export function MCPServerConfigurationStepper({
       name: name.trim(),
       description: description.trim() || undefined,
       auth_type: selectedAuthType,
+      connected_account_ownership: configurationType,
       all_tools_enabled: allToolsEnabled,
       enabled_tools: allToolsEnabled ? [] : Array.from(selectedTools),
       allowed_teams: Array.from(selectedTeams),
@@ -181,13 +188,18 @@ export function MCPServerConfigurationStepper({
   const isStepValid = (stepId: string) => {
     switch (stepId) {
       case "general":
+        // Only name is required in general step
         return !!name.trim();
-      case "account":
+      case "authentication":
+        // Authentication must be selected if available
         return (
           !server?.supported_auth_types ||
           server.supported_auth_types.length === 0 ||
           selectedAuthType !== undefined
         );
+      case "type":
+        // Configuration type is always valid (has default value)
+        return !!configurationType;
       case "tools":
         return allToolsEnabled || selectedTools.size > 0;
       case "teams":
@@ -225,7 +237,6 @@ export function MCPServerConfigurationStepper({
                         Provide a name and description for this configuration
                       </p>
                     </div>
-
                     <div className="space-y-3">
                       <div className="px-1 space-y-2">
                         <Label htmlFor="config-name">
@@ -262,7 +273,7 @@ export function MCPServerConfigurationStepper({
                   </div>
                 )}
 
-                {stepper.current.id === "account" && (
+                {stepper.current.id === "authentication" && (
                   <div className="space-y-4">
                     <div className="px-1">
                       <h3 className="text-sm font-medium mb-1">
@@ -294,10 +305,13 @@ export function MCPServerConfigurationStepper({
                         {server.supported_auth_types.map((authType) => (
                           <label
                             key={authType}
-                            htmlFor={authType}
+                            htmlFor={`auth-${authType}`}
                             className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
                           >
-                            <RadioGroupItem value={authType} id={authType} />
+                            <RadioGroupItem
+                              value={authType}
+                              id={`auth-${authType}`}
+                            />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">
@@ -326,6 +340,63 @@ export function MCPServerConfigurationStepper({
                         ))}
                       </RadioGroup>
                     )}
+                  </div>
+                )}
+
+                {stepper.current.id === "type" && (
+                  <div className="space-y-4">
+                    <div className="px-1">
+                      <h3 className="text-sm font-medium mb-1">
+                        Connected Account Type
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Choose how this configuration will be used in your
+                        organization
+                      </p>
+                    </div>
+
+                    <RadioGroup
+                      value={configurationType}
+                      onValueChange={(value) =>
+                        setConfigurationType(value as ConnectedAccountOwnership)
+                      }
+                      className="space-y-1.5 px-1"
+                    >
+                      <label
+                        htmlFor="stepper-individual"
+                        className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value={ConnectedAccountOwnership.INDIVIDUAL}
+                          id="stepper-individual"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">Individual</div>
+                          <p className="text-xs text-muted-foreground">
+                            {getConfigurationTypeDetailedInfo(
+                              ConnectedAccountOwnership.INDIVIDUAL,
+                            )}
+                          </p>
+                        </div>
+                      </label>
+                      <label
+                        htmlFor="stepper-shared"
+                        className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                      >
+                        <RadioGroupItem
+                          value={ConnectedAccountOwnership.SHARED}
+                          id="stepper-shared"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">Shared</div>
+                          <p className="text-xs text-muted-foreground">
+                            {getConfigurationTypeDetailedInfo(
+                              ConnectedAccountOwnership.SHARED,
+                            )}
+                          </p>
+                        </div>
+                      </label>
+                    </RadioGroup>
                   </div>
                 )}
 

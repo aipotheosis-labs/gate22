@@ -4,6 +4,11 @@ export enum AuthType {
   NO_AUTH = "no_auth",
 }
 
+export enum ConnectedAccountOwnership {
+  INDIVIDUAL = "individual",
+  SHARED = "shared",
+}
+
 export interface AuthConfig {
   type: AuthType;
   [key: string]: unknown;
@@ -52,6 +57,7 @@ export interface MCPServerConfigurationCreate {
   name: string;
   description?: string;
   auth_type: AuthType;
+  connected_account_ownership: ConnectedAccountOwnership;
   all_tools_enabled: boolean;
   enabled_tools: string[];
   allowed_teams: string[];
@@ -72,6 +78,7 @@ export interface MCPServerConfigurationPublic {
   name: string;
   description?: string;
   auth_type: AuthType;
+  connected_account_ownership: ConnectedAccountOwnership;
   all_tools_enabled: boolean;
   enabled_tools: MCPToolBasic[];
   allowed_teams: TeamInfo[];
@@ -85,6 +92,7 @@ export interface MCPServerConfigurationPublicBasic {
   mcp_server_id: string;
   name: string;
   description?: string;
+  connected_account_ownership?: ConnectedAccountOwnership;
   mcp_server: MCPServerPublicBasic;
   created_at?: string;
   updated_at?: string;

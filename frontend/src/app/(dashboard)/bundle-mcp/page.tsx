@@ -128,17 +128,22 @@ export default function BundleMCPPage() {
           const id = info.getValue();
           const baseUrl = getMcpBaseUrl();
           const url = `${baseUrl}/mcp?bundle_id=${id}`;
+          // Show shortened version: ...?bundle_id={id}
+          const displayUrl = `...?bundle_id=${id}`;
           return (
-            <div className="flex items-center gap-2">
-              <div className="font-mono text-xs text-muted-foreground truncate max-w-md">
-                {url}
+            <div className="flex items-center gap-1">
+              <div
+                className="font-mono text-xs text-muted-foreground truncate max-w-[200px]"
+                title={url}
+              >
+                {displayUrl}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleCopyUrl(id)}
-                className="h-6 w-6 p-0"
-                title="Copy MCP URL"
+                className="h-6 w-6 p-0 shrink-0"
+                title="Copy full MCP URL"
               >
                 {copiedBundleId === id ? (
                   <Check className="h-3 w-3 text-green-600" />
