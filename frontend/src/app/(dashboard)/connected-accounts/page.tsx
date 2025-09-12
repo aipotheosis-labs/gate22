@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
+import { getOwnershipLabel } from "@/utils/configuration-labels";
 
 const columnHelper = createColumnHelper<ConnectedAccount>();
 
@@ -92,41 +93,23 @@ export default function ConnectedAccountsPage() {
     return [
       columnHelper.accessor("user", {
         id: "user",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">ACCOUNT USER</span>
-          </div>
-        ),
+        header: () => "ACCOUNT USER",
         cell: (info) => {
           const user = info.getValue();
-          return (
-            <div className="text-sm text-muted-foreground">
-              {user?.name || "-"}
-            </div>
-          );
+          return <div className="text-sm">{user?.name || "-"}</div>;
         },
         enableGlobalFilter: true,
       }),
 
       columnHelper.accessor("ownership", {
         id: "ownership_type",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal whitespace-nowrap">
-              ACCOUNT TYPE
-            </span>
-          </div>
-        ),
+        header: () => "ACCOUNT TYPE",
         cell: (info) => {
           const ownership = info.getValue() as ConnectedAccountOwnership;
           if (!ownership) return null;
 
           return (
-            <Badge variant="outline">
-              {ownership === ConnectedAccountOwnership.INDIVIDUAL
-                ? "Individual"
-                : "Shared"}
-            </Badge>
+            <Badge variant="outline">{getOwnershipLabel(ownership)}</Badge>
           );
         },
         enableGlobalFilter: true,
@@ -134,11 +117,7 @@ export default function ConnectedAccountsPage() {
 
       columnHelper.accessor("mcp_server_configuration_id", {
         id: "configured_mcp_server",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">MCP SERVER</span>
-          </div>
-        ),
+        header: () => "MCP SERVER",
         cell: (info) => {
           const configId = info.getValue();
           const config = mcpConfigMap[configId];
@@ -174,26 +153,17 @@ export default function ConnectedAccountsPage() {
       columnHelper.accessor("created_at", {
         id: "created_at",
         header: ({ column }) => (
-          <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0 whitespace-nowrap"
-            >
-              CREATED
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 hover:text-foreground/80 transition-colors"
+          >
+            <span>CREATED</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
         ),
         cell: (info) => {
           const dateString = info.getValue();
-          return (
-            <div className="text-sm text-muted-foreground">
-              {formatToLocalTime(dateString)}
-            </div>
-          );
+          return <div className="text-sm">{formatToLocalTime(dateString)}</div>;
         },
         enableGlobalFilter: false,
       }),
@@ -201,37 +171,24 @@ export default function ConnectedAccountsPage() {
       columnHelper.accessor("updated_at", {
         id: "updated_at",
         header: ({ column }) => (
-          <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0 whitespace-nowrap"
-            >
-              UPDATED
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 hover:text-foreground/80 transition-colors"
+          >
+            <span>UPDATED</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
         ),
         cell: (info) => {
           const dateString = info.getValue();
-          return (
-            <div className="text-sm text-muted-foreground">
-              {formatToLocalTime(dateString)}
-            </div>
-          );
+          return <div className="text-sm">{formatToLocalTime(dateString)}</div>;
         },
         enableGlobalFilter: false,
       }),
 
       columnHelper.accessor((row) => row, {
         id: "actions",
-        header: () => (
-          <div className="flex items-center justify-end">
-            <span className="text-left font-normal">ACTIONS</span>
-          </div>
-        ),
+        header: () => <div className="flex justify-end">ACTIONS</div>,
         cell: (info) => {
           const account = info.getValue();
           const config = mcpConfigMap[account.mcp_server_configuration_id];

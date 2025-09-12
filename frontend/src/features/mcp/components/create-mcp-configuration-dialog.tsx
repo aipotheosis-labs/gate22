@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -274,7 +274,7 @@ export function CreateMCPConfigurationDialog() {
   };
 
   // When server changes, reset auth type if it's not supported
-  useMemo(() => {
+  useEffect(() => {
     if (
       selectedServer &&
       selectedAuthType &&
@@ -287,7 +287,7 @@ export function CreateMCPConfigurationDialog() {
   }, [selectedServer, selectedAuthType]);
 
   // Set default auth type when server is selected
-  useMemo(() => {
+  useEffect(() => {
     if (
       selectedServer &&
       !selectedAuthType &&

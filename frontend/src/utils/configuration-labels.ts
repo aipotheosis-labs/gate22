@@ -5,6 +5,22 @@ import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
  */
 
 /**
+ * Get display label for ownership type
+ */
+export const getOwnershipLabel = (
+  ownership: ConnectedAccountOwnership | undefined | null,
+): string => {
+  switch (ownership) {
+    case ConnectedAccountOwnership.INDIVIDUAL:
+      return "Individual";
+    case ConnectedAccountOwnership.SHARED:
+      return "Shared";
+    default:
+      return "Unknown";
+  }
+};
+
+/**
  * Get detailed information/tooltip content for connected account type
  */
 export const getConfigurationTypeDetailedInfo = (

@@ -82,11 +82,7 @@ export default function BundleMCPPage() {
     return [
       columnHelper.accessor("name", {
         id: "name",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">NAME</span>
-          </div>
-        ),
+        header: () => "NAME",
         cell: (info) => {
           const name = info.getValue();
           return (
@@ -101,29 +97,17 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("user", {
         id: "user",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">USER</span>
-          </div>
-        ),
+        header: () => "USER",
         cell: (info) => {
           const user = info.getValue();
-          return (
-            <div className="text-sm text-muted-foreground">
-              {user?.name || "-"}
-            </div>
-          );
+          return <div className="text-sm">{user?.name || "-"}</div>;
         },
         enableGlobalFilter: true,
       }),
 
       columnHelper.accessor("id", {
         id: "mcp_url",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">MCP URL</span>
-          </div>
-        ),
+        header: () => "MCP URL",
         cell: (info) => {
           const id = info.getValue();
           const baseUrl = getMcpBaseUrl();
@@ -133,7 +117,7 @@ export default function BundleMCPPage() {
           return (
             <div className="flex items-center gap-1">
               <div
-                className="font-mono text-xs text-muted-foreground truncate max-w-[200px]"
+                className="font-mono text-xs truncate max-w-[200px]"
                 title={url}
               >
                 {displayUrl}
@@ -159,11 +143,7 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("mcp_server_configurations", {
         id: "configurations",
-        header: () => (
-          <div className="flex items-center justify-start">
-            <span className="text-left font-normal">CONFIGURATIONS</span>
-          </div>
-        ),
+        header: () => "CONFIGURATIONS",
         cell: (info) => {
           const configurations = info.getValue();
           const count = configurations?.length || 0;
@@ -179,24 +159,19 @@ export default function BundleMCPPage() {
       columnHelper.accessor("created_at", {
         id: "created_at",
         header: ({ column }) => (
-          <div className="flex items-center justify-start">
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === "asc")
-              }
-              className="p-0 h-auto text-left font-normal bg-transparent hover:bg-transparent focus:ring-0"
-            >
-              CREATED
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 hover:text-foreground/80 transition-colors"
+          >
+            <span>CREATED</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
         ),
         cell: (info) => {
           const dateString = info.getValue();
           return (
-            <div className="text-sm text-muted-foreground">
-              {formatToLocalTime(dateString)}
+            <div className="text-sm">
+              {dateString ? formatToLocalTime(dateString) : "-"}
             </div>
           );
         },
@@ -205,11 +180,7 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor((row) => row, {
         id: "actions",
-        header: () => (
-          <div className="flex items-center justify-end">
-            <span className="text-left font-normal">ACTIONS</span>
-          </div>
-        ),
+        header: () => <div className="flex justify-end">ACTIONS</div>,
         cell: (info) => {
           const bundle = info.getValue();
           return (

@@ -159,7 +159,7 @@ export default function MCPServersPage() {
             {filteredServers.map((server) => (
               <Card
                 key={server.id}
-                className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer min-h-[180px]"
+                className="flex flex-col hover:shadow-md transition-shadow cursor-pointer min-h-[180px]"
                 onClick={() => router.push(`/mcp-servers/${server.id}`)}
               >
                 <CardHeader className="flex flex-col flex-1 pb-2">

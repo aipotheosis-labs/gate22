@@ -41,13 +41,10 @@ export function ExpandableText({
         {text}
       </span>
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         onClick={() => setIsExpanded(!isExpanded)}
-        className={cn(
-          "h-auto p-0 text-xs font-normal text-muted-foreground hover:text-foreground",
-          expandButtonClassName,
-        )}
+        className={cn("h-6 px-2 text-xs font-normal", expandButtonClassName)}
       >
         {isExpanded ? (
           <>

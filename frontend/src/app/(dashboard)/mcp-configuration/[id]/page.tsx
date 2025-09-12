@@ -36,7 +36,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAuthTypeLabel, getAuthTypeDetailedInfo } from "@/utils/auth-labels";
-import { getConfigurationTypeDetailedInfo } from "@/utils/configuration-labels";
+import {
+  getConfigurationTypeDetailedInfo,
+  getOwnershipLabel,
+} from "@/utils/configuration-labels";
 import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
 
 export default function MCPConfigurationDetailPage() {
@@ -299,15 +302,16 @@ export default function MCPConfigurationDetailPage() {
               </label>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-sm font-medium">
-                  {configuration.connected_account_ownership ===
-                  ConnectedAccountOwnership.INDIVIDUAL
-                    ? "Individual"
-                    : "Shared"}
+                  {getOwnershipLabel(configuration.connected_account_ownership)}
                 </p>
                 {configuration.connected_account_ownership && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                      <HelpCircle
+                        className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-label="Connected account type information"
+                        tabIndex={0}
+                      />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p>
@@ -331,7 +335,11 @@ export default function MCPConfigurationDetailPage() {
                 </p>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                    <HelpCircle
+                      className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      aria-label="Authentication type information"
+                      tabIndex={0}
+                    />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>{getAuthTypeDetailedInfo(configuration.auth_type)}</p>

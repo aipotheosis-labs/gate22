@@ -210,7 +210,7 @@ export default function AvailableMCPServersPage() {
                 <Card
                   key={config.id}
                   className={cn(
-                    "relative group hover:shadow-lg transition-all cursor-pointer min-h-[240px]",
+                    "relative group hover:shadow-md transition-all cursor-pointer min-h-[240px]",
                     isSelected && "ring-1 ring-primary bg-primary/5",
                   )}
                   onClick={() => router.push(`/mcp-configuration/${config.id}`)}
