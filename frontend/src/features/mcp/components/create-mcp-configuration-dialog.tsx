@@ -521,10 +521,10 @@ export function CreateMCPConfigurationDialog() {
               </div>
             </div>
 
-            {!allToolsEnabled && selectedServer.tools.length > 0 && (
+            {!allToolsEnabled && (selectedServer.tools?.length ?? 0) > 0 && (
               <ScrollArea className="h-64 border rounded-md p-3">
                 <div className="space-y-2">
-                  {selectedServer.tools.map((tool) => (
+                  {(selectedServer.tools ?? []).map((tool) => (
                     <div key={tool.id} className="flex items-start space-x-2">
                       <Checkbox
                         id={tool.id}
@@ -550,7 +550,7 @@ export function CreateMCPConfigurationDialog() {
               </ScrollArea>
             )}
 
-            {selectedServer.tools.length === 0 && (
+            {(selectedServer.tools?.length ?? 0) === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No tools available for this server
               </div>
