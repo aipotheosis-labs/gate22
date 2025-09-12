@@ -92,7 +92,7 @@ export function MCPServerDetailModal({
                     <div className="font-medium text-sm">{tool}</div>
                     {server.tools.descriptions &&
                       server.tools.descriptions[index] && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
                           {server.tools.descriptions[index]}
                         </div>
                       )}

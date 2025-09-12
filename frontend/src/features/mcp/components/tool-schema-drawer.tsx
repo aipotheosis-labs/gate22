@@ -102,7 +102,7 @@ export function ToolSchemaDrawer({
             {tool.name}
           </SheetTitle>
           {tool.description && (
-            <SheetDescription className="text-sm leading-relaxed text-muted-foreground mt-2">
+            <SheetDescription className="text-sm leading-relaxed text-muted-foreground mt-2 whitespace-pre-wrap">
               {tool.description}
             </SheetDescription>
           )}

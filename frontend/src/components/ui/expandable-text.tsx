@@ -21,18 +21,24 @@ export function ExpandableText({
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Check if text is long enough to need expansion
-  // This is a simple heuristic - you might want to measure actual rendered height
-  const needsExpansion = text.length > 150; // Adjust threshold as needed
+  // Consider both character count and newlines
+  const lines = text.split("\n");
+  const needsExpansion = text.length > 150 || lines.length > maxLines;
 
   if (!needsExpansion) {
-    return <span className={className}>{text}</span>;
+    return (
+      <span className={cn(className, "whitespace-pre-wrap break-words")}>
+        {text}
+      </span>
+    );
   }
 
   return (
-    <div className="space-y-1">
+    <div>
       <span
         className={cn(
           className,
+          "whitespace-pre-wrap break-words",
           !isExpanded && maxLines === 2 && "line-clamp-2",
           !isExpanded && maxLines === 3 && "line-clamp-3",
           !isExpanded && maxLines === 1 && "line-clamp-1",
@@ -40,22 +46,24 @@ export function ExpandableText({
       >
         {text}
       </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={cn("h-6 px-2 text-xs font-normal", expandButtonClassName)}
-      >
-        {isExpanded ? (
-          <>
-            Show less <ChevronUp className="ml-1 h-3 w-3" />
-          </>
-        ) : (
-          <>
-            Show more <ChevronDown className="ml-1 h-3 w-3" />
-          </>
-        )}
-      </Button>
+      <div className="mt-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={cn("h-6 px-2 text-xs font-normal", expandButtonClassName)}
+        >
+          {isExpanded ? (
+            <>
+              Show less <ChevronUp className="ml-1 h-3 w-3" />
+            </>
+          ) : (
+            <>
+              Show more <ChevronDown className="ml-1 h-3 w-3" />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
