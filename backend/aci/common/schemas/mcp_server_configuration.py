@@ -107,3 +107,18 @@ class MCPServerConfigurationPublic(BaseModel):
     mcp_server: MCPServerPublic
 
     # TODO: scrub sensitive data from whitelabeling overrides if support in the future
+
+
+# Only used in the response of the List MCP server configurations endpoint.
+# Not using ConnectedAccountPublic schema here because it has cyclic references links back
+# toM CPServerConfigurationPublic.
+class AccessibleConnectedAccount(BaseModel):
+    id: UUID
+    user_id: UUID
+    mcp_server_configuration_id: UUID
+    ownership: ConnectedAccountOwnership
+
+
+# Only used in the response of the List MCP server configurations endpoint
+class MCPServerConfigurationPublicWithAccessibleConnectedAccount(MCPServerConfigurationPublic):
+    accessible_connected_account: AccessibleConnectedAccount | None

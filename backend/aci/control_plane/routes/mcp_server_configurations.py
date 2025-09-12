@@ -10,8 +10,10 @@ from aci.common.enums import ConnectedAccountOwnership, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server_configuration import (
+    AccessibleConnectedAccount,
     MCPServerConfigurationCreate,
     MCPServerConfigurationPublic,
+    MCPServerConfigurationPublicWithAccessibleConnectedAccount,
     MCPServerConfigurationUpdate,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
@@ -72,7 +74,9 @@ async def create_mcp_server_configuration(
 async def list_mcp_server_configurations(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
-) -> PaginationResponse[MCPServerConfigurationPublic]:
+) -> PaginationResponse[
+    MCPServerConfigurationPublic | MCPServerConfigurationPublicWithAccessibleConnectedAccount
+]:
     team_ids: list[UUID] | None
 
     if context.act_as.role == OrganizationRole.ADMIN:
@@ -96,13 +100,48 @@ async def list_mcp_server_configurations(
         team_ids=team_ids,
     )
 
-    return PaginationResponse[MCPServerConfigurationPublic](
-        data=[
-            schema_utils.construct_mcp_server_configuration_public(
-                context.db_session, mcp_server_configuration
+    output_list: list[
+        MCPServerConfigurationPublic | MCPServerConfigurationPublicWithAccessibleConnectedAccount
+    ] = []
+    for mcp_server_configuration in mcp_server_configurations:
+        output = schema_utils.construct_mcp_server_configuration_public(
+            context.db_session, mcp_server_configuration
+        )
+
+        if context.act_as.role == OrganizationRole.MEMBER:
+            if (
+                mcp_server_configuration.connected_account_ownership
+                == ConnectedAccountOwnership.INDIVIDUAL
+            ):
+                accessible_connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
+                    context.db_session,
+                    context.user_id,
+                    mcp_server_configuration.id,
+                )
+            else:
+                accessible_connected_account = crud.connected_accounts.get_shared_connected_account_by_by_mcp_server_configuration_id(  # noqa: E501
+                    context.db_session,
+                    mcp_server_configuration.id,
+                )
+            output_with_accessible_connected_account = (
+                MCPServerConfigurationPublicWithAccessibleConnectedAccount(
+                    **output.model_dump(),
+                    accessible_connected_account=AccessibleConnectedAccount.model_validate(
+                        accessible_connected_account, from_attributes=True
+                    )
+                    if accessible_connected_account
+                    else None,
+                )
             )
-            for mcp_server_configuration in mcp_server_configurations
-        ],
+            output_list.append(output_with_accessible_connected_account)
+        else:
+            # Admin should not see accessible connected account
+            output_list.append(output)
+
+    return PaginationResponse[
+        MCPServerConfigurationPublic | MCPServerConfigurationPublicWithAccessibleConnectedAccount
+    ](
+        data=output_list,
         offset=pagination_params.offset,
     )
 
