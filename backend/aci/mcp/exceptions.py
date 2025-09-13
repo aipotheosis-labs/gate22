@@ -124,3 +124,16 @@ class MCPToolNotEnabled(RemoteMCPException):
 
     def __init__(self, tool_name: str):
         super().__init__(title="MCP tool not enabled", message=f"MCP tool {tool_name} not enabled")
+
+
+class UnsupportedJSONRPCMethodError(RemoteMCPException):
+    def __init__(self, method: str, id: int | str | None = None):
+        super().__init__(title="Unsupported jsonrpc method", message=method)
+        self.method = method
+        self.id = id
+
+
+class InvalidJSONRPCPayloadError(RemoteMCPException):
+    def __init__(self, message: str | None = None, id: int | str | None = None):
+        super().__init__(title="Invalid jsonrpc payload", message=message)
+        self.id = id

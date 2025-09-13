@@ -1,18 +1,20 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, Request, Response, status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.logging_setup import get_logger
 from aci.mcp import dependencies as deps
+from aci.mcp.exceptions import InvalidJSONRPCPayloadError, UnsupportedJSONRPCMethodError
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
     JSONRPCErrorResponse,
     JSONRPCInitializeRequest,
     JSONRPCNotificationInitialized,
-    JSONRPCRequest,
+    JSONRPCPayload,
     JSONRPCSuccessResponse,
     JSONRPCToolsCallRequest,
     JSONRPCToolsListRequest,
@@ -32,11 +34,42 @@ SUPPORTED_PROTOCOL_VERSION = "2025-06-18"
 @router.post("", status_code=status.HTTP_200_OK)
 async def mcp_post(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    request: Request,
+    response: Response,
     bundle_id: UUID,
-    body: JSONRPCRequest,
     mcp_protocol_version: Annotated[str | None, Header()] = None,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse | None:
-    logger.info(f"Received MCP request: {body.model_dump()}")
+    # parse payload
+    try:
+        payload = await _parse_payload(request)
+    except UnsupportedJSONRPCMethodError as e:
+        logger.error(str(e))
+        return JSONRPCErrorResponse(
+            id=e.id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.METHOD_NOT_FOUND,
+                message=str(e),
+            ),
+        )
+    except InvalidJSONRPCPayloadError as e:
+        logger.error(str(e))
+        return JSONRPCErrorResponse(
+            id=e.id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.PARSE_ERROR,
+                message=str(e),
+            ),
+        )
+    except Exception as e:
+        logger.exception(f"Unexpected error parsing payload: {e}")
+        return JSONRPCErrorResponse(
+            # In jsonrpc, id is required in response, if unable to to detect, it must be Nullable
+            id=None,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                message=str(e),
+            ),
+        )
 
     mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
         db_session,
@@ -45,18 +78,18 @@ async def mcp_post(
     if mcp_server_bundle is None:
         logger.error(f"Bundle not found, bundle_id={bundle_id}")
         return JSONRPCErrorResponse(
-            id=getattr(body, "id", None),  # Use getattr to safely get id, defaulting to None
+            id=payload.id if not isinstance(payload, JSONRPCNotificationInitialized) else None,
             error=JSONRPCErrorResponse.ErrorData(
-                code=-32004,
+                code=JSONRPCErrorCode.INVALID_REQUEST,
                 message=f"Bundle not found, bundle_id={bundle_id}",
             ),
         )
 
-    match body:
+    match payload:
         case JSONRPCInitializeRequest():
-            logger.info(f"Received initialize request={body.model_dump()}")
+            logger.info(f"Received initialize request={payload.model_dump()}")
             return JSONRPCSuccessResponse(
-                id=body.id,
+                id=payload.id,
                 result={
                     "protocolVersion": SUPPORTED_PROTOCOL_VERSION
                     if mcp_protocol_version is None
@@ -65,19 +98,17 @@ async def mcp_post(
                     "serverInfo": {
                         "name": "ACI.dev MCP Gateway",
                         "title": "ACI.dev MCP Gateway",
-                        "version": "1.0.0",
+                        "version": "0.0.1",
                     },
                     # TODO: add instructions
-                    "instructions": "",
+                    "instructions": f"use {SEARCH_TOOLS.get('name')} and {EXECUTE_TOOL.get('name')} to discover and execute tools",  # noqa: E501
                 },
             )
 
         case JSONRPCToolsListRequest():
-            logger.info(f"Received tools/list request={body.model_dump()}")
-            logger.info(f"searched tools={SEARCH_TOOLS}")
-            logger.info(f"executed tools={EXECUTE_TOOL}")
+            logger.info(f"Received tools/list request={payload.model_dump()}")
             return JSONRPCSuccessResponse(
-                id=body.id,
+                id=payload.id,
                 result={
                     "tools": [
                         SEARCH_TOOLS,
@@ -87,25 +118,28 @@ async def mcp_post(
             )
 
         case JSONRPCToolsCallRequest():
-            logger.info(f"Received tools/call request={body.model_dump()}")
-            match body.params.name:
+            logger.info(f"Received tools/call request={payload.model_dump()}")
+            match payload.params.name:
+                # TODO: derive from SEARCH_TOOLS and EXECUTE_TOOL instead of string literals
                 case "SEARCH_TOOLS":
-                    return await handle_search_tools(db_session, mcp_server_bundle, body)
+                    return await handle_search_tools(db_session, mcp_server_bundle, payload)
                 case "EXECUTE_TOOL":
-                    return await handle_execute_tool(db_session, mcp_server_bundle, body)
+                    return await handle_execute_tool(db_session, mcp_server_bundle, payload)
                 case _:
-                    logger.error(f"Unknown tool: {body.params.name}")
+                    logger.error(f"Unknown tool: {payload.params.name}")
                     return JSONRPCErrorResponse(
-                        id=body.id,
+                        id=payload.id,
                         error=JSONRPCErrorResponse.ErrorData(
                             code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
-                            message=f"Unknown tool: {body.params.name}",
+                            message=f"Unknown tool: {payload.params.name}",
                         ),
                     )
 
         case JSONRPCNotificationInitialized():
             # NOTE: no-op for initialized notifications
-            logger.info(f"Received initialized notification={body.model_dump()}")
+            logger.info(f"Received initialized notification={payload.model_dump()}")
+            # NOTE: it's important to return 202 otherwise some clients will not handle the response
+            response.status_code = status.HTTP_202_ACCEPTED
             return None
 
 
@@ -115,3 +149,53 @@ async def mcp_delete() -> None:
     NOTE: delete is a no-op for now.
     """
     pass
+
+
+async def _parse_payload(
+    request: Request,
+) -> (
+    JSONRPCInitializeRequest
+    | JSONRPCToolsListRequest
+    | JSONRPCToolsCallRequest
+    | JSONRPCNotificationInitialized
+):
+    payload = await request.json()
+    if isinstance(payload, dict):
+        try:
+            jprc_payload = JSONRPCPayload.model_validate(payload)
+        except ValidationError as e:
+            raise InvalidJSONRPCPayloadError(f"Invalid payload: {e}", payload.get("id")) from e
+
+        match jprc_payload.method:
+            case "initialize":
+                try:
+                    return JSONRPCInitializeRequest.model_validate(payload)
+                except ValidationError as e:
+                    raise InvalidJSONRPCPayloadError(
+                        f"Invalid initialize request: {e}", jprc_payload.id
+                    ) from e
+            case "tools/list":
+                try:
+                    return JSONRPCToolsListRequest.model_validate(payload)
+                except ValidationError as e:
+                    raise InvalidJSONRPCPayloadError(
+                        f"Invalid tools/list request: {e}", jprc_payload.id
+                    ) from e
+            case "tools/call":
+                try:
+                    return JSONRPCToolsCallRequest.model_validate(payload)
+                except ValidationError as e:
+                    raise InvalidJSONRPCPayloadError(
+                        f"Invalid tools/call request: {e}", jprc_payload.id
+                    ) from e
+            case "notifications/initialized":
+                try:
+                    return JSONRPCNotificationInitialized.model_validate(payload)
+                except ValidationError as e:
+                    raise InvalidJSONRPCPayloadError(
+                        f"Invalid notifications/initialized request: {e}", jprc_payload.id
+                    ) from e
+            case _:
+                raise UnsupportedJSONRPCMethodError(jprc_payload.method, jprc_payload.id)
+    else:
+        raise InvalidJSONRPCPayloadError(f"Invalid payload type: {type(payload)}")

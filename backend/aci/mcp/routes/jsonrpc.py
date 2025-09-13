@@ -1,8 +1,15 @@
 from enum import IntEnum
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
 from mcp import types as mcp_types
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class JSONRPCPayload(BaseModel):
+    jsonrpc: Literal["2.0"]
+    id: int | str | None = None
+    method: str
+    params: dict[str, Any] | None = None
 
 
 class JSONRPCInitializeRequest(BaseModel):
@@ -46,16 +53,6 @@ class JSONRPCNotificationInitialized(BaseModel):
     jsonrpc: Literal["2.0"] = "2.0"
     method: Literal["notifications/initialized"]
     params: dict = Field(default_factory=dict)
-
-
-# TODO: use RootModel?
-JSONRPCRequest = Annotated[
-    JSONRPCInitializeRequest
-    | JSONRPCToolsListRequest
-    | JSONRPCToolsCallRequest
-    | JSONRPCNotificationInitialized,
-    Field(discriminator="method"),
-]
 
 
 class JSONRPCSuccessResponse(BaseModel):
