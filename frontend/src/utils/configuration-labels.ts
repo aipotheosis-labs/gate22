@@ -47,7 +47,7 @@ export const getAuthTypeLabel = (
 ): string => {
   switch (authType) {
     case AuthType.OAUTH:
-      return "OAuth";
+      return "OAuth 2.0";
     case AuthType.API_KEY:
       return "API Key";
     case AuthType.NO_AUTH:
