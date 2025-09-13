@@ -39,7 +39,7 @@ export default function BundleDetailPage() {
 
   // Generate configuration for different editors
   const generateConfig = (url: string, bundleName: string, editor: string) => {
-    const configKey = editor === "vscode" ? "mcp.servers" : "mcpServers";
+    const configKey = editor === "vscode" ? "servers" : "mcpServers";
     return JSON.stringify(
       {
         [configKey]: {
