@@ -15,6 +15,7 @@ from aci.mcp.routes.jsonrpc import (
     JSONRPCInitializeRequest,
     JSONRPCNotificationInitialized,
     JSONRPCPayload,
+    JSONRPCPingRequest,
     JSONRPCSuccessResponse,
     JSONRPCToolsCallRequest,
     JSONRPCToolsListRequest,
@@ -142,11 +143,27 @@ async def mcp_post(
             response.status_code = status.HTTP_202_ACCEPTED
             return None
 
+        case JSONRPCPingRequest():
+            logger.info(f"Received ping request={payload.model_dump()}")
+            return JSONRPCSuccessResponse(
+                id=payload.id,
+                result={},
+            )
+
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def mcp_delete() -> None:
     """
     NOTE: delete is a no-op for now.
+    """
+    pass
+
+
+# NOTE: for now we don't support sse stream feature so for GET return 405
+@router.get("", status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
+async def mcp_get() -> None:
+    """
+    NOTE: get is not allowed for now.
     """
     pass
 
@@ -158,6 +175,7 @@ async def _parse_payload(
     | JSONRPCToolsListRequest
     | JSONRPCToolsCallRequest
     | JSONRPCNotificationInitialized
+    | JSONRPCPingRequest
 ):
     payload = await request.json()
     if isinstance(payload, dict):
@@ -194,6 +212,13 @@ async def _parse_payload(
                 except ValidationError as e:
                     raise InvalidJSONRPCPayloadError(
                         f"Invalid notifications/initialized request: {e}", jprc_payload.id
+                    ) from e
+            case "ping":
+                try:
+                    return JSONRPCPingRequest.model_validate(payload)
+                except ValidationError as e:
+                    raise InvalidJSONRPCPayloadError(
+                        f"Invalid ping request: {e}", jprc_payload.id
                     ) from e
             case _:
                 raise UnsupportedJSONRPCMethodError(jprc_payload.method, jprc_payload.id)

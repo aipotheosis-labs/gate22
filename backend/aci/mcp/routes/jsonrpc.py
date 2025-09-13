@@ -55,6 +55,12 @@ class JSONRPCNotificationInitialized(BaseModel):
     params: dict = Field(default_factory=dict)
 
 
+class JSONRPCPingRequest(BaseModel):
+    jsonrpc: Literal["2.0"] = "2.0"
+    id: int | str
+    method: Literal["ping"]
+
+
 class JSONRPCSuccessResponse(BaseModel):
     jsonrpc: Literal["2.0"] = "2.0"
     id: int | str
