@@ -75,14 +75,16 @@ export function ConfigurationSelectionDialog({
     : [];
 
   // For shared accounts, check if a valid shared account exists using the callback
-  const hasValidShared =
-    isSharedAccount && hasValidSharedAccount
+  const hasValidShared = isSharedAccount
+    ? hasValidSharedAccount
       ? hasValidSharedAccount(selectedConfigId)
-      : isSharedAccount;
+      : false
+    : false;
 
   const hasAvailableAccounts =
-    hasValidShared || (!isSharedAccount && configAccounts.length > 0);
-  const canAddConfiguration = selectedConfigId && hasAvailableAccounts;
+    (isSharedAccount && hasValidShared) ||
+    (!isSharedAccount && configAccounts.length > 0);
+  const canAddConfiguration = !!selectedConfigId && !!hasAvailableAccounts;
 
   const handleConfirm = () => {
     if (canAddConfiguration) {
@@ -169,10 +171,11 @@ export function ConfigurationSelectionDialog({
                             );
 
                             // For shared accounts, check if a valid shared account exists
-                            const hasValidSharedForConfig =
-                              isShared && hasValidSharedAccount
+                            const hasValidSharedForConfig = isShared
+                              ? hasValidSharedAccount
                                 ? hasValidSharedAccount(config.id)
-                                : isShared;
+                                : false
+                              : false;
 
                             const hasAccounts =
                               hasValidSharedForConfig ||
