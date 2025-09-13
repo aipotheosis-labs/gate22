@@ -1,4 +1,4 @@
-import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
+import { ConnectedAccountOwnership, AuthType } from "@/features/mcp/types/mcp.types";
 
 /**
  * Utility functions for displaying connected account type labels and information
@@ -33,5 +33,23 @@ export const getConfigurationTypeDetailedInfo = (
       return "Admins can create shared connected accounts that are accessible by team members. The credentials are managed centrally for the entire team.";
     default:
       return "";
+  }
+};
+
+/**
+ * Get display label for authentication type
+ */
+export const getAuthTypeLabel = (
+  authType: AuthType | undefined | null,
+): string => {
+  switch (authType) {
+    case AuthType.OAUTH:
+      return "OAuth";
+    case AuthType.API_KEY:
+      return "API Key";
+    case AuthType.NO_AUTH:
+      return "No Auth";
+    default:
+      return "Unknown";
   }
 };
