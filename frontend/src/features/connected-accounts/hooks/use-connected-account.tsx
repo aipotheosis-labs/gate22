@@ -17,14 +17,18 @@ import { toast } from "sonner";
 
 export const connectedAccountKeys = {
   all: () => ["connectedaccounts"] as const,
+  filtered: (configIds?: string[]) =>
+    ["connectedaccounts", { configIds }] as const,
 };
 
-export const useConnectedAccounts = () => {
+export const useConnectedAccounts = (configIds?: string[]) => {
   const { accessToken } = useMetaInfo();
 
   return useQuery<ConnectedAccount[], Error>({
-    queryKey: connectedAccountKeys.all(),
-    queryFn: () => getAllConnectedAccounts(accessToken!),
+    queryKey: configIds
+      ? connectedAccountKeys.filtered(configIds)
+      : connectedAccountKeys.all(),
+    queryFn: () => getAllConnectedAccounts(accessToken!, configIds),
     enabled: !!accessToken,
   });
 };

@@ -4,11 +4,21 @@ import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 export async function getAllConnectedAccounts(
   accessToken: string,
+  configIds?: string[],
 ): Promise<ConnectedAccount[]> {
   const baseUrl = getApiBaseUrl();
-  // Fetch with a large limit to get all accounts
+
+  // Build query params
+  const params = new URLSearchParams();
+  params.append("limit", "100");
+
+  // Add config_id filters if provided
+  if (configIds && configIds.length > 0) {
+    configIds.forEach((id) => params.append("config_id", id));
+  }
+
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts?limit=100`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts?${params.toString()}`,
     {
       method: "GET",
       headers: {

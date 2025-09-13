@@ -1,4 +1,7 @@
-import { ConnectedAccountOwnership, AuthType } from "@/features/mcp/types/mcp.types";
+import {
+  ConnectedAccountOwnership,
+  AuthType,
+} from "@/features/mcp/types/mcp.types";
 
 /**
  * Utility functions for displaying connected account type labels and information

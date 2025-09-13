@@ -24,20 +24,24 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { MCPServerConfigurationPublicBasic, ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
+import {
+  MCPServerConfigurationPublicBasic,
+  ConnectedAccountOwnership,
+} from "@/features/mcp/types/mcp.types";
+import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 
 interface ConfigurationSelectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   availableConfigurations: MCPServerConfigurationPublicBasic[];
-  connectedAccounts?: any[];
+  connectedAccounts?: ConnectedAccount[];
   alreadySelectedIds: string[];
   onConfirm: (configurationId: string) => void;
+  hasValidSharedAccount?: (configId: string) => boolean;
 }
 
 export function ConfigurationSelectionDialog({
@@ -47,24 +51,38 @@ export function ConfigurationSelectionDialog({
   connectedAccounts = [],
   alreadySelectedIds,
   onConfirm,
+  hasValidSharedAccount,
 }: ConfigurationSelectionDialogProps) {
   const [selectedConfigId, setSelectedConfigId] = useState<string>("");
   const [open, setOpen] = useState(false);
 
   // Filter out already selected configurations
   const availableToSelect = availableConfigurations.filter(
-    (config) => !alreadySelectedIds.includes(config.id)
+    (config) => !alreadySelectedIds.includes(config.id),
   );
 
-  // Check if selected configuration has available accounts (for individual type)
-  const selectedConfig = availableConfigurations.find(c => c.id === selectedConfigId);
-  const isSharedAccount = selectedConfig?.connected_account_ownership === ConnectedAccountOwnership.SHARED;
-  const configAccounts = selectedConfigId ? connectedAccounts.filter(
-    account => account.mcp_server_configuration_id === selectedConfigId
-  ) : [];
-  const hasAvailableAccounts = isSharedAccount || configAccounts.length > 0;
-  const canAddConfiguration = selectedConfigId && hasAvailableAccounts;
+  // Check if selected configuration has available accounts
+  const selectedConfig = availableConfigurations.find(
+    (c) => c.id === selectedConfigId,
+  );
+  const isSharedAccount =
+    selectedConfig?.connected_account_ownership ===
+    ConnectedAccountOwnership.SHARED;
+  const configAccounts = selectedConfigId
+    ? connectedAccounts.filter(
+        (account) => account.mcp_server_configuration_id === selectedConfigId,
+      )
+    : [];
 
+  // For shared accounts, check if a valid shared account exists using the callback
+  const hasValidShared =
+    isSharedAccount && hasValidSharedAccount
+      ? hasValidSharedAccount(selectedConfigId)
+      : isSharedAccount;
+
+  const hasAvailableAccounts =
+    hasValidShared || (!isSharedAccount && configAccounts.length > 0);
+  const canAddConfiguration = selectedConfigId && hasAvailableAccounts;
 
   const handleConfirm = () => {
     if (canAddConfiguration) {
@@ -109,7 +127,7 @@ export function ConfigurationSelectionDialog({
                         <div className="flex items-center gap-2">
                           {(() => {
                             const config = availableToSelect.find(
-                              (c) => c.id === selectedConfigId
+                              (c) => c.id === selectedConfigId,
                             );
                             return (
                               <>
@@ -141,11 +159,24 @@ export function ConfigurationSelectionDialog({
                         <CommandEmpty>No configuration found.</CommandEmpty>
                         <CommandGroup>
                           {availableToSelect.map((config) => {
-                            const isShared = config.connected_account_ownership === ConnectedAccountOwnership.SHARED;
+                            const isShared =
+                              config.connected_account_ownership ===
+                              ConnectedAccountOwnership.SHARED;
                             const accountsForConfig = connectedAccounts.filter(
-                              account => account.mcp_server_configuration_id === config.id
+                              (account) =>
+                                account.mcp_server_configuration_id ===
+                                config.id,
                             );
-                            const hasAccounts = isShared || accountsForConfig.length > 0;
+
+                            // For shared accounts, check if a valid shared account exists
+                            const hasValidSharedForConfig =
+                              isShared && hasValidSharedAccount
+                                ? hasValidSharedAccount(config.id)
+                                : isShared;
+
+                            const hasAccounts =
+                              hasValidSharedForConfig ||
+                              (!isShared && accountsForConfig.length > 0);
 
                             return (
                               <CommandItem
@@ -153,7 +184,9 @@ export function ConfigurationSelectionDialog({
                                 value={config.name}
                                 onSelect={() => {
                                   setSelectedConfigId(
-                                    config.id === selectedConfigId ? "" : config.id
+                                    config.id === selectedConfigId
+                                      ? ""
+                                      : config.id,
                                   );
                                   setOpen(false);
                                 }}
@@ -172,7 +205,12 @@ export function ConfigurationSelectionDialog({
                                       </div>
                                     )}
                                     <div className="flex flex-col">
-                                      <span className={cn(!hasAccounts && "text-muted-foreground")}>
+                                      <span
+                                        className={cn(
+                                          !hasAccounts &&
+                                            "text-muted-foreground",
+                                        )}
+                                      >
                                         {config.name}
                                       </span>
                                       {!hasAccounts && (
@@ -180,26 +218,26 @@ export function ConfigurationSelectionDialog({
                                           No connected accounts available
                                         </span>
                                       )}
-                                      {isShared && (
+                                      {hasAccounts && isShared && (
                                         <span className="text-xs text-muted-foreground">
-                                          Shared account
+                                          Shared account available
+                                        </span>
+                                      )}
+                                      {hasAccounts && !isShared && (
+                                        <span className="text-xs text-muted-foreground">
+                                          Individual account available
                                         </span>
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    {!hasAccounts && (
-                                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                                  <Check
+                                    className={cn(
+                                      "h-4 w-4",
+                                      selectedConfigId === config.id
+                                        ? "opacity-100"
+                                        : "opacity-0",
                                     )}
-                                    <Check
-                                      className={cn(
-                                        "h-4 w-4",
-                                        selectedConfigId === config.id
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                  </div>
+                                  />
                                 </div>
                               </CommandItem>
                             );
@@ -212,13 +250,24 @@ export function ConfigurationSelectionDialog({
               )}
             </div>
 
-            {/* Show warning if no accounts available for individual configuration */}
-            {selectedConfig && !isSharedAccount && configAccounts.length === 0 && (
+            {/* Show warning if no accounts available */}
+            {selectedConfig && !hasAvailableAccounts && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  This configuration requires an individual connected account, but none are available.
-                  Please create a connected account for this configuration first.
+                  {isSharedAccount ? (
+                    <>
+                      This configuration requires a shared connected account,
+                      but none is available or valid for your user. Please
+                      contact your administrator to set up the shared account.
+                    </>
+                  ) : (
+                    <>
+                      This configuration requires an individual connected
+                      account, but none are available. Please create a connected
+                      account for this configuration first.
+                    </>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
@@ -228,16 +277,12 @@ export function ConfigurationSelectionDialog({
             <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={!canAddConfiguration}
-            >
+            <Button onClick={handleConfirm} disabled={!canAddConfiguration}>
               Add Configuration
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </>
   );
 }

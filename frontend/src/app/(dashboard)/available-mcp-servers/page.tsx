@@ -22,10 +22,12 @@ import {
 import Image from "next/image";
 import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
 import { Button } from "@/components/ui/button";
-import { CreateBundleForm } from "@/features/bundle-mcp/components/create-bundle-form";
+import { BundleMCPStepperForm } from "@/features/bundle-mcp/components/bundle-mcp-stepper-form";
 import { useCreateMCPServerBundle } from "@/features/bundle-mcp/hooks/use-bundle-mcp";
 import { CreateMCPServerBundleInput } from "@/features/bundle-mcp/types/bundle-mcp.types";
 import { cn } from "@/lib/utils";
+import { useConnectedAccounts } from "@/features/connected-accounts/hooks/use-connected-account";
+import { getOwnershipLabel } from "@/utils/configuration-labels";
 
 export default function AvailableMCPServersPage() {
   const router = useRouter();
@@ -35,6 +37,7 @@ export default function AvailableMCPServersPage() {
     new Set(),
   );
   const [isCreatingBundle, setIsCreatingBundle] = useState(false);
+  const [isBundleDialogOpen, setIsBundleDialogOpen] = useState(false);
 
   // Fetch MCP configurations available to the member
   const {
@@ -46,6 +49,9 @@ export default function AvailableMCPServersPage() {
   });
 
   const { mutateAsync: createBundle } = useCreateMCPServerBundle();
+
+  // Fetch connected accounts for all configurations
+  const { data: connectedAccounts = [] } = useConnectedAccounts();
 
   const configurations = useMemo(
     () => configurationsResponse?.data || [],
@@ -99,6 +105,7 @@ export default function AvailableMCPServersPage() {
     try {
       await createBundle(values);
       setSelectedConfigs(new Set());
+      setIsBundleDialogOpen(false);
       router.push("/bundle-mcp");
     } catch (error) {
       console.error("Failed to create bundle:", error);
@@ -120,24 +127,14 @@ export default function AvailableMCPServersPage() {
             </p>
           </div>
           {selectedConfigs.size > 0 && (
-            <CreateBundleForm
-              title="Create MCP Bundle"
-              availableConfigurations={configurations
-                .filter((config) => selectedConfigs.has(config.id))
-                .map((config) => ({
-                  id: config.id,
-                  name: config.name,
-                  icon: config.mcp_server?.logo || undefined,
-                }))}
-              selectedIds={Array.from(selectedConfigs)}
-              onSelectionChange={(ids) => setSelectedConfigs(new Set(ids))}
-              onSubmit={handleCreateBundle}
+            <Button
+              variant="default"
+              disabled={isCreatingBundle}
+              onClick={() => setIsBundleDialogOpen(true)}
             >
-              <Button variant="default" disabled={isCreatingBundle}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Bundle ({selectedConfigs.size} selected)
-              </Button>
-            </CreateBundleForm>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Bundle ({selectedConfigs.size} selected)
+            </Button>
           )}
         </div>
       </div>
@@ -206,6 +203,13 @@ export default function AvailableMCPServersPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredConfigurations.map((config) => {
               const isSelected = selectedConfigs.has(config.id);
+              const configAccounts = connectedAccounts.filter(
+                (account) => account.mcp_server_configuration_id === config.id,
+              );
+              const requiresAccount = !!config.connected_account_ownership;
+              const hasNoAccounts =
+                requiresAccount && configAccounts.length === 0;
+
               return (
                 <Card
                   key={config.id}
@@ -221,28 +225,49 @@ export default function AvailableMCPServersPage() {
                       <button
                         className={cn(
                           "flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all h-[34px] shrink-0",
-                          isSelected
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                            : "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-input",
+                          hasNoAccounts
+                            ? "opacity-40 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-400"
+                            : isSelected
+                              ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm"
+                              : "bg-white text-foreground hover:bg-gray-50 border-black hover:shadow-sm",
                         )}
+                        disabled={hasNoAccounts}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCardToggle(config.id);
+                          if (!hasNoAccounts) {
+                            handleCardToggle(config.id);
+                          }
                         }}
+                        title={
+                          hasNoAccounts
+                            ? "Setup connected account first"
+                            : "Add to bundle"
+                        }
                       >
                         <div
                           className={cn(
                             "h-5 w-5 rounded border flex items-center justify-center transition-all",
-                            isSelected
-                              ? "bg-primary-foreground border-primary-foreground"
-                              : "bg-background border-gray-400",
+                            hasNoAccounts
+                              ? "bg-gray-50 border-gray-300"
+                              : isSelected
+                                ? "bg-primary-foreground border-primary-foreground"
+                                : "bg-white border-black",
                           )}
                         >
-                          {isSelected && (
+                          {isSelected && !hasNoAccounts && (
                             <Check className="h-3 w-3 text-primary" />
                           )}
                         </div>
-                        <span className="text-sm font-semibold">Bundle</span>
+                        <span
+                          className={cn(
+                            "text-sm font-semibold",
+                            !hasNoAccounts &&
+                              !isSelected &&
+                              "group-hover:text-primary",
+                          )}
+                        >
+                          Bundle
+                        </span>
                       </button>
                     </div>
 
@@ -270,6 +295,37 @@ export default function AvailableMCPServersPage() {
                           </p>
                         </div>
                       </div>
+
+                      {/* Connected Account Info */}
+                      {config.connected_account_ownership && (
+                        <div className="mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {getOwnershipLabel(
+                                config.connected_account_ownership,
+                              )}
+                            </Badge>
+                            {(() => {
+                              if (configAccounts.length > 0) {
+                                return (
+                                  <span className="text-xs text-green-600">
+                                    {configAccounts.length} account
+                                    {configAccounts.length > 1 ? "s" : ""}{" "}
+                                    available
+                                  </span>
+                                );
+                              } else {
+                                return (
+                                  <span className="text-xs text-amber-600">
+                                    No accounts - setup required
+                                  </span>
+                                );
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      )}
+
                       <CardDescription className="text-sm line-clamp-2 text-muted-foreground">
                         {config.description || config.mcp_server?.description}
                       </CardDescription>
@@ -317,6 +373,17 @@ export default function AvailableMCPServersPage() {
           </div>
         )}
       </div>
+
+      {/* Bundle MCP Stepper Form Dialog */}
+      <BundleMCPStepperForm
+        isOpen={isBundleDialogOpen}
+        onClose={() => setIsBundleDialogOpen(false)}
+        availableConfigurations={configurations}
+        connectedAccounts={connectedAccounts}
+        selectedIds={Array.from(selectedConfigs)}
+        onSelectionChange={(ids) => setSelectedConfigs(new Set(ids))}
+        onSubmit={handleCreateBundle}
+      />
     </div>
   );
 }

@@ -56,7 +56,12 @@ export default function BundleMCPPage() {
   const { data: configurationsData, isLoading: isConfigsLoading } =
     useMCPServerConfigurations({ limit: 100 });
   const configurations = configurationsData?.data || [];
-  const { data: connectedAccounts = [], isLoading: isAccountsLoading } = useConnectedAccounts();
+
+  // Extract configuration IDs to fetch related connected accounts
+  const configurationIds = configurations.map((config) => config.id);
+  const { data: connectedAccounts = [] } = useConnectedAccounts(
+    configurationIds.length > 0 ? configurationIds : undefined,
+  );
 
   const { mutateAsync: createBundleMutation } = useCreateMCPServerBundle();
   const { mutateAsync: deleteBundleMutation } = useDeleteMCPServerBundle();
