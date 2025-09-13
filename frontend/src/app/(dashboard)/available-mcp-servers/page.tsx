@@ -317,7 +317,7 @@ export default function AvailableMCPServersPage() {
                               } else {
                                 return (
                                   <span className="text-xs text-amber-600">
-                                    No accounts - setup required
+                                    Connect an account to use this MCP
                                   </span>
                                 );
                               }
