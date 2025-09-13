@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Package, ArrowUpDown, Copy, Check } from "lucide-react";
-import { CreateBundleForm } from "@/features/bundle-mcp/components/create-bundle-form";
+import { BundleMCPStepperForm } from "@/features/bundle-mcp/components/bundle-mcp-stepper-form";
 import {
   useCreateMCPServerBundle,
   useDeleteMCPServerBundle,
   useMCPServerBundles,
 } from "@/features/bundle-mcp/hooks/use-bundle-mcp";
 import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
+import { useConnectedAccounts } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerBundle } from "@/features/bundle-mcp/types/bundle-mcp.types";
 import { formatToLocalTime } from "@/utils/time";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
@@ -42,6 +43,7 @@ const columnHelper = createColumnHelper<MCPServerBundle>();
 export default function BundleMCPPage() {
   const router = useRouter();
   const [copiedBundleId, setCopiedBundleId] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { activeOrg, activeRole } = useMetaInfo();
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
   const isAdminViewingAsAdmin =
@@ -54,6 +56,7 @@ export default function BundleMCPPage() {
   const { data: configurationsData, isLoading: isConfigsLoading } =
     useMCPServerConfigurations({ limit: 100 });
   const configurations = configurationsData?.data || [];
+  const { data: connectedAccounts = [], isLoading: isAccountsLoading } = useConnectedAccounts();
 
   const { mutateAsync: createBundleMutation } = useCreateMCPServerBundle();
   const { mutateAsync: deleteBundleMutation } = useDeleteMCPServerBundle();
@@ -263,22 +266,14 @@ export default function BundleMCPPage() {
           </p>
         </div>
         <PermissionGuard permission={PERMISSIONS.BUNDLE_CREATE}>
-          <CreateBundleForm
-            title="Create MCP Bundle"
-            availableConfigurations={configurations.map((config) => ({
-              id: config.id,
-              name: config.name,
-              icon: config.mcp_server?.logo || undefined,
-            }))}
-            onSubmit={async (values) => {
-              await createBundleMutation(values);
-            }}
+          <Button
+            variant="default"
+            disabled={isConfigsLoading || !canCreate}
+            onClick={() => setShowCreateDialog(true)}
           >
-            <Button variant="default" disabled={isConfigsLoading || !canCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Bundle
-            </Button>
-          </CreateBundleForm>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Bundle
+          </Button>
         </PermissionGuard>
       </div>
 
@@ -317,31 +312,32 @@ export default function BundleMCPPage() {
                   for easier management
                 </p>
                 <PermissionGuard permission={PERMISSIONS.BUNDLE_CREATE}>
-                  <CreateBundleForm
-                    title="Create MCP Bundle"
-                    availableConfigurations={configurations.map((config) => ({
-                      id: config.id,
-                      name: config.name,
-                      icon: config.mcp_server?.logo || undefined,
-                    }))}
-                    onSubmit={async (values) => {
-                      await createBundleMutation(values);
-                    }}
+                  <Button
+                    variant="default"
+                    disabled={isConfigsLoading || !canCreate}
+                    onClick={() => setShowCreateDialog(true)}
                   >
-                    <Button
-                      variant="default"
-                      disabled={isConfigsLoading || !canCreate}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Bundle
-                    </Button>
-                  </CreateBundleForm>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Bundle
+                  </Button>
                 </PermissionGuard>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Bundle Creation Stepper Dialog */}
+      <BundleMCPStepperForm
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        availableConfigurations={configurations}
+        connectedAccounts={connectedAccounts}
+        onSubmit={async (values) => {
+          await createBundleMutation(values);
+          setShowCreateDialog(false);
+        }}
+      />
     </div>
   );
 }
