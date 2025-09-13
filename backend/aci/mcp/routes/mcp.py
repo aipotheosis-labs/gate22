@@ -56,7 +56,7 @@ async def mcp_post(
         return JSONRPCErrorResponse(
             id=e.id,
             error=JSONRPCErrorResponse.ErrorData(
-                code=JSONRPCErrorCode.PARSE_ERROR,
+                code=JSONRPCErrorCode.INVALID_REQUEST,
                 message=str(e),
             ),
         )
@@ -66,7 +66,7 @@ async def mcp_post(
             # In jsonrpc, id is required in response, if unable to to detect, it must be Nullable
             id=None,
             error=JSONRPCErrorResponse.ErrorData(
-                code=JSONRPCErrorCode.INTERNAL_ERROR,
+                code=JSONRPCErrorCode.PARSE_ERROR,
                 message=str(e),
             ),
         )
