@@ -76,14 +76,20 @@ export function CreateTeamDialog({
     try {
       const createTeamData = {
         ...formData,
-        member_user_ids: selectedMembers.length > 0 ? selectedMembers : undefined,
+        member_user_ids:
+          selectedMembers.length > 0 ? selectedMembers : undefined,
       };
-      
-      const newTeam = await createTeam(accessToken, activeOrg.orgId, createTeamData);
-      
-      const successMessage = selectedMembers.length > 0
-        ? `Team "${formData.name}" created with ${selectedMembers.length} member${selectedMembers.length > 1 ? 's' : ''}`
-        : `Team "${formData.name}" created successfully`;
+
+      const newTeam = await createTeam(
+        accessToken,
+        activeOrg.orgId,
+        createTeamData,
+      );
+
+      const successMessage =
+        selectedMembers.length > 0
+          ? `Team "${formData.name}" created with ${selectedMembers.length} member${selectedMembers.length > 1 ? "s" : ""}`
+          : `Team "${formData.name}" created successfully`;
       toast.success(successMessage);
 
       // Reset form
