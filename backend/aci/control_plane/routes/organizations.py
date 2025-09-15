@@ -225,9 +225,7 @@ async def create_team(
         )
         org_member_ids = {member.user_id for member in org_members}
 
-        invalid_user_ids = [
-            user_id for user_id in member_ids if user_id not in org_member_ids
-        ]
+        invalid_user_ids = [user_id for user_id in member_ids if user_id not in org_member_ids]
 
         if invalid_user_ids:
             logger.error(f"Invalid user IDs: {invalid_user_ids}")
