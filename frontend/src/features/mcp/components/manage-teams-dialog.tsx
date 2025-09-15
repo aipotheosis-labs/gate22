@@ -133,7 +133,8 @@ export function ManageTeamsDialog({
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    No teams found. Create a team to manage access to this MCP configuration.
+                    No teams found. Create a team to manage access to this MCP
+                    configuration.
                   </AlertDescription>
                 </Alert>
                 <Button
