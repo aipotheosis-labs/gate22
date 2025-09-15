@@ -216,6 +216,8 @@ async def create_team(
 
     # Validate member IDs if provided
     if request.member_user_ids:
+        # De-duplicate while preserving order
+        member_ids = list(dict.fromkeys(request.member_user_ids))
         # Check that all users exist and are members of the organization
         org_members = crud.organizations.get_organization_members(
             db_session=context.db_session,
@@ -224,7 +226,7 @@ async def create_team(
         org_member_ids = {member.user_id for member in org_members}
 
         invalid_user_ids = [
-            user_id for user_id in request.member_user_ids if user_id not in org_member_ids
+            user_id for user_id in member_ids if user_id not in org_member_ids
         ]
 
         if invalid_user_ids:
@@ -244,7 +246,8 @@ async def create_team(
 
     # Add initial members if provided
     if request.member_user_ids:
-        for user_id in request.member_user_ids:
+        # Reuse the validated, de-duplicated list
+        for user_id in member_ids:
             crud.teams.add_team_member(
                 db_session=context.db_session,
                 organization_id=organization_id,
