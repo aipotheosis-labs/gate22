@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,20 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
-import { createTeam, addTeamMember } from "@/features/teams/api/team";
+import { createTeam } from "@/features/teams/api/team";
 import { listOrganizationUsers } from "@/features/settings/api/organization";
 import { Team } from "@/features/teams/types/team.types";
 import { OrganizationUser } from "@/features/settings/types/organization.types";
-import {
-  UserPlus,
-  Users,
-  ChevronRight,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 
 interface CreateTeamWithMembersDialogProps {
   open: boolean;
@@ -35,30 +28,29 @@ interface CreateTeamWithMembersDialogProps {
   onSuccess?: (team: Team) => void;
 }
 
-type Step = "create-team" | "add-members";
-
 export function CreateTeamWithMembersDialog({
   open,
   onOpenChange,
   onSuccess,
 }: CreateTeamWithMembersDialogProps) {
   const { accessToken, activeOrg } = useMetaInfo();
-  const [currentStep, setCurrentStep] = useState<Step>("create-team");
   const [isLoading, setIsLoading] = useState(false);
-  const [createdTeam, setCreatedTeam] = useState<Team | null>(null);
-
-  // Team creation form data
-  const [teamFormData, setTeamFormData] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
-
-  // Member selection
   const [orgMembers, setOrgMembers] = useState<OrganizationUser[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
 
-  // Load organization members when moving to add-members step
+  // Load organization members when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadOrganizationMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const loadOrganizationMembers = async () => {
     setMembersLoading(true);
     try {
@@ -71,26 +63,43 @@ export function CreateTeamWithMembersDialog({
     }
   };
 
-  // Handle team creation
-  const handleCreateTeam = async () => {
-    if (!teamFormData.name.trim()) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
       toast.error("Team name is required");
       return;
     }
 
     setIsLoading(true);
     try {
+      const createTeamData = {
+        ...formData,
+        member_user_ids:
+          selectedMembers.length > 0 ? selectedMembers : undefined,
+      };
+
       const newTeam = await createTeam(
         accessToken,
         activeOrg.orgId,
-        teamFormData,
+        createTeamData,
       );
-      setCreatedTeam(newTeam);
-      toast.success(`Team "${teamFormData.name}" created successfully`);
 
-      // Move to member addition step
-      setCurrentStep("add-members");
-      await loadOrganizationMembers();
+      const successMessage =
+        selectedMembers.length > 0
+          ? `Team "${formData.name}" created with ${selectedMembers.length} member${selectedMembers.length > 1 ? "s" : ""}`
+          : `Team "${formData.name}" created successfully`;
+      toast.success(successMessage);
+
+      // Reset form
+      setFormData({
+        name: "",
+        description: "",
+      });
+      setSelectedMembers([]);
+
+      onOpenChange(false);
+      onSuccess?.(newTeam);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to create team";
@@ -100,63 +109,13 @@ export function CreateTeamWithMembersDialog({
     }
   };
 
-  // Handle adding members to the team
-  const handleAddMembers = async () => {
-    if (!createdTeam) return;
-
-    if (selectedMembers.length === 0) {
-      // Skip member addition and complete
-      handleComplete();
-      return;
-    }
-
-    setIsLoading(true);
-    const errors: string[] = [];
-
-    // Add each selected member to the team
-    for (const userId of selectedMembers) {
-      try {
-        await addTeamMember(
-          accessToken,
-          activeOrg.orgId,
-          createdTeam.team_id,
-          userId,
-        );
-      } catch {
-        const member = orgMembers.find((m) => m.user_id === userId);
-        errors.push(member?.name || userId);
-      }
-    }
-
-    setIsLoading(false);
-
-    if (errors.length > 0) {
-      toast.error(`Failed to add some members: ${errors.join(", ")}`);
-    } else if (selectedMembers.length > 0) {
-      toast.success(
-        `Added ${selectedMembers.length} member${selectedMembers.length > 1 ? "s" : ""} to the team`,
-      );
-    }
-
-    handleComplete();
-  };
-
-  // Complete the process
-  const handleComplete = () => {
-    if (createdTeam) {
-      onSuccess?.(createdTeam);
-    }
-    handleClose();
-  };
-
-  // Reset and close dialog
   const handleClose = () => {
     if (!isLoading) {
-      setCurrentStep("create-team");
-      setTeamFormData({ name: "", description: "" });
+      setFormData({
+        name: "",
+        description: "",
+      });
       setSelectedMembers([]);
-      setCreatedTeam(null);
-      setOrgMembers([]);
       onOpenChange(false);
     }
   };
@@ -164,123 +123,70 @@ export function CreateTeamWithMembersDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[525px]">
-        {currentStep === "create-team" ? (
-          <>
-            <DialogHeader>
-              <DialogTitle>Create New Team</DialogTitle>
-              <DialogDescription>
-                Create a new team to organize members and manage access to
-                resources.
-              </DialogDescription>
-            </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Create New Team</DialogTitle>
+            <DialogDescription>
+              Create a new team to organize members and manage access to
+              resources.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Team Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="Engineering, Marketing, Design..."
-                  value={teamFormData.name}
-                  onChange={(e) =>
-                    setTeamFormData({ ...teamFormData, name: e.target.value })
-                  }
-                  disabled={isLoading}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe the purpose of this team..."
-                  value={teamFormData.description}
-                  onChange={(e) =>
-                    setTeamFormData({
-                      ...teamFormData,
-                      description: e.target.value,
-                    })
-                  }
-                  disabled={isLoading}
-                  rows={3}
-                />
-              </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Team Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                placeholder="Engineering, Marketing, Design..."
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                disabled={isLoading}
+                required
+              />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Describe the purpose of this team..."
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateTeam}
-                disabled={isLoading || !teamFormData.name.trim()}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    Create & Continue
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle>Add Team Members</DialogTitle>
-              <DialogDescription>
-                Select members from your organization to add to{" "}
-                {createdTeam?.name}. You can skip this step and add members
-                later.
-              </DialogDescription>
-            </DialogHeader>
+                rows={3}
+              />
+            </div>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Team Members (Optional)</Label>
               {membersLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   <span className="text-sm text-muted-foreground">
                     Loading members...
                   </span>
                 </div>
-              ) : orgMembers.length === 0 ? (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    No other members found in your organization. You can invite
-                    members later.
-                  </AlertDescription>
-                </Alert>
               ) : (
                 <>
-                  <div className="space-y-2">
-                    <Label>Select Members</Label>
-                    <MultiSelect
-                      options={orgMembers.map((member) => ({
-                        value: member.user_id,
-                        label: `${member.name} (${member.email})`,
-                      }))}
-                      selected={selectedMembers}
-                      onChange={setSelectedMembers}
-                      placeholder="Select members to add..."
-                      searchPlaceholder="Search members by name or email..."
-                      emptyText="No members found."
-                      className="w-full"
-                    />
-                  </div>
-
+                  <MultiSelect
+                    options={orgMembers.map((member) => ({
+                      value: member.user_id,
+                      label: `${member.name} (${member.email})`,
+                    }))}
+                    selected={selectedMembers}
+                    onChange={setSelectedMembers}
+                    placeholder="Select members to add..."
+                    searchPlaceholder="Search members by name or email..."
+                    emptyText="No members found."
+                    className="w-full"
+                    disabled={isLoading}
+                  />
                   {selectedMembers.length > 0 && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
@@ -293,35 +199,22 @@ export function CreateTeamWithMembersDialog({
                 </>
               )}
             </div>
+          </div>
 
-            <DialogFooter className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleComplete}
-                disabled={isLoading}
-              >
-                Skip
-              </Button>
-              <Button onClick={handleAddMembers} disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding Members...
-                  </>
-                ) : selectedMembers.length > 0 ? (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add {selectedMembers.length} Member
-                    {selectedMembers.length !== 1 ? "s" : ""}
-                  </>
-                ) : (
-                  "Complete"
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create Team"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
