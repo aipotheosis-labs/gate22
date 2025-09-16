@@ -1,8 +1,8 @@
 from typing import Any
 
 import anyio
-import boto3
-from botocore.exceptions import ClientError
+import boto3  # type: ignore[import-untyped]
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from aci.common.logging_setup import get_logger
 from aci.control_plane import config
@@ -57,18 +57,20 @@ class EmailService:
                     Source=self.sender,
                 )
             )
-            logger.info(f"Email sent to {recipient}! Message ID: {response['MessageId']}")
+            # Avoid PII in logs
+            logger.info("Email sent via SES. MessageId=%s", response.get("MessageId"))
+            send_at = response.get("ResponseMetadata", {}).get("HTTPHeaders", {}).get("date")
             return {
                 "email_recipient": recipient,
                 "email_provider": "aws",
-                "email_send_at": response["ResponseMetadata"]["HTTPHeaders"]["date"],
-                "email_reference_id": response["MessageId"],
+                "email_send_at": send_at,
+                "email_reference_id": response.get("MessageId"),
             }
         except ClientError as e:
-            logger.error(f"Failed to send email to {recipient}: {e.response['Error']['Message']}")
+            logger.error("SES send_email failed: %s", e.response.get("Error", {}).get("Message"))
             return None
         except Exception as e:
-            logger.error(f"Unexpected error sending email to {recipient}: {e}")
+            logger.error("Unexpected error sending email: %s", e)
             return None
 
     async def send_verification_email(

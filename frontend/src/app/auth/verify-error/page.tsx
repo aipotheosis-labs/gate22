@@ -4,8 +4,17 @@ import { XCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
 
 export default function VerifyErrorPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyErrorPageContent />
+    </Suspense>
+  );
+}
+
+function VerifyErrorPageContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 

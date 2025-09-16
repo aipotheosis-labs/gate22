@@ -4,8 +4,17 @@ import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Suspense } from "react";
 
 export default function VerifyPendingPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyPendingPageContent />
+    </Suspense>
+  );
+}
+
+function VerifyPendingPageContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
 

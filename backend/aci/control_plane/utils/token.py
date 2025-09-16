@@ -48,7 +48,7 @@ def hash_token(token: str) -> str:
 def validate_token(token: str) -> dict[str, Any] | None:
     """Validate and decode a JWT token."""
     try:
-        payload = jwt.decode(
+        payload: dict[str, Any] = jwt.decode(
             token,
             config.JWT_SIGNING_KEY,
             algorithms=[config.JWT_ALGORITHM],
@@ -60,5 +60,3 @@ def validate_token(token: str) -> dict[str, Any] | None:
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid token: {e}")
         return None
-
-
