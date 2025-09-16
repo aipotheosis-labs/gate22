@@ -63,24 +63,3 @@ def validate_token(token: str) -> dict[str, Any] | None:
         return None
 
 
-def generate_refresh_token() -> tuple[str, str]:
-    """
-    Generate a refresh token and its hash.
-    Returns: (refresh_token, token_hash)
-    """
-    # Generate a refresh token
-    refresh_token = secrets.token_urlsafe(32)
-
-    # Hash refresh token
-    token_hash = hash_refresh_token(refresh_token)
-
-    return refresh_token, token_hash
-
-
-def hash_refresh_token(refresh_token: str) -> str:
-    """
-    Hash a refresh token. Using HMAC-SHA-256 is good enough for hashing refresh token.
-    """
-    return hmac.new(
-        config.REFRESH_TOKEN_KEY.encode(), refresh_token.encode(), hashlib.sha256
-    ).hexdigest()
