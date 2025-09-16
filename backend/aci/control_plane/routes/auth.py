@@ -1,4 +1,7 @@
 import datetime
+import hashlib
+import hmac
+import secrets
 from typing import Annotated, Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 from uuid import UUID
@@ -27,11 +30,11 @@ from aci.control_plane import config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import OAuth2Error
 from aci.control_plane.external_services.email_service import email_service
-from aci.control_plane.utils import token as token_utils
-from aci.control_plane.utils.google_oauth import (
+from aci.control_plane.google_login_utils import (
     exchange_google_userinfo,
     generate_google_auth_url,
 )
+from aci.control_plane.utils import token as token_utils
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -265,7 +268,7 @@ async def issue_token(
         )
 
     # Check if refresh token is valid
-    refresh_token_hash = token_utils.hash_refresh_token(refresh_token)
+    refresh_token_hash = _hash_refresh_token(refresh_token)
     refresh_token_obj = crud.users.get_refresh_token(db_session, refresh_token_hash)
     if not refresh_token_obj:
         raise HTTPException(
@@ -366,11 +369,20 @@ async def logout(
 
     # Delete the refresh token in database
     if refresh_token:
-        token_hash = token_utils.hash_refresh_token(refresh_token)
+        token_hash = _hash_refresh_token(refresh_token)
         crud.users.delete_refresh_token(db_session, token_hash)
 
     # Delete the refresh token in cookie
     response.delete_cookie("refresh_token")
+
+
+def _hash_refresh_token(refresh_token: str) -> str:
+    """
+    Hash a refresh token. Using HMAC-SHA-256 is good enough for hashing refresh token.
+    """
+    return hmac.new(
+        config.REFRESH_TOKEN_KEY.encode(), refresh_token.encode(), hashlib.sha256
+    ).hexdigest()
 
 
 def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response) -> None:
@@ -378,8 +390,11 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
     Generate a refresh token, store it in the database and set it in response cookie.
     """
 
-    # Generate a refresh token and its hash
-    refresh_token, token_hash = token_utils.generate_refresh_token()
+    # Generate a refresh token
+    refresh_token = secrets.token_urlsafe(32)
+
+    # Hash refresh token
+    token_hash = _hash_refresh_token(refresh_token)
 
     # Set the refresh token expiration time
     expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
@@ -421,7 +436,8 @@ async def _register_user_with_email(
         # If the existing account is a third-party identity, do not allow overriding
         if existing_user.identity_provider != UserIdentityProvider.EMAIL:
             raise ValueError(
-                "This email is already registered with a third-party login. Please sign in with that provider."
+                "This email is already registered with a third-party login. "
+                "Please sign in with that provider."
             )
 
         # If the email is already verified, treat as an existing account

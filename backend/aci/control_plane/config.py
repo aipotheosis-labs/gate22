@@ -54,10 +54,6 @@ AWS_ACCESS_KEY_ID = check_and_get_env_variable("CONTROL_PLANE_AWS_ACCESS_KEY_ID"
 AWS_SECRET_ACCESS_KEY = check_and_get_env_variable(
     "CONTROL_PLANE_AWS_SECRET_ACCESS_KEY", default=""
 )
-# Optional session token for temporary credentials (STS)
-AWS_SESSION_TOKEN = check_and_get_env_variable(
-    "CONTROL_PLANE_AWS_SESSION_TOKEN", default=""
-)
 SENDER_EMAIL = check_and_get_env_variable(
     "CONTROL_PLANE_SENDER_EMAIL", default="team@aipolabs.info"
 )

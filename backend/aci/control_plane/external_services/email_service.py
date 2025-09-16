@@ -20,9 +20,6 @@ class EmailService:
         if config.AWS_ACCESS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
             client_kwargs["aws_access_key_id"] = config.AWS_ACCESS_KEY_ID
             client_kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
-            # Support temporary credentials via optional session token
-            if getattr(config, "AWS_SESSION_TOKEN", ""):
-                client_kwargs["aws_session_token"] = config.AWS_SESSION_TOKEN
 
         self.client = boto3.client("ses", **client_kwargs)
         self.sender = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"
