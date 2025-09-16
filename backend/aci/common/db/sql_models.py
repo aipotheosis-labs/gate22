@@ -80,6 +80,9 @@ class User(Base):
     refresh_tokens: Mapped[list[UserRefreshToken]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
+    verifications: Mapped[list[Verification]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", init=False
+    )
 
 
 class UserRefreshToken(Base):
@@ -106,6 +109,35 @@ class UserRefreshToken(Base):
         DateTime(timezone=True), nullable=True, init=False
     )
     user: Mapped[User] = relationship(back_populates="refresh_tokens", init=False)
+
+
+class Verification(Base):
+    __tablename__ = "verifications"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    type: Mapped[str] = mapped_column(
+        String(MAX_ENUM_LENGTH), nullable=False
+    )  # 'email_verification' | 'password_reset'
+    token_hash: Mapped[str] = mapped_column(
+        String(MAX_STRING_LENGTH), unique=True, nullable=False
+    )  # HMAC-SHA256(secret, token)
+    email_metadata: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True
+    )  # email provider, send time, reference id
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, init=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+
+    user: Mapped[User] = relationship(back_populates="verifications", init=False)
 
 
 class Organization(Base):

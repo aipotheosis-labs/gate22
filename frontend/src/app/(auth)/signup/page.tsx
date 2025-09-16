@@ -6,17 +6,13 @@ import { SignupForm } from "@/features/auth/components/signup-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import {
-  register,
-  issueToken,
-  getProfile,
-  getGoogleAuthUrl,
-} from "@/features/auth/api/auth";
+import { register, getGoogleAuthUrl } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 
 export default function SignupPage() {
   const router = useRouter();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  // No inline verification message shown on this page
 
   const handleSignup = async (
     email: string,
@@ -34,21 +30,8 @@ export default function SignupPage() {
       return; // Error is already displayed as toast
     }
 
-    // Issue access token after successful registration
-    const tokenResponse = await issueToken();
-
-    // Store token in memory using token manager
-    tokenManager.setAccessToken(tokenResponse.token);
-
-    // Get user profile to check if organization exists
-    const userProfile = await getProfile(tokenResponse.token);
-
-    // Redirect to organization creation onboarding if no org, otherwise dashboard
-    if (!userProfile.organizations || userProfile.organizations.length === 0) {
-      router.push("/onboarding/organization");
-    } else {
-      router.push("/mcp-servers");
-    }
+    // Redirect to verify-pending page so user can see next steps
+    router.push(`/auth/verify-pending?email=${encodeURIComponent(email)}`);
   };
 
   const handleGoogleSignup = () => {
@@ -97,6 +80,8 @@ export default function SignupPage() {
                 Start your journey with MCP Gateway
               </p>
             </div>
+
+            {/* No inline verification banner; user is redirected to verify-pending */}
 
             <SignupForm onSignup={handleSignup} />
 

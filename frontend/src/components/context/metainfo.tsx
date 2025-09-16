@@ -109,6 +109,21 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             username: userProfile.email.split("@")[0],
             pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
           };
+          // If the user has no organizations, send them to onboarding
+          if (
+            !userProfile.organizations ||
+            userProfile.organizations.length === 0
+          ) {
+            setAccessToken(token);
+            setUser(user);
+            setOrgs([]);
+            setActiveOrg(null);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            router.push("/onboarding/organization");
+            return;
+          }
+
           let org: OrgMemberInfoClass;
 
           if (storedOrg && userProfile.organizations) {
@@ -195,7 +210,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     };
 
     checkExistingSession();
-  }, []);
+  }, [router]);
 
   const handleLogout = useCallback(async () => {
     try {

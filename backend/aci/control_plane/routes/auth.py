@@ -1,8 +1,5 @@
 import datetime
-import hashlib
-import hmac
-import secrets
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 from uuid import UUID
 
@@ -15,6 +12,7 @@ from starlette.responses import RedirectResponse
 
 from aci.common import utils
 from aci.common.db import crud
+from aci.common.db.sql_models import User, Verification
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import (
@@ -28,7 +26,9 @@ from aci.common.schemas.auth import (
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import OAuth2Error
-from aci.control_plane.google_login_utils import (
+from aci.control_plane.external_services.email_service import email_service
+from aci.control_plane.utils import token as token_utils
+from aci.control_plane.utils.google_oauth import (
     exchange_google_userinfo,
     generate_google_auth_url,
 )
@@ -129,6 +129,7 @@ async def google_callback(
             email=google_userinfo.email,
             password_hash=None,
             identity_provider=UserIdentityProvider.GOOGLE,
+            email_verified=True,
         )
 
     # Issue a refresh token, store in secure cookie
@@ -145,7 +146,8 @@ async def google_callback(
     status_code=status.HTTP_201_CREATED,
     description="""
     Register a new user using email flow. On success, it will set a refresh
-    token in the response cookie. Call /token endpoint to get a JWT token.
+    token in the response cookie and send a verification email.
+    Call /token endpoint to get a JWT token.
     """,
 )
 async def register(
@@ -153,37 +155,38 @@ async def register(
     request: EmailRegistrationRequest,
     response: Response,
 ) -> None:
-    # Check if user already exists
-    user = crud.users.get_user_by_email(db_session, request.email)
-    if user:
-        if user.deleted_at is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "This account is under deletion process. "
-                    "Please contact support if you need assistance."
-                ),
-            )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already been used"
+    try:
+        # Use helper function to handle registration and email verification
+        user, _ = await _register_user_with_email(
+            db_session=db_session,
+            name=request.name,
+            email=request.email,
+            password=request.password,
         )
 
-    # Hash password
-    hashed = utils.hash_user_password(request.password)
+        db_session.commit()
 
-    # Create user
-    user = crud.users.create_user(
-        db_session=db_session,
-        name=request.name,
-        email=request.email,
-        password_hash=hashed,
-        identity_provider=UserIdentityProvider.EMAIL,
-    )
+        # Issue a refresh token, store in secure cookie
+        _issue_refresh_token(db_session, user.id, response)
 
-    db_session.commit()
-
-    # Issue a refresh token, store in secure cookie
-    _issue_refresh_token(db_session, user.id, response)
+    except ValueError as e:
+        # Handle business logic errors
+        error_msg = str(e)
+        if "deletion process" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=error_msg,
+            ) from e
+        elif "Email already been used" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg,
+            ) from e
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg,
+            ) from e
 
 
 @router.post(
@@ -225,6 +228,13 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
         )
 
+    # Require email verification for email/password logins
+    if not user.email_verified and user.identity_provider == UserIdentityProvider.EMAIL:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. Please check your inbox for the verification link.",
+        )
+
     # Update the last login time
     user.last_login_at = datetime.datetime.now(datetime.UTC)
     db_session.commit()
@@ -253,10 +263,9 @@ async def issue_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token"
         )
-    logger.info(f"Refresh token: {refresh_token}")
 
     # Check if refresh token is valid
-    refresh_token_hash = _hash_refresh_token(refresh_token)
+    refresh_token_hash = token_utils.hash_refresh_token(refresh_token)
     refresh_token_obj = crud.users.get_refresh_token(db_session, refresh_token_hash)
     if not refresh_token_obj:
         raise HTTPException(
@@ -312,6 +321,34 @@ async def issue_token(
     return TokenResponse(token=token)
 
 
+@router.get(
+    "/verify-email",
+    status_code=status.HTTP_302_FOUND,
+    description="""
+    Verify a user's email address using the token from the verification email.
+    Redirects to the frontend with success or error status.
+    """,
+)
+async def verify_email(
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    token: str = Query(..., description="The verification token from the email"),
+) -> RedirectResponse:
+    # Use helper function to verify email
+    is_valid, message, _ = _verify_user_email(db_session, token)
+
+    if not is_valid:
+        # Redirect to frontend with error
+        error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={message}"
+        return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
+
+    # Commit the transaction
+    db_session.commit()
+
+    # Redirect to frontend with success
+    success_url = f"{config.FRONTEND_URL}/auth/verify-success"
+    return RedirectResponse(success_url, status_code=status.HTTP_302_FOUND)
+
+
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -329,20 +366,11 @@ async def logout(
 
     # Delete the refresh token in database
     if refresh_token:
-        token_hash = _hash_refresh_token(refresh_token)
+        token_hash = token_utils.hash_refresh_token(refresh_token)
         crud.users.delete_refresh_token(db_session, token_hash)
 
     # Delete the refresh token in cookie
     response.delete_cookie("refresh_token")
-
-
-def _hash_refresh_token(refresh_token: str) -> str:
-    """
-    Hash a refresh token. Using HMAC-SHA-256 is good enough for hashing refresh token.
-    """
-    return hmac.new(
-        config.REFRESH_TOKEN_KEY.encode(), refresh_token.encode(), hashlib.sha256
-    ).hexdigest()
 
 
 def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response) -> None:
@@ -350,11 +378,8 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
     Generate a refresh token, store it in the database and set it in response cookie.
     """
 
-    # Generate a refresh token
-    refresh_token = secrets.token_urlsafe(32)
-
-    # Hash refresh token
-    token_hash = _hash_refresh_token(refresh_token)
+    # Generate a refresh token and its hash
+    refresh_token, token_hash = token_utils.generate_refresh_token()
 
     # Set the refresh token expiration time
     expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=30)
@@ -372,3 +397,144 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
         samesite="lax",
         max_age=60 * 60 * 24 * 30,
     )
+
+
+async def _register_user_with_email(
+    db_session: Session,
+    name: str,
+    email: str,
+    password: str,
+) -> tuple[User, dict[str, Any] | None]:
+    """
+    Register a new user with email and send verification email.
+    Returns the created user and email metadata.
+    """
+    # Check if user already exists
+    existing_user = crud.users.get_user_by_email(db_session, email)
+    if existing_user:
+        if existing_user.deleted_at is not None:
+            raise ValueError(
+                "This account is under deletion process. "
+                "Please contact support if you need assistance."
+            )
+
+        # If the existing account is a third-party identity, do not allow overriding
+        if existing_user.identity_provider != UserIdentityProvider.EMAIL:
+            raise ValueError(
+                "This email is already registered with a third-party login. Please sign in with that provider."
+            )
+
+        # If the email is already verified, treat as an existing account
+        if existing_user.email_verified:
+            raise ValueError("Email already been used")
+
+        # For unverified existing email accounts, update latest info and resend verification
+        existing_user.name = name
+        existing_user.password_hash = utils.hash_user_password(password)
+        db_session.add(existing_user)
+
+        # Invalidate any previous unused verification tokens for this user
+        now_ts = datetime.datetime.now(datetime.UTC)
+        (
+            db_session.query(Verification)
+            .filter(
+                Verification.user_id == existing_user.id,
+                Verification.type == "email_verification",
+                Verification.used_at.is_(None),
+            )
+            .update({Verification.used_at: now_ts}, synchronize_session=False)
+        )
+
+        user = existing_user
+    else:
+        # Create user with email_verified=false
+        password_hash = utils.hash_user_password(password)
+        user = crud.users.create_user(
+            db_session=db_session,
+            name=name,
+            email=email,
+            password_hash=password_hash,
+            identity_provider=UserIdentityProvider.EMAIL,
+        )
+
+    # Generate and send verification email
+    token, token_hash, expires_at = token_utils.generate_verification_token(
+        user_id=user.id,
+        email=email,
+        verification_type="email_verification",
+    )
+
+    # Create verification URL
+    base_url = f"{config.CONTROL_PLANE_BASE_URL}{config.APP_ROOT_PATH}"
+    verification_url = f"{base_url}/auth/verify-email?token={token}"
+
+    # Send verification email
+    email_metadata = await email_service.send_verification_email(
+        recipient=email,
+        user_name=name,
+        verification_url=verification_url,
+    )
+
+    # Store verification record
+    verification = Verification(
+        user_id=user.id,
+        type="email_verification",
+        token_hash=token_hash,
+        expires_at=expires_at,
+        email_metadata=email_metadata,
+    )
+    db_session.add(verification)
+
+    return user, email_metadata
+
+
+def _verify_user_email(
+    db_session: Session,
+    token: str,
+) -> tuple[bool, str, User | None]:
+    """
+    Verify a user's email using the verification token.
+    Returns success status, message, and the user if successful.
+    """
+    # Validate and decode token
+    payload = token_utils.validate_token(token)
+    if not payload:
+        # JWT invalid or expired
+        return False, "invalid_or_expired_token", None
+
+    if payload.get("type") != "email_verification":
+        return False, "invalid_token_type", None
+
+    # Check verification record
+    token_hash = token_utils.hash_token(token)
+    verification = (
+        db_session.query(Verification)
+        .filter(
+            Verification.token_hash == token_hash,
+            Verification.used_at.is_(None),
+        )
+        .first()
+    )
+
+    if not verification:
+        return False, "token_not_found_or_already_used", None
+
+    if verification.expires_at < datetime.datetime.now(datetime.UTC):
+        return False, "token_expired", None
+
+    user_id = UUID(payload["user_id"])
+    if verification.user_id != user_id:
+        return False, "token_mismatch", None
+
+    # Mark verification as used
+    verification.used_at = datetime.datetime.now(datetime.UTC)
+    db_session.add(verification)
+
+    # Update user's email_verified status
+    user = crud.users.get_user_by_id(db_session, user_id)
+    if user:
+        user.email_verified = True
+        db_session.add(user)
+        db_session.commit()
+        return True, "email_verified", user
+    return False, "user_not_found", None

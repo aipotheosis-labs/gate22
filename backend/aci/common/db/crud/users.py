@@ -13,11 +13,12 @@ def create_user(
     email: str,
     password_hash: str | None,
     identity_provider: UserIdentityProvider,
+    email_verified: bool = False,
 ) -> User:
     user = User(
         name=name,
         email=email,
-        email_verified=False,
+        email_verified=email_verified,
         password_hash=password_hash,
         identity_provider=identity_provider,
     )

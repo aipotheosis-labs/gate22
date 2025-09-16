@@ -80,7 +80,6 @@ export default function CreateOrganizationPage() {
         } catch {
           // If parsing JSON fails, fall back to statusText
         }
-        console.error("API Error:", response.status, errorMessage);
         throw new Error(errorMessage);
       }
 
