@@ -283,6 +283,20 @@ class MCPServer(Base):
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     # e.g., https://example.com/mcp
     url: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Custom MCP Server, null if it is a public MCP Server
+    organization_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=True,
+        server_default=None,
+    )
+
+    # Last time the MCP Server was synced for the tool list.
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, server_default=None
+    )
+
     description: Mapped[str] = mapped_column(Text, nullable=False)
     transport_type: Mapped[MCPServerTransportType] = mapped_column(
         SQLEnum(MCPServerTransportType, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
@@ -308,6 +322,10 @@ class MCPServer(Base):
 
     tools: Mapped[list[MCPTool]] = relationship(
         back_populates="mcp_server", cascade="all, delete-orphan", init=False
+    )
+
+    ops_account: Mapped[OpsAccount | None] = relationship(
+        back_populates="mcp_server", init=False, uselist=False
     )
 
 
@@ -444,6 +462,39 @@ class ConnectedAccount(Base):
             name="uc_connected_accounts_one_per_user_per_mcp_server_config",
         ),
     )
+
+
+# One Custom MCP Server (non-public) would have one OpsAccount.
+class OpsAccount(Base):
+    __tablename__ = "ops_accounts"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    mcp_server_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("mcp_servers.id", ondelete="CASCADE"), nullable=False
+    )
+    auth_credentials: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    created_by_user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    mcp_server: Mapped[MCPServer] = relationship(back_populates="ops_account", init=False)
+
+    # Ensure one ops account per MCP server
+    __table_args__ = (UniqueConstraint("mcp_server_id", name="uc_ops_account_mcp_server"),)
 
 
 class MCPServerBundle(Base):

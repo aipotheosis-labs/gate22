@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServer
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp_server import MCPServerUpsert
+from aci.common.schemas.mcp_server import CustomMCPServerCreate, PublicMCPServerUpsert
 
 logger = get_logger(__name__)
 
@@ -63,13 +63,15 @@ def get_mcp_server_by_id(
         return mcp_server
 
 
-def create_mcp_server(
-    db_session: Session, mcp_server_upsert: MCPServerUpsert, embedding: list[float]
+def create_public_mcp_server(
+    db_session: Session, mcp_server_upsert: PublicMCPServerUpsert, embedding: list[float]
 ) -> MCPServer:
     mcp_server_data = mcp_server_upsert.model_dump(mode="json", exclude_none=True)
     mcp_server = MCPServer(
         **mcp_server_data,
         embedding=embedding,
+        organization_id=None,
+        last_synced_at=None,
     )
     db_session.add(mcp_server)
     db_session.flush()
@@ -77,10 +79,10 @@ def create_mcp_server(
     return mcp_server
 
 
-def update_mcp_server(
+def update_public_mcp_server(
     db_session: Session,
     mcp_server: MCPServer,
-    mcp_server_upsert: MCPServerUpsert,
+    mcp_server_upsert: PublicMCPServerUpsert,
     embedding: list[float] | None = None,
 ) -> MCPServer:
     new_mcp_server_data = mcp_server_upsert.model_dump(mode="json", exclude_none=True)
@@ -91,6 +93,25 @@ def update_mcp_server(
     if embedding:
         mcp_server.embedding = embedding
 
+    db_session.flush()
+    db_session.refresh(mcp_server)
+    return mcp_server
+
+
+def create_custom_mcp_server(
+    db_session: Session,
+    organization_id: UUID,
+    custom_mcp_server_upsert: CustomMCPServerCreate,
+    embedding: list[float],
+) -> MCPServer:
+    mcp_server_data = custom_mcp_server_upsert.model_dump(mode="json", exclude_none=True)
+    mcp_server = MCPServer(
+        **mcp_server_data,
+        embedding=embedding,
+        organization_id=organization_id,
+        last_synced_at=None,
+    )
+    db_session.add(mcp_server)
     db_session.flush()
     db_session.refresh(mcp_server)
     return mcp_server
