@@ -33,6 +33,17 @@ def unverified_user(db_session: Session) -> User:
 
 
 @pytest.fixture
+def verified_user(db_session: Session) -> User:
+    """Create a verified user for testing."""
+    return _create_verified_user(
+        db_session,
+        name="Verified User",
+        email="verified@example.com",
+        password="VerifiedPass123!",
+    )
+
+
+@pytest.fixture
 def mock_email_service(test_client: TestClient) -> Generator[MagicMock, None, None]:
     """Mock the email service to avoid actual AWS SES calls."""
     # Import here to avoid circular imports
@@ -67,6 +78,78 @@ def mock_email_service(test_client: TestClient) -> Generator[MagicMock, None, No
     del app.dependency_overrides[deps.get_email_service]
 
 
+def _create_verified_user(
+    db_session: Session, name: str, email: str, password: str
+) -> User:
+    """Helper to create a verified user."""
+    password_hash = utils.hash_user_password(password)
+    user = crud.users.create_user(
+        db_session=db_session,
+        name=name,
+        email=email,
+        password_hash=password_hash,
+        identity_provider=UserIdentityProvider.EMAIL,
+    )
+    user.email_verified = True
+    db_session.commit()
+    return user
+
+
+def _create_verification_record(
+    db_session: Session,
+    user: User,
+    token: str | None = None,
+    expired: bool = False,
+    used: bool = False,
+) -> tuple[str, UserVerification]:
+    """Helper to create a verification record with optional token generation."""
+    if token is None:
+        token, token_hash, expires_at = token_utils.generate_verification_token(
+            user_id=user.id,
+            email=user.email,
+            verification_type="email_verification",
+        )
+    else:
+        token_hash = token_utils.hash_token(token)
+        if expired:
+            expires_at = datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=25)
+        else:
+            expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=24)
+
+    verification = UserVerification(
+        user_id=user.id,
+        type="email_verification",
+        token_hash=token_hash,
+        expires_at=expires_at,
+        email_metadata=None,
+    )
+
+    if used:
+        verification.used_at = datetime.datetime.now(datetime.UTC)
+
+    db_session.add(verification)
+    db_session.commit()
+    return token, verification
+
+
+def _assert_email_service_called(
+    mock_email_service: MagicMock, expected_email: str, expected_name: str
+) -> None:
+    """Assert email service was called with expected parameters."""
+    mock_email_service.send_verification_email.assert_called_once()
+    call_args = mock_email_service.send_verification_email.call_args
+    assert call_args[1]["recipient"] == expected_email
+    assert call_args[1]["user_name"] == expected_name
+
+
+def _assert_redirect_response(
+    response, expected_status: int, expected_location_contains: str
+) -> None:
+    """Assert redirect response matches expectations."""
+    assert response.status_code == expected_status
+    assert expected_location_contains in response.headers["location"]
+
+
 def extract_token_from_mock(mock_email_service: MagicMock) -> str:
     """Extract verification token from mocked email service call."""
     call_args = mock_email_service.send_verification_email.call_args
@@ -97,10 +180,7 @@ class TestEmailRegistration:
         assert response.status_code == 201
 
         # Check email service was called
-        mock_email_service.send_verification_email.assert_called_once()
-        call_args = mock_email_service.send_verification_email.call_args
-        assert call_args[1]["recipient"] == "newuser@example.com"
-        assert call_args[1]["user_name"] == "Test User"
+        _assert_email_service_called(mock_email_service, "newuser@example.com", "Test User")
 
         # Check user was created with email_verified=False
         user = crud.users.get_user_by_email(db_session, "newuser@example.com")
@@ -157,27 +237,16 @@ class TestEmailRegistration:
         assert len(new_verifications) >= 1
 
     def test_register_existing_verified_email(
-        self, test_client: TestClient, db_session: Session
+        self, test_client: TestClient, verified_user: User, mock_email_service: MagicMock
     ) -> None:
         """Test registration fails for already verified emails."""
-        # Create a verified user
-        password_hash = utils.hash_user_password("ExistingPass123!")
-        verified_user = crud.users.create_user(
-            db_session=db_session,
-            name="Verified User",
-            email="verified@example.com",
-            password_hash=password_hash,
-            identity_provider=UserIdentityProvider.EMAIL,
-        )
-        verified_user.email_verified = True
-        db_session.commit()
 
         # Try to register with same email
         response = test_client.post(
             f"{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/register/email",
             json={
                 "name": "Another User",
-                "email": "verified@example.com",
+                "email": verified_user.email,
                 "password": "NewPassword123!",
             },
         )
@@ -208,27 +277,15 @@ class TestEmailLogin:
         assert "Email not verified" in response.json()["detail"]
 
     def test_login_allowed_for_verified_email(
-        self, test_client: TestClient, db_session: Session
+        self, test_client: TestClient, verified_user: User
     ) -> None:
         """Test that login works for verified email accounts."""
-        # Create a verified user
-        password = "VerifiedPass123!"
-        password_hash = utils.hash_user_password(password)
-        verified_user = crud.users.create_user(
-            db_session=db_session,
-            name="Verified Login User",
-            email="verified_login@example.com",
-            password_hash=password_hash,
-            identity_provider=UserIdentityProvider.EMAIL,
-        )
-        verified_user.email_verified = True
-        db_session.commit()
 
         response = test_client.post(
             f"{config.APP_ROOT_PATH}{config.ROUTER_PREFIX_AUTH}/login/email",
             json={
                 "email": verified_user.email,
-                "password": password,
+                "password": "VerifiedPass123!",
             },
         )
 
@@ -241,23 +298,8 @@ class TestEmailUserVerification:
         self, test_client: TestClient, db_session: Session, unverified_user: User
     ) -> None:
         """Test successful email verification with valid token."""
-        # Generate a valid token
-        token, token_hash, expires_at = token_utils.generate_verification_token(
-            user_id=unverified_user.id,
-            email=unverified_user.email,
-            verification_type="email_verification",
-        )
-
-        # Create verification record
-        verification = UserVerification(
-            user_id=unverified_user.id,
-            type="email_verification",
-            token_hash=token_hash,
-            expires_at=expires_at,
-            email_metadata=None,
-        )
-        db_session.add(verification)
-        db_session.commit()
+        # Generate a valid token and create verification record
+        token, verification = _create_verification_record(db_session, unverified_user)
 
         # Verify email
         response = test_client.get(
@@ -265,8 +307,7 @@ class TestEmailUserVerification:
             params={"token": token},
         )
 
-        assert response.status_code == 302  # Redirect
-        assert "/auth/verify-success" in response.headers["location"]
+        _assert_redirect_response(response, 302, "/auth/verify-success")
 
         # Check user is now verified
         db_session.refresh(unverified_user)
@@ -283,8 +324,7 @@ class TestEmailUserVerification:
             params={"token": "invalid-token-12345"},
         )
 
-        assert response.status_code == 302
-        assert "/auth/verify-error" in response.headers["location"]
+        _assert_redirect_response(response, 302, "/auth/verify-error")
         assert "invalid_or_expired_token" in response.headers["location"]
 
     def test_verify_email_expired_token(
@@ -324,8 +364,7 @@ class TestEmailUserVerification:
             params={"token": token},
         )
 
-        assert response.status_code == 302
-        assert "/auth/verify-error" in response.headers["location"]
+        _assert_redirect_response(response, 302, "/auth/verify-error")
 
         # User should still be unverified
         db_session.refresh(unverified_user)
@@ -335,24 +374,10 @@ class TestEmailUserVerification:
         self, test_client: TestClient, db_session: Session, unverified_user: User
     ) -> None:
         """Test that verification token can't be reused."""
-        # Generate a valid token
-        token, token_hash, expires_at = token_utils.generate_verification_token(
-            user_id=unverified_user.id,
-            email=unverified_user.email,
-            verification_type="email_verification",
+        # Generate token and create verification record marked as used
+        token, verification = _create_verification_record(
+            db_session, unverified_user, used=True
         )
-
-        # Create verification record already marked as used
-        verification = UserVerification(
-            user_id=unverified_user.id,
-            type="email_verification",
-            token_hash=token_hash,
-            expires_at=expires_at,
-            email_metadata=None,
-        )
-        verification.used_at = datetime.datetime.now(datetime.UTC)
-        db_session.add(verification)
-        db_session.commit()
 
         # Try to use the already-used token
         response = test_client.get(
@@ -360,6 +385,5 @@ class TestEmailUserVerification:
             params={"token": token},
         )
 
-        assert response.status_code == 302
-        assert "/auth/verify-error" in response.headers["location"]
+        _assert_redirect_response(response, 302, "/auth/verify-error")
         assert "token_not_found_or_already_used" in response.headers["location"]
