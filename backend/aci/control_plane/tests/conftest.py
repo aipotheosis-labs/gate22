@@ -290,7 +290,7 @@ def dummy_mcp_servers(db_session: Session) -> list[MCPServer]:
         embedding,
         mcp_tool_embeddings,
     ) in dummy_mcp_servers_to_be_inserted:
-        mcp_server = crud.mcp_servers.create_mcp_server(
+        mcp_server = crud.mcp_servers.create_public_mcp_server(
             db_session=db_session, mcp_server_upsert=mcp_server_upsert, embedding=embedding
         )
         crud.mcp_tools.create_mcp_tools(

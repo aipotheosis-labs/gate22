@@ -1,6 +1,9 @@
 import datetime
 import os
+import random
 import re
+import string
+from enum import Enum
 from functools import cache
 from uuid import UUID
 
@@ -134,3 +137,24 @@ def sign_token(
         jwt_payload.model_dump(mode="json"), jwt_signing_key, algorithm=jwt_algorithm
     )
     return token
+
+
+class CaseOption(Enum):
+    UPPER = "upper"
+    LOWER = "lower"
+    MIXED = "mixed"
+
+
+def generate_alphanumeric_string(digits: int, case: CaseOption = CaseOption.MIXED) -> str:
+    """
+    Generate a random alphanumeric string of a given length.
+    """
+
+    if case == CaseOption.UPPER:
+        alphabet = string.ascii_uppercase + string.digits
+    elif case == CaseOption.LOWER:
+        alphabet = string.ascii_lowercase + string.digits
+    elif case == CaseOption.MIXED:
+        alphabet = string.ascii_letters + string.digits
+
+    return "".join(random.choice(alphabet) for _ in range(digits))

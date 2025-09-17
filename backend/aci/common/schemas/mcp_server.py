@@ -17,7 +17,7 @@ class MCPServerMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class MCPServerUpsert(BaseModel, extra="forbid"):
+class PublicMCPServerUpsert(BaseModel, extra="forbid"):
     name: str
     url: str
     transport_type: MCPServerTransportType
@@ -29,12 +29,23 @@ class MCPServerUpsert(BaseModel, extra="forbid"):
 
     @field_validator("name")
     def validate_name(cls, v: str) -> str:
+        msg = (
+            "name must be uppercase, contain only letters, numbers and underscores, not "
+            "have consecutive underscores, and not start or end with an underscore"
+        )
+
+        if v.startswith("_") or v.endswith("_"):
+            raise ValueError(msg)
+
         if not re.match(r"^[A-Z0-9_]+$", v) or "__" in v:
-            raise ValueError(
-                "name must be uppercase, contain only letters, numbers and underscores, and not "
-                "have consecutive underscores"
-            )
+            raise ValueError(msg)
         return v
+
+
+# Currently Custom MCP Server has same fields as PublicMCPServerUpsert.
+# But we should not extend PublicMCPServerUpsert in the future to avoid confusion.
+class CustomMCPServerCreate(PublicMCPServerUpsert, extra="forbid"):
+    pass
 
 
 class MCPServerEmbeddingFields(BaseModel):
@@ -52,6 +63,8 @@ class MCPServerPublic(BaseModel):
     id: UUID
     name: str
     url: str
+    organization_id: UUID | None
+    last_synced_at: datetime | None
     # TODO: is it necessary to expose transport_type?
     description: str
     logo: str

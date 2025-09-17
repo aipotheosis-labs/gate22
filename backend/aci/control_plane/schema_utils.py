@@ -26,6 +26,8 @@ def construct_mcp_server_public(mcp_server: MCPServer) -> MCPServerPublic:
         id=mcp_server.id,
         name=mcp_server.name,
         url=mcp_server.url,
+        organization_id=mcp_server.organization_id,
+        last_synced_at=mcp_server.last_synced_at,
         description=mcp_server.description,
         logo=mcp_server.logo,
         categories=mcp_server.categories,
