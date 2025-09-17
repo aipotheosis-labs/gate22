@@ -482,3 +482,71 @@ class MCPServerBundle(Base):
 
 
 # TODO: sessions table for mcp server that require sessions
+
+
+###################################################################################################
+# Below tables are used only by the "native MCP" service hosting native MCP Servers
+# see design doc:
+# https://www.notion.so/Design-Doc-a-new-service-as-the-execution-engine-for-native-MCP-servers-integration-based-26b8378d6a4780b4a389cf302d021c49
+###################################################################################################
+
+
+class VirtualMCPServer(Base):
+    """
+    This table is close to the "App" table of the tool-calling platform but many fields removed.
+    """
+
+    __tablename__ = "virtual_mcp_servers"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False, unique=True)
+    description: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+
+class VirtualMCPTool(Base):
+    __tablename__ = "virtual_mcp_tools"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    virtual_mcp_server_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("virtual_mcp_servers.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    # NOTE: here we still prefix "app name" (e.g., "GMAIL__SEND_EMAIL"), but in the response of
+    # tools/list (requested by unified mcp) we will strip off the prefix (e.g., "SEND_EMAIL")
+    # we can do this because we will have the "app name" in the mcp url (as query parameter)
+    # e.g., https://mcp.aci.dev/virtual/mcp?name=GMAIL
+    name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    # NOTE: this input_schema will include "visibility" field for "rest" protocol type
+    # But they will be stripped off in the response of tools/list (requested by unified mcp)
+    input_schema: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    # NOTE: tool_metadata serves similar function as the "protocol & protocol_data" field in the
+    # tool-calling platform
+    tool_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
