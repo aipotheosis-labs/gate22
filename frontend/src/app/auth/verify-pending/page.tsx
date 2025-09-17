@@ -28,16 +28,17 @@ function VerifyPendingPageContent() {
 
       {/* Back button */}
       <div className="absolute top-6 left-6 z-10">
-        <Link href="/">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:bg-background/80 backdrop-blur-sm"
-          >
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="hover:bg-background/80 backdrop-blur-sm"
+        >
+          <Link href="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Main Content */}

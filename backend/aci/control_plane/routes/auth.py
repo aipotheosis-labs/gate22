@@ -28,7 +28,12 @@ from aci.common.schemas.auth import (
 )
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
-from aci.control_plane.exceptions import OAuth2Error
+from aci.control_plane.exceptions import (
+    AccountDeletionInProgressError,
+    EmailAlreadyExistsError,
+    OAuth2Error,
+    ThirdPartyIdentityExistsError,
+)
 from aci.control_plane.external_services.email_service import email_service
 from aci.control_plane.google_login_utils import (
     exchange_google_userinfo,
@@ -158,38 +163,18 @@ async def register(
     request: EmailRegistrationRequest,
     response: Response,
 ) -> None:
-    try:
-        # Use helper function to handle registration and email verification
-        user, _ = await _register_user_with_email(
-            db_session=db_session,
-            name=request.name,
-            email=request.email,
-            password=request.password,
-        )
+    # Use helper function to handle registration and email verification
+    user, _ = await _register_user_with_email(
+        db_session=db_session,
+        name=request.name,
+        email=request.email,
+        password=request.password,
+    )
 
-        db_session.commit()
+    db_session.commit()
 
-        # Issue a refresh token, store in secure cookie
-        _issue_refresh_token(db_session, user.id, response)
-
-    except ValueError as e:
-        # Handle business logic errors
-        error_msg = str(e)
-        if "deletion process" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=error_msg,
-            ) from e
-        elif "Email already been used" in error_msg:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_msg,
-            ) from e
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=error_msg,
-            ) from e
+    # Issue a refresh token, store in secure cookie
+    _issue_refresh_token(db_session, user.id, response)
 
 
 @router.post(
@@ -428,21 +413,16 @@ async def _register_user_with_email(
     existing_user = crud.users.get_user_by_email(db_session, email)
     if existing_user:
         if existing_user.deleted_at is not None:
-            raise ValueError(
-                "This account is under deletion process. "
-                "Please contact support if you need assistance."
-            )
+            # Account is under deletion process
+            raise AccountDeletionInProgressError()
 
         # If the existing account is a third-party identity, do not allow overriding
         if existing_user.identity_provider != UserIdentityProvider.EMAIL:
-            raise ValueError(
-                "This email is already registered with a third-party login. "
-                "Please sign in with that provider."
-            )
+            raise ThirdPartyIdentityExistsError()
 
         # If the email is already verified, treat as an existing account
         if existing_user.email_verified:
-            raise ValueError("Email already been used")
+            raise EmailAlreadyExistsError()
 
         # For unverified existing email accounts, update latest info and resend verification
         existing_user.name = name

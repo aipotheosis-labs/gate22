@@ -94,3 +94,42 @@ class UnexpectedError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+class AccountDeletionInProgressError(ControlPlaneException):
+    """
+    Exception raised when an account is under deletion process.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="account_deletion_in_progress",
+            message=message,
+            error_code=status.HTTP_409_CONFLICT,
+        )
+
+
+class EmailAlreadyExistsError(ControlPlaneException):
+    """
+    Exception raised when an email is already associated with an existing account.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="email_already_exists",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class ThirdPartyIdentityExistsError(ControlPlaneException):
+    """
+    Exception raised when an email is already registered with a third-party identity provider.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="third_party_identity_exists",
+            message=message,
+            error_code=status.HTTP_409_CONFLICT,
+        )
