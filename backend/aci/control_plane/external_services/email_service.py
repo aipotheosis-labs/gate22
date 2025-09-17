@@ -16,14 +16,14 @@ logger = get_logger(__name__)
 
 class EmailService:
     def __init__(self) -> None:
-        client_kwargs: dict[str, Any] = {"region_name": config.AWS_REGION}
+        client_kwargs: dict[str, Any] = {"region_name": config.AWS_SES_REGION}
 
         # Only pass explicit credentials if provided (non-empty). This lets boto3
         # use the default credential chain (env vars, shared config, IAM role)
         # when keys are not set, avoiding invalid empty credentials.
-        if config.AWS_ACCESS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
-            client_kwargs["aws_access_key_id"] = config.AWS_ACCESS_KEY_ID
-            client_kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
+        if config.AWS_SES_ACCESS_KEY_ID and config.AWS_SES_SECRET_ACCESS_KEY:
+            client_kwargs["aws_access_key_id"] = config.AWS_SES_ACCESS_KEY_ID
+            client_kwargs["aws_secret_access_key"] = config.AWS_SES_SECRET_ACCESS_KEY
 
         self.client = boto3.client("ses", **client_kwargs)
         self.sender = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"

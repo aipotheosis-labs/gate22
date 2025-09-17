@@ -35,6 +35,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "google-auth-oauthlib>=1.2.2",
     "mcp[cli]>=1.13.1",
+    "humanize>=4.11.0",
 ]
 
 [dependency-groups]

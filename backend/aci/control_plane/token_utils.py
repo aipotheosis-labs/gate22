@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 def generate_verification_token(
     user_id: UUID,
     email: str,
-    verification_type: str = "email_verification",
+    verification_type: str,
     expires_in_minutes: int = config.EMAIL_VERIFICATION_EXPIRE_MINUTES,
 ) -> tuple[str, str, datetime.datetime]:
     """Generate a JWT verification token and its hash."""
