@@ -20,11 +20,11 @@ def generate_verification_token(
     user_id: UUID,
     email: str,
     verification_type: str = "email_verification",
-    expires_in_hours: int = 24,
+    expires_in_minutes: int = config.EMAIL_VERIFICATION_EXPIRE_MINUTES,
 ) -> tuple[str, str, datetime.datetime]:
     """Generate a JWT verification token and its hash."""
     now = datetime.datetime.now(datetime.UTC)
-    expires_at = now + datetime.timedelta(hours=expires_in_hours)
+    expires_at = now + datetime.timedelta(minutes=expires_in_minutes)
 
     payload = {
         "type": verification_type,

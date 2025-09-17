@@ -133,3 +133,12 @@ class ThirdPartyIdentityExistsError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_409_CONFLICT,
         )
+
+
+class EmailSendError(ControlPlaneException):
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="email_send_failed",
+            message=message,
+            error_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )

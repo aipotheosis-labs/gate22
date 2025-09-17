@@ -1,3 +1,5 @@
+import html
+import textwrap
 from typing import Any
 
 import anyio
@@ -5,7 +7,9 @@ import boto3  # type: ignore[import-untyped]
 from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from aci.common.logging_setup import get_logger
+from aci.common import utils
 from aci.control_plane import config
+from aci.control_plane.exceptions import EmailSendError
 
 logger = get_logger(__name__)
 
@@ -31,7 +35,7 @@ class EmailService:
         subject: str,
         body_text: str,
         body_html: str,
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         try:
             response = await anyio.to_thread.run_sync(
                 lambda: self.client.send_email(
@@ -57,7 +61,6 @@ class EmailService:
                     Source=self.sender,
                 )
             )
-            # Avoid PII in logs
             logger.info("Email sent via SES. MessageId=%s", response.get("MessageId"))
             send_at = response.get("ResponseMetadata", {}).get("HTTPHeaders", {}).get("date")
             return {
@@ -67,11 +70,14 @@ class EmailService:
                 "email_reference_id": response.get("MessageId"),
             }
         except ClientError as e:
-            logger.error("SES send_email failed: %s", e.response.get("Error", {}).get("Message"))
-            return None
+            logger.error(
+                "SES send_email failed: %s",
+                e.response.get("Error", {}).get("Message"),
+            )
+            raise EmailSendError("email provider error") from e
         except Exception as e:
             logger.error("Unexpected error sending email: %s", e)
-            return None
+            raise EmailSendError("unexpected error sending email") from e
 
     async def send_verification_email(
         self,
@@ -81,21 +87,28 @@ class EmailService:
     ) -> dict[str, Any] | None:
         subject = "Verify Your Email Address"
 
-        body_text = f"""
-        Hi {user_name},
+        expires_label = utils.format_duration_from_minutes(config.EMAIL_VERIFICATION_EXPIRE_MINUTES)
 
-        Thank you for signing up! Please verify your email address by clicking the
-        link below:
+        body_text = textwrap.dedent(
+            f"""
+            Hi {user_name},
 
-        {verification_url}
+            Thank you for signing up! Please verify your email address by clicking the
+            link below:
 
-        This link will expire in 24 hours.
+            {verification_url}
 
-        If you didn't create an account, you can safely ignore this email.
+            This link will expire in {expires_label}.
 
-        Best regards,
-        The Aipolabs Team
-        """
+            If you didn't create an account, you can safely ignore this email.
+
+            Best regards,
+            The Aipolabs Team
+            """
+        ).strip()
+
+        safe_name = html.escape(user_name)
+        safe_url = html.escape(verification_url, quote=True)
 
         body_html = f"""
         <!DOCTYPE html>
@@ -155,19 +168,19 @@ class EmailService:
                     <h2>Verify Your Email Address</h2>
                 </div>
 
-                <p>Hi {user_name},</p>
+                <p>Hi {safe_name},</p>
 
                 <p>Thank you for signing up! Please verify your email address to complete
                    your registration.</p>
 
                 <div style="text-align: center;">
-                    <a href="{verification_url}" class="button">Verify Email Address</a>
+                    <a href="{safe_url}" class="button">Verify Email Address</a>
                 </div>
 
                 <p>Or copy and paste this link into your browser:</p>
-                <p class="link">{verification_url}</p>
+                <p class="link">{safe_url}</p>
 
-                <p><strong>This link will expire in 24 hours.</strong></p>
+                <p><strong>This link will expire in {html.escape(expires_label)}.</strong></p>
 
                 <p>If you didn't create an account, you can safely ignore this email.</p>
 

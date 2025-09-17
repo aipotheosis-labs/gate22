@@ -7,6 +7,7 @@ from functools import cache
 from uuid import UUID
 
 import bcrypt
+import humanize
 import jwt
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -136,6 +137,15 @@ def sign_token(
         jwt_payload.model_dump(mode="json"), jwt_signing_key, algorithm=jwt_algorithm
     )
     return token
+
+
+def format_duration_from_minutes(minutes: int) -> str:
+    """
+    Convert a duration in minutes into a friendly human-readable label.
+    Uses the humanize library for consistent and localized formatting.
+    """
+    delta = datetime.timedelta(minutes=minutes)
+    return humanize.naturaldelta(delta)
 
 
 def generate_alphanumeric_string(

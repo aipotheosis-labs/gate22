@@ -8,6 +8,7 @@ from uuid import UUID
 
 import bcrypt
 import jwt
+from aci.control_plane import token_utils as token_utils
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -39,7 +40,6 @@ from aci.control_plane.google_login_utils import (
     exchange_google_userinfo,
     generate_google_auth_url,
 )
-from aci.control_plane.utils import token as token_utils
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -458,6 +458,7 @@ async def _register_user_with_email(
         user_id=user.id,
         email=email,
         verification_type="email_verification",
+        expires_in_minutes=config.EMAIL_VERIFICATION_EXPIRE_MINUTES,
     )
 
     # Create verification URL
