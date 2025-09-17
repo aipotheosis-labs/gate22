@@ -21,6 +21,7 @@ from aci.control_plane import dependencies as deps
 logger = get_logger(__name__)
 router = APIRouter()
 
+# TODO: singleton globally
 openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
