@@ -17,7 +17,9 @@ class MCPServerMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class PublicMCPServerUpsert(BaseModel, extra="forbid"):
+class PublicMCPServerUpsert(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str
     url: str
     transport_type: MCPServerTransportType
@@ -44,7 +46,7 @@ class PublicMCPServerUpsert(BaseModel, extra="forbid"):
 
 # Currently Custom MCP Server has same fields as PublicMCPServerUpsert.
 # But we should not extend PublicMCPServerUpsert in the future to avoid confusion.
-class CustomMCPServerCreate(PublicMCPServerUpsert, extra="forbid"):
+class CustomMCPServerCreate(PublicMCPServerUpsert):
     pass
 
 
