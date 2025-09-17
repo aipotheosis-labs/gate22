@@ -59,3 +59,10 @@ repos:
         pass_filenames: false
         require_serial: true
         files: ^backend/
+      - id: importlinter
+        name: running backend importlinter checks
+        language: system
+        entry: sh -c "cd backend && uv run lint-imports"
+        pass_filenames: false
+        require_serial: true
+        files: ^backend/

@@ -49,6 +49,10 @@ jobs:
         working-directory: backend
         run: |
           uv run mypy .
+      - name: Run Import Linter
+        working-directory: backend
+        run: |
+          uv run lint-imports
 
   test:
     name: Compose Tests

@@ -49,6 +49,7 @@ dev = [
     "respx>=0.22.0",
     "types-jsonschema>=4.23.0.20250516",
     "google-api-python-client-stubs>=1.29.0",
+    "import-linter>=2.1",
 ]
 
 

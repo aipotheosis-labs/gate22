@@ -23,7 +23,7 @@ from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
-from aci.common.test_utils import clear_database, create_test_db_session
+from aci.common.test_utils import clear_database
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.main import app as fastapi_app
@@ -564,7 +564,16 @@ def dummy_mcp_server_bundles(
 # ------------------------------------------------------------
 @pytest.fixture(scope="function")
 def db_session() -> Generator[Session, None, None]:
-    yield from create_test_db_session()
+    """
+    Create a database session for testing.
+    Ensures we're using the test database.
+    Each test gets its own database session for better isolation.
+    """
+    assert config.DB_HOST == "test-db", "Must use test-db for tests"
+    assert "test" in config.DB_FULL_URL.lower(), "Database URL must contain 'test' for safety"
+
+    with utils.create_db_session(config.DB_FULL_URL) as session:
+        yield session
 
 
 @pytest.fixture(scope="function", autouse=True)
