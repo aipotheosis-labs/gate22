@@ -5,7 +5,6 @@ services:
     environment:
       - CONTROL_PLANE_OPENAI_API_KEY=${CONTROL_PLANE_OPENAI_API_KEY?}
       - CLI_OPENAI_API_KEY=${CLI_OPENAI_API_KEY?}
-      - CONTROL_PLANE_AWS_SES_REGION=us-east-2
   test-runner:
     environment:
       - CONTROL_PLANE_OPENAI_API_KEY=${CONTROL_PLANE_OPENAI_API_KEY?}
