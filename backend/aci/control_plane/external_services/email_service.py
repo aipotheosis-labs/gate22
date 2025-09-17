@@ -16,6 +16,15 @@ logger = get_logger(__name__)
 
 class EmailService:
     def __init__(self) -> None:
+        self._client: Any = None
+        self._sender: str | None = None
+        self.charset = "UTF-8"
+
+    def _initialize_client(self) -> None:
+        """Lazy initialization of the SES client."""
+        if self._client is not None:
+            return
+
         client_kwargs: dict[str, Any] = {"region_name": config.AWS_SES_REGION}
 
         # Only pass explicit credentials if provided (non-empty). This lets boto3
@@ -25,9 +34,8 @@ class EmailService:
             client_kwargs["aws_access_key_id"] = config.AWS_SES_ACCESS_KEY_ID
             client_kwargs["aws_secret_access_key"] = config.AWS_SES_SECRET_ACCESS_KEY
 
-        self.client = boto3.client("ses", **client_kwargs)
-        self.sender = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"
-        self.charset = "UTF-8"
+        self._client = boto3.client("ses", **client_kwargs)
+        self._sender = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"
 
     async def send_email(
         self,
@@ -36,9 +44,10 @@ class EmailService:
         body_text: str,
         body_html: str,
     ) -> dict[str, Any]:
+        self._initialize_client()
         try:
             response = await anyio.to_thread.run_sync(
-                lambda: self.client.send_email(
+                lambda: self._client.send_email(
                     Destination={
                         "ToAddresses": [recipient],
                     },
@@ -58,7 +67,7 @@ class EmailService:
                             "Data": subject,
                         },
                     },
-                    Source=self.sender,
+                    Source=self._sender,
                 )
             )
             logger.info("Email sent via SES. MessageId=%s", response.get("MessageId"))

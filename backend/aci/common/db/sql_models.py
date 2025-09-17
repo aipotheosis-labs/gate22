@@ -80,7 +80,7 @@ class User(Base):
     refresh_tokens: Mapped[list[UserRefreshToken]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
-    verifications: Mapped[list[Verification]] = relationship(
+    verifications: Mapped[list[UserVerification]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
 
@@ -111,8 +111,8 @@ class UserRefreshToken(Base):
     user: Mapped[User] = relationship(back_populates="refresh_tokens", init=False)
 
 
-class Verification(Base):
-    __tablename__ = "verifications"
+class UserVerification(Base):
+    __tablename__ = "user_verifications"
 
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False

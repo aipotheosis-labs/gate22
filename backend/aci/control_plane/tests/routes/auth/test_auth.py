@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import utils
 from aci.common.db import crud
-from aci.common.db.sql_models import User, Verification
+from aci.common.db.sql_models import User, UserVerification
 from aci.common.enums import UserIdentityProvider
 from aci.control_plane import config
 from aci.control_plane import token_utils as token_utils
@@ -94,7 +94,7 @@ class TestEmailRegistration:
 
         # Check verification record was created
         verification = (
-            db_session.query(Verification).filter(Verification.user_id == user.id).first()
+            db_session.query(UserVerification).filter(UserVerification.user_id == user.id).first()
         )
         assert verification is not None
         assert verification.type == "email_verification"
@@ -130,11 +130,11 @@ class TestEmailRegistration:
 
         # Check new verification was created
         new_verifications = (
-            db_session.query(Verification)
+            db_session.query(UserVerification)
             .filter(
-                Verification.user_id == unverified_user.id,
-                Verification.type == "email_verification",
-                Verification.used_at.is_(None),
+                UserVerification.user_id == unverified_user.id,
+                UserVerification.type == "email_verification",
+                UserVerification.used_at.is_(None),
             )
             .all()
         )
@@ -220,7 +220,7 @@ class TestEmailLogin:
         assert "refresh_token" in response.cookies
 
 
-class TestEmailVerification:
+class TestEmailUserVerification:
     def test_verify_email_valid_token(
         self, test_client: TestClient, db_session: Session, unverified_user: User
     ) -> None:
@@ -233,7 +233,7 @@ class TestEmailVerification:
         )
 
         # Create verification record
-        verification = Verification(
+        verification = UserVerification(
             user_id=unverified_user.id,
             type="email_verification",
             token_hash=token_hash,
@@ -292,7 +292,7 @@ class TestEmailVerification:
         token_hash = token_utils.hash_token(token)
 
         # Create verification record
-        verification = Verification(
+        verification = UserVerification(
             user_id=unverified_user.id,
             type="email_verification",
             token_hash=token_hash,
@@ -327,7 +327,7 @@ class TestEmailVerification:
         )
 
         # Create verification record already marked as used
-        verification = Verification(
+        verification = UserVerification(
             user_id=unverified_user.id,
             type="email_verification",
             token_hash=token_hash,

@@ -15,7 +15,7 @@ from starlette.responses import RedirectResponse
 
 from aci.common import utils
 from aci.common.db import crud
-from aci.common.db.sql_models import User, Verification
+from aci.common.db.sql_models import User, UserVerification
 from aci.common.enums import OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import (
@@ -451,13 +451,13 @@ async def _register_user_with_email(
         # Invalidate any previous unused verification tokens for this user
         now_ts = datetime.datetime.now(datetime.UTC)
         (
-            db_session.query(Verification)
+            db_session.query(UserVerification)
             .filter(
-                Verification.user_id == existing_user.id,
-                Verification.type == "email_verification",
-                Verification.used_at.is_(None),
+                UserVerification.user_id == existing_user.id,
+                UserVerification.type == "email_verification",
+                UserVerification.used_at.is_(None),
             )
-            .update({Verification.used_at: now_ts}, synchronize_session=False)
+            .update({UserVerification.used_at: now_ts}, synchronize_session=False)
         )
 
         user = existing_user
@@ -492,7 +492,7 @@ async def _register_user_with_email(
     )
 
     # Store verification record
-    verification = Verification(
+    verification = UserVerification(
         user_id=user.id,
         type="email_verification",
         token_hash=token_hash,
@@ -525,10 +525,10 @@ def _verify_user_email(
     # Check verification record
     token_hash = token_utils.hash_token(token)
     verification = (
-        db_session.query(Verification)
+        db_session.query(UserVerification)
         .filter(
-            Verification.token_hash == token_hash,
-            Verification.used_at.is_(None),
+            UserVerification.token_hash == token_hash,
+            UserVerification.used_at.is_(None),
         )
         .first()
     )
