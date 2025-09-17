@@ -5,9 +5,11 @@ services:
     environment:
       - CONTROL_PLANE_OPENAI_API_KEY=${CONTROL_PLANE_OPENAI_API_KEY?}
       - CLI_OPENAI_API_KEY=${CLI_OPENAI_API_KEY?}
+      - CONTROL_PLANE_AWS_REGION=${CONTROL_PLANE_AWS_REGION?}
   test-runner:
     environment:
       - CONTROL_PLANE_OPENAI_API_KEY=${CONTROL_PLANE_OPENAI_API_KEY?}
       - CLI_OPENAI_API_KEY=${CLI_OPENAI_API_KEY?}
+      - CONTROL_PLANE_AWS_REGION=${CONTROL_PLANE_AWS_REGION?}
     command: >
       /bin/sh -c "alembic upgrade head && uv run pytest"
