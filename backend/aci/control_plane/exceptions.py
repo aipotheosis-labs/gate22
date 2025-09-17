@@ -142,3 +142,81 @@ class EmailSendError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+
+
+class InvalidVerificationTokenError(ControlPlaneException):
+    """
+    Exception raised when email verification token is invalid or expired.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="invalid_or_expired_token",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class InvalidTokenTypeError(ControlPlaneException):
+    """
+    Exception raised when token type doesn't match expected type.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="invalid_token_type",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class TokenNotFoundError(ControlPlaneException):
+    """
+    Exception raised when verification token is not found or already used.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="token_not_found_or_already_used",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
+class TokenExpiredError(ControlPlaneException):
+    """
+    Exception raised when verification token has expired.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="token_expired",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class TokenMismatchError(ControlPlaneException):
+    """
+    Exception raised when token doesn't match the user.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="token_mismatch",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class UserNotFoundError(ControlPlaneException):
+    """
+    Exception raised when user is not found.
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="user_not_found",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )

@@ -32,8 +32,14 @@ from aci.control_plane import token_utils as token_utils
 from aci.control_plane.exceptions import (
     AccountDeletionInProgressError,
     EmailAlreadyExistsError,
+    InvalidTokenTypeError,
+    InvalidVerificationTokenError,
     OAuth2Error,
     ThirdPartyIdentityExistsError,
+    TokenExpiredError,
+    TokenMismatchError,
+    TokenNotFoundError,
+    UserNotFoundError,
 )
 from aci.control_plane.external_services.email_service import email_service
 from aci.control_plane.google_login_utils import (
@@ -321,20 +327,33 @@ async def verify_email(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     token: str = Query(..., description="The verification token from the email"),
 ) -> RedirectResponse:
-    # Use helper function to verify email
-    is_valid, message, _ = _verify_user_email(db_session, token)
+    try:
+        # Use helper function to verify email
+        _verify_user_email(db_session, token)
 
-    if not is_valid:
-        # Redirect to frontend with error
-        error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={message}"
+        # Commit the transaction
+        db_session.commit()
+
+        # Redirect to frontend with success
+        success_url = f"{config.FRONTEND_URL}/auth/verify-success"
+        return RedirectResponse(success_url, status_code=status.HTTP_302_FOUND)
+    except (
+        InvalidVerificationTokenError,
+        InvalidTokenTypeError,
+        TokenNotFoundError,
+        TokenExpiredError,
+        TokenMismatchError,
+        UserNotFoundError,
+    ) as e:
+        # Redirect to frontend with specific error
+        error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={e.title}"
         return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
-
-    # Commit the transaction
-    db_session.commit()
-
-    # Redirect to frontend with success
-    success_url = f"{config.FRONTEND_URL}/auth/verify-success"
-    return RedirectResponse(success_url, status_code=status.HTTP_302_FOUND)
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(f"Unexpected error during email verification: {e!s}")
+        # Redirect to frontend with generic error
+        error_url = f"{config.FRONTEND_URL}/auth/verify-error?error=verification_failed"
+        return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
 
 
 @router.post(
@@ -488,19 +507,20 @@ async def _register_user_with_email(
 def _verify_user_email(
     db_session: Session,
     token: str,
-) -> tuple[bool, str, User | None]:
+) -> User:
     """
     Verify a user's email using the verification token.
-    Returns success status, message, and the user if successful.
+    Returns the verified user.
+    Raises exceptions for various error conditions.
     """
     # Validate and decode token
     payload = token_utils.validate_token(token)
     if not payload:
         # JWT invalid or expired
-        return False, "invalid_or_expired_token", None
+        raise InvalidVerificationTokenError("The verification token is invalid or expired")
 
     if payload.get("type") != "email_verification":
-        return False, "invalid_token_type", None
+        raise InvalidTokenTypeError("The token is not a valid email verification token")
 
     # Check verification record
     token_hash = token_utils.hash_token(token)
@@ -514,14 +534,14 @@ def _verify_user_email(
     )
 
     if not verification:
-        return False, "token_not_found_or_already_used", None
+        raise TokenNotFoundError("The verification token was not found or has already been used")
 
     if verification.expires_at < datetime.datetime.now(datetime.UTC):
-        return False, "token_expired", None
+        raise TokenExpiredError("The verification token has expired")
 
     user_id = UUID(payload["user_id"])
     if verification.user_id != user_id:
-        return False, "token_mismatch", None
+        raise TokenMismatchError("The verification token does not match the user")
 
     # Mark verification as used
     verification.used_at = datetime.datetime.now(datetime.UTC)
@@ -529,9 +549,10 @@ def _verify_user_email(
 
     # Update user's email_verified status
     user = crud.users.get_user_by_id(db_session, user_id)
-    if user:
-        user.email_verified = True
-        db_session.add(user)
-        db_session.commit()
-        return True, "email_verified", user
-    return False, "user_not_found", None
+    if not user:
+        raise UserNotFoundError("User not found")
+
+    user.email_verified = True
+    db_session.add(user)
+    db_session.commit()
+    return user
