@@ -3,6 +3,7 @@ from collections.abc import Generator
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import jwt
 import pytest
 from fastapi.testclient import TestClient
@@ -78,9 +79,7 @@ def mock_email_service(test_client: TestClient) -> Generator[MagicMock, None, No
     del app.dependency_overrides[deps.get_email_service]
 
 
-def _create_verified_user(
-    db_session: Session, name: str, email: str, password: str
-) -> User:
+def _create_verified_user(db_session: Session, name: str, email: str, password: str) -> User:
     """Helper to create a verified user."""
     password_hash = utils.hash_user_password(password)
     user = crud.users.create_user(
@@ -143,7 +142,7 @@ def _assert_email_service_called(
 
 
 def _assert_redirect_response(
-    response, expected_status: int, expected_location_contains: str
+    response: httpx.Response, expected_status: int, expected_location_contains: str
 ) -> None:
     """Assert redirect response matches expectations."""
     assert response.status_code == expected_status
@@ -375,9 +374,7 @@ class TestEmailUserVerification:
     ) -> None:
         """Test that verification token can't be reused."""
         # Generate token and create verification record marked as used
-        token, verification = _create_verification_record(
-            db_session, unverified_user, used=True
-        )
+        token, verification = _create_verification_record(db_session, unverified_user, used=True)
 
         # Try to use the already-used token
         response = test_client.get(
