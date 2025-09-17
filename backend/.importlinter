@@ -2,8 +2,9 @@
 root_package = aci
 include_external_packages = true
 
-[importlinter:contract:common_independence]
-name = Common module is independent
+# 1) common must not depend on any feature modules
+[importlinter:contract:common_independent]
+name = Common must be independent
 type = forbidden
 source_modules =
     aci.common
@@ -11,31 +12,14 @@ forbidden_modules =
     aci.cli
     aci.control_plane
     aci.mcp
+    aci.virtual_mcp
 
-[importlinter:contract:mcp_isolation]
-name = MCP module can only import from common
-type = forbidden
-source_modules =
-    aci.mcp
-forbidden_modules =
+# 2) all non-common modules must not depend on each other
+[importlinter:contract:features_are_independent]
+name = Feature modules are independent of each other
+type = independence
+modules =
     aci.cli
     aci.control_plane
-
-
-[importlinter:contract:control_plane_isolation]
-name = Control Plane module can only import from common
-type = forbidden
-source_modules =
-    aci.control_plane
-forbidden_modules =
-    aci.cli
     aci.mcp
-
-[importlinter:contract:cli_isolation]
-name = CLI module can only import from common and control_plane
-type = forbidden
-source_modules =
-    aci.cli
-forbidden_modules =
-    aci.mcp
-    aci.control_plane
+    aci.virtual_mcp
