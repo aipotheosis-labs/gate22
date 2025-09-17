@@ -1,5 +1,6 @@
 import datetime
-from typing import Generator, cast
+from collections.abc import Generator
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import jwt

@@ -8,7 +8,6 @@ from uuid import UUID
 
 import bcrypt
 import jwt
-from aci.control_plane import token_utils as token_utils
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -29,6 +28,7 @@ from aci.common.schemas.auth import (
 )
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
+from aci.control_plane import token_utils as token_utils
 from aci.control_plane.exceptions import (
     AccountDeletionInProgressError,
     EmailAlreadyExistsError,

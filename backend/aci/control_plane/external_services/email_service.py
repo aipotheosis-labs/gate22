@@ -6,8 +6,8 @@ import anyio
 import boto3  # type: ignore[import-untyped]
 from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
-from aci.common.logging_setup import get_logger
 from aci.common import utils
+from aci.common.logging_setup import get_logger
 from aci.control_plane import config
 from aci.control_plane.exceptions import EmailSendError
 
