@@ -41,7 +41,7 @@ from aci.control_plane.exceptions import (
     TokenNotFoundError,
     UserNotFoundError,
 )
-from aci.control_plane.external_services.email_service import email_service
+from aci.control_plane.external_services.email_service import EmailService
 from aci.control_plane.google_login_utils import (
     exchange_google_userinfo,
     generate_google_auth_url,
@@ -166,12 +166,14 @@ async def google_callback(
 )
 async def register(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    email_service: Annotated[EmailService, Depends(deps.get_email_service)],
     request: EmailRegistrationRequest,
     response: Response,
 ) -> None:
     # Use helper function to handle registration and email verification
     user, _ = await _register_user_with_email(
         db_session=db_session,
+        email_service=email_service,
         name=request.name,
         email=request.email,
         password=request.password,
@@ -420,6 +422,7 @@ def _issue_refresh_token(db_session: Session, user_id: UUID, response: Response)
 
 async def _register_user_with_email(
     db_session: Session,
+    email_service: EmailService,
     name: str,
     email: str,
     password: str,

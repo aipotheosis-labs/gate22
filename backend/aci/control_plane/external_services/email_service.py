@@ -16,14 +16,7 @@ logger = get_logger(__name__)
 
 class EmailService:
     def __init__(self) -> None:
-        self._client: Any = None
-        self._sender: str | None = None
         self.charset = "UTF-8"
-
-    def _initialize_client(self) -> None:
-        """Lazy initialization of the SES client."""
-        if self._client is not None:
-            return
 
         client_kwargs: dict[str, Any] = {"region_name": config.AWS_SES_REGION}
 
@@ -44,7 +37,6 @@ class EmailService:
         body_text: str,
         body_html: str,
     ) -> dict[str, Any]:
-        self._initialize_client()
         try:
             response = await anyio.to_thread.run_sync(
                 lambda: self._client.send_email(
@@ -203,6 +195,3 @@ class EmailService:
         """
 
         return await self.send_email(recipient, subject, body_text, body_html)
-
-
-email_service = EmailService()

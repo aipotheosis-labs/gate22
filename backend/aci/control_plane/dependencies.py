@@ -14,6 +14,7 @@ from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo, JWTPayload
 from aci.control_plane import config
+from aci.control_plane.external_services.email_service import EmailService
 
 logger = get_logger(__name__)
 http_bearer = HTTPBearer(auto_error=True, description="login to receive a JWT token")
@@ -138,3 +139,11 @@ def is_role_valid(act_as_role: OrganizationRole, membership_role: OrganizationRo
     # Member can only act as member
     if membership_role == OrganizationRole.MEMBER:
         return act_as_role == OrganizationRole.MEMBER
+
+
+def get_email_service() -> EmailService:
+    """
+    Dependency for email service.
+    This allows easy mocking in tests via dependency overrides.
+    """
+    return EmailService()

@@ -1,7 +1,7 @@
 import datetime
 from collections.abc import Generator
 from typing import cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import jwt
 import pytest
@@ -33,22 +33,38 @@ def unverified_user(db_session: Session) -> User:
 
 
 @pytest.fixture
-def mock_email_service() -> Generator[MagicMock, None, None]:
+def mock_email_service(test_client: TestClient) -> Generator[MagicMock, None, None]:
     """Mock the email service to avoid actual AWS SES calls."""
-    with patch("aci.control_plane.routes.auth.email_service") as mock_service:
-        # Create an async mock that returns the email metadata
-        async def mock_send_verification_email(
-            recipient: str, user_name: str, verification_url: str
-        ) -> dict[str, str]:
-            return {
-                "email_recipient": recipient,
-                "email_provider": "aws",
-                "email_send_at": "2025-01-17T12:00:00Z",
-                "email_reference_id": "test-message-id",
-            }
+    # Import here to avoid circular imports
+    from aci.control_plane import dependencies as deps
+    from aci.control_plane.external_services.email_service import EmailService
 
-        mock_service.send_verification_email = MagicMock(side_effect=mock_send_verification_email)
-        yield mock_service
+    # Create a mock email service
+    mock_service = MagicMock(spec=EmailService)
+
+    # Create an async mock that returns the email metadata
+    async def mock_send_verification_email(
+        recipient: str, user_name: str, verification_url: str
+    ) -> dict[str, str]:
+        return {
+            "email_recipient": recipient,
+            "email_provider": "aws",
+            "email_send_at": "2025-01-17T12:00:00Z",
+            "email_reference_id": "test-message-id",
+        }
+
+    mock_service.send_verification_email = AsyncMock(side_effect=mock_send_verification_email)
+
+    # Import the FastAPI app
+    from aci.control_plane.main import app
+
+    # Override the dependency
+    app.dependency_overrides[deps.get_email_service] = lambda: mock_service
+
+    yield mock_service
+
+    # Clean up the override
+    del app.dependency_overrides[deps.get_email_service]
 
 
 def extract_token_from_mock(mock_email_service: MagicMock) -> str:
@@ -64,8 +80,8 @@ def extract_token_from_mock(mock_email_service: MagicMock) -> str:
 class TestEmailRegistration:
     def test_register_with_email_sends_verification(
         self,
-        test_client: TestClient,
         db_session: Session,
+        test_client: TestClient,
         mock_email_service: MagicMock,
     ) -> None:
         """Test that registration sends verification email and sets email_verified=False."""
@@ -102,9 +118,9 @@ class TestEmailRegistration:
 
     def test_register_existing_unverified_email(
         self,
-        test_client: TestClient,
         db_session: Session,
         unverified_user: User,
+        test_client: TestClient,
         mock_email_service: MagicMock,
     ) -> None:
         """Test re-registration with unverified email updates info and resends verification."""
