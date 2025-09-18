@@ -596,6 +596,10 @@ class VirtualMCPServer(Base):
         init=False,
     )
 
+    tools: Mapped[list[VirtualMCPTool]] = relationship(
+        back_populates="virtual_mcp_server", cascade="all, delete-orphan", init=False
+    )
+
 
 class VirtualMCPTool(Base):
     __tablename__ = "virtual_mcp_tools"
@@ -630,4 +634,8 @@ class VirtualMCPTool(Base):
         onupdate=func.now(),
         nullable=False,
         init=False,
+    )
+
+    virtual_mcp_server: Mapped[VirtualMCPServer] = relationship(
+        "VirtualMCPServer", back_populates="tools", init=False
     )

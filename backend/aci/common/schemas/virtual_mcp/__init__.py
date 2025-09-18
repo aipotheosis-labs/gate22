@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, RootModel
 
-from aci.common.enums import HttpMethod, VirtualMCPToolType
+from aci.common.enums import HttpLocation, HttpMethod, VirtualMCPToolType
 
 
 class RestVirtualMCPToolMetadata(BaseModel):
@@ -27,3 +27,20 @@ class VirtualMCPToolMetadata(
     ]
 ):
     pass
+
+
+class VirtualMCPAuthTokenData(BaseModel):
+    """
+    example:
+    {
+        "location": "header",
+        "name": "Authorization",
+        "prefix": "Bearer",
+        "token": "1234567890"
+    }
+    """
+
+    location: HttpLocation
+    name: str
+    prefix: str | None = None
+    token: str

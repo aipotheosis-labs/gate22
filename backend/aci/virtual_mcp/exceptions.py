@@ -83,3 +83,12 @@ class InvalidJSONRPCPayloadError(VirtualMCPException):
     def __init__(self, message: str | None = None, id: int | str | None = None):
         super().__init__(title="Invalid jsonrpc payload", message=message)
         self.id = id
+
+
+class InvalidAuthTokenError(VirtualMCPException):
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Invalid auth token",
+            message=message,
+            error_code=status.HTTP_401_UNAUTHORIZED,
+        )

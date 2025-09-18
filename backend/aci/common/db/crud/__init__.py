@@ -8,6 +8,7 @@ from . import (
     teams,
     user_verifications,
     users,
+    virtual_mcp,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "teams",
     "user_verifications",
     "users",
+    "virtual_mcp",
 ]

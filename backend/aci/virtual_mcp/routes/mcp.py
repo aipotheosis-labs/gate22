@@ -4,9 +4,16 @@ from fastapi import APIRouter, Depends, Header, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from aci.common.enums import HttpLocation
 from aci.common.logging_setup import get_logger
+from aci.common.schemas.virtual_mcp import VirtualMCPAuthTokenData
 from aci.virtual_mcp import dependencies as deps
-from aci.virtual_mcp.exceptions import InvalidJSONRPCPayloadError, UnsupportedJSONRPCMethodError
+from aci.virtual_mcp.exceptions import (
+    InvalidAuthTokenError,
+    InvalidJSONRPCPayloadError,
+    UnsupportedJSONRPCMethodError,
+)
+from aci.virtual_mcp.routes import handlers
 from aci.virtual_mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
     JSONRPCErrorResponse,
@@ -30,10 +37,15 @@ async def mcp_post(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     request: Request,
     response: Response,
-    server: str,
+    server_name: str,
     x_virtual_mcp_auth_token: Annotated[str | None, Header()] = None,
     mcp_protocol_version: Annotated[str | None, Header()] = None,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse | None:
+    # parse auth token
+    # auth_token_data = (
+    #     _parse_auth_token(x_virtual_mcp_auth_token) if x_virtual_mcp_auth_token else None
+    # )
+
     # parse payload
     try:
         payload = await _parse_payload(request)
@@ -58,7 +70,7 @@ async def mcp_post(
     except Exception as e:
         logger.exception(f"Unexpected error parsing payload: {e}")
         return JSONRPCErrorResponse(
-            # In jsonrpc, id is required in response, if unable to to detect, it must be Nullable
+            # In jsonrpc, id is required in response, if unable to to detect, it must be Null
             id=None,
             error=JSONRPCErrorResponse.ErrorData(
                 code=JSONRPCErrorCode.PARSE_ERROR,
@@ -66,6 +78,7 @@ async def mcp_post(
             ),
         )
 
+    # handle different requests
     match payload:
         case JSONRPCInitializeRequest():
             logger.info(f"Received initialize request={payload.model_dump()}")
@@ -77,23 +90,18 @@ async def mcp_post(
                     else mcp_protocol_version,
                     "capabilities": {"tools": {}},
                     "serverInfo": {
-                        "name": f"ACI.dev {server} MCP",
-                        "title": f"ACI.dev {server} MCP",
+                        "name": f"ACI.dev {server_name} MCP",
+                        "title": f"ACI.dev {server_name} MCP",
                         "version": "0.0.1",
                     },
-                    # TODO: add instructions
+                    # TODO: add instructions (such as server's description?)
                     "instructions": "",
                 },
             )
 
         case JSONRPCToolsListRequest():
             logger.info(f"Received tools/list request={payload.model_dump()}")
-            return JSONRPCSuccessResponse(
-                id=payload.id,
-                result={
-                    "tools": [],
-                },
-            )
+            return await handlers.handle_tools_list(payload, db_session, server_name)
 
         case JSONRPCToolsCallRequest():
             logger.info(f"Received tools/call request={payload.model_dump()}")
@@ -137,6 +145,35 @@ async def mcp_get() -> None:
     pass
 
 
+# TODO: move it to dependencies.py?
+def _parse_auth_token(x_virtual_mcp_auth_token: str) -> VirtualMCPAuthTokenData:
+    """
+    parse the auth token from the header
+    e.g.,
+    "header Authorization Bearer 1234567890" -> VirtualMCPAuthTokenData(
+        location="header",
+        name="Authorization",
+        prefix="Bearer",
+        token="1234567890"
+    )
+    "query api_key 1234567890" -> VirtualMCPAuthTokenData(
+        location="query",
+        name="api_key",
+        token="1234567890"
+    )
+    """
+    token_data = x_virtual_mcp_auth_token.split(" ")
+    if len(token_data) != 3 and len(token_data) != 4:
+        raise InvalidAuthTokenError()
+    return VirtualMCPAuthTokenData(
+        location=HttpLocation(token_data[0]),
+        name=token_data[1],
+        prefix=token_data[2] if len(token_data) == 4 else None,
+        token=token_data[3] if len(token_data) == 4 else token_data[2],
+    )
+
+
+# TODO: duplicate code with mcp.py
 async def _parse_payload(
     request: Request,
 ) -> (

@@ -69,3 +69,13 @@ class HttpMethod(StrEnum):
     PATCH = "PATCH"
     HEAD = "HEAD"
     OPTIONS = "OPTIONS"
+
+
+class MCPToolSchemaFormat(StrEnum):
+    """
+    format for a MCP tool schema.
+    """
+
+    OPENAI = "openai"  # for openai chat completions API
+    ANTHROPIC = "anthropic"  # for anthropic chat completions API
+    OPENAI_RESPONSES = "openai_responses"  # for openai responses API
