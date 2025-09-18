@@ -3,7 +3,6 @@ import os
 import random
 import re
 import string
-from enum import Enum
 from functools import cache
 from uuid import UUID
 
@@ -139,22 +138,12 @@ def sign_token(
     return token
 
 
-class CaseOption(Enum):
-    UPPER = "upper"
-    LOWER = "lower"
-    MIXED = "mixed"
-
-
-def generate_alphanumeric_string(digits: int, case: CaseOption = CaseOption.MIXED) -> str:
+def generate_alphanumeric_string(
+    length: int, character_pool: str = string.ascii_letters + string.digits
+) -> str:
     """
     Generate a random alphanumeric string of a given length.
+    Convenient to call with customized `character_pool`, examples:
+        "ABCDE" / string.digits + string.ascii_uppercase / string.ascii_letters
     """
-
-    if case == CaseOption.UPPER:
-        alphabet = string.ascii_uppercase + string.digits
-    elif case == CaseOption.LOWER:
-        alphabet = string.ascii_lowercase + string.digits
-    elif case == CaseOption.MIXED:
-        alphabet = string.ascii_letters + string.digits
-
-    return "".join(random.choice(alphabet) for _ in range(digits))
+    return "".join(random.choices(character_pool, k=length))

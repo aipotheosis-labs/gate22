@@ -1,3 +1,4 @@
+import string
 from typing import Annotated
 from uuid import UUID
 
@@ -66,13 +67,15 @@ def _generate_unique_mcp_server_canonical_name(
     Return None if failed.
     """
     for _ in range(max_trials):
-        random_id = utils.generate_alphanumeric_string(8, case=utils.CaseOption.UPPER)
-        canonical_name = f"{name}_{random_id}"
-        exists = crud.mcp_servers.get_mcp_server_by_name(
-            db_session, canonical_name, throw_error_if_not_found=False
+        random_id = utils.generate_alphanumeric_string(
+            8, character_pool=string.ascii_uppercase + string.digits
         )
-        if not exists:
+        canonical_name = f"{name}_{random_id}"
+        if not crud.mcp_servers.get_mcp_server_by_name(
+            db_session, canonical_name, throw_error_if_not_found=False
+        ):
             return canonical_name
+
     logger.error(
         f"Failed to generate a unique MCP server canonical name for {name} after {max_trials} tries"
     )
