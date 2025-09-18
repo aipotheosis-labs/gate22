@@ -1,8 +1,9 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from openai import OpenAI
+from pydantic import AnyUrl
 from pydantic.networks import HttpUrl
 from sqlalchemy.orm import Session
 
@@ -25,6 +26,9 @@ from aci.common.schemas.mcp_server import (
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
+from aci.control_plane.routes.connected_accounts import (
+    CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
+)
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -97,6 +101,7 @@ def _generate_unique_mcp_server_canonical_name(
     ),
 )
 async def mcp_server_oauth2_discovery(
+    request: Request,
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: MCPServerOAuth2LookupRequest,
 ) -> MCPServerOAuth2LookupResponse:
@@ -125,19 +130,27 @@ async def mcp_server_oauth2_discovery(
         return result
 
     # Step 2: Perform dynamic client registration (DCR) if requested
+
+    # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
+    # flow. If not provided, we use the default callback URL in our API.
+
+    redirect_uris: list[AnyUrl] = []
+    if body.redirect_uri is None:
+        path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
+        redirect_uris = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
+    else:
+        redirect_uris = [body.redirect_uri]
+
     if body.dcr:
         try:
             oauth2_client_registrator = ClientRegistrator(
                 str(body.url),
                 client_metadata=OAuthClientMetadata(
-                    redirect_uris=[
-                        body.redirect_uri
-                        or HttpUrl("https://localhost:8000/mcp-server/oauth2-callback")
-                    ],
+                    redirect_uris=redirect_uris,
                     token_endpoint_auth_method="none",
                     grant_types=["authorization_code", "refresh_token"],
                     response_types=["code"],
-                    scope="",
+                    scope="",  # TODO: discover default scope
                 ),
                 oauth_metadata=oauth2_metadata,
             )
