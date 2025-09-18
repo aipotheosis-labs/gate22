@@ -56,11 +56,16 @@ class ClientRegistrator:
             by_alias=True, mode="json", exclude_none=True
         )
 
-        response = httpx.post(
-            registration_url,
-            json=registration_data,
-            headers={"Content-Type": "application/json"},
-        )
+        try:
+            response = httpx.post(
+                registration_url,
+                json=registration_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10.0,
+                follow_redirects=True,
+            )
+        except httpx.RequestError as e:
+            raise OAuth2ClientRegistrationError(f"Registration request failed: {e}") from e
 
         if response.status_code not in (200, 201):
             response.read()
