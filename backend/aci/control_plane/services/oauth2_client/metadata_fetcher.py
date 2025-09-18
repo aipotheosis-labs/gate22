@@ -146,7 +146,12 @@ class MetadataFetcher:
             break
 
     def metadata_discovery(self) -> OAuthMetadata:
-        init_response = httpx.get(self.context.server_url, timeout=httpx.Timeout(5.0))
+        try:
+            init_response = httpx.get(self.context.server_url, timeout=httpx.Timeout(5.0))
+        except httpx.RequestError as e:
+            raise OAuth2MetadataDiscoveryError(
+                f"Metadata discovery failed: {self.context.server_url}"
+            ) from e
 
         # Step 1: Discover protected resource metadata (RFC9728 with WWW-Authenticate support)
         self._discover_protected_resource(init_response)
