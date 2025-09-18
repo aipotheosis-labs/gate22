@@ -82,7 +82,7 @@ class MCPServerPublic(BaseModel):
 class MCPServerOAuth2LookupRequest(BaseModel):
     url: HttpUrl
     dcr: bool  # whether or not to perform dynamic client registration
-    redirect_uri: HttpUrl | None = None
+    redirect_uri: HttpUrl | None = None  # If not provided, use the default callback URL in our API.
 
 
 class MCPServerOAuth2LookupResponse(BaseModel):
