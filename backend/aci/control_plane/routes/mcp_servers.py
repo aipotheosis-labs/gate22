@@ -184,6 +184,7 @@ async def mcp_server_oauth2_discovery(
                 str(body.url),
                 client_metadata=OAuthClientMetadata(
                     redirect_uris=redirect_uris,
+                    # TODO: should we support client_secret_basic in the future?
                     token_endpoint_auth_method="none",
                     grant_types=["authorization_code", "refresh_token"],
                     response_types=["code"],
