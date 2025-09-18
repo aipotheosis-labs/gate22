@@ -171,15 +171,14 @@ async def mcp_server_oauth2_discovery(
 
     # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
     # flow. If not provided, we use the default callback URL in our API.
-
-    redirect_uris: list[AnyUrl] = []
-    if body.redirect_uri is None:
-        path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
-        redirect_uris = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
-    else:
-        redirect_uris = [body.redirect_uri]
-
     if body.dcr:
+        redirect_uris: list[AnyUrl] = []
+        if body.redirect_uri is None:
+            path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
+            redirect_uris = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
+        else:
+            redirect_uris = [body.redirect_uri]
+
         try:
             oauth2_client_registrator = ClientRegistrator(
                 str(body.url),
