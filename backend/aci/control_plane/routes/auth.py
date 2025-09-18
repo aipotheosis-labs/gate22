@@ -546,15 +546,28 @@ def _verify_user_email(
     Raises exceptions for various error conditions.
     """
     # Validate and decode token
-    payload = token_utils.validate_token(token)
-    if not payload:
-        # JWT invalid or expired
-        raise InvalidEmailVerificationTokenError("The verification token is invalid or expired")
+    try:
+        payload = token_utils.validate_token(token)
+    except jwt.ExpiredSignatureError:
+        # Token is expired
+        raise EmailVerificationTokenExpiredError("The verification token has expired") from None
+    except jwt.InvalidTokenError:
+        # Token is invalid (malformed, bad signature, etc.)
+        raise InvalidEmailVerificationTokenError("The verification token is invalid") from None
 
     if payload.get("type") != "email_verification":
         raise InvalidEmailVerificationTokenTypeError(
             "The token is not a valid email verification token"
         )
+
+    # Extract and validate user_id from payload
+    try:
+        user_id_str = payload.get("user_id")
+        if not user_id_str:
+            raise InvalidEmailVerificationTokenError("Token payload missing user_id")
+        user_id = UUID(user_id_str)
+    except ValueError:
+        raise InvalidEmailVerificationTokenError("Token payload contains invalid user_id") from None
 
     # Check verification record
     token_hash = token_utils.hash_token(token)
@@ -575,7 +588,6 @@ def _verify_user_email(
     if verification.expires_at < datetime.datetime.now(datetime.UTC):
         raise EmailVerificationTokenExpiredError("The verification token has expired")
 
-    user_id = UUID(payload["user_id"])
     if verification.user_id != user_id:
         raise EmailVerificationTokenMismatchError("The verification token does not match the user")
 

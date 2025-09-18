@@ -45,8 +45,16 @@ def hash_token(token: str) -> str:
     return hmac.new(config.JWT_SIGNING_KEY.encode(), token.encode(), hashlib.sha256).hexdigest()
 
 
-def validate_token(token: str) -> dict[str, Any] | None:
-    """Validate and decode a JWT token."""
+def validate_token(token: str) -> dict[str, Any]:
+    """Validate and decode a JWT token.
+
+    Returns:
+        dict: Decoded payload if token is valid
+
+    Raises:
+        jwt.ExpiredSignatureError: If the token has expired
+        jwt.InvalidTokenError: If the token is invalid (malformed, bad signature, etc.)
+    """
     try:
         payload: dict[str, Any] = jwt.decode(
             token,
@@ -54,9 +62,9 @@ def validate_token(token: str) -> dict[str, Any] | None:
             algorithms=[config.JWT_ALGORITHM],
         )
         return payload
-    except jwt.ExpiredSignatureError:
-        logger.warning("Token has expired")
-        return None
+    except jwt.ExpiredSignatureError as e:
+        logger.warning(f"Token has expired: {e}")
+        raise
     except jwt.InvalidTokenError as e:
         logger.warning(f"Invalid token: {e}")
-        return None
+        raise
