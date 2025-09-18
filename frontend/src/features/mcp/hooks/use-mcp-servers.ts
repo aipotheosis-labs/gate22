@@ -32,9 +32,10 @@ export const mcpQueryKeys = {
 
 // Hook to list all available MCP servers
 export function useMCPServers(params?: PaginationParams) {
+  const { accessToken } = useMetaInfo();
   return useQuery({
     queryKey: mcpQueryKeys.servers.list(params),
-    queryFn: () => mcpService.servers.list(params),
+    queryFn: () => mcpService.servers.list(accessToken!, params),
   });
 }
 

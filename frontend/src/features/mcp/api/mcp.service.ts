@@ -37,9 +37,10 @@ export const mcpService = {
   // MCP Servers endpoints
   servers: {
     list: async (
+      token: string,
       params?: PaginationParams,
     ): Promise<PaginationResponse<MCPServerPublic>> => {
-      return fetcher<PaginationResponse<MCPServerPublic>>(
+      return fetcherWithAuth<PaginationResponse<MCPServerPublic>>(token)(
         API_ENDPOINTS.SERVERS,
         {
           params: {
