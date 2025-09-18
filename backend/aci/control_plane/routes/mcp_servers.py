@@ -53,7 +53,7 @@ async def get_mcp_server(
     return schema_utils.construct_mcp_server_public(mcp_server)
 
 
-@router.get("")
+@router.get("", response_model=PaginationResponse[MCPServerPublic])
 async def list_mcp_servers(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     pagination_params: Annotated[PaginationParams, Depends()],
@@ -133,6 +133,7 @@ async def create_custom_mcp_server(
 
 @router.post(
     "/oauth2-discovery",
+    response_model=MCPServerOAuth2DiscoveryResponse,
     description=(
         "Discover OAuth2 Metadata and optionally perform dynamic client registration (DCR) for MCP "
         "server. Note that this does not result in any record creation or update in Control Plane."
