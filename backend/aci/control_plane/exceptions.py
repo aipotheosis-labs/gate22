@@ -210,3 +210,29 @@ class UserNotFoundError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_404_NOT_FOUND,
         )
+
+
+class OAuth2ClientRegistrationError(ControlPlaneException):
+    """
+    Exception raised when an OAuth registration error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="OAuth2 client registration error",
+            message=message,
+            error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+class OAuth2MetadataDiscoveryError(ControlPlaneException):
+    """
+    Exception raised when an OAuth2 discovery error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="OAuth2 discovery error",
+            message=message,
+            error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

@@ -11,11 +11,6 @@ from aci.common import embeddings, utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
-from aci.common.oauth2_client import (
-    ClientRegistrator,
-    MetadataFetcher,
-    OAuthClientMetadata,
-)
 from aci.common.schemas.mcp_server import (
     CustomMCPServerCreate,
     MCPServerEmbeddingFields,
@@ -28,6 +23,11 @@ from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
+)
+from aci.control_plane.services.oauth2_client import (
+    ClientRegistrator,
+    MetadataFetcher,
+    OAuthClientMetadata,
 )
 
 logger = get_logger(__name__)

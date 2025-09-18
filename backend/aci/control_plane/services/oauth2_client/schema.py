@@ -4,13 +4,11 @@ from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field
 
 
 class InvalidScopeError(Exception):
-    def __init__(self, message: str):
-        self.message = message
+    pass
 
 
 class InvalidRedirectUriError(Exception):
-    def __init__(self, message: str):
-        self.message = message
+    pass
 
 
 class ProtectedResourceMetadata(BaseModel):

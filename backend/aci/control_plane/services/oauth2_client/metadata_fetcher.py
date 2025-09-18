@@ -5,8 +5,8 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from pydantic import ValidationError
 
-from aci.common.exceptions import OAuth2MetadataDiscoveryError
-from aci.common.oauth2_client.schema import (
+from aci.control_plane.exceptions import OAuth2MetadataDiscoveryError
+from aci.control_plane.services.oauth2_client.schema import (
     OAuthMetadata,
     ProtectedResourceMetadata,
 )

@@ -33,21 +33,3 @@ class AuthCredentialsManagerError(ACICommonError):
 
     def __init__(self, message: str | None = None):
         super().__init__(title="Auth credentials manager error", message=message)
-
-
-class OAuth2ClientRegistrationError(ACICommonError):
-    """
-    Exception raised when an OAuth registration error occurs
-    """
-
-    def __init__(self, message: str | None = None):
-        super().__init__(title="OAuth registration error", message=message)
-
-
-class OAuth2MetadataDiscoveryError(ACICommonError):
-    """
-    Exception raised when an OAuth2 discovery error occurs
-    """
-
-    def __init__(self, message: str | None = None):
-        super().__init__(title="OAuth2 discovery error", message=message)
