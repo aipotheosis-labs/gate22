@@ -62,7 +62,6 @@ class ClientRegistrator:
                 json=registration_data,
                 headers={"Content-Type": "application/json"},
                 timeout=10.0,
-                follow_redirects=True,
             )
         except httpx.RequestError as e:
             raise OAuth2ClientRegistrationError(f"Registration request failed: {e}") from e
