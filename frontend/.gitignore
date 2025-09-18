@@ -45,3 +45,6 @@ tmp/
 .vscode
 .idea
 .claude
+
+# Sentry Config File
+.env.sentry-build-plugin
