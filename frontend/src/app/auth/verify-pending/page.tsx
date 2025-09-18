@@ -1,22 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Suspense } from "react";
 
 export default function VerifyPendingPage() {
-  return (
-    <Suspense fallback={null}>
-      <VerifyPendingPageContent />
-    </Suspense>
-  );
-}
+  const [email, setEmail] = useState<string | null>(null);
 
-function VerifyPendingPageContent() {
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email");
+  useEffect(() => {
+    const pendingEmail =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("pendingEmail")
+        : null;
+
+    if (pendingEmail) {
+      setEmail(pendingEmail);
+      sessionStorage.removeItem("pendingEmail");
+    }
+  }, []);
 
   return (
     <div className="min-h-screen relative">

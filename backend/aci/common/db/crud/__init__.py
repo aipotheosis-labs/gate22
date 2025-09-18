@@ -6,6 +6,7 @@ from . import (
     mcp_tools,
     organizations,
     teams,
+    user_verifications,
     users,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "mcp_tools",
     "organizations",
     "teams",
+    "user_verifications",
     "users",
 ]

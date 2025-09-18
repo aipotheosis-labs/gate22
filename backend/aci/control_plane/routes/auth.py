@@ -459,6 +459,8 @@ async def _register_user_with_email(
     Register a new user with email and send verification email.
     Returns the created user and email metadata.
     """
+    verification_type = UserVerificationType.EMAIL_VERIFICATION
+
     # Check if user already exists
     existing_user = crud.users.get_user_by_email(db_session, email)
     if existing_user:
@@ -481,14 +483,11 @@ async def _register_user_with_email(
 
         # Invalidate any previous unused verification tokens for this user
         now_ts = datetime.datetime.now(datetime.UTC)
-        (
-            db_session.query(UserVerification)
-            .filter(
-                UserVerification.user_id == existing_user.id,
-                UserVerification.type == "email_verification",
-                UserVerification.used_at.is_(None),
-            )
-            .update({UserVerification.used_at: now_ts}, synchronize_session=False)
+        crud.user_verifications.invalidate_unused_verifications(
+            db_session=db_session,
+            user_id=existing_user.id,
+            verification_type=verification_type,
+            used_at=now_ts,
         )
 
         user = existing_user
@@ -508,7 +507,7 @@ async def _register_user_with_email(
     token, token_hash, expires_at = token_utils.generate_verification_token(
         user_id=user.id,
         email=email,
-        verification_type="email_verification",
+        verification_type=verification_type.value,
         expires_in_minutes=config.EMAIL_VERIFICATION_EXPIRE_MINUTES,
     )
 
@@ -524,14 +523,14 @@ async def _register_user_with_email(
     )
 
     # Store verification record
-    verification = UserVerification(
+    crud.user_verifications.create_verification(
+        db_session=db_session,
         user_id=user.id,
-        type=UserVerificationType.EMAIL_VERIFICATION,
+        verification_type=verification_type,
         token_hash=token_hash,
         expires_at=expires_at,
         email_metadata=email_metadata,
     )
-    db_session.add(verification)
 
     return user, email_metadata
 
@@ -545,6 +544,25 @@ def _verify_user_email(
     Returns the verification record and user_id.
     Raises exceptions for various error conditions.
     """
+    # Check verification record before decoding JWT so we can surface specific errors
+    token_hash = token_utils.hash_token(token)
+    verification_type = UserVerificationType.EMAIL_VERIFICATION
+    verification = crud.user_verifications.get_unused_verification_by_token_hash(
+        db_session=db_session,
+        token_hash=token_hash,
+        verification_type=verification_type,
+    )
+
+    if not verification:
+        raise EmailVerificationTokenNotFoundError(
+            "The verification token was not found or has already been used"
+        )
+
+    current_time = datetime.datetime.now(datetime.UTC)
+
+    if verification.expires_at and verification.expires_at < current_time:
+        raise EmailVerificationTokenExpiredError("The verification token has expired")
+
     # Validate and decode token
     try:
         payload = token_utils.validate_token(token)
@@ -555,7 +573,7 @@ def _verify_user_email(
         # Token is invalid (malformed, bad signature, etc.)
         raise InvalidEmailVerificationTokenError("The verification token is invalid") from None
 
-    if payload.get("type") != "email_verification":
+    if payload.get("type") != verification_type.value:
         raise InvalidEmailVerificationTokenTypeError(
             "The token is not a valid email verification token"
         )
@@ -568,25 +586,6 @@ def _verify_user_email(
         user_id = UUID(user_id_str)
     except ValueError:
         raise InvalidEmailVerificationTokenError("Token payload contains invalid user_id") from None
-
-    # Check verification record
-    token_hash = token_utils.hash_token(token)
-    verification = (
-        db_session.query(UserVerification)
-        .filter(
-            UserVerification.token_hash == token_hash,
-            UserVerification.used_at.is_(None),
-        )
-        .first()
-    )
-
-    if not verification:
-        raise EmailVerificationTokenNotFoundError(
-            "The verification token was not found or has already been used"
-        )
-
-    if verification.expires_at < datetime.datetime.now(datetime.UTC):
-        raise EmailVerificationTokenExpiredError("The verification token has expired")
 
     if verification.user_id != user_id:
         raise EmailVerificationTokenMismatchError("The verification token does not match the user")

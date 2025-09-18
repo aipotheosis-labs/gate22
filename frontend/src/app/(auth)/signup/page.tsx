@@ -30,8 +30,11 @@ export default function SignupPage() {
       return; // Error is already displayed as toast
     }
 
-    // Redirect to verify-pending page so user can see next steps
-    router.push(`/auth/verify-pending?email=${encodeURIComponent(email)}`);
+    // Redirect to verify-pending without exposing email in URL
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("pendingEmail", email);
+    }
+    router.push("/auth/verify-pending");
   };
 
   const handleGoogleSignup = () => {

@@ -126,6 +126,15 @@ export async function login(email: string, password: string): Promise<boolean> {
           return false;
         }
         if (
+          normalizedError === "email_not_verified" ||
+          normalizedError.includes("email not verified")
+        ) {
+          toast.error(
+            "Please verify your email before logging in. Check your inbox or request a new verification email.",
+          );
+          return false;
+        }
+        if (
           normalizedError === "user_not_found" ||
           normalizedError.includes("not found")
         ) {
