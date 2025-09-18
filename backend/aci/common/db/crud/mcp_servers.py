@@ -1,7 +1,7 @@
 from typing import Literal, overload
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServer
@@ -119,15 +119,33 @@ def create_custom_mcp_server(
 
 def list_mcp_servers(
     db_session: Session,
+    organization_id: UUID | None = None,
     offset: int | None = None,
     limit: int | None = None,
 ) -> list[MCPServer]:
+    """
+    Returns:
+        List of MCP Servers.
+        If organization_id is provided, returns Public MCP Servers + Custom MCP Servers under the
+        organization.
+        If not provided, returns all Public MCP Servers.
+    """
     statement = select(MCPServer).order_by(MCPServer.name.asc())
 
     if offset is not None:
         statement = statement.offset(offset)
     if limit is not None:
         statement = statement.limit(limit)
+
+    if organization_id is not None:
+        statement = statement.where(
+            or_(
+                MCPServer.organization_id == organization_id,
+                MCPServer.organization_id.is_(None),
+            )
+        )
+    else:
+        statement = statement.where(MCPServer.organization_id.is_(None))
 
     servers = list(db_session.execute(statement).scalars().all())
     return servers

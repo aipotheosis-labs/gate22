@@ -32,6 +32,14 @@ async def get_mcp_server(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     mcp_server_id: UUID,
 ) -> MCPServerPublic:
+    access_control.check_mcp_server_accessibility(
+        db_session=context.db_session,
+        act_as=context.act_as,
+        user_id=context.user_id,
+        mcp_server_id=mcp_server_id,
+        throw_error_if_not_permitted=True,
+    )
+
     mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         context.db_session, mcp_server_id, throw_error_if_not_found=False
     )
@@ -44,13 +52,17 @@ async def get_mcp_server(
 
 @router.get("")
 async def list_mcp_servers(
-    db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
 ) -> PaginationResponse[MCPServerPublic]:
+    logger.info(f"Listing MCP servers for organization {context.act_as.organization_id}")
     # TODO: support search by keywords / categories (currently filtering is done in Frontend)
 
     mcp_servers = crud.mcp_servers.list_mcp_servers(
-        db_session, offset=pagination_params.offset, limit=pagination_params.limit
+        context.db_session,
+        organization_id=context.act_as.organization_id,
+        offset=pagination_params.offset,
+        limit=pagination_params.limit,
     )
 
     return PaginationResponse(
@@ -117,4 +129,6 @@ async def create_custom_mcp_server(
     )
 
     mcp_server_public = schema_utils.construct_mcp_server_public(mcp_server)
+
+    context.db_session.commit()
     return mcp_server_public

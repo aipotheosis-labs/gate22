@@ -36,6 +36,14 @@ async def create_mcp_server_configuration(
         throw_error_if_not_permitted=True,
     )
 
+    access_control.check_mcp_server_accessibility(
+        db_session=context.db_session,
+        act_as=context.act_as,
+        user_id=context.user_id,
+        mcp_server_id=body.mcp_server_id,
+        throw_error_if_not_permitted=True,
+    )
+
     mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         context.db_session, body.mcp_server_id, throw_error_if_not_found=False
     )

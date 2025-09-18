@@ -90,3 +90,32 @@ def check_mcp_server_config_accessibility(
                 f"Configuration {mcp_server_configuration_id}"
             )
         return False
+
+
+def check_mcp_server_accessibility(
+    db_session: Session,
+    act_as: ActAsInfo,
+    user_id: UUID,
+    mcp_server_id: UUID,
+    throw_error_if_not_permitted: bool = True,
+) -> bool:
+    """
+    Check if the user has access to a MCP server.
+    """
+    logger.debug(f"Checking if User {user_id} has access to the MCPServer {mcp_server_id}")
+    mcp_server = crud.mcp_servers.get_mcp_server_by_id(
+        db_session, mcp_server_id, throw_error_if_not_found=True
+    )
+    # Public MCP server, anyone can access
+    if mcp_server.organization_id is None:
+        return True
+
+    # Check if the user belongs to the organization
+    if act_as.organization_id != mcp_server.organization_id:
+        if throw_error_if_not_permitted:
+            raise NotPermittedError(
+                message=f"User {user_id} has no access to the MCP Server {mcp_server_id}"
+            )
+        return False
+
+    return True

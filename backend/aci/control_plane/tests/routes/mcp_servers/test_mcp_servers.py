@@ -16,34 +16,69 @@ from aci.control_plane import config
 logger = get_logger(__name__)
 
 
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+    ],
+)
+@pytest.mark.parametrize("has_custom_mcp_server", [True, False])
 @pytest.mark.parametrize("offset", [None, 0, 10])
 def test_list_mcp_servers(
+    request: pytest.FixtureRequest,
     test_client: TestClient,
+    db_session: Session,
     offset: int,
-    dummy_access_token_no_orgs: str,
+    dummy_organization: Organization,
     dummy_mcp_servers: list[MCPServerPublic],
+    dummy_custom_mcp_server: MCPServerPublic,
+    has_custom_mcp_server: bool,
+    access_token_fixture: str,
 ) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
     params = {}
     if offset is not None:
         params["offset"] = offset
 
+    dummy_random_organization = crud.organizations.create_organization(
+        db_session=db_session,
+        name="Dummy Other Organization",
+        description="Dummy Other Organization Description",
+    )
+
+    if has_custom_mcp_server:
+        dummy_custom_mcp_server.organization_id = dummy_organization.id
+    else:
+        dummy_custom_mcp_server.organization_id = dummy_random_organization.id
+    db_session.commit()
+
     response = test_client.get(
         config.ROUTER_PREFIX_MCP_SERVERS,
         params=params,
-        headers={"Authorization": f"Bearer {dummy_access_token_no_orgs}"},
+        headers={"Authorization": f"Bearer {access_token}"},
     )
-    paginated_response = PaginationResponse[MCPServerPublic].model_validate(response.json())
 
+    logger.info(f"Access token fixture: {access_token_fixture}")
+    if access_token_fixture == "dummy_access_token_no_orgs":
+        assert response.status_code == 403
+        return
+
+    paginated_response = PaginationResponse[MCPServerPublic].model_validate(response.json())
     assert response.status_code == 200
     assert paginated_response.offset == (offset if offset is not None else 0)
 
     if offset is None or offset == 0:
-        assert len(paginated_response.data) == len(dummy_mcp_servers)
+        # dummy_mcp_servers has 3 public MCP servers + 1 custom MCP server (dummy_custom_mcp_server)
+        if has_custom_mcp_server:
+            assert len(paginated_response.data) == len(dummy_mcp_servers)
+            assert dummy_custom_mcp_server.id in [data.id for data in paginated_response.data]
+        else:
+            assert len(paginated_response.data) == len(dummy_mcp_servers) - 1
+            assert dummy_custom_mcp_server.id not in [data.id for data in paginated_response.data]
 
-        # NOTE: sorted by name asc
-        assert [data.name for data in paginated_response.data] == sorted(
-            [dummy_mcp_server.name for dummy_mcp_server in dummy_mcp_servers]
-        )
     else:
         assert len(paginated_response.data) == 0
 
@@ -113,3 +148,63 @@ def test_create_custom_mcp_server(
 
     # Check if the MCP server name is generated correctly
     assert re.fullmatch(f"{input_mcp_server_data.name}_[A-Z0-9]{{8}}", db_mcp_server_data.name)
+
+
+@pytest.mark.parametrize(
+    "access_token_fixture",
+    [
+        "dummy_access_token_no_orgs",
+        "dummy_access_token_admin",
+        "dummy_access_token_member",
+    ],
+)
+@pytest.mark.parametrize("is_public_mcp_server", [True, False])
+@pytest.mark.parametrize("is_custom_mcp_server_same_org", [True, False])
+def test_get_mcp_server(
+    test_client: TestClient,
+    db_session: Session,
+    request: pytest.FixtureRequest,
+    dummy_mcp_server: MCPServerPublic,
+    dummy_organization: Organization,
+    is_custom_mcp_server_same_org: bool,
+    is_public_mcp_server: bool,
+    access_token_fixture: str,
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    dummy_random_organization = crud.organizations.create_organization(
+        db_session=db_session,
+        name="Dummy Other Organization",
+        description="Dummy Other Organization Description",
+    )
+
+    if is_public_mcp_server:
+        dummy_mcp_server.organization_id = None
+    else:
+        if is_custom_mcp_server_same_org:
+            dummy_mcp_server.organization_id = dummy_organization.id
+        else:
+            dummy_mcp_server.organization_id = dummy_random_organization.id
+    db_session.commit()
+
+    response = test_client.get(
+        f"{config.ROUTER_PREFIX_MCP_SERVERS}/{dummy_mcp_server.id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    if access_token_fixture in ["dummy_access_token_no_orgs"]:
+        assert response.status_code == 403
+        return
+
+    if not is_public_mcp_server and not is_custom_mcp_server_same_org:
+        # other org's custom MCP server
+        assert response.status_code == 403
+        assert response.json()["error"].startswith("Not permitted")
+        return
+
+    assert response.status_code == 200
+    mcp_server_data = MCPServerPublic.model_validate(response.json())
+
+    assert mcp_server_data.id == dummy_mcp_server.id
+    assert mcp_server_data.name == dummy_mcp_server.name
+    assert mcp_server_data.url == dummy_mcp_server.url

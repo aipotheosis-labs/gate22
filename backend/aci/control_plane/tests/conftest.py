@@ -18,9 +18,18 @@ from aci.common.db.sql_models import (
     Team,
     User,
 )
-from aci.common.enums import ConnectedAccountOwnership, OrganizationRole, UserIdentityProvider
+from aci.common.enums import (
+    AuthType,
+    ConnectedAccountOwnership,
+    HttpLocation,
+    MCPServerTransportType,
+    OrganizationRole,
+    UserIdentityProvider,
+)
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
+from aci.common.schemas.mcp_auth import APIKeyConfig, AuthConfig, NoAuthConfig
+from aci.common.schemas.mcp_server import CustomMCPServerCreate, MCPServerMetadata
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 from aci.common.test_utils import clear_database
@@ -282,7 +291,7 @@ def dummy_user_without_org(db_session: Session) -> User:
 
 
 @pytest.fixture(scope="function")
-def dummy_mcp_servers(db_session: Session) -> list[MCPServer]:
+def dummy_mcp_servers(db_session: Session, dummy_custom_mcp_server: MCPServer) -> list[MCPServer]:
     dummy_mcp_servers = []
     for (
         mcp_server_upsert,
@@ -299,8 +308,40 @@ def dummy_mcp_servers(db_session: Session) -> list[MCPServer]:
             mcp_tool_embeddings=mcp_tool_embeddings,
         )
         dummy_mcp_servers.append(mcp_server)
-        db_session.commit()
+
+    # Add a dummy custom MCP server
+    dummy_mcp_servers.append(dummy_custom_mcp_server)
+    db_session.commit()
+
     return dummy_mcp_servers
+
+
+@pytest.fixture(scope="function")
+def dummy_custom_mcp_server(db_session: Session, dummy_organization: Organization) -> MCPServer:
+    mcp_server = crud.mcp_servers.create_custom_mcp_server(
+        db_session=db_session,
+        organization_id=dummy_organization.id,
+        custom_mcp_server_upsert=CustomMCPServerCreate(
+            name="TEST_MCP_SERVER",
+            url="https://test-mcp-server.com",
+            description="Test MCP server",
+            categories=["test"],
+            transport_type=MCPServerTransportType.STREAMABLE_HTTP,
+            auth_configs=[
+                AuthConfig.model_validate(
+                    APIKeyConfig(
+                        type=AuthType.API_KEY, location=HttpLocation.HEADER, name="X-API-Key"
+                    )
+                ),
+                AuthConfig.model_validate(NoAuthConfig(type=AuthType.NO_AUTH)),
+            ],
+            logo="https://test-mcp-server.com/logo.png",
+            server_metadata=MCPServerMetadata(),
+        ),
+        embedding=[0.1] * 1024,
+    )
+    db_session.commit()
+    return mcp_server
 
 
 @pytest.fixture(scope="function")
