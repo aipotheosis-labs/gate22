@@ -48,6 +48,7 @@ class ClientRegistrator:
         if self.context.oauth_metadata and self.context.oauth_metadata.registration_endpoint:
             registration_url = str(self.context.oauth_metadata.registration_endpoint)
         else:
+            # Fallback to common registration endpoint if not provided.
             auth_base_url = self.context.get_authorization_base_url(self.context.server_url)
             registration_url = urljoin(auth_base_url, "/register")
 

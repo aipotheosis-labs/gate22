@@ -150,7 +150,7 @@ class MetadataFetcher:
 
         if self.context.oauth_metadata is None:
             raise OAuth2MetadataDiscoveryError(
-                "OAuth metadata not found for server URL: {self.context.server_url}"
+                f"OAuth metadata not found for server URL: {self.context.server_url}"
             )
 
         return self.context.oauth_metadata
