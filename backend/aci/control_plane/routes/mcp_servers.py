@@ -3,15 +3,23 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from openai import OpenAI
+from pydantic.networks import HttpUrl
 from sqlalchemy.orm import Session
 
 from aci.common import embeddings, utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
+from aci.common.oauth2_client import (
+    ClientRegistrator,
+    MetadataFetcher,
+    OAuthClientMetadata,
+)
 from aci.common.schemas.mcp_server import (
     CustomMCPServerCreate,
     MCPServerEmbeddingFields,
+    MCPServerOAuth2LookupRequest,
+    MCPServerOAuth2LookupResponse,
     MCPServerPublic,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
@@ -79,6 +87,68 @@ def _generate_unique_mcp_server_canonical_name(
     raise Exception(
         f"Failed to generate a unique MCP server canonical name for {name} after {max_trials} tries"
     )
+
+
+@router.post(
+    "/oauth2-discovery",
+    description=(
+        "Discover OAuth2 Metadata and optionally perform dynamic client registration (DCR) for MCP "
+        "server. Note that this does not result in any record creation or update in Control Plane."
+    ),
+)
+async def mcp_server_oauth2_discovery(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    body: MCPServerOAuth2LookupRequest,
+) -> MCPServerOAuth2LookupResponse:
+    # Enforce only admin to perform this action
+    access_control.check_act_as_organization_role(
+        context.act_as, required_role=OrganizationRole.ADMIN
+    )
+
+    result = MCPServerOAuth2LookupResponse(
+        authorize_url=None,
+        access_token_url=None,
+        refresh_token_url=None,
+        client_id=None,
+        client_secret=None,
+    )
+
+    # Step 1: Discover OAuth metadata
+    try:
+        oauth2_metadata_fetcher = MetadataFetcher(str(body.url))
+        oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
+        result.authorize_url = str(oauth2_metadata.authorization_endpoint)
+        result.access_token_url = str(oauth2_metadata.token_endpoint)
+        result.refresh_token_url = str(oauth2_metadata.token_endpoint)
+    except Exception as e:
+        logger.info(f"Failed to fetch OAuth metadata: {e}. URL: {body.url}")
+        return result
+
+    # Step 2: Perform dynamic client registration (DCR) if requested
+    if body.dcr:
+        try:
+            oauth2_client_registrator = ClientRegistrator(
+                str(body.url),
+                client_metadata=OAuthClientMetadata(
+                    redirect_uris=[
+                        body.redirect_uri
+                        or HttpUrl("https://localhost:8000/mcp-server/oauth2-callback")
+                    ],
+                    token_endpoint_auth_method="none",
+                    grant_types=["authorization_code", "refresh_token"],
+                    response_types=["code"],
+                    scope="",
+                ),
+                oauth_metadata=oauth2_metadata,
+            )
+            client_info = oauth2_client_registrator.dynamic_client_registration()
+            result.client_id = client_info.client_id
+            result.client_secret = client_info.client_secret
+        except Exception as e:
+            logger.info(f"Failed to register client: {e}. URL: {body.url}")
+            return result
+
+    return result
 
 
 @router.post("", response_model=MCPServerPublic)

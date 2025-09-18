@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 
 from aci.common.enums import AuthType, MCPServerTransportType
 from aci.common.schemas.mcp_auth import AuthConfig
@@ -77,3 +77,17 @@ class MCPServerPublic(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+
+class MCPServerOAuth2LookupRequest(BaseModel):
+    url: HttpUrl
+    dcr: bool  # whether or not to perform dynamic client registration
+    redirect_uri: HttpUrl | None = None
+
+
+class MCPServerOAuth2LookupResponse(BaseModel):
+    client_id: str | None = None
+    client_secret: str | None = None
+    authorize_url: str | None = None
+    access_token_url: str | None = None
+    refresh_token_url: str | None = None
