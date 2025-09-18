@@ -120,7 +120,16 @@ class MetadataFetcher:
             # Question: Do we need to provide header regarding MCP protocol version?
             # Original code snippet:
             # return httpx.Request("GET", url, headers={MCP_PROTOCOL_VERSION: LATEST_PROTOCOL_VERSION}) # noqa: E501
-            response = httpx.get(url)
+
+            try:
+                response = httpx.get(
+                    url,
+                    timeout=httpx.Timeout(5.0),
+                    follow_redirects=True,
+                )
+            except httpx.RequestError:
+                # Network error; try next URL
+                continue
 
             if response.status_code == 200:
                 try:
@@ -131,15 +140,22 @@ class MetadataFetcher:
                     # Apply default scope if needed
                     # if self.context.client_metadata.scope is None and metadata.scopes_supported is not None: # noqa: E501
                     #     self.context.client_metadata.scope = " ".join(metadata.scopes_supported)
+                    break
                 except ValidationError:
                     pass
-            elif response.status_code < 400 or response.status_code >= 500:
+            elif response.status_code >= 500:
                 raise OAuth2MetadataDiscoveryError(
                     f"OAuth metadata discovery failed: {response.status_code} {response.text}"
                 )
+            # For 3xx/4xx (other than 200 OK), continue to the next URL
 
     def metadata_discovery(self) -> OAuthMetadata:
-        init_response = httpx.get(self.context.server_url)
+        try:
+            init_response = httpx.get(self.context.server_url, timeout=httpx.Timeout(5.0))
+        except httpx.RequestError as e:
+            raise OAuth2MetadataDiscoveryError(
+                f"Metadata discovery failed: {self.context.server_url}"
+            ) from e
 
         # Step 1: Discover protected resource metadata (RFC9728 with WWW-Authenticate support)
         self._discover_protected_resource(init_response)
