@@ -52,9 +52,10 @@ export function useMCPServer(serverId: string) {
 
 // Hook to get a specific MCP server by name
 export function useMCPServerByName(serverName: string) {
+  const { accessToken } = useMetaInfo();
   return useQuery({
     queryKey: mcpQueryKeys.servers.byName(serverName),
-    queryFn: () => mcpService.servers.getByName(serverName),
+    queryFn: () => mcpService.servers.getByName(accessToken!, serverName),
     enabled: !!serverName,
   });
 }
