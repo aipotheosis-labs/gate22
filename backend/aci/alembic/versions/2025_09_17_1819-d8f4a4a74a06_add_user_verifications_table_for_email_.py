@@ -1,7 +1,7 @@
 """Add user verifications table for email verification
 
 Revision ID: d8f4a4a74a06
-Revises: 7b83f4be0060
+Revises: 967410def57b
 Create Date: 2025-09-17 18:19:39.857182+00:00
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'd8f4a4a74a06'
-down_revision: Union[str, None] = '7b83f4be0060'
+down_revision: Union[str, None] = '967410def57b'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
