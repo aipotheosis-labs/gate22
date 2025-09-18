@@ -37,6 +37,7 @@ class ClientRegistrator:
             server_url=server_url,
             client_metadata=client_metadata,
             oauth_metadata=oauth_metadata,
+            client_info=client_info,
         )
 
     def _register_client(self) -> None:
