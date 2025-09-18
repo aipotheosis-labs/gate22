@@ -17,10 +17,14 @@ export default function VerifyErrorPage() {
 function VerifyErrorPageContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const normalizedError = error?.toLowerCase() ?? "";
 
   const getErrorDetails = () => {
-    switch (error) {
+    switch (normalizedError) {
       case "invalid_or_expired_token":
+      case "invalid or expired token":
+      case "invalid or expired email verification token":
+      case "invalid email verification token":
         return {
           title: "Verification Link Expired",
           message:
@@ -28,6 +32,8 @@ function VerifyErrorPageContent() {
           showSignUp: true,
         };
       case "token_expired":
+      case "token expired":
+      case "email verification token expired":
         return {
           title: "Link Expired",
           message:
@@ -35,6 +41,8 @@ function VerifyErrorPageContent() {
           showSignUp: true,
         };
       case "token_not_found_or_already_used":
+      case "token not found or already used":
+      case "email verification token not found or already used":
         return {
           title: "Link Already Used",
           message:
@@ -42,7 +50,11 @@ function VerifyErrorPageContent() {
           showSignUp: false,
         };
       case "invalid_token_type":
+      case "invalid token type":
       case "token_mismatch":
+      case "token mismatch":
+      case "invalid email verification token type":
+      case "email verification token mismatch":
         return {
           title: "Invalid Link",
           message:

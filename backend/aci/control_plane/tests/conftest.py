@@ -138,6 +138,7 @@ def dummy_access_token_another_org(db_session: Session) -> str:
         email="dummy_other@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
 
     dummy_other_organization = crud.organizations.create_organization(
@@ -185,6 +186,7 @@ def dummy_organization(db_session: Session) -> Organization:
         email="dummy@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
     crud.organizations.add_user_to_organization(
         db_session=db_session,
@@ -247,6 +249,7 @@ def dummy_another_org_member(db_session: Session, dummy_organization: Organizati
         email="dummy_another@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
     crud.organizations.add_user_to_organization(
         db_session=db_session,
@@ -270,6 +273,7 @@ def dummy_user_without_org(db_session: Session) -> User:
         email="dummy_without_org@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
     return user
 

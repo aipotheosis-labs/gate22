@@ -94,10 +94,10 @@ def test_create_team_with_members(
 
     # Create additional users for the organization
     member1 = crud.users.create_user(
-        db_session, "Member One", "member1@example.com", None, UserIdentityProvider.EMAIL
+        db_session, "Member One", "member1@example.com", None, UserIdentityProvider.EMAIL, True
     )
     member2 = crud.users.create_user(
-        db_session, "Member Two", "member2@example.com", None, UserIdentityProvider.EMAIL
+        db_session, "Member Two", "member2@example.com", None, UserIdentityProvider.EMAIL, True
     )
 
     # Add them to the organization
@@ -110,7 +110,7 @@ def test_create_team_with_members(
 
     # Create a non-org member for invalid test
     non_org_member = crud.users.create_user(
-        db_session, "Non Org Member", "nonorg@example.com", None, UserIdentityProvider.EMAIL
+        db_session, "Non Org Member", "nonorg@example.com", None, UserIdentityProvider.EMAIL, True
     )
 
     db_session.commit()
@@ -235,7 +235,7 @@ def test_list_team_members(
 
     # Create a team with a random teammate, then optionally add current user as a team member
     teammate = crud.users.create_user(
-        db_session, "Teammate", "teammate@example.com", None, UserIdentityProvider.EMAIL
+        db_session, "Teammate", "teammate@example.com", None, UserIdentityProvider.EMAIL, True
     )
     crud.organizations.add_user_to_organization(
         db_session, dummy_organization.id, teammate.id, OrganizationRole.MEMBER
@@ -295,7 +295,7 @@ def test_add_team_member(
     access_token = request.getfixturevalue(access_token_fixture)
 
     new_user = crud.users.create_user(
-        db_session, "New User", "new_user@example.com", None, UserIdentityProvider.EMAIL
+        db_session, "New User", "new_user@example.com", None, UserIdentityProvider.EMAIL, True
     )
     if is_user_in_org:
         crud.organizations.add_user_to_organization(
@@ -365,7 +365,12 @@ def test_remove_team_member(
 
     # Create a new user and add it to the organization
     new_user = crud.users.create_user(
-        db_session, "Target User", "target_user@example.com", None, UserIdentityProvider.EMAIL
+        db_session,
+        "Target User",
+        "target_user@example.com",
+        None,
+        UserIdentityProvider.EMAIL,
+        True,
     )
     crud.organizations.add_user_to_organization(
         db_session, dummy_organization.id, new_user.id, OrganizationRole.MEMBER

@@ -14,7 +14,7 @@ from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo, JWTPayload
 from aci.control_plane import config
-from aci.control_plane.external_services.email_service import EmailService
+from aci.control_plane.services.email_service import EmailService
 
 logger = get_logger(__name__)
 http_bearer = HTTPBearer(auto_error=True, description="login to receive a JWT token")

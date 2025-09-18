@@ -50,14 +50,8 @@ DB_FULL_URL = construct_db_url(DB_SCHEME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 OPENAI_API_KEY = check_and_get_env_variable("CONTROL_PLANE_OPENAI_API_KEY")
 
 # AWS SES Configuration
-AWS_SES_REGION = check_and_get_env_variable("CONTROL_PLANE_AWS_SES_REGION", default="us-east-2")
-AWS_SES_ACCESS_KEY_ID = check_and_get_env_variable(
-    "CONTROL_PLANE_AWS_SES_ACCESS_KEY_ID", default=""
-)
-AWS_SES_SECRET_ACCESS_KEY = check_and_get_env_variable(
-    "CONTROL_PLANE_AWS_SES_SECRET_ACCESS_KEY", default=""
-)
-SENDER_EMAIL = check_and_get_env_variable(
-    "CONTROL_PLANE_SENDER_EMAIL", default="team@aipolabs.info"
-)
-SENDER_NAME = check_and_get_env_variable("CONTROL_PLANE_SENDER_NAME", default="Aipolabs Team")
+AWS_SES_REGION = check_and_get_env_variable("CONTROL_PLANE_AWS_SES_REGION")
+AWS_SES_ACCESS_KEY_ID = check_and_get_env_variable("CONTROL_PLANE_AWS_SES_ACCESS_KEY_ID")
+AWS_SES_SECRET_ACCESS_KEY = check_and_get_env_variable("CONTROL_PLANE_AWS_SES_SECRET_ACCESS_KEY")
+SENDER_EMAIL = check_and_get_env_variable("CONTROL_PLANE_SENDER_EMAIL")
+SENDER_NAME = "ACI.dev Team"

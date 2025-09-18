@@ -27,6 +27,7 @@ from aci.common.enums import (
     OrganizationRole,
     TeamRole,
     UserIdentityProvider,
+    UserVerificationType,
 )
 
 EMBEDDING_DIMENSION = 1024
@@ -80,9 +81,6 @@ class User(Base):
     refresh_tokens: Mapped[list[UserRefreshToken]] = relationship(
         back_populates="user", cascade="all, delete-orphan", init=False
     )
-    verifications: Mapped[list[UserVerification]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", init=False
-    )
 
 
 class UserRefreshToken(Base):
@@ -120,9 +118,9 @@ class UserVerification(Base):
     user_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    type: Mapped[str] = mapped_column(
-        String(MAX_ENUM_LENGTH), nullable=False
-    )  # 'email_verification' | 'password_reset'
+    type: Mapped[UserVerificationType] = mapped_column(
+        SQLEnum(UserVerificationType, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
+    )
     token_hash: Mapped[str] = mapped_column(
         String(MAX_STRING_LENGTH), unique=True, nullable=False
     )  # HMAC-SHA256(secret, token)
@@ -137,7 +135,7 @@ class UserVerification(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
 
-    user: Mapped[User] = relationship(back_populates="verifications", init=False)
+    # No relationship needed - only using user_id foreign key directly
 
 
 class Organization(Base):

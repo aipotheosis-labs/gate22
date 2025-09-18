@@ -53,6 +53,7 @@ def create_mock_org_teams_users(
             email=f"admin-{short_id}@aci.dev",
             password_hash=utils.hash_user_password("password"),
             identity_provider=UserIdentityProvider.EMAIL,
+            email_verified=True,
         )
         user1 = crud.users.create_user(
             db_session,
@@ -60,6 +61,7 @@ def create_mock_org_teams_users(
             email=f"user1-{short_id}@aci.dev",
             password_hash=utils.hash_user_password("password"),
             identity_provider=UserIdentityProvider.EMAIL,
+            email_verified=True,
         )
         user2 = crud.users.create_user(
             db_session,
@@ -67,6 +69,7 @@ def create_mock_org_teams_users(
             email=f"user2-{short_id}@aci.dev",
             password_hash=utils.hash_user_password("password"),
             identity_provider=UserIdentityProvider.EMAIL,
+            email_verified=True,
         )
 
         # Add users to organization

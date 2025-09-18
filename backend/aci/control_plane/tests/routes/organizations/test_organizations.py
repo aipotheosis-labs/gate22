@@ -123,6 +123,7 @@ def test_list_organization_members(
         email="new_member@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
     crud.organizations.add_user_to_organization(
         db_session, dummy_organization.id, new_member.id, OrganizationRole.MEMBER
@@ -172,6 +173,7 @@ def test_remove_organization_member(
         email="new_member@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
     crud.organizations.add_user_to_organization(
         db_session, dummy_organization.id, new_member.id, remove_member_role
@@ -251,6 +253,7 @@ def test_leave_organization(
             email=f"new_admin{i}@example.com",
             password_hash=None,
             identity_provider=UserIdentityProvider.EMAIL,
+            email_verified=True,
         )
         crud.organizations.add_user_to_organization(
             db_session, dummy_organization.id, new_admin.id, OrganizationRole.ADMIN
@@ -317,6 +320,7 @@ def test_update_organization_member_role(
             email="new_member@example.com",
             password_hash=None,
             identity_provider=UserIdentityProvider.EMAIL,
+            email_verified=True,
         )
         crud.organizations.add_user_to_organization(
             db_session, dummy_organization.id, target_user.id, OrganizationRole.ADMIN

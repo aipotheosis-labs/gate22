@@ -62,18 +62,14 @@ export async function register(
 
       // Provide user-friendly messages for common errors
       if (typeof errorMessage === "string") {
+        const normalizedError = errorMessage.toLowerCase();
+
         // Map backend error codes to user-friendly messages
         if (
-          errorMessage === "email_already_exists" ||
-          errorMessage === "user_already_exists"
+          normalizedError === "email_already_exists" ||
+          normalizedError === "user_already_exists" ||
+          normalizedError.includes("email already")
         ) {
-          toast.error(
-            "This email is already registered. Please try logging in instead.",
-          );
-          return false;
-        }
-        // Fallback for old error messages (backwards compatibility)
-        if (errorMessage.toLowerCase().includes("email already")) {
           toast.error(
             "This email is already registered. Please try logging in instead.",
           );
@@ -120,19 +116,30 @@ export async function login(email: string, password: string): Promise<boolean> {
 
       // Provide user-friendly messages for common errors
       if (typeof errorMessage === "string") {
+        const normalizedError = errorMessage.toLowerCase();
+
         if (
-          errorMessage.toLowerCase().includes("invalid") ||
-          errorMessage.toLowerCase().includes("incorrect")
+          normalizedError.includes("invalid") ||
+          normalizedError.includes("incorrect")
         ) {
           toast.error("Invalid email or password. Please try again.");
           return false;
         }
         if (
-          errorMessage === "user_not_found" ||
-          errorMessage.toLowerCase().includes("not found")
+          normalizedError === "user_not_found" ||
+          normalizedError.includes("not found")
         ) {
           toast.error(
             "No account found with this email. Please sign up first.",
+          );
+          return false;
+        }
+        if (
+          normalizedError === "account_deletion_in_progress" ||
+          normalizedError === "account deletion in progress"
+        ) {
+          toast.error(
+            "Your account is currently being deleted. Please try again later or contact support.",
           );
           return false;
         }

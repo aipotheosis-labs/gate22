@@ -6,6 +6,11 @@ class UserIdentityProvider(StrEnum):
     EMAIL = "email"  # email/password login
 
 
+class UserVerificationType(StrEnum):
+    EMAIL_VERIFICATION = "email_verification"
+    PASSWORD_RESET = "password_reset"
+
+
 class OrganizationRole(StrEnum):
     ADMIN = "admin"  # e.g., manager MCP server configuration
     MEMBER = "member"  # e.g., developer who bundle and use MCP servers

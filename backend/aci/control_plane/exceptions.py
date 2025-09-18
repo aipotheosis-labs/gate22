@@ -103,7 +103,7 @@ class AccountDeletionInProgressError(ControlPlaneException):
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="account_deletion_in_progress",
+            title="Account deletion in progress",
             message=message,
             error_code=status.HTTP_409_CONFLICT,
         )
@@ -116,7 +116,7 @@ class EmailAlreadyExistsError(ControlPlaneException):
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="email_already_exists",
+            title="Email already exists",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -129,7 +129,7 @@ class ThirdPartyIdentityExistsError(ControlPlaneException):
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="third_party_identity_exists",
+            title="Third-party identity exists",
             message=message,
             error_code=status.HTTP_409_CONFLICT,
         )
@@ -138,72 +138,62 @@ class ThirdPartyIdentityExistsError(ControlPlaneException):
 class EmailSendError(ControlPlaneException):
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="email_send_failed",
+            title="Email send failed",
             message=message,
             error_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
 
-class InvalidVerificationTokenError(ControlPlaneException):
-    """
-    Exception raised when email verification token is invalid or expired.
-    """
+class InvalidEmailVerificationTokenError(ControlPlaneException):
+    """Email verification token is invalid or malformed."""
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="invalid_or_expired_token",
+            title="Invalid or expired email verification token",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
-class InvalidTokenTypeError(ControlPlaneException):
-    """
-    Exception raised when token type doesn't match expected type.
-    """
+class InvalidEmailVerificationTokenTypeError(ControlPlaneException):
+    """Email verification token type doesn't match expected type."""
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="invalid_token_type",
+            title="Invalid email verification token type",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
-class TokenNotFoundError(ControlPlaneException):
-    """
-    Exception raised when verification token is not found or already used.
-    """
+class EmailVerificationTokenNotFoundError(ControlPlaneException):
+    """Email verification token is missing or already used."""
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="token_not_found_or_already_used",
+            title="Email verification token not found or already used",
             message=message,
             error_code=status.HTTP_404_NOT_FOUND,
         )
 
 
-class TokenExpiredError(ControlPlaneException):
-    """
-    Exception raised when verification token has expired.
-    """
+class EmailVerificationTokenExpiredError(ControlPlaneException):
+    """Email verification token has expired."""
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="token_expired",
+            title="Email verification token expired",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
-class TokenMismatchError(ControlPlaneException):
-    """
-    Exception raised when token doesn't match the user.
-    """
+class EmailVerificationTokenMismatchError(ControlPlaneException):
+    """Email verification token does not match the user."""
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="token_mismatch",
+            title="Email verification token mismatch",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -216,7 +206,7 @@ class UserNotFoundError(ControlPlaneException):
 
     def __init__(self, message: str | None = None):
         super().__init__(
-            title="user_not_found",
+            title="User not found",
             message=message,
             error_code=status.HTTP_404_NOT_FOUND,
         )

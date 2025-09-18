@@ -13,7 +13,7 @@ def create_user(
     email: str,
     password_hash: str | None,
     identity_provider: UserIdentityProvider,
-    email_verified: bool = False,
+    email_verified: bool,
 ) -> User:
     user = User(
         name=name,

@@ -2,6 +2,7 @@ import datetime
 from collections.abc import Generator
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import jwt
@@ -27,8 +28,8 @@ def unverified_user(db_session: Session) -> User:
         email="unverified@example.com",
         password_hash=password_hash,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=False,
     )
-    user.email_verified = False
     db_session.commit()
     return user
 
@@ -49,7 +50,7 @@ def mock_email_service(test_client: TestClient) -> Generator[MagicMock, None, No
     """Mock the email service to avoid actual AWS SES calls."""
     # Import here to avoid circular imports
     from aci.control_plane import dependencies as deps
-    from aci.control_plane.external_services.email_service import EmailService
+    from aci.control_plane.services.email_service import EmailService
 
     # Create a mock email service
     mock_service = MagicMock(spec=EmailService)
@@ -88,8 +89,8 @@ def _create_verified_user(db_session: Session, name: str, email: str, password: 
         email=email,
         password_hash=password_hash,
         identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
     )
-    user.email_verified = True
     db_session.commit()
     return user
 
@@ -383,4 +384,8 @@ class TestEmailUserVerification:
         )
 
         _assert_redirect_response(response, 302, "/auth/verify-error")
-        assert "token_not_found_or_already_used" in response.headers["location"]
+        parsed = urlparse(response.headers["location"])
+        query_params = parse_qs(parsed.query)
+        assert query_params.get("error") == [
+            "Email verification token not found or already used"
+        ]

@@ -32,16 +32,16 @@ from aci.control_plane import token_utils as token_utils
 from aci.control_plane.exceptions import (
     AccountDeletionInProgressError,
     EmailAlreadyExistsError,
-    InvalidTokenTypeError,
-    InvalidVerificationTokenError,
+    EmailVerificationTokenExpiredError,
+    EmailVerificationTokenMismatchError,
+    EmailVerificationTokenNotFoundError,
+    InvalidEmailVerificationTokenError,
+    InvalidEmailVerificationTokenTypeError,
     OAuth2Error,
     ThirdPartyIdentityExistsError,
-    TokenExpiredError,
-    TokenMismatchError,
-    TokenNotFoundError,
     UserNotFoundError,
 )
-from aci.control_plane.external_services.email_service import EmailService
+from aci.control_plane.services.email_service import EmailService
 from aci.control_plane.google_login_utils import (
     exchange_google_userinfo,
     generate_google_auth_url,
@@ -330,8 +330,20 @@ async def verify_email(
     token: str = Query(..., description="The verification token from the email"),
 ) -> RedirectResponse:
     try:
-        # Use helper function to verify email
-        _verify_user_email(db_session, token)
+        # Verify the token and get verification record
+        verification, user_id = _verify_user_email(db_session, token)
+
+        # Mark verification as used
+        verification.used_at = datetime.datetime.now(datetime.UTC)
+        db_session.add(verification)
+
+        # Update user's email_verified status
+        user = crud.users.get_user_by_id(db_session, user_id)
+        if not user:
+            raise UserNotFoundError("User not found")
+
+        user.email_verified = True
+        db_session.add(user)
 
         # Commit the transaction
         db_session.commit()
@@ -340,11 +352,11 @@ async def verify_email(
         success_url = f"{config.FRONTEND_URL}/auth/verify-success"
         return RedirectResponse(success_url, status_code=status.HTTP_302_FOUND)
     except (
-        InvalidVerificationTokenError,
-        InvalidTokenTypeError,
-        TokenNotFoundError,
-        TokenExpiredError,
-        TokenMismatchError,
+        InvalidEmailVerificationTokenError,
+        InvalidEmailVerificationTokenTypeError,
+        EmailVerificationTokenNotFoundError,
+        EmailVerificationTokenExpiredError,
+        EmailVerificationTokenMismatchError,
         UserNotFoundError,
     ) as e:
         # Redirect to frontend with specific error
@@ -473,6 +485,7 @@ async def _register_user_with_email(
             email=email,
             password_hash=password_hash,
             identity_provider=UserIdentityProvider.EMAIL,
+            email_verified=False,
         )
 
     # Generate and send verification email
@@ -510,20 +523,24 @@ async def _register_user_with_email(
 def _verify_user_email(
     db_session: Session,
     token: str,
-) -> User:
+) -> tuple[UserVerification, UUID]:
     """
     Verify a user's email using the verification token.
-    Returns the verified user.
+    Returns the verification record and user_id.
     Raises exceptions for various error conditions.
     """
     # Validate and decode token
     payload = token_utils.validate_token(token)
     if not payload:
         # JWT invalid or expired
-        raise InvalidVerificationTokenError("The verification token is invalid or expired")
+        raise InvalidEmailVerificationTokenError(
+            "The verification token is invalid or expired"
+        )
 
     if payload.get("type") != "email_verification":
-        raise InvalidTokenTypeError("The token is not a valid email verification token")
+        raise InvalidEmailVerificationTokenTypeError(
+            "The token is not a valid email verification token"
+        )
 
     # Check verification record
     token_hash = token_utils.hash_token(token)
@@ -537,25 +554,17 @@ def _verify_user_email(
     )
 
     if not verification:
-        raise TokenNotFoundError("The verification token was not found or has already been used")
+        raise EmailVerificationTokenNotFoundError(
+            "The verification token was not found or has already been used"
+        )
 
     if verification.expires_at < datetime.datetime.now(datetime.UTC):
-        raise TokenExpiredError("The verification token has expired")
+        raise EmailVerificationTokenExpiredError("The verification token has expired")
 
     user_id = UUID(payload["user_id"])
     if verification.user_id != user_id:
-        raise TokenMismatchError("The verification token does not match the user")
+        raise EmailVerificationTokenMismatchError(
+            "The verification token does not match the user"
+        )
 
-    # Mark verification as used
-    verification.used_at = datetime.datetime.now(datetime.UTC)
-    db_session.add(verification)
-
-    # Update user's email_verified status
-    user = crud.users.get_user_by_id(db_session, user_id)
-    if not user:
-        raise UserNotFoundError("User not found")
-
-    user.email_verified = True
-    db_session.add(user)
-    db_session.commit()
-    return user
+    return verification, user_id
