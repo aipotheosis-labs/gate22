@@ -55,9 +55,6 @@ async def list_mcp_servers(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
 ) -> PaginationResponse[MCPServerPublic]:
-    logger.info(f"Listing MCP servers for organization {context.act_as.organization_id}")
-    # TODO: support search by keywords / categories (currently filtering is done in Frontend)
-
     mcp_servers = crud.mcp_servers.list_mcp_servers(
         context.db_session,
         organization_id=context.act_as.organization_id,
