@@ -25,6 +25,7 @@ function VerifyErrorPageContent() {
       case "invalid or expired token":
       case "invalid or expired email verification token":
       case "invalid email verification token":
+      case "invalid_email_verification_token":
         return {
           title: "Verification Link Expired",
           message:
@@ -34,6 +35,7 @@ function VerifyErrorPageContent() {
       case "token_expired":
       case "token expired":
       case "email verification token expired":
+      case "email_verification_token_expired":
         return {
           title: "Link Expired",
           message:
@@ -43,6 +45,7 @@ function VerifyErrorPageContent() {
       case "token_not_found_or_already_used":
       case "token not found or already used":
       case "email verification token not found or already used":
+      case "email_verification_token_not_found":
         return {
           title: "Link Already Used",
           message:
@@ -55,10 +58,19 @@ function VerifyErrorPageContent() {
       case "token mismatch":
       case "invalid email verification token type":
       case "email verification token mismatch":
+      case "invalid_email_verification_token_type":
+      case "email_verification_token_mismatch":
         return {
           title: "Invalid Link",
           message:
             "This verification link appears to be invalid. Please check your email for the correct link.",
+          showSignUp: true,
+        };
+      case "user_not_found":
+        return {
+          title: "Account Not Found",
+          message:
+            "We couldn't find an account for this verification link. Please sign up again to create your account.",
           showSignUp: true,
         };
       default:

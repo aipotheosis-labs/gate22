@@ -325,7 +325,9 @@ class TestEmailUserVerification:
         )
 
         _assert_redirect_response(response, 302, "/auth/verify-error")
-        assert "invalid_or_expired_token" in response.headers["location"]
+        parsed = urlparse(response.headers["location"])
+        query_params = parse_qs(parsed.query)
+        assert query_params.get("error") == ["invalid_email_verification_token"]
 
     def test_verify_email_expired_token(
         self, test_client: TestClient, db_session: Session, unverified_user: User
@@ -365,6 +367,9 @@ class TestEmailUserVerification:
         )
 
         _assert_redirect_response(response, 302, "/auth/verify-error")
+        parsed = urlparse(response.headers["location"])
+        query_params = parse_qs(parsed.query)
+        assert query_params.get("error") == ["email_verification_token_expired"]
 
         # User should still be unverified
         db_session.refresh(unverified_user)
@@ -386,4 +391,4 @@ class TestEmailUserVerification:
         _assert_redirect_response(response, 302, "/auth/verify-error")
         parsed = urlparse(response.headers["location"])
         query_params = parse_qs(parsed.query)
-        assert query_params.get("error") == ["Email verification token not found or already used"]
+        assert query_params.get("error") == ["email_verification_token_not_found"]

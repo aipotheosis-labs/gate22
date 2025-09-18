@@ -35,6 +35,7 @@ from aci.control_plane import dependencies as deps
 from aci.control_plane import token_utils as token_utils
 from aci.control_plane.exceptions import (
     AccountDeletionInProgressError,
+    ControlPlaneException,
     EmailAlreadyExistsError,
     EmailVerificationTokenExpiredError,
     EmailVerificationTokenMismatchError,
@@ -45,14 +46,24 @@ from aci.control_plane.exceptions import (
     ThirdPartyIdentityExistsError,
     UserNotFoundError,
 )
-from aci.control_plane.services.email_service import EmailService
 from aci.control_plane.google_login_utils import (
     exchange_google_userinfo,
     generate_google_auth_url,
 )
+from aci.control_plane.services.email_service import EmailService
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+
+EMAIL_VERIFICATION_ERROR_PARAMS: dict[type[ControlPlaneException], str] = {
+    InvalidEmailVerificationTokenError: "invalid_email_verification_token",
+    InvalidEmailVerificationTokenTypeError: "invalid_email_verification_token_type",
+    EmailVerificationTokenNotFoundError: "email_verification_token_not_found",
+    EmailVerificationTokenExpiredError: "email_verification_token_expired",
+    EmailVerificationTokenMismatchError: "email_verification_token_mismatch",
+    UserNotFoundError: "user_not_found",
+}
 
 
 @router.get(
@@ -364,7 +375,7 @@ async def verify_email(
         UserNotFoundError,
     ) as e:
         # Redirect to frontend with specific error
-        error_param = _email_verification_error_param(e)
+        error_param = EMAIL_VERIFICATION_ERROR_PARAMS.get(type(e), "verification_failed")
         error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={error_param}"
         return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
     except Exception as e:
@@ -569,21 +580,3 @@ def _verify_user_email(
         raise EmailVerificationTokenMismatchError("The verification token does not match the user")
 
     return verification, user_id
-
-
-def _email_verification_error_param(
-    exc: (
-        InvalidEmailVerificationTokenError
-        | InvalidEmailVerificationTokenTypeError
-        | EmailVerificationTokenNotFoundError
-        | EmailVerificationTokenExpiredError
-        | EmailVerificationTokenMismatchError
-        | UserNotFoundError
-    ),
-) -> str:
-    """Resolve the error query parameter for email verification redirects."""
-
-    if isinstance(exc, (InvalidEmailVerificationTokenError, EmailVerificationTokenExpiredError)):
-        return "invalid_or_expired_token"
-
-    return exc.title
