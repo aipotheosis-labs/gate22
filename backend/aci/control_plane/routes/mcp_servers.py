@@ -1,5 +1,5 @@
 import string
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -180,12 +180,21 @@ async def mcp_server_oauth2_discovery(
             redirect_uris = [body.redirect_uri]
 
         try:
+            # We currently only support none and client_secret_post
+            token_endpoint_auth_method: Literal["none", "client_secret_post"]
+            if "client_secret_post" in (
+                oauth2_metadata.token_endpoint_auth_methods_supported or []
+            ):
+                token_endpoint_auth_method = "client_secret_post"
+            else:
+                token_endpoint_auth_method = "none"
+
             oauth2_client_registrator = ClientRegistrator(
                 str(body.url),
                 client_metadata=OAuthClientMetadata(
                     redirect_uris=redirect_uris,
                     # TODO: should we support client_secret_basic in the future?
-                    token_endpoint_auth_method="none",
+                    token_endpoint_auth_method=token_endpoint_auth_method,
                     grant_types=["authorization_code", "refresh_token"],
                     response_types=["code"],
                     scope="",  # TODO: discover default scope

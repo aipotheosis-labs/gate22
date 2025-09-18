@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
@@ -91,3 +92,4 @@ class MCPServerOAuth2DiscoveryResponse(BaseModel):
     authorize_url: str | None = None
     access_token_url: str | None = None
     refresh_token_url: str | None = None
+    token_endpoint_auth_method: Literal["none", "client_secret_post"] | None = None
