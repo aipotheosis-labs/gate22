@@ -138,12 +138,6 @@ class MetadataFetcher:
                     f"OAuth metadata discovery failed: {response.status_code} {response.text}"
                 )
 
-    async def _handle_oauth_metadata_response(self, response: httpx.Response) -> None:
-        pass
-        # Apply default scope if needed
-        # if self.context.client_metadata.scope is None and metadata.scopes_supported is not None:
-        #     self.context.client_metadata.scope = " ".join(metadata.scopes_supported)
-
     def metadata_discovery(self) -> OAuthMetadata:
         init_response = httpx.get(self.context.server_url)
 
