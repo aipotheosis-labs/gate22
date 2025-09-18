@@ -154,16 +154,28 @@ async def mcp_server_oauth2_discovery(
         refresh_token_url=None,
         client_id=None,
         client_secret=None,
+        token_endpoint_auth_method=None,
     )
 
     # Step 1: Discover OAuth metadata
     try:
         oauth2_metadata_fetcher = MetadataFetcher(str(body.url))
         oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
+
+        # We currently only support none and client_secret_post
+        token_endpoint_auth_method: Literal["none", "client_secret_post"]
+        if "client_secret_post" in (oauth2_metadata.token_endpoint_auth_methods_supported or []):
+            token_endpoint_auth_method = "client_secret_post"
+        else:
+            token_endpoint_auth_method = "none"
+
+        result.token_endpoint_auth_method = token_endpoint_auth_method
         result.authorize_url = str(oauth2_metadata.authorization_endpoint)
         result.access_token_url = str(oauth2_metadata.token_endpoint)
         result.refresh_token_url = str(oauth2_metadata.token_endpoint)
     except Exception as e:
+        # If exception is raised, it means the discovery failed.
+        # We still return the result with null values instead of non-200 status code.
         logger.info(f"Failed to fetch OAuth metadata: {e}. URL: {body.url}")
         return result
 
@@ -180,15 +192,6 @@ async def mcp_server_oauth2_discovery(
             redirect_uris = [body.redirect_uri]
 
         try:
-            # We currently only support none and client_secret_post
-            token_endpoint_auth_method: Literal["none", "client_secret_post"]
-            if "client_secret_post" in (
-                oauth2_metadata.token_endpoint_auth_methods_supported or []
-            ):
-                token_endpoint_auth_method = "client_secret_post"
-            else:
-                token_endpoint_auth_method = "none"
-
             oauth2_client_registrator = ClientRegistrator(
                 str(body.url),
                 client_metadata=OAuthClientMetadata(
