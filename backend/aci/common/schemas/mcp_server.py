@@ -79,13 +79,13 @@ class MCPServerPublic(BaseModel):
     updated_at: datetime
 
 
-class MCPServerOAuth2LookupRequest(BaseModel):
+class MCPServerOAuth2DiscoveryRequest(BaseModel):
     url: HttpUrl
     dcr: bool  # whether or not to perform dynamic client registration
     redirect_uri: HttpUrl | None = None  # If not provided, use the default callback URL in our API.
 
 
-class MCPServerOAuth2LookupResponse(BaseModel):
+class MCPServerOAuth2DiscoveryResponse(BaseModel):
     client_id: str | None = None
     client_secret: str | None = None
     authorize_url: str | None = None

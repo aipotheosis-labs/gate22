@@ -14,8 +14,8 @@ from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server import (
     CustomMCPServerCreate,
     MCPServerEmbeddingFields,
-    MCPServerOAuth2LookupRequest,
-    MCPServerOAuth2LookupResponse,
+    MCPServerOAuth2DiscoveryRequest,
+    MCPServerOAuth2DiscoveryResponse,
     MCPServerPublic,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
@@ -141,14 +141,14 @@ async def create_custom_mcp_server(
 async def mcp_server_oauth2_discovery(
     request: Request,
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
-    body: MCPServerOAuth2LookupRequest,
-) -> MCPServerOAuth2LookupResponse:
+    body: MCPServerOAuth2DiscoveryRequest,
+) -> MCPServerOAuth2DiscoveryResponse:
     # Enforce only admin to perform this action
     access_control.check_act_as_organization_role(
         context.act_as, required_role=OrganizationRole.ADMIN
     )
 
-    result = MCPServerOAuth2LookupResponse(
+    result = MCPServerOAuth2DiscoveryResponse(
         authorize_url=None,
         access_token_url=None,
         refresh_token_url=None,
