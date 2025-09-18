@@ -16,7 +16,11 @@ from starlette.responses import RedirectResponse
 from aci.common import utils
 from aci.common.db import crud
 from aci.common.db.sql_models import User, UserVerification
-from aci.common.enums import OrganizationRole, UserIdentityProvider
+from aci.common.enums import (
+    OrganizationRole,
+    UserIdentityProvider,
+    UserVerificationType,
+)
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import (
     ActAsInfo,
@@ -360,7 +364,8 @@ async def verify_email(
         UserNotFoundError,
     ) as e:
         # Redirect to frontend with specific error
-        error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={e.title}"
+        error_param = _email_verification_error_param(e)
+        error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={error_param}"
         return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
     except Exception as e:
         # Log unexpected errors
@@ -510,7 +515,7 @@ async def _register_user_with_email(
     # Store verification record
     verification = UserVerification(
         user_id=user.id,
-        type="email_verification",
+        type=UserVerificationType.EMAIL_VERIFICATION,
         token_hash=token_hash,
         expires_at=expires_at,
         email_metadata=email_metadata,
@@ -533,9 +538,7 @@ def _verify_user_email(
     payload = token_utils.validate_token(token)
     if not payload:
         # JWT invalid or expired
-        raise InvalidEmailVerificationTokenError(
-            "The verification token is invalid or expired"
-        )
+        raise InvalidEmailVerificationTokenError("The verification token is invalid or expired")
 
     if payload.get("type") != "email_verification":
         raise InvalidEmailVerificationTokenTypeError(
@@ -563,8 +566,24 @@ def _verify_user_email(
 
     user_id = UUID(payload["user_id"])
     if verification.user_id != user_id:
-        raise EmailVerificationTokenMismatchError(
-            "The verification token does not match the user"
-        )
+        raise EmailVerificationTokenMismatchError("The verification token does not match the user")
 
     return verification, user_id
+
+
+def _email_verification_error_param(
+    exc: (
+        InvalidEmailVerificationTokenError
+        | InvalidEmailVerificationTokenTypeError
+        | EmailVerificationTokenNotFoundError
+        | EmailVerificationTokenExpiredError
+        | EmailVerificationTokenMismatchError
+        | UserNotFoundError
+    ),
+) -> str:
+    """Resolve the error query parameter for email verification redirects."""
+
+    if isinstance(exc, (InvalidEmailVerificationTokenError, EmailVerificationTokenExpiredError)):
+        return "invalid_or_expired_token"
+
+    return exc.title

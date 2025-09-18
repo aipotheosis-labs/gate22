@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from aci.common import utils
 from aci.common.db import crud
 from aci.common.db.sql_models import User, UserVerification
-from aci.common.enums import UserIdentityProvider
+from aci.common.enums import UserIdentityProvider, UserVerificationType
 from aci.control_plane import config
 from aci.control_plane import token_utils as token_utils
 
@@ -118,7 +118,7 @@ def _create_verification_record(
 
     verification = UserVerification(
         user_id=user.id,
-        type="email_verification",
+        type=UserVerificationType.EMAIL_VERIFICATION,
         token_hash=token_hash,
         expires_at=expires_at,
         email_metadata=None,
@@ -350,7 +350,7 @@ class TestEmailUserVerification:
         # Create verification record
         verification = UserVerification(
             user_id=unverified_user.id,
-            type="email_verification",
+            type=UserVerificationType.EMAIL_VERIFICATION,
             token_hash=token_hash,
             expires_at=expired_at,
             email_metadata=None,
@@ -386,6 +386,4 @@ class TestEmailUserVerification:
         _assert_redirect_response(response, 302, "/auth/verify-error")
         parsed = urlparse(response.headers["location"])
         query_params = parse_qs(parsed.query)
-        assert query_params.get("error") == [
-            "Email verification token not found or already used"
-        ]
+        assert query_params.get("error") == ["Email verification token not found or already used"]

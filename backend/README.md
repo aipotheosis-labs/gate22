@@ -93,8 +93,10 @@ For VS Code users, configure Ruff formatter:
 
 ### Running Tests
 
+Run the test suite in an ephemeral container (automatically applies migrations before executing tests):
+
 ```bash
-docker compose exec test-runner pytest
+docker compose run --rm test-runner pytest
 ```
 
 ## Database Management
