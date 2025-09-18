@@ -214,7 +214,7 @@ class UserNotFoundError(ControlPlaneException):
 
 class OAuth2ClientRegistrationError(ControlPlaneException):
     """
-    Exception raised when an OAuth registration error occurs
+    Exception raised when an OAuth2 registration error occurs
     """
 
     def __init__(self, message: str | None = None):
