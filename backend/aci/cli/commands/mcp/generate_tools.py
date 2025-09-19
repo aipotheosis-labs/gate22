@@ -1,7 +1,5 @@
 import asyncio
-import hashlib
 import json
-import re
 from datetime import datetime
 from pathlib import Path
 
@@ -11,7 +9,7 @@ from sqlalchemy import select
 
 from aci.cli import config
 from aci.common import auth_credentials_manager as acm
-from aci.common import utils
+from aci.common import mcp_tool_utils, utils
 from aci.common.db import crud
 from aci.common.db.sql_models import (
     ConnectedAccount,
@@ -137,7 +135,15 @@ def _create_tools_json_file(mcp_server_name: str, canonical_tools: list[mcp_type
     tools: list[dict] = []
 
     for canonical_tool in canonical_tools:
-        tool_name = f"{mcp_server_name}__{_sanitize_canonical_tool_name(canonical_tool.name)}"
+        try:
+            sanitized = mcp_tool_utils.sanitize_canonical_tool_name(canonical_tool.name)
+        except mcp_tool_utils.MCPToolSanitizationError:
+            console.print(
+                f"[yellow]Warning: Tool name '{canonical_tool.name}' is empty after sanitization. Using 'UNKNOWN_TOOL' as placeholder. Need manual fix after generation.[/yellow]"  # noqa: E501
+            )
+            sanitized = "UNKNOWN_TOOL"
+
+        tool_name = f"{mcp_server_name}__{sanitized}"
 
         console.print(f"Creating tool {tool_name} ({canonical_tool.name})")
 
@@ -151,9 +157,10 @@ def _create_tools_json_file(mcp_server_name: str, canonical_tools: list[mcp_type
         description_hash = (
             ""
             if canonical_tool.description is None
-            else _normalize_and_hash_content(canonical_tool.description)
+            else mcp_tool_utils.normalize_and_hash_content(canonical_tool.description)
         )
-        input_schema_hash = _normalize_and_hash_content(canonical_tool.inputSchema)
+        # If the sanitized name is empty (edge case), provide a fallback
+        input_schema_hash = mcp_tool_utils.normalize_and_hash_content(canonical_tool.inputSchema)
 
         # Build function definition according to the specification
         tool = {
@@ -186,54 +193,6 @@ def _create_tools_json_file(mcp_server_name: str, canonical_tools: list[mcp_type
         json.dump(tools, f, indent=2)
 
     console.print(f"[green]Created {tools_file} with {len(tools)} tools[/green]")
-
-
-def _normalize_and_hash_content(content: str | dict) -> str:
-    """
-    Normalize content and generate a hash to detect meaningful changes while ignoring formatting.
-
-    For strings: keeps only letters and numbers (removes punctuation, whitespace, etc.)
-    For objects: converts to normalized JSON with sorted keys
-    """
-    if isinstance(content, str):
-        # Normalize string content:
-        # 1. Convert to lowercase for case-insensitive comparison
-        # 2. Keep only letters and numbers (remove all punctuation, whitespace, etc.)
-        normalized = re.sub(r"[^a-z0-9]", "", content.lower())
-    else:
-        # For objects (like inputSchema), convert to normalized JSON
-        # Sort keys to ensure consistent ordering
-        normalized = json.dumps(content, sort_keys=True, separators=(",", ":"))
-
-    # Generate SHA-256 hash of normalized content
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-
-
-def _sanitize_canonical_tool_name(canonical_tool_name: str) -> str:
-    """
-    Convert MCP tool name to comply with naming rules: uppercase letters, numbers, underscores only,
-    no consecutive underscores
-    """
-    # Convert to uppercase
-    sanitized = canonical_tool_name.upper()
-
-    # Replace any non-alphanumeric characters (except underscores) with underscores
-    sanitized = re.sub(r"[^A-Z0-9_]", "_", sanitized)
-
-    # Remove consecutive underscores by replacing multiple underscores with single underscore
-    sanitized = re.sub(r"_+", "_", sanitized)
-
-    # Remove leading and trailing underscores
-    sanitized = sanitized.strip("_")
-
-    # If the sanitized name is empty (edge case), provide a fallback
-    if not sanitized:
-        console.print(
-            f"[yellow]Warning: Tool name '{canonical_tool_name}' is empty after sanitization. Using 'UNKNOWN_TOOL' as placeholder. Need manual fix after generation.[/yellow]"  # noqa: E501
-        )
-        sanitized = "UNKNOWN_TOOL"
-
-    return sanitized
 
 
 @click.command()

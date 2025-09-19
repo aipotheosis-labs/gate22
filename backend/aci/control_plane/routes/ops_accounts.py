@@ -319,6 +319,6 @@ async def _update_ops_account(
     )
 
     if refresh_tools:
-        await MCPToolsManager().refresh_mcp_tools(db_session, mcp_server)
+        await MCPToolsManager(mcp_server).refresh_mcp_tools(db_session)
 
     return ops_account
