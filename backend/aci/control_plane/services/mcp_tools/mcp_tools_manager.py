@@ -52,7 +52,7 @@ class MCPToolsManager:
                     ),
                 ),
             )
-            logger.info(f"MCP tool: {tool_name} --> {mcp_tool_upsert.name}")
+            logger.info(f"Fetched MCP tool: {tool.name} --> {mcp_tool_upsert.name}")
             mcp_tool_upserts.append(mcp_tool_upsert)
 
         embeddings.generate_mcp_tool_embeddings(

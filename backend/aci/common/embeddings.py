@@ -43,7 +43,9 @@ def generate_mcp_tool_embedding(
 ) -> list[float]:
     logger.debug(f"Generating embedding for mcp tool: {mcp_tool.name}...")
     text_for_embedding = mcp_tool.model_dump_json()
-    logger.debug(f"Text for mcp tool embedding: {text_for_embedding}")
+    logger.debug(
+        f"Text for mcp tool embedding: {text_for_embedding[:100]}{'...' if len(text_for_embedding) > 100 else ''}"  # noqa: E501
+    )
     return generate_embedding(openai_client, text_for_embedding)
 
 
@@ -57,7 +59,7 @@ def generate_embedding(
     """
     Generate an embedding for the given text using OpenAI's model.
     """
-    logger.debug(f"Generating embedding for text: {text}")
+    logger.debug(f"Generating embedding for text: {text[:100]}{'...' if len(text) > 100 else ''}")
     try:
         response = openai_client.embeddings.create(
             input=[text],
