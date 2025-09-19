@@ -1,5 +1,3 @@
-import os
-
 from aci.common.utils import check_and_get_env_variable, construct_db_url
 
 # FastAPI APP CONFIG
@@ -50,11 +48,6 @@ DB_FULL_URL = construct_db_url(DB_SCHEME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 
 # LLM
 OPENAI_API_KEY = check_and_get_env_variable("CONTROL_PLANE_OPENAI_API_KEY")
-
-# AWS Configuration
-AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION", "")
-AWS_KEY_ID = os.getenv("AWS_KEY_ID", "")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 
 SENDER_EMAIL = check_and_get_env_variable("CONTROL_PLANE_SENDER_EMAIL")
 SENDER_NAME = "ACI.dev Team"

@@ -17,19 +17,7 @@ logger = get_logger(__name__)
 class EmailService:
     def __init__(self) -> None:
         self.charset = "UTF-8"
-
-        client_kwargs: dict[str, Any] = {}
-
-        if config.AWS_DEFAULT_REGION:
-            client_kwargs["region_name"] = config.AWS_DEFAULT_REGION
-
-        # Pass explicit credentials only when both keys are set.
-        # Otherwise rely on boto3's default chain(AWS IAM role on prod).
-        if config.AWS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
-            client_kwargs["aws_access_key_id"] = config.AWS_KEY_ID
-            client_kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
-
-        self._client = boto3.client("ses", **client_kwargs)
+        self._client = boto3.client("ses")
         self._sender = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"
 
     async def send_email(
