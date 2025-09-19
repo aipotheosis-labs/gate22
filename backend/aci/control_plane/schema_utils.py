@@ -13,6 +13,7 @@ from aci.common.schemas.mcp_server import MCPServerPublic
 from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
+from aci.common.schemas.ops_account import OpsAccountPublic
 from aci.common.schemas.organization import TeamInfo
 from aci.common.schemas.user import UserPublic
 
@@ -36,6 +37,9 @@ def construct_mcp_server_public(mcp_server: MCPServer) -> MCPServerPublic:
             MCPToolPublicWithoutSchema.model_validate(tool, from_attributes=True)
             for tool in mcp_server.tools
         ],
+        ops_account=OpsAccountPublic.model_validate(mcp_server.ops_account, from_attributes=True)
+        if mcp_server.ops_account
+        else None,
         created_at=mcp_server.created_at,
         updated_at=mcp_server.updated_at,
     )

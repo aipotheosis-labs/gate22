@@ -7,6 +7,7 @@ from pydantic import AnyHttpUrl, BaseModel, ConfigDict, field_validator
 from aci.common.enums import AuthType, MCPServerTransportType
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
+from aci.common.schemas.ops_account import OpsAccountPublic
 
 
 # NOTE: using a generic metadata schema for now before the schema is finalized
@@ -72,6 +73,7 @@ class MCPServerPublic(BaseModel):
     logo: str
     categories: list[str]
     supported_auth_types: list[AuthType]
+    ops_account: OpsAccountPublic | None
 
     tools: list[MCPToolPublicWithoutSchema]
 

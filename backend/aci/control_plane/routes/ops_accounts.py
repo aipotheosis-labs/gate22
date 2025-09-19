@@ -311,4 +311,4 @@ async def oauth2_callback(
             url=state.redirect_url_after_account_creation, status_code=status.HTTP_302_FOUND
         )
 
-    return OpsAccountPublic.model_validate(ops_account)
+    return OpsAccountPublic.model_validate(ops_account, from_attributes=True)
