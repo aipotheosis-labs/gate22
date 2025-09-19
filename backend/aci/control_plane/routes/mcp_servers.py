@@ -150,7 +150,7 @@ async def mcp_server_oauth2_discovery(
         context.act_as, required_role=OrganizationRole.ADMIN
     )
 
-    oauth2_metadata_fetcher = MetadataFetcher(str(body.url))
+    oauth2_metadata_fetcher = MetadataFetcher(str(body.mcp_server_url))
     oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
 
     return MCPServerOAuth2DiscoveryResponse(
@@ -195,7 +195,7 @@ async def mcp_server_oauth2_dcr(
         token_endpoint_auth_method = "none"
 
     oauth2_client_registrator = ClientRegistrator(
-        body.registration_url,
+        body.mcp_server_url,
         client_metadata=OAuthClientMetadata(
             redirect_uris=redirect_uris,
             token_endpoint_auth_method=token_endpoint_auth_method,
@@ -203,7 +203,7 @@ async def mcp_server_oauth2_dcr(
             response_types=["code"],
             scope="",  # TODO: discover default scope
         ),
-        registration_endpoint=HttpUrl(body.registration_url),
+        registration_endpoint=HttpUrl(body.registration_url) if body.registration_url else None,
     )
     client_info = oauth2_client_registrator.dynamic_client_registration()
     return MCPServerOAuth2DCRResponse(

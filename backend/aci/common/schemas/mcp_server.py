@@ -80,19 +80,20 @@ class MCPServerPublic(BaseModel):
 
 
 class MCPServerOAuth2DiscoveryRequest(BaseModel):
-    url: HttpUrl
+    mcp_server_url: HttpUrl
 
 
 class MCPServerOAuth2DiscoveryResponse(BaseModel):
     authorize_url: str | None = None
     access_token_url: str | None = None
     refresh_token_url: str | None = None
-    registration_url: str | None = None
+    registration_url: str | None = None  # This could be none if DCR is not supported by the server
     token_endpoint_auth_method_supported: list[str]
 
 
 class MCPServerOAuth2DCRRequest(BaseModel):
-    registration_url: str
+    mcp_server_url: str
+    registration_url: str | None = None
     token_endpoint_auth_method_supported: list[str]
 
 
