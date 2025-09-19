@@ -27,6 +27,7 @@ from aci.control_plane.exceptions import OAuth2MetadataDiscoveryError
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
 )
+from aci.control_plane.routes.ops_accounts import OPS_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME
 from aci.control_plane.services.oauth2_client import (
     ClientRegistrator,
     MetadataFetcher,
@@ -194,8 +195,15 @@ async def mcp_server_oauth2_dcr(
 
     # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
     # flow. If not provided, we use the default callback URL in our API.
-    path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
-    redirect_uris: list[AnyUrl] = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
+    connected_account_callback_path = request.url_for(
+        CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME
+    ).path
+
+    ops_account_callback_path = request.url_for(OPS_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
+    redirect_uris: list[AnyUrl] = [
+        HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{connected_account_callback_path}"),
+        HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{ops_account_callback_path}"),
+    ]
 
     # We currently only support none and client_secret_post.
     # TODO: support `client_secret_basic`
