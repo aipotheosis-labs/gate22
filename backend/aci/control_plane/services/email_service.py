@@ -18,14 +18,16 @@ class EmailService:
     def __init__(self) -> None:
         self.charset = "UTF-8"
 
-        client_kwargs: dict[str, Any] = {"region_name": config.AWS_SES_REGION}
+        client_kwargs: dict[str, Any] = {}
 
-        # Only pass explicit credentials if provided (non-empty). This lets boto3
-        # use the default credential chain (env vars, shared config, IAM role)
-        # when keys are not set, avoiding invalid empty credentials.
-        if config.AWS_SES_ACCESS_KEY_ID and config.AWS_SES_SECRET_ACCESS_KEY:
-            client_kwargs["aws_access_key_id"] = config.AWS_SES_ACCESS_KEY_ID
-            client_kwargs["aws_secret_access_key"] = config.AWS_SES_SECRET_ACCESS_KEY
+        if config.AWS_DEFAULT_REGION:
+            client_kwargs["region_name"] = config.AWS_DEFAULT_REGION
+
+        # Pass explicit credentials only when both keys are set.
+        # Otherwise rely on boto3's default chain(AWS IAM role on prod).
+        if config.AWS_KEY_ID and config.AWS_SECRET_ACCESS_KEY:
+            client_kwargs["aws_access_key_id"] = config.AWS_KEY_ID
+            client_kwargs["aws_secret_access_key"] = config.AWS_SECRET_ACCESS_KEY
 
         self._client = boto3.client("ses", **client_kwargs)
         self._sender = f"{config.SENDER_NAME} <{config.SENDER_EMAIL}>"
