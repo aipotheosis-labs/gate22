@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer, OpsAccount
-from aci.common.enums import AuthType, ConnectedAccountOwnership, OrganizationRole
+from aci.common.enums import AuthType, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.oauth2_manager import OAuth2Manager
 from aci.common.schemas.mcp_auth import (
@@ -216,8 +216,8 @@ async def oauth2_callback(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
 ) -> OpsAccountPublic | RedirectResponse:
     """
-    Callback endpoint for OAuth2 account creation.
-    - A connected account (with necessary credentials from the OAuth2 provider) will be created in
+    Callback endpoint for OAuth2 Ops account creation.
+    - A Ops account (with necessary credentials from the OAuth2 provider) will be created in
     the database.
     """
     # check for errors
@@ -312,38 +312,3 @@ async def oauth2_callback(
         )
 
     return OpsAccountPublic.model_validate(ops_account)
-
-
-@router.delete("/{connected_account_id}")
-async def delete_connected_account(
-    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
-    connected_account_id: UUID,
-) -> None:
-    connected_account = crud.connected_accounts.get_connected_account_by_id(
-        context.db_session, connected_account_id
-    )
-    if not connected_account:
-        raise HTTPException(status_code=404, detail="Connected account not found")
-
-    # Check if the user is acted as the organization of the connected account
-    access_control.check_act_as_organization_role(
-        context.act_as,
-        requested_organization_id=connected_account.mcp_server_configuration.organization_id,
-        throw_error_if_not_permitted=True,
-    )
-
-    # Member can only delete their own connected accounts.
-    # Admin can delete any connected account, so no need to check here.
-    if context.act_as.role == OrganizationRole.MEMBER:
-        if not (
-            connected_account.user_id == context.user_id
-            and connected_account.ownership == ConnectedAccountOwnership.INDIVIDUAL
-        ):
-            logger.error(
-                f"Connected account {connected_account_id} is not belongs to the member {context.user_id}"  # noqa: E501
-            )
-            raise NotPermittedError(message="Cannot delete others' connected accounts")
-
-    # Delete the connected account
-    crud.connected_accounts.delete_connected_account(context.db_session, connected_account_id)
-    context.db_session.commit()
