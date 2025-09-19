@@ -111,17 +111,13 @@ export default function BundleDetailPage() {
 
   const handleMcpUrlCopy = () => {
     if (!isUrlVisible) {
-      toast.error('Please show the URL first to copy it');
+      toast.error("Please show the URL first to copy it");
       return;
     }
     handleCopy(mcpUrl, "mcp-url");
   };
 
   const handleConfigCopy = (editor: string) => {
-    if (!isUrlVisible) {
-      toast.error('Please show the URL first to copy the configuration');
-      return;
-    }
     const config = generateConfig(mcpUrl, bundle!.name, editor);
     handleCopy(config, `${editor}-config`);
   };
@@ -195,8 +191,10 @@ export default function BundleDetailPage() {
                 Security Notice
               </p>
               <p className="text-sm text-amber-700">
-                The MCP URL below contains a secret bundle ID that should be treated as a service token.
-                <strong> Do not share this URL with others</strong> as it provides access to your MCP server bundle.
+                The MCP URL below contains a secret bundle ID that should be
+                treated as a service token.
+                <strong> Do not share this URL with others</strong> as it
+                provides access to your MCP server bundle.
               </p>
             </div>
           </div>
@@ -251,7 +249,8 @@ export default function BundleDetailPage() {
             </code>
             {!isUrlVisible && (
               <p className="text-xs text-muted-foreground">
-                Click "Show" to reveal the MCP URL with the secret bundle ID
+                Click &quot;Show&quot; to reveal the MCP URL with the secret
+                bundle ID
               </p>
             )}
           </div>
@@ -300,7 +299,11 @@ export default function BundleDetailPage() {
             </TabsList>
 
             {editorConfigs.map((editor) => {
-              const config = generateConfig(isUrlVisible ? mcpUrl : maskedMcpUrl, bundle.name, editor.id);
+              const config = generateConfig(
+                isUrlVisible ? mcpUrl : maskedMcpUrl,
+                bundle.name,
+                editor.id,
+              );
               const configId = `${editor.id}-config`;
 
               return (
@@ -350,12 +353,6 @@ export default function BundleDetailPage() {
                       )}
                     </Button>
                   </div>
-                  {!isUrlVisible && (
-                    <p className="text-xs text-muted-foreground bg-muted/30 p-3 rounded border">
-                      <Shield className="h-3 w-3 inline mr-1" />
-                      Show the MCP URL above to reveal the actual configuration with the secret bundle ID
-                    </p>
-                  )}
                 </TabsContent>
               );
             })}

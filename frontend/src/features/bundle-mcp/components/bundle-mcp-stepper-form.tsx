@@ -10,13 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +30,7 @@ import {
   ConnectedAccountOwnership,
 } from "@/features/mcp/types/mcp.types";
 import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
-import { ConfigurationSelectionDialog } from "./configuration-selection-dialog";
+import { ManageMCPConfigurationDialog } from "@/features/mcp/components/manage-mcp-configuration-dialog";
 import { getOwnershipLabel } from "@/utils/configuration-labels";
 
 interface ConfigurationSelection {
@@ -97,16 +90,26 @@ export function BundleMCPStepperForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Handle adding a new configuration to the bundle
-  const handleAddConfiguration = (configId: string) => {
-    const newSelection: ConfigurationSelection = { configurationId: configId };
-    setSelections((prev) => [...prev, newSelection]);
+  // Handle managing configurations (adding/removing)
+  const handleManageConfigurations = (
+    additions: string[],
+    removals: string[],
+  ) => {
+    // Remove configurations that are to be removed
+    let updatedSelections = selections.filter(
+      (selection) => !removals.includes(selection.configurationId),
+    );
+
+    // Add new configurations
+    const newSelections: ConfigurationSelection[] = additions.map((id) => ({
+      configurationId: id,
+    }));
+    updatedSelections = [...updatedSelections, ...newSelections];
+
+    setSelections(updatedSelections);
 
     // Notify parent about selection change
-    const newSelectedIds = [
-      ...selections.map((s) => s.configurationId),
-      configId,
-    ];
+    const newSelectedIds = updatedSelections.map((s) => s.configurationId);
     onSelectionChange?.(newSelectedIds);
   };
 
@@ -120,7 +123,6 @@ export function BundleMCPStepperForm({
       .map((s) => s.configurationId);
     onSelectionChange?.(newSelectedIds);
   };
-
 
   // Get available accounts for a configuration
   const getAccountsForConfiguration = (configId: string) => {
@@ -277,7 +279,7 @@ export function BundleMCPStepperForm({
                           onClick={() => setShowConfigSelectionDialog(true)}
                         >
                           <Plus className="h-4 w-4 mr-2" />
-                          Add MCP Configuration
+                          Manage MCP Configuration
                         </Button>
                       </div>
                     ) : (
@@ -391,7 +393,7 @@ export function BundleMCPStepperForm({
                             className="w-full"
                           >
                             <Plus className="h-4 w-4 mr-2" />
-                            Add MCP Configuration
+                            Manage MCP Configuration
                           </Button>
                         </div>
                       </>
@@ -460,14 +462,14 @@ export function BundleMCPStepperForm({
         </DialogContent>
       </Dialog>
 
-      {/* Configuration Selection Dialog */}
-      <ConfigurationSelectionDialog
+      {/* Configuration Management Dialog */}
+      <ManageMCPConfigurationDialog
         isOpen={showConfigSelectionDialog}
         onClose={() => setShowConfigSelectionDialog(false)}
         availableConfigurations={availableConfigurations}
         connectedAccounts={connectedAccounts}
         alreadySelectedIds={selections.map((s) => s.configurationId)}
-        onConfirm={handleAddConfiguration}
+        onConfirm={handleManageConfigurations}
         hasValidSharedAccount={hasValidSharedAccount}
       />
     </>
