@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, field_validator
 
 from aci.common.enums import AuthType, MCPServerTransportType
 from aci.common.schemas.mcp_auth import AuthConfig
@@ -80,20 +80,22 @@ class MCPServerPublic(BaseModel):
 
 
 class MCPServerOAuth2DiscoveryRequest(BaseModel):
-    mcp_server_url: HttpUrl
+    mcp_server_url: AnyHttpUrl
 
 
 class MCPServerOAuth2DiscoveryResponse(BaseModel):
-    authorize_url: str | None = None
-    access_token_url: str | None = None
-    refresh_token_url: str | None = None
-    registration_url: str | None = None  # This could be none if DCR is not supported by the server
+    authorize_url: AnyHttpUrl | None = None
+    access_token_url: AnyHttpUrl | None = None
+    refresh_token_url: AnyHttpUrl | None = None
+
+    # This could be none if DCR is not supported by the server
+    registration_url: AnyHttpUrl | None = None
     token_endpoint_auth_method_supported: list[str]
 
 
 class MCPServerOAuth2DCRRequest(BaseModel):
-    mcp_server_url: str
-    registration_url: str
+    mcp_server_url: AnyHttpUrl
+    registration_url: AnyHttpUrl
     token_endpoint_auth_method_supported: list[str]
 
 

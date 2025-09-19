@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
 import httpx
-from pydantic import HttpUrl, ValidationError
+from pydantic import AnyHttpUrl, ValidationError
 
 from aci.control_plane.exceptions import OAuth2ClientRegistrationError
 from aci.control_plane.services.oauth2_client.schema import (
@@ -13,9 +13,9 @@ from aci.control_plane.services.oauth2_client.schema import (
 
 @dataclass
 class RegistrationContext:
-    server_url: str
+    server_url: AnyHttpUrl
     client_metadata: OAuthClientMetadata
-    registration_endpoint: HttpUrl
+    registration_endpoint: AnyHttpUrl
     client_info: OAuthClientInformationFull | None = None
 
     def get_authorization_base_url(self, server_url: str) -> str:
@@ -27,9 +27,9 @@ class RegistrationContext:
 class ClientRegistrator:
     def __init__(
         self,
-        server_url: str,
+        server_url: AnyHttpUrl,
         client_metadata: OAuthClientMetadata,
-        registration_endpoint: HttpUrl,
+        registration_endpoint: AnyHttpUrl,
         client_info: OAuthClientInformationFull | None = None,
     ):
         self.context = RegistrationContext(
@@ -53,7 +53,7 @@ class ClientRegistrator:
             registration_url = str(self.context.registration_endpoint)
         else:
             # Fallback to common registration endpoint if not provided.
-            auth_base_url = self.context.get_authorization_base_url(self.context.server_url)
+            auth_base_url = self.context.get_authorization_base_url(str(self.context.server_url))
             registration_url = urljoin(auth_base_url, "/register")
 
         registration_data = self.context.client_metadata.model_dump(

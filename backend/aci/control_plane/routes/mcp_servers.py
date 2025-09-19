@@ -154,10 +154,10 @@ async def mcp_server_oauth2_discovery(
     oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
 
     return MCPServerOAuth2DiscoveryResponse(
-        authorize_url=str(oauth2_metadata.authorization_endpoint),
-        access_token_url=str(oauth2_metadata.token_endpoint),
-        refresh_token_url=str(oauth2_metadata.token_endpoint),
-        registration_url=str(oauth2_metadata.registration_endpoint),
+        authorize_url=oauth2_metadata.authorization_endpoint,
+        access_token_url=oauth2_metadata.token_endpoint,
+        refresh_token_url=oauth2_metadata.token_endpoint,
+        registration_url=oauth2_metadata.registration_endpoint,
         token_endpoint_auth_method_supported=oauth2_metadata.token_endpoint_auth_methods_supported
         or [],
     )
@@ -203,7 +203,7 @@ async def mcp_server_oauth2_dcr(
             response_types=["code"],
             scope="",  # TODO: discover default scope
         ),
-        registration_endpoint=HttpUrl(body.registration_url),
+        registration_endpoint=body.registration_url,
     )
     client_info = oauth2_client_registrator.dynamic_client_registration()
     return MCPServerOAuth2DCRResponse(
