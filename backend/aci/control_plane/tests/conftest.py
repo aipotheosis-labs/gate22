@@ -20,6 +20,7 @@ from aci.common.db.sql_models import (
 )
 from aci.common.enums import ConnectedAccountOwnership, OrganizationRole, UserIdentityProvider
 from aci.common.logging_setup import get_logger
+from aci.common.openai_client import init_openai_client
 from aci.common.schemas.auth import ActAsInfo
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
@@ -30,6 +31,8 @@ from aci.control_plane.main import app as fastapi_app
 from aci.control_plane.tests import helper
 
 logger = get_logger(__name__)
+
+init_openai_client(config.OPENAI_API_KEY)
 
 test_jwt_signing_key = config.JWT_SIGNING_KEY
 test_jwt_algorithm = config.JWT_ALGORITHM

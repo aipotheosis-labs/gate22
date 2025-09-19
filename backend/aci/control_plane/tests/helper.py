@@ -2,15 +2,13 @@ import json
 import logging
 from pathlib import Path
 
-from openai import OpenAI
-
 from aci.common import embeddings
+from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, PublicMCPServerUpsert
 from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
-from aci.control_plane import config
 
 logger = logging.getLogger(__name__)
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
+
 DUMMY_MCP_SERVERS_DIR = Path(__file__).parent / "dummy_mcp_servers"
 
 
@@ -52,11 +50,11 @@ def prepare_mcp_servers() -> list[
             assert tool_upsert.name.startswith(mcp_server_upsert.name)
 
         mcp_server_embedding = embeddings.generate_mcp_server_embedding(
-            openai_client,
+            get_openai_client(),
             mcp_server_embedding_fields,
         )
         mcp_tool_embeddings = embeddings.generate_mcp_tool_embeddings(
-            openai_client,
+            get_openai_client(),
             tools_embedding_fields,
         )
         results.append(

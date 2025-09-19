@@ -3,7 +3,6 @@ from pathlib import Path
 
 import click
 from deepdiff import DeepDiff
-from openai import OpenAI
 from rich.console import Console
 from rich.table import Table
 from sqlalchemy.orm import Session
@@ -11,11 +10,10 @@ from sqlalchemy.orm import Session
 from aci.cli import config
 from aci.common import embeddings, utils
 from aci.common.db import crud
+from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
 
 console = Console()
-
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
 @click.command()
@@ -111,7 +109,7 @@ def create_mcp_tools_helper(
     Returns a list of created mcp tool names.
     """
     mcp_tool_embeddings = embeddings.generate_mcp_tool_embeddings(
-        openai_client,
+        get_openai_client(),
         [
             MCPToolEmbeddingFields.model_validate(mcp_tool.model_dump())
             for mcp_tool in mcp_tool_upserts
@@ -164,7 +162,7 @@ def update_mcp_tools_helper(
 
     # Generate new embeddings in batch for mcp tools that require regeneration.
     mcp_tool_embeddings = embeddings.generate_mcp_tool_embeddings(
-        openai_client,
+        get_openai_client(),
         [
             MCPToolEmbeddingFields.model_validate(mcp_tool.model_dump())
             for mcp_tool in mcp_tools_with_new_embeddings

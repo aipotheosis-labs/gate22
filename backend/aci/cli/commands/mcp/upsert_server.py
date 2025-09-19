@@ -5,7 +5,6 @@ from uuid import UUID
 import click
 from deepdiff import DeepDiff
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
-from openai import OpenAI
 from rich.console import Console
 from sqlalchemy.orm import Session
 
@@ -13,11 +12,10 @@ from aci.cli import config
 from aci.common import embeddings, utils
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer
+from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, PublicMCPServerUpsert
 
 console = Console()
-
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
 @click.command()
@@ -89,7 +87,7 @@ def create_mcp_server_helper(
 ) -> UUID:
     # Generate mcp server embedding using the fields defined in MCPServerEmbeddingFields
     mcp_server_embedding = embeddings.generate_mcp_server_embedding(
-        openai_client,
+        get_openai_client(),
         MCPServerEmbeddingFields.model_validate(mcp_server_upsert.model_dump()),
     )
 
@@ -135,7 +133,7 @@ def update_mcp_server_helper(
     new_embedding = None
     if _need_embedding_regeneration(existing_mcp_server_upsert, mcp_server_upsert):
         new_embedding = embeddings.generate_mcp_server_embedding(
-            openai_client,
+            get_openai_client(),
             MCPServerEmbeddingFields.model_validate(mcp_server_upsert.model_dump()),
         )
 

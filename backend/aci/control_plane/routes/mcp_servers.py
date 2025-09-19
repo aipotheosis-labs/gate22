@@ -3,7 +3,6 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from openai import OpenAI
 from pydantic import AnyUrl, HttpUrl
 from sqlalchemy.orm import Session
 
@@ -11,6 +10,7 @@ from aci.common import embeddings, utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
+from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import (
     CustomMCPServerCreate,
     MCPServerEmbeddingFields,
@@ -35,9 +35,6 @@ from aci.control_plane.services.oauth2_client import (
 
 logger = get_logger(__name__)
 router = APIRouter()
-
-# TODO: singleton globally
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
 # TODO: support both query by mcp server id and name
@@ -108,7 +105,7 @@ async def create_custom_mcp_server(
     )
 
     mcp_server_embedding = embeddings.generate_mcp_server_embedding(
-        openai_client,
+        get_openai_client(),
         MCPServerEmbeddingFields(
             name=mcp_server_data.name,
             url=mcp_server_data.url,

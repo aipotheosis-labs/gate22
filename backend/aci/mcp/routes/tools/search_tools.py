@@ -1,7 +1,6 @@
 import json
 
 from mcp import types as mcp_types
-from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -9,7 +8,7 @@ from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerBundle
 from aci.common.embeddings import generate_embedding
 from aci.common.logging_setup import get_logger
-from aci.mcp import config
+from aci.common.openai_client import get_openai_client
 from aci.mcp.logging import LogEvent
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
@@ -19,8 +18,6 @@ from aci.mcp.routes.jsonrpc import (
 )
 
 logger = get_logger(__name__)
-# TODO: put to cache and share the same instance?
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
 class SearchToolsInputSchema(BaseModel):
@@ -104,7 +101,7 @@ async def _search_tools(
     offset: int,
 ) -> mcp_types.CallToolResult:
     # TODO: use anyio.to_thread.run_sync to run the embedding generation?
-    intent_embedding = generate_embedding(openai_client, intent) if intent else None
+    intent_embedding = generate_embedding(get_openai_client(), intent) if intent else None
     mcp_server_configurations = (
         crud.mcp_server_bundles.get_mcp_server_configurations_of_mcp_server_bundle(
             db_session,
