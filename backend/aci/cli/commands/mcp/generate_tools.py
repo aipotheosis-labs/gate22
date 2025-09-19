@@ -160,7 +160,6 @@ def _create_tools_json_file(mcp_server_name: str, canonical_tools: list[mcp_type
             if canonical_tool.description is None
             else mcp_tool_utils.normalize_and_hash_content(canonical_tool.description)
         )
-        # If the sanitized name is empty (edge case), provide a fallback
         input_schema_hash = mcp_tool_utils.normalize_and_hash_content(canonical_tool.inputSchema)
 
         # Build function definition according to the specification
