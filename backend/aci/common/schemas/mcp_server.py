@@ -93,7 +93,7 @@ class MCPServerOAuth2DiscoveryResponse(BaseModel):
 
 class MCPServerOAuth2DCRRequest(BaseModel):
     mcp_server_url: str
-    registration_url: str | None = None
+    registration_url: str
     token_endpoint_auth_method_supported: list[str]
 
 

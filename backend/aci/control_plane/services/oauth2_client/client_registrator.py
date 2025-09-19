@@ -15,7 +15,7 @@ from aci.control_plane.services.oauth2_client.schema import (
 class RegistrationContext:
     server_url: str
     client_metadata: OAuthClientMetadata
-    registration_endpoint: HttpUrl | None = None
+    registration_endpoint: HttpUrl
     client_info: OAuthClientInformationFull | None = None
 
     def get_authorization_base_url(self, server_url: str) -> str:
@@ -29,7 +29,7 @@ class ClientRegistrator:
         self,
         server_url: str,
         client_metadata: OAuthClientMetadata,
-        registration_endpoint: HttpUrl | None = None,
+        registration_endpoint: HttpUrl,
         client_info: OAuthClientInformationFull | None = None,
     ):
         self.context = RegistrationContext(

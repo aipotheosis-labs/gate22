@@ -203,7 +203,7 @@ async def mcp_server_oauth2_dcr(
             response_types=["code"],
             scope="",  # TODO: discover default scope
         ),
-        registration_endpoint=HttpUrl(body.registration_url) if body.registration_url else None,
+        registration_endpoint=HttpUrl(body.registration_url),
     )
     client_info = oauth2_client_registrator.dynamic_client_registration()
     return MCPServerOAuth2DCRResponse(
