@@ -20,6 +20,7 @@ ROUTER_PREFIX_USERS = "/users"
 ROUTER_PREFIX_MCP_SERVERS = "/mcp-servers"
 ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/mcp-server-configurations"
 ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/connected-accounts"
+ROUTER_PREFIX_OPS_ACCOUNTS = "/ops-accounts"
 ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/mcp-server-bundles"
 ROUTER_PREFIX_MCP_TOOLS = "/mcp-tools"
 

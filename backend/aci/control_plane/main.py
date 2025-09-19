@@ -22,6 +22,7 @@ from aci.control_plane.routes import (
     mcp_server_configurations,
     mcp_servers,
     mcp_tools,
+    ops_accounts,
     organizations,
     users,
 )
@@ -111,6 +112,12 @@ app.include_router(
     mcp_servers.router,
     prefix=config.ROUTER_PREFIX_MCP_SERVERS,
     tags=[config.ROUTER_PREFIX_MCP_SERVERS.split("/")[-1]],
+)
+
+app.include_router(
+    ops_accounts.router,
+    prefix=config.ROUTER_PREFIX_OPS_ACCOUNTS,
+    tags=[config.ROUTER_PREFIX_OPS_ACCOUNTS.split("/")[-1]],
 )
 
 app.include_router(
