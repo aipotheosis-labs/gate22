@@ -3,7 +3,7 @@ from typing import Any, Literal
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field
 
 """
-All models in this file are copied from the Official MCP Python SDK, in this file:
+All models in this file are adapted from the Official MCP Python SDK, in this file:
 https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/shared/auth.py
 
 These are models that corresponds to the RFC Spec of OAuth2 Discovery and Dynamic Client

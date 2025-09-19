@@ -35,7 +35,7 @@ class MetadataFetcher:
         Returns:
             Resource metadata URL if found in WWW-Authenticate header, None otherwise
 
-        This function is copied from the Official MCP Python SDK
+        This function is adapted from the Official MCP Python SDK
         https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L207-L229
         """
         if not init_response or init_response.status_code != 401:
@@ -62,7 +62,7 @@ class MetadataFetcher:
         1. Protected resource metadata
         2. The authorization server URL
 
-        This function is copied and modified from the Official MCP Python SDK
+        This function is adapted and modified from the Official MCP Python SDK
         https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L231-L238
         """
         # RFC9728: Try to extract resource_metadata URL from WWW-Authenticate header of the initial response # noqa: E501
@@ -98,7 +98,7 @@ class MetadataFetcher:
         """
         Generate ordered list of (url, type) tuples for discovery attempts.
 
-        This function is copied from the Official MCP Python SDK
+        This function is adapted from the Official MCP Python SDK
         https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L254-L279
         """
         urls: list[str] = []
@@ -132,7 +132,7 @@ class MetadataFetcher:
         Updates the context with:
         1. OAuth metadata
 
-        This function is copied and modified from the Official MCP Python SDK
+        This function is adapted and modified from the Official MCP Python SDK
         https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L474-L483
         """
         for url in discovery_urls:

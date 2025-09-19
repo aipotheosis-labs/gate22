@@ -43,7 +43,7 @@ class ClientRegistrator:
         """
         Build registration request or skip if already registered.
 
-        This function is copied and modified from the Official MCP Python SDK
+        This function is adapted and modified from the Official MCP Python SDK
         https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L281-L310
         """
         if self.context.client_info:
