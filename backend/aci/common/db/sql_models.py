@@ -566,15 +566,18 @@ class MCPServerBundle(Base):
 
 
 ###################################################################################################
-# Below tables are used only by the "native MCP" service hosting native MCP Servers
+# Below tables are used only by the "virtual MCP" service hosting virtual MCP Servers
 # see design doc:
-# https://www.notion.so/Design-Doc-a-new-service-as-the-execution-engine-for-native-MCP-servers-integration-based-26b8378d6a4780b4a389cf302d021c49
+# https://www.notion.so/Design-Doc-a-new-service-as-the-execution-engine-for-virtual-MCP-servers-integration-based-26b8378d6a4780b4a389cf302d021c49
 ###################################################################################################
 
 
 class VirtualMCPServer(Base):
     """
     This table is close to the "App" table of the tool-calling platform but many fields removed.
+    We can almost get rid of this table and combine the data with VirtualMCPTool table, but
+    for now we keep it separate to follow the same design pattern we have, for a
+    better forward compatibility.
     """
 
     __tablename__ = "virtual_mcp_servers"
@@ -583,7 +586,7 @@ class VirtualMCPServer(Base):
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
     name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False, unique=True)
-    description: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
@@ -597,7 +600,7 @@ class VirtualMCPServer(Base):
     )
 
     tools: Mapped[list[VirtualMCPTool]] = relationship(
-        back_populates="virtual_mcp_server", cascade="all, delete-orphan", init=False
+        back_populates="server", cascade="all, delete-orphan", init=False
     )
 
 
@@ -636,6 +639,6 @@ class VirtualMCPTool(Base):
         init=False,
     )
 
-    virtual_mcp_server: Mapped[VirtualMCPServer] = relationship(
+    server: Mapped[VirtualMCPServer] = relationship(
         "VirtualMCPServer", back_populates="tools", init=False
     )

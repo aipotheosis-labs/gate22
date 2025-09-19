@@ -21,7 +21,7 @@ async def handle_tools_list(
     """
     Handle the tools/list request for a MCP server.
     """
-    vms = crud.virtual_mcp.servers.get_virtual_mcp_server(
+    vms = crud.virtual_mcp.servers.get_server(
         db_session, server_name, throw_error_if_not_found=False
     )
     if vms is None:

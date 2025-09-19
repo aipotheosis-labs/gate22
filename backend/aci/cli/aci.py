@@ -1,7 +1,7 @@
 import click
 
 from aci.cli import config
-from aci.cli.commands import mcp, mock_data
+from aci.cli.commands import mcp, mock_data, virtual_mcp
 from aci.common.logging_setup import setup_logging
 from aci.common.openai_client import init_openai_client
 
@@ -13,6 +13,17 @@ def cli() -> None:
     pass
 
 
+@cli.group(name="virtual-mcp")
+def virtual_mcp_group() -> None:
+    pass
+
+
+# Virtual MCP commands
+virtual_mcp_group.add_command(virtual_mcp.upsert_server, name="upsert-server")
+virtual_mcp_group.add_command(virtual_mcp.upsert_tools, name="upsert-tools")
+
+# Other commands
+# TODO: group these commands
 cli.add_command(mcp.upsert_mcp_server, name="upsert-mcp-server")
 cli.add_command(mcp.upsert_mcp_tools, name="upsert-mcp-tools")
 cli.add_command(mock_data.create_mock_org_teams_users, name="create-mock-org-teams-users")

@@ -109,6 +109,7 @@ services:
     volumes:
       - ./aci/:/workdir/aci
       - ./mcp_servers/:/workdir/mcp_servers
+      - ./virtual_mcp_servers/:/workdir/virtual_mcp_servers
       - ./alembic.ini:/workdir/alembic.ini
     command: >
       /bin/sh -c "alembic upgrade head && tail -f /dev/null"
