@@ -162,21 +162,22 @@ class MetadataFetcher:
     def metadata_discovery(self) -> OAuthMetadata:
         try:
             init_response = httpx.get(self.context.server_url, timeout=httpx.Timeout(5.0))
-        except httpx.RequestError as e:
+
+            # Step 1: Discover protected resource metadata (RFC9728 with WWW-Authenticate support)
+            self._discover_protected_resource(init_response)
+
+            # Step 2: Discover OAuth metadata (with fallback for legacy servers)
+            discovery_urls = self._get_discovery_urls()
+            self._get_oauth_metadata(discovery_urls)
+
+            if self.context.oauth_metadata is None:
+                raise OAuth2MetadataDiscoveryError(
+                    f"OAuth metadata not found for server URL: {self.context.server_url}"
+                )
+
+            return self.context.oauth_metadata
+
+        except Exception as e:
             raise OAuth2MetadataDiscoveryError(
                 f"Metadata discovery failed: {self.context.server_url}"
             ) from e
-
-        # Step 1: Discover protected resource metadata (RFC9728 with WWW-Authenticate support)
-        self._discover_protected_resource(init_response)
-
-        # Step 2: Discover OAuth metadata (with fallback for legacy servers)
-        discovery_urls = self._get_discovery_urls()
-        self._get_oauth_metadata(discovery_urls)
-
-        if self.context.oauth_metadata is None:
-            raise OAuth2MetadataDiscoveryError(
-                f"OAuth metadata not found for server URL: {self.context.server_url}"
-            )
-
-        return self.context.oauth_metadata

@@ -23,6 +23,7 @@ from aci.common.schemas.mcp_server import (
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
+from aci.control_plane.exceptions import OAuth2MetadataDiscoveryError
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
 )
@@ -150,17 +151,30 @@ async def mcp_server_oauth2_discovery(
         context.act_as, required_role=OrganizationRole.ADMIN
     )
 
-    oauth2_metadata_fetcher = MetadataFetcher(str(body.mcp_server_url))
-    oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
+    try:
+        oauth2_metadata_fetcher = MetadataFetcher(str(body.mcp_server_url))
+        oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
 
-    return MCPServerOAuth2DiscoveryResponse(
-        authorize_url=oauth2_metadata.authorization_endpoint,
-        access_token_url=oauth2_metadata.token_endpoint,
-        refresh_token_url=oauth2_metadata.token_endpoint,
-        registration_url=oauth2_metadata.registration_endpoint,
-        token_endpoint_auth_method_supported=oauth2_metadata.token_endpoint_auth_methods_supported
-        or [],
-    )
+        return MCPServerOAuth2DiscoveryResponse(
+            authorize_url=oauth2_metadata.authorization_endpoint,
+            access_token_url=oauth2_metadata.token_endpoint,
+            refresh_token_url=oauth2_metadata.token_endpoint,
+            registration_url=oauth2_metadata.registration_endpoint,
+            token_endpoint_auth_method_supported=oauth2_metadata.token_endpoint_auth_methods_supported
+            or [],
+        )
+    except OAuth2MetadataDiscoveryError as e:
+        # Return 200 with empty fields, as the action is actually success, but the discovery failed
+        logger.error(
+            f"Failed to discover OAuth2 metadata, mcp_server_url={body.mcp_server_url}, error={e}"
+        )
+        return MCPServerOAuth2DiscoveryResponse(
+            authorize_url=None,
+            access_token_url=None,
+            refresh_token_url=None,
+            registration_url=None,
+            token_endpoint_auth_method_supported=[] or [],
+        )
 
 
 @router.post(

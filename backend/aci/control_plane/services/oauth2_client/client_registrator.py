@@ -84,9 +84,12 @@ class ClientRegistrator:
             raise OAuth2ClientRegistrationError(f"Invalid registration response: {e}") from e
 
     def dynamic_client_registration(self) -> OAuthClientInformationFull:
-        self._register_client()
+        try:
+            self._register_client()
 
-        if self.context.client_info is None:
-            raise OAuth2ClientRegistrationError("Client information not found")
+            if self.context.client_info is None:
+                raise OAuth2ClientRegistrationError("Client information not found")
 
-        return self.context.client_info
+            return self.context.client_info
+        except Exception as e:
+            raise OAuth2ClientRegistrationError(f"Client registration failed: {e}") from e
