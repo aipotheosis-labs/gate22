@@ -255,11 +255,10 @@ class MCPToolsManagerError(ControlPlaneException):
     """
     Exception raised when an error occurs in the MCP tools manager
     """
+
     def __init__(self, message: str | None = None):
         super().__init__(
             title="MCP tools manager error",
             message=message,
             error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
-
-

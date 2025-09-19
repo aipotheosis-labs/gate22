@@ -1,19 +1,15 @@
-from openai import OpenAI
 from sqlalchemy.orm import Session
 
 from aci.common import auth_credentials_manager as acm
 from aci.common import embeddings
 from aci.common.db.sql_models import MCPServer
 from aci.common.logging_setup import get_logger
+from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
-from aci.control_plane import config
 from aci.control_plane.exceptions import MCPToolsManagerError
 from aci.control_plane.services.mcp_tools.mcp_tools_fetcher import MCPToolsFetcher
 
 logger = get_logger(__name__)
-
-
-openai_client = OpenAI(api_key=config.OPENAI_API_KEY)
 
 
 class MCPToolsManager:
@@ -34,7 +30,7 @@ class MCPToolsManager:
         # Embed the tools
         mcp_tool_upserts = [MCPToolUpsert.model_validate(tool) for tool in tools]
         embeddings.generate_mcp_tool_embeddings(
-            openai_client,
+            get_openai_client(),
             [
                 MCPToolEmbeddingFields.model_validate(mcp_tool.model_dump())
                 for mcp_tool in mcp_tool_upserts
