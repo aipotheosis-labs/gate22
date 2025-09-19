@@ -42,7 +42,6 @@ import { getOwnershipLabel } from "@/utils/configuration-labels";
 
 interface ConfigurationSelection {
   configurationId: string;
-  connectedAccountId?: string;
 }
 
 interface BundleMCPStepperProps {
@@ -87,22 +86,11 @@ export function BundleMCPStepperForm({
       setNameError("");
       setDescription("");
 
-      // Initialize selections with default account for each configuration
+      // Initialize selections with configuration IDs only
       const initialSelections =
-        selectedIds?.map((id) => {
-          const selection: ConfigurationSelection = { configurationId: id };
-
-          // Auto-select the first available account for both shared and individual configs
-          const accounts = connectedAccounts.filter(
-            (account) => account.mcp_server_configuration_id === id,
-          );
-
-          if (accounts.length > 0) {
-            selection.connectedAccountId = accounts[0].id;
-          }
-
-          return selection;
-        }) || [];
+        selectedIds?.map((id) => ({
+          configurationId: id,
+        })) || [];
 
       setSelections(initialSelections);
     }
@@ -111,13 +99,7 @@ export function BundleMCPStepperForm({
 
   // Handle adding a new configuration to the bundle
   const handleAddConfiguration = (configId: string) => {
-    // Auto-select the first available account for both shared and individual configs
     const newSelection: ConfigurationSelection = { configurationId: configId };
-    const accounts = getAccountsForConfiguration(configId);
-    if (accounts.length > 0) {
-      newSelection.connectedAccountId = accounts[0].id;
-    }
-
     setSelections((prev) => [...prev, newSelection]);
 
     // Notify parent about selection change
@@ -139,16 +121,6 @@ export function BundleMCPStepperForm({
     onSelectionChange?.(newSelectedIds);
   };
 
-  // Handle account selection for individual configs
-  const handleAccountSelection = (configId: string, accountId: string) => {
-    setSelections((prev) =>
-      prev.map((s) =>
-        s.configurationId === configId
-          ? { ...s, connectedAccountId: accountId }
-          : s,
-      ),
-    );
-  };
 
   // Get available accounts for a configuration
   const getAccountsForConfiguration = (configId: string) => {
@@ -316,7 +288,7 @@ export function BundleMCPStepperForm({
                               <TableHead className="w-[300px]">
                                 Configuration
                               </TableHead>
-                              <TableHead className="w-[250px]">
+                              <TableHead className="w-[200px]">
                                 Connected Account
                               </TableHead>
                               <TableHead className="w-[80px]">
@@ -376,39 +348,19 @@ export function BundleMCPStepperForm({
                                         Shared Account
                                       </Badge>
                                     ) : (
-                                      <Select
-                                        value={
-                                          selection.connectedAccountId || ""
-                                        }
-                                        onValueChange={(value) =>
-                                          handleAccountSelection(
-                                            config.id,
-                                            value,
-                                          )
-                                        }
-                                      >
-                                        <SelectTrigger className="w-full max-w-[220px]">
-                                          <SelectValue placeholder="Select account..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {accounts.length === 0 ? (
-                                            <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                                              No accounts available
-                                            </div>
-                                          ) : (
-                                            accounts.map((account) => (
-                                              <SelectItem
-                                                key={account.id}
-                                                value={account.id}
-                                              >
-                                                {account.user?.email ||
-                                                  account.user?.name ||
-                                                  "Unknown"}
-                                              </SelectItem>
-                                            ))
-                                          )}
-                                        </SelectContent>
-                                      </Select>
+                                      <div className="text-sm">
+                                        {accounts.length > 0 ? (
+                                          <span>
+                                            {accounts[0].user?.email ||
+                                              accounts[0].user?.name ||
+                                              "Connected"}
+                                          </span>
+                                        ) : (
+                                          <span className="text-muted-foreground">
+                                            No account connected
+                                          </span>
+                                        )}
+                                      </div>
                                     )}
                                   </TableCell>
                                   <TableCell>
