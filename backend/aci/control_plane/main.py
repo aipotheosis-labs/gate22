@@ -7,6 +7,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from aci.common.logging_setup import setup_logging
+from aci.common.openai_client import init_openai_client
 from aci.control_plane import config
 from aci.control_plane.exceptions import ControlPlaneException
 from aci.control_plane.middleware.interceptor import (
@@ -39,6 +40,9 @@ setup_logging(
     aci_log_level=config.LOG_LEVEL,
     filters=[RequestContextFilter()],
 )
+
+# Initialize the OpenAI client at the startup
+init_openai_client(config.OPENAI_API_KEY)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
