@@ -291,7 +291,7 @@ export default function BundleDetailPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="cursor" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="w-full grid grid-cols-4 h-auto">
               {editorConfigs.map((editor) => (
                 <TabsTrigger key={editor.id} value={editor.id}>
                   {editor.name}
