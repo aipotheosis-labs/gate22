@@ -1,4 +1,4 @@
-"""Add user verifications table for email verification
+"""add user verifications table for email verification
 
 Revision ID: d8f4a4a74a06
 Revises: 967410def57b
