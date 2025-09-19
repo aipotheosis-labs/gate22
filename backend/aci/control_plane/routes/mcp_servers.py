@@ -164,6 +164,7 @@ async def mcp_server_oauth2_discovery(
         oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
 
         # We currently only support none and client_secret_post
+        # TODO: support `client_secret_basic`
         token_endpoint_auth_method: Literal["none", "client_secret_post"]
         if "client_secret_post" in (oauth2_metadata.token_endpoint_auth_methods_supported or []):
             token_endpoint_auth_method = "client_secret_post"
@@ -185,19 +186,14 @@ async def mcp_server_oauth2_discovery(
     # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
     # flow. If not provided, we use the default callback URL in our API.
     if body.dcr:
-        redirect_uris: list[AnyUrl] = []
-        if body.redirect_uri is None:
-            path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
-            redirect_uris = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
-        else:
-            redirect_uris = [body.redirect_uri]
+        path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
+        redirect_uris: list[AnyUrl] = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
 
         try:
             oauth2_client_registrator = ClientRegistrator(
                 str(body.url),
                 client_metadata=OAuthClientMetadata(
                     redirect_uris=redirect_uris,
-                    # TODO: should we support client_secret_basic in the future?
                     token_endpoint_auth_method=token_endpoint_auth_method,
                     grant_types=["authorization_code", "refresh_token"],
                     response_types=["code"],
