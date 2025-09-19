@@ -34,6 +34,9 @@ class MetadataFetcher:
 
         Returns:
             Resource metadata URL if found in WWW-Authenticate header, None otherwise
+
+        This function is copied from the Official MCP Python SDK
+        https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L207-L229
         """
         if not init_response or init_response.status_code != 401:
             return None
@@ -58,6 +61,9 @@ class MetadataFetcher:
         Updates the context with:
         1. Protected resource metadata
         2. The authorization server URL
+
+        This function is copied and modified from the Official MCP Python SDK
+        https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L231-L238
         """
         # RFC9728: Try to extract resource_metadata URL from WWW-Authenticate header of the initial response # noqa: E501
         url = self._extract_resource_metadata_from_www_auth(init_response)
@@ -89,7 +95,12 @@ class MetadataFetcher:
             self.context.auth_server_url = str(metadata.authorization_servers[0])
 
     def _get_discovery_urls(self) -> list[str]:
-        """Generate ordered list of (url, type) tuples for discovery attempts."""
+        """
+        Generate ordered list of (url, type) tuples for discovery attempts.
+
+        This function is copied from the Official MCP Python SDK
+        https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L254-L279
+        """
         urls: list[str] = []
         auth_server_url = self.context.auth_server_url or self.context.server_url
         parsed = urlparse(auth_server_url)
@@ -120,6 +131,9 @@ class MetadataFetcher:
         Discover OAuth metadata (RFC8414 with fallback for legacy servers)
         Updates the context with:
         1. OAuth metadata
+
+        This function is copied and modified from the Official MCP Python SDK
+        https://github.com/modelcontextprotocol/python-sdk/blob/ca3466666310dbcb5c45690ac2571c574759984f/src/mcp/client/auth.py#L474-L483
         """
         for url in discovery_urls:
             # Question: Do we need to provide header regarding MCP protocol version?
