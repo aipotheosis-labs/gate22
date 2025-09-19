@@ -7,6 +7,7 @@ from aci.common.db import crud
 from aci.common.db.sql_models import (
     MCPServer,
     MCPServerConfiguration,
+    OpsAccount,
 )
 from aci.common.enums import ConnectedAccountOwnership
 from aci.common.exceptions import AuthCredentialsManagerError
@@ -191,7 +192,68 @@ def get_mcp_server_configuration_oauth2_config(
     )
 
 
-def get_auth_config(
+def get_ops_account_auth_config(
+    ops_account: OpsAccount,
+) -> AuthConfig:
+    """
+    Get the auth config for an ops account.
+    Find the MCP Server Auth Config that matches the auth type of the Ops Account
+    """
+    auth_credentials = AuthCredentials.model_validate(ops_account.auth_credentials)
+
+    for auth_config_dict in ops_account.mcp_server.auth_configs:
+        auth_config = AuthConfig.model_validate(auth_config_dict)
+        if auth_config.root.type == auth_credentials.root.type:
+            return auth_config
+
+    logger.error(
+        f"No auth config found for mcp_server_name={ops_account.mcp_server.name}, "
+        f"auth_type={auth_credentials.root.type}"
+    )
+    raise AuthCredentialsManagerError("No auth config found")
+
+
+async def get_ops_account_auth_credentials(
+    db_session: Session,
+    ops_account_id: UUID,
+) -> AuthCredentials:
+    """
+    Get the auth credentials for an ops account.
+    """
+    logger.info(f"Getting auth credentials, ops_account_id={ops_account_id}")
+    ops_account = crud.ops_accounts.get_ops_account_by_id(db_session, ops_account_id)
+
+    if ops_account is None:
+        logger.error(f"Ops account not found, ops_account_id={ops_account_id}")
+        raise AuthCredentialsManagerError("Connected account not found")
+
+    auth_credentials = AuthCredentials.model_validate(ops_account.auth_credentials)
+
+    if _need_refresh(auth_credentials):
+        logger.warning(
+            f"Auth credentials need to be refreshed, "
+            f"ops_account_id={ops_account_id}"
+            f"mcp_server_name={ops_account.mcp_server.name}"
+        )
+
+        # Find the MCP Server Auth Config that matches the auth type of the Ops Account
+        auth_config = get_ops_account_auth_config(ops_account)
+
+        auth_credentials = await _refresh_auth_credentials(
+            ops_account.mcp_server.name,
+            auth_config,
+            auth_credentials,
+        )
+        # update back to the ops account
+        crud.ops_accounts.update_ops_account_auth_credentials(
+            db_session,
+            ops_account,
+            auth_credentials.model_dump(mode="json", exclude_none=True),
+        )
+    return auth_credentials
+
+
+def get_connected_account_auth_config(
     mcp_server: MCPServer, mcp_server_configuration: MCPServerConfiguration
 ) -> AuthConfig:
     """
@@ -212,7 +274,7 @@ def get_auth_config(
     )
 
 
-async def get_auth_credentials(
+async def get_connected_account_auth_credentials(
     db_session: Session,
     user_id: UUID,
     mcp_server_configuration_id: UUID,
@@ -256,7 +318,7 @@ async def get_auth_credentials(
         # TODO: consider auth_config as parameters?
         auth_credentials = await _refresh_auth_credentials(
             connected_account.mcp_server_configuration.mcp_server.name,
-            get_auth_config(
+            get_connected_account_auth_config(
                 connected_account.mcp_server_configuration.mcp_server,
                 connected_account.mcp_server_configuration,
             ),

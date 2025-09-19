@@ -96,15 +96,16 @@ async def handle_execute_tool(
 
     try:
         # Get the auth config and credentials for the mcp server configuration per user
-        auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
+        auth_config = acm.get_connected_account_auth_config(mcp_server, mcp_server_configuration)
         # TODO: handle token refresh for oauth2 credentials
-        auth_credentials = await acm.get_auth_credentials(
+        auth_credentials = await acm.get_connected_account_auth_credentials(
             db_session,
             mcp_server_bundle.user_id,
             mcp_server_configuration.id,
             mcp_server_configuration.connected_account_ownership,
         )
-        # TODO: need to commit because get_auth_credentials might update the auth credentials
+        # TODO: need to commit because get_connected_account_auth_credentials() might update the
+        # auth credentials
         # consider making the logic here more explicit?
         db_session.commit()
     except Exception as e:

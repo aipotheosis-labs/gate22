@@ -65,9 +65,9 @@ async def _generate_tools_async(mcp_server_name: str) -> None:
             raise click.ClickException(f"Connected account for {mcp_server_name} not found")
 
         # Get the auth config and credentials
-        auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
+        auth_config = acm.get_connected_account_auth_config(mcp_server, mcp_server_configuration)
         # TODO: handle token refresh for oauth2 credentials
-        auth_credentials = await acm.get_auth_credentials(
+        auth_credentials = await acm.get_connected_account_auth_credentials(
             db_session,
             connected_account.user_id,
             mcp_server_configuration.id,

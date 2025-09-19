@@ -34,6 +34,7 @@ from aci.control_plane.exceptions import (
     NotPermittedError,
     OAuth2Error,
 )
+from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsManager
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -125,26 +126,6 @@ async def _create_no_auth_ops_account(
     return await _update_ops_account(
         db_session, user_id, mcp_server, auth_credentials.model_dump(mode="json")
     )
-
-
-async def _update_ops_account(
-    db_session: Session,
-    user_id: UUID,
-    mcp_server: MCPServer,
-    auth_credentials: dict,
-) -> OpsAccount:
-    ops_account = mcp_server.ops_account
-
-    # if the ops account already exists, delete it and create a new one
-    if ops_account:
-        crud.ops_accounts.delete_ops_account_by_id(db_session, ops_account.id)
-    ops_account = crud.ops_accounts.create_ops_account(
-        db_session,
-        user_id,
-        mcp_server.id,
-        auth_credentials,
-    )
-    return ops_account
 
 
 async def _create_oauth2_ops_account(
@@ -312,3 +293,32 @@ async def oauth2_callback(
         )
 
     return OpsAccountPublic.model_validate(ops_account, from_attributes=True)
+
+
+async def _update_ops_account(
+    db_session: Session,
+    user_id: UUID,
+    mcp_server: MCPServer,
+    auth_credentials: dict,
+    refresh_tools: bool = False,
+) -> OpsAccount:
+    """
+    Remove the existing ops account for the MCP server and create a new one with the new auth
+    credentials.
+    """
+    ops_account = mcp_server.ops_account
+
+    # if the ops account already exists, delete it and create a new one
+    if ops_account:
+        crud.ops_accounts.delete_ops_account_by_id(db_session, ops_account.id)
+    ops_account = crud.ops_accounts.create_ops_account(
+        db_session,
+        user_id,
+        mcp_server.id,
+        auth_credentials,
+    )
+
+    if refresh_tools:
+        await MCPToolsManager().refresh_mcp_tools(db_session, mcp_server)
+
+    return ops_account

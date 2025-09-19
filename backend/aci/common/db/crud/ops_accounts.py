@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import OpsAccount
@@ -30,3 +30,22 @@ def delete_ops_account_by_id(
 ) -> None:
     statement = delete(OpsAccount).where(OpsAccount.id == ops_account_id)
     db_session.execute(statement)
+
+
+def get_ops_account_by_id(
+    db_session: Session,
+    ops_account_id: UUID,
+) -> OpsAccount | None:
+    statement = select(OpsAccount).where(OpsAccount.id == ops_account_id)
+    return db_session.execute(statement).scalar_one_or_none()
+
+
+def update_ops_account_auth_credentials(
+    db_session: Session,
+    ops_account: OpsAccount,
+    auth_credentials: dict,
+) -> OpsAccount:
+    ops_account.auth_credentials = auth_credentials
+    db_session.flush()
+    db_session.refresh(ops_account)
+    return ops_account
