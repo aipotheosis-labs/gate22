@@ -14,6 +14,8 @@ from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server import (
     CustomMCPServerCreate,
     MCPServerEmbeddingFields,
+    MCPServerOAuth2DCRRequest,
+    MCPServerOAuth2DCRResponse,
     MCPServerOAuth2DiscoveryRequest,
     MCPServerOAuth2DiscoveryResponse,
     MCPServerPublic,
@@ -140,7 +142,6 @@ async def create_custom_mcp_server(
     ),
 )
 async def mcp_server_oauth2_discovery(
-    request: Request,
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: MCPServerOAuth2DiscoveryRequest,
 ) -> MCPServerOAuth2DiscoveryResponse:
@@ -149,63 +150,63 @@ async def mcp_server_oauth2_discovery(
         context.act_as, required_role=OrganizationRole.ADMIN
     )
 
-    result = MCPServerOAuth2DiscoveryResponse(
-        authorize_url=None,
-        access_token_url=None,
-        refresh_token_url=None,
-        client_id=None,
-        client_secret=None,
-        token_endpoint_auth_method=None,
+    oauth2_metadata_fetcher = MetadataFetcher(str(body.url))
+    oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
+
+    return MCPServerOAuth2DiscoveryResponse(
+        authorize_url=str(oauth2_metadata.authorization_endpoint),
+        access_token_url=str(oauth2_metadata.token_endpoint),
+        refresh_token_url=str(oauth2_metadata.token_endpoint),
+        registration_url=str(oauth2_metadata.registration_endpoint),
+        token_endpoint_auth_method_supported=oauth2_metadata.token_endpoint_auth_methods_supported
+        or [],
     )
 
-    # Step 1: Discover OAuth metadata
-    try:
-        oauth2_metadata_fetcher = MetadataFetcher(str(body.url))
-        oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
 
-        # We currently only support none and client_secret_post
-        # TODO: support `client_secret_basic`
-        token_endpoint_auth_method: Literal["none", "client_secret_post"]
-        if "client_secret_post" in (oauth2_metadata.token_endpoint_auth_methods_supported or []):
-            token_endpoint_auth_method = "client_secret_post"
-        else:
-            token_endpoint_auth_method = "none"
-
-        result.token_endpoint_auth_method = token_endpoint_auth_method
-        result.authorize_url = str(oauth2_metadata.authorization_endpoint)
-        result.access_token_url = str(oauth2_metadata.token_endpoint)
-        result.refresh_token_url = str(oauth2_metadata.token_endpoint)
-    except Exception as e:
-        # If exception is raised, it means the discovery failed.
-        # We still return the result with null values instead of non-200 status code.
-        logger.info(f"Failed to fetch OAuth metadata: {e}. URL: {body.url}")
-        return result
-
-    # Step 2: Perform dynamic client registration (DCR) if requested
+@router.post(
+    "/oauth2-dcr",
+    response_model=MCPServerOAuth2DCRResponse,
+    description=(
+        "Perform dynamic client registration (DCR) for MCP server. Note that this does not result "
+        "in any record creation or update in Control Plane."
+    ),
+)
+async def mcp_server_oauth2_dcr(
+    request: Request,
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    body: MCPServerOAuth2DCRRequest,
+) -> MCPServerOAuth2DCRResponse:
+    # Enforce only admin to perform this action
+    access_control.check_act_as_organization_role(
+        context.act_as, required_role=OrganizationRole.ADMIN
+    )
 
     # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
     # flow. If not provided, we use the default callback URL in our API.
-    if body.dcr:
-        path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
-        redirect_uris: list[AnyUrl] = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
+    path = request.url_for(CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
+    redirect_uris: list[AnyUrl] = [HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{path}")]
 
-        try:
-            oauth2_client_registrator = ClientRegistrator(
-                str(body.url),
-                client_metadata=OAuthClientMetadata(
-                    redirect_uris=redirect_uris,
-                    token_endpoint_auth_method=token_endpoint_auth_method,
-                    grant_types=["authorization_code", "refresh_token"],
-                    response_types=["code"],
-                    scope="",  # TODO: discover default scope
-                ),
-                oauth_metadata=oauth2_metadata,
-            )
-            client_info = oauth2_client_registrator.dynamic_client_registration()
-            result.client_id = client_info.client_id
-            result.client_secret = client_info.client_secret
-        except Exception as e:
-            logger.info(f"Failed to register client: {e}. URL: {body.url}")
-            return result
+    # We currently only support none and client_secret_post.
+    # TODO: support `client_secret_basic`
+    token_endpoint_auth_method: Literal["none", "client_secret_post"]
+    if "client_secret_post" in (body.token_endpoint_auth_method_supported or []):
+        token_endpoint_auth_method = "client_secret_post"
+    else:
+        token_endpoint_auth_method = "none"
 
-    return result
+    oauth2_client_registrator = ClientRegistrator(
+        body.registration_url,
+        client_metadata=OAuthClientMetadata(
+            redirect_uris=redirect_uris,
+            token_endpoint_auth_method=token_endpoint_auth_method,
+            grant_types=["authorization_code", "refresh_token"],
+            response_types=["code"],
+            scope="",  # TODO: discover default scope
+        ),
+        registration_endpoint=HttpUrl(body.registration_url),
+    )
+    client_info = oauth2_client_registrator.dynamic_client_registration()
+    return MCPServerOAuth2DCRResponse(
+        client_id=client_info.client_id,
+        client_secret=client_info.client_secret,
+    )

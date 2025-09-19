@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
@@ -82,14 +81,21 @@ class MCPServerPublic(BaseModel):
 
 class MCPServerOAuth2DiscoveryRequest(BaseModel):
     url: HttpUrl
-    dcr: bool  # whether or not to perform dynamic client registration
-    redirect_uri: HttpUrl | None = None  # If not provided, use the default callback URL in our API.
 
 
 class MCPServerOAuth2DiscoveryResponse(BaseModel):
-    client_id: str | None = None
-    client_secret: str | None = None
     authorize_url: str | None = None
     access_token_url: str | None = None
     refresh_token_url: str | None = None
-    token_endpoint_auth_method: Literal["none", "client_secret_post"] | None = None
+    registration_url: str | None = None
+    token_endpoint_auth_method_supported: list[str]
+
+
+class MCPServerOAuth2DCRRequest(BaseModel):
+    registration_url: str
+    token_endpoint_auth_method_supported: list[str]
+
+
+class MCPServerOAuth2DCRResponse(BaseModel):
+    client_id: str | None = None
+    client_secret: str | None = None
