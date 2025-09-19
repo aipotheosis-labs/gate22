@@ -127,6 +127,8 @@ async def create_custom_mcp_server(
         embedding=mcp_server_embedding,
     )
 
+    context.db_session.commit()
+
     mcp_server_public = schema_utils.construct_mcp_server_public(mcp_server)
     return mcp_server_public
 
