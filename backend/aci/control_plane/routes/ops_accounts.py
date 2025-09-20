@@ -113,7 +113,11 @@ async def _create_api_key_ops_account(
 ) -> OpsAccount:
     auth_credentials = APIKeyCredentials(type=AuthType.API_KEY, secret_key=api_key)
     return await _update_ops_account(
-        db_session, user_id, mcp_server, auth_credentials.model_dump(mode="json")
+        db_session,
+        user_id,
+        mcp_server,
+        auth_credentials.model_dump(mode="json"),
+        refresh_tools=True,
     )
 
 
@@ -124,7 +128,11 @@ async def _create_no_auth_ops_account(
 ) -> OpsAccount:
     auth_credentials = NoAuthCredentials(type=AuthType.NO_AUTH)
     return await _update_ops_account(
-        db_session, user_id, mcp_server, auth_credentials.model_dump(mode="json")
+        db_session,
+        user_id,
+        mcp_server,
+        auth_credentials.model_dump(mode="json"),
+        refresh_tools=True,
     )
 
 
@@ -283,7 +291,11 @@ async def oauth2_callback(
     auth_credentials = oauth2_manager.parse_fetch_token_response(token_response)
 
     ops_account = await _update_ops_account(
-        db_session, state.user_id, mcp_server, auth_credentials.model_dump(mode="json")
+        db_session,
+        state.user_id,
+        mcp_server,
+        auth_credentials.model_dump(mode="json"),
+        refresh_tools=True,
     )
     db_session.commit()
 
@@ -319,6 +331,10 @@ async def _update_ops_account(
     )
 
     if refresh_tools:
-        await MCPToolsManager(mcp_server).refresh_mcp_tools(db_session)
+        try:
+            await MCPToolsManager(mcp_server).refresh_mcp_tools(db_session)
+        except Exception as e:
+            # If the tools refresh fails, should not block the user from creating the ops account
+            logger.exception(f"Error refreshing MCP tools: {e}")
 
     return ops_account

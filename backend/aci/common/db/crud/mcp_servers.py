@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal, overload
 from uuid import UUID
 
@@ -131,3 +132,13 @@ def list_mcp_servers(
 
     servers = list(db_session.execute(statement).scalars().all())
     return servers
+
+
+def update_mcp_server_last_synced_at_now(
+    db_session: Session,
+    mcp_server: MCPServer,
+) -> MCPServer:
+    mcp_server.last_synced_at = datetime.now()
+    db_session.flush()
+    db_session.refresh(mcp_server)
+    return mcp_server
