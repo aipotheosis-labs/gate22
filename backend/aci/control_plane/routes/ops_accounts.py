@@ -111,7 +111,7 @@ async def _create_api_key_ops_account(
     api_key: str,
 ) -> OpsAccount:
     auth_credentials = APIKeyCredentials(type=AuthType.API_KEY, secret_key=api_key)
-    return await _update_ops_account(
+    return await _upsert_mcp_server_ops_account(
         db_session, user_id, mcp_server, auth_credentials.model_dump(mode="json")
     )
 
@@ -122,12 +122,12 @@ async def _create_no_auth_ops_account(
     mcp_server: MCPServer,
 ) -> OpsAccount:
     auth_credentials = NoAuthCredentials(type=AuthType.NO_AUTH)
-    return await _update_ops_account(
+    return await _upsert_mcp_server_ops_account(
         db_session, user_id, mcp_server, auth_credentials.model_dump(mode="json")
     )
 
 
-async def _update_ops_account(
+async def _upsert_mcp_server_ops_account(
     db_session: Session,
     user_id: UUID,
     mcp_server: MCPServer,
@@ -137,13 +137,16 @@ async def _update_ops_account(
 
     # if the ops account already exists, delete it and create a new one
     if ops_account:
-        crud.ops_accounts.delete_ops_account_by_id(db_session, ops_account.id)
-    ops_account = crud.ops_accounts.create_ops_account(
-        db_session,
-        user_id,
-        mcp_server.id,
-        auth_credentials,
-    )
+        crud.ops_accounts.update_ops_account_auth_credentials(
+            db_session, ops_account.id, auth_credentials, user_id
+        )
+    else:
+        ops_account = crud.ops_accounts.create_ops_account(
+            db_session,
+            user_id,
+            mcp_server.id,
+            auth_credentials,
+        )
     return ops_account
 
 
@@ -161,7 +164,7 @@ async def _create_oauth2_ops_account(
             break
 
     if not oauth2_config:
-        raise ValueError("No OAuth2 config found for mcp_server_id={mcp_server.id}")
+        raise ValueError(f"No OAuth2 config found for mcp_server_id={mcp_server.id}")
 
     oauth2_manager = OAuth2Manager(
         app_name=mcp_server.name,
@@ -279,7 +282,7 @@ async def oauth2_callback(
             break
 
     if not oauth2_config:
-        raise ValueError("No OAuth2 config found for mcp_server_id={mcp_server.id}")
+        raise ValueError(f"No OAuth2 config found for mcp_server_id={mcp_server.id}")
 
     oauth2_manager = OAuth2Manager(
         app_name=mcp_server.name,
@@ -301,7 +304,7 @@ async def oauth2_callback(
     )
     auth_credentials = oauth2_manager.parse_fetch_token_response(token_response)
 
-    ops_account = await _update_ops_account(
+    ops_account = await _upsert_mcp_server_ops_account(
         db_session, state.user_id, mcp_server, auth_credentials.model_dump(mode="json")
     )
     db_session.commit()
