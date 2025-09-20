@@ -92,6 +92,7 @@ async def _list_tools(
     auth_credentials: AuthCredentials,
 ) -> list[mcp_types.Tool]:
     mcp_auth_credentials_manager = MCPAuthManager(
+        mcp_server=mcp_server,
         auth_config=auth_config,
         auth_credentials=auth_credentials,
     )

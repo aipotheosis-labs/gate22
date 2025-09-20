@@ -41,10 +41,11 @@ async def mcp_post(
     x_virtual_mcp_auth_token: Annotated[str | None, Header()] = None,
     mcp_protocol_version: Annotated[str | None, Header()] = None,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse | None:
-    # parse auth token
-    # auth_token_data = (
-    #     _parse_auth_token(x_virtual_mcp_auth_token) if x_virtual_mcp_auth_token else None
-    # )
+    # parse auth token (agreed auth format with ACI's mcp service)
+    auth_token_data = (
+        _parse_auth_token(x_virtual_mcp_auth_token) if x_virtual_mcp_auth_token else None
+    )
+    logger.info(f"Parsed auth token data: {auth_token_data}")
 
     # parse payload
     try:

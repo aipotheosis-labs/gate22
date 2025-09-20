@@ -4,6 +4,7 @@ from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
+from mcp.shared import exceptions as mcp_exceptions
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
@@ -119,24 +120,39 @@ async def handle_execute_tool(
 
     # forward tool call to the corresponding mcp server
     try:
-        tool_call_result = await _forward_tool_call(
+        result = await _forward_tool_call(
             name=MCPToolMetadata.model_validate(mcp_tool.tool_metadata).canonical_tool_name,
             arguments=tool_arguments,
             mcp_server=mcp_server,
             auth_config=auth_config,
             auth_credentials=auth_credentials,
         )
-        return JSONRPCSuccessResponse(
-            id=jsonrpc_tools_call_request.id,
-            result=tool_call_result.model_dump(exclude_none=True),
-        )
+        # TODO: should we differentiate tool call error from external MCPs v.s the tool call
+        # (SEARCH_TOOLS and EXECUTE_TOOL) error from the unified MCP service itself?
+        # e.g., still return JSONRPCSuccessResponse for external tool call error?
+        if isinstance(result, mcp_exceptions.McpError):
+            return JSONRPCErrorResponse(
+                # NOTE: JSONRPCErrorResponse.ErrorData is different class from mcp.types.ErrorData
+                # so we assign the error data manually
+                id=jsonrpc_tools_call_request.id,
+                error=JSONRPCErrorResponse.ErrorData(
+                    code=result.error.code,
+                    message=result.error.message,
+                    data=result.error.data,
+                ),
+            )
+        else:
+            return JSONRPCSuccessResponse(
+                id=jsonrpc_tools_call_request.id,
+                result=result.model_dump(exclude_none=True),
+            )
     except Exception as e:
         logger.exception(f"Error forwarding tool call: {e}")
         return JSONRPCErrorResponse(
             id=jsonrpc_tools_call_request.id,
             error=JSONRPCErrorResponse.ErrorData(
                 code=JSONRPCErrorCode.INTERNAL_ERROR,
-                message=str(e),
+                message="Unknown error forwarding tool call",
             ),
         )
 
@@ -201,9 +217,10 @@ async def _forward_tool_call(
     mcp_server: MCPServer,
     auth_config: AuthConfig,
     auth_credentials: AuthCredentials,
-) -> mcp_types.CallToolResult:
+) -> mcp_types.CallToolResult | mcp_exceptions.McpError:
     # TODO: use the correct auth type
     mcp_auth_credentials_manager = MCPAuthManager(
+        mcp_server=mcp_server,
         auth_config=auth_config,
         auth_credentials=auth_credentials,
     )
@@ -228,20 +245,29 @@ async def _forward_tool_call(
 
 async def _call_tool(
     session: ClientSession, name: str, arguments: dict
-) -> mcp_types.CallToolResult:
+) -> mcp_types.CallToolResult | mcp_exceptions.McpError:
+    """
+    Initialize the session and call a tool on the mcp server.
+    TODO: here we return the mcp error as response because the async taskgroup
+    will wrap the exception under the exception group.
+    """
     # initialize
     # TODO: conditionally initialize the session based on the mcp server?
     # many mcp servers don't support/need to initialize the session
-    start_time = time.time()
-    await session.initialize()
-    logger.info(f"Initialize took {time.time() - start_time} seconds")
+    try:
+        start_time = time.time()
+        await session.initialize()
+        logger.info(f"Initialize took {time.time() - start_time} seconds")
 
-    # call tool
-    start_time = time.time()
-    tool_call_response = await session.call_tool(
-        name=name,
-        arguments=arguments,
-    )
-    logger.info(f"Tool call took {time.time() - start_time} seconds")
-    logger.debug(tool_call_response.model_dump_json())
-    return tool_call_response
+        # call tool
+        start_time = time.time()
+        tool_call_response = await session.call_tool(
+            name=name,
+            arguments=arguments,
+        )
+        logger.info(f"Tool call took {time.time() - start_time} seconds")
+        logger.debug(tool_call_response.model_dump_json())
+        return tool_call_response
+    except mcp_exceptions.McpError as e:
+        logger.exception(f"tool call failed, tool={name}, arguments={arguments}, error={e}")
+        return e
