@@ -4,7 +4,7 @@ import re
 
 from aci.common.exceptions import MCPToolSanitizationError
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
+from aci.common.schemas.mcp_tool import MCPToolUpsert
 
 logger = get_logger(__name__)
 
@@ -119,7 +119,7 @@ def non_embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpser
     """
     Return whether the fields that has not been used for embedding has changed.
     """
-    non_embedding_fields = set(MCPToolEmbeddingFields.model_fields.keys())
+    non_embedding_fields = set(MCPToolUpsert.model_fields.keys())
     non_embedding_fields.difference_update({"name", "description", "input_schema", "tool_metadata"})
     return old_tool.model_dump(include=non_embedding_fields) != new_tool.model_dump(
         include=non_embedding_fields
