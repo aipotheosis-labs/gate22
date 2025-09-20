@@ -12,7 +12,7 @@ from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
 # NOTE: using a generic metadata schema for now before the schema is finalized
 # TODO: for now this is not used, some potential useful fields: "need_session"
 class MCPServerMetadata(BaseModel):
-    pass
+    is_virtual_mcp_server: bool | None = None
 
     model_config = ConfigDict(extra="forbid")
 

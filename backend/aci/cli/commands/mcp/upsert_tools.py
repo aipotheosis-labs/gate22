@@ -18,8 +18,8 @@ console = Console()
 
 @click.command()
 @click.option(
-    "--mcp-tools-file",
-    "mcp_tools_file",
+    "--tools-file",
+    "tools_file",
     required=True,
     type=click.Path(exists=True, path_type=Path),
     help="Path to the mcp tools JSON file",
@@ -29,7 +29,7 @@ console = Console()
     is_flag=True,
     help="Provide this flag to run the command and apply changes to the database",
 )
-def upsert_mcp_tools(mcp_tools_file: Path, skip_dry_run: bool) -> list[str]:
+def upsert_mcp_tools(tools_file: Path, skip_dry_run: bool) -> list[str]:
     """
     Upsert mcp tools in the DB from a JSON file.
 
@@ -40,12 +40,12 @@ def upsert_mcp_tools(mcp_tools_file: Path, skip_dry_run: bool) -> list[str]:
 
     Batch creation and update operations are performed.
     """
-    return upsert_mcp_tools_helper(mcp_tools_file, skip_dry_run)
+    return upsert_mcp_tools_helper(tools_file, skip_dry_run)
 
 
-def upsert_mcp_tools_helper(mcp_tools_file: Path, skip_dry_run: bool) -> list[str]:
+def upsert_mcp_tools_helper(tools_file: Path, skip_dry_run: bool) -> list[str]:
     with utils.create_db_session(config.DB_FULL_URL) as db_session:
-        with open(mcp_tools_file) as f:
+        with open(tools_file) as f:
             mcp_tools_data = json.load(f)
 
         # Validate and parse each mcp tool record

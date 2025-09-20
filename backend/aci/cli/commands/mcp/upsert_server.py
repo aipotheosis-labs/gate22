@@ -20,8 +20,8 @@ console = Console()
 
 @click.command()
 @click.option(
-    "--mcp-server-file",
-    "mcp_server_file",
+    "--server-file",
+    "server_file",
     required=True,
     type=click.Path(exists=True, path_type=Path),
     help="Path to the mcp server JSON file",
@@ -39,7 +39,7 @@ console = Console()
     is_flag=True,
     help="Provide this flag to run the command and apply changes to the database",
 )
-def upsert_mcp_server(mcp_server_file: Path, secrets_file: Path | None, skip_dry_run: bool) -> UUID:
+def upsert_mcp_server(server_file: Path, secrets_file: Path | None, skip_dry_run: bool) -> UUID:
     """
     Insert or update an MCPServer in the DB from a JSON file, optionally injecting secrets.
     If an mcp server with the given name already exists, performs an update; otherwise, creates a
@@ -47,11 +47,11 @@ def upsert_mcp_server(mcp_server_file: Path, secrets_file: Path | None, skip_dry
     For changing the mcp server name of an existing mcp server, use the <PLACEHOLDER> command.
     """
     with utils.create_db_session(config.DB_FULL_URL) as db_session:
-        return upsert_mcp_server_helper(db_session, mcp_server_file, secrets_file, skip_dry_run)
+        return upsert_mcp_server_helper(db_session, server_file, secrets_file, skip_dry_run)
 
 
 def upsert_mcp_server_helper(
-    db_session: Session, mcp_server_file: Path, secrets_file: Path | None, skip_dry_run: bool
+    db_session: Session, server_file: Path, secrets_file: Path | None, skip_dry_run: bool
 ) -> UUID:
     # Load secrets if provided
     secrets = {}
@@ -60,7 +60,7 @@ def upsert_mcp_server_helper(
             secrets = json.load(f)
     # Render the template in-memory and load JSON data
     try:
-        rendered_content = _render_template_to_string(mcp_server_file, secrets)
+        rendered_content = _render_template_to_string(server_file, secrets)
     except Exception as e:
         console.print(
             f"[bold red]Error rendering template, failed to upsert mcp server: {e}[/bold red]"

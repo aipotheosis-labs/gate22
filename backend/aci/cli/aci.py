@@ -18,17 +18,24 @@ def virtual_mcp_group() -> None:
     pass
 
 
+@cli.group(name="mcp")
+def mcp_group() -> None:
+    pass
+
+
 # Virtual MCP commands
 virtual_mcp_group.add_command(virtual_mcp.upsert_server, name="upsert-server")
 virtual_mcp_group.add_command(virtual_mcp.upsert_tools, name="upsert-tools")
 
+# MCP commands
+mcp_group.add_command(mcp.upsert_mcp_server, name="upsert-server")
+mcp_group.add_command(mcp.upsert_mcp_tools, name="upsert-tools")
+mcp_group.add_command(mcp.generate_tools, name="generate-tools")
+
 # Other commands
 # TODO: group these commands
-cli.add_command(mcp.upsert_mcp_server, name="upsert-mcp-server")
-cli.add_command(mcp.upsert_mcp_tools, name="upsert-mcp-tools")
 cli.add_command(mock_data.create_mock_org_teams_users, name="create-mock-org-teams-users")
 cli.add_command(mock_data.create_mock_mcp_configuration, name="create-mock-mcp-configuration")
-cli.add_command(mcp.generate_tools, name="generate-tools")
 
 # Initialize the OpenAI client at the startup
 init_openai_client(config.OPENAI_API_KEY)

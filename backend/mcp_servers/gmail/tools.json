@@ -1,0 +1,54 @@
+[
+  {
+    "name": "GMAIL__MESSAGES_LIST",
+    "description": "Lists the messages in the user's mailbox",
+    "tags": [],
+    "tool_metadata": {
+      "canonical_tool_name": "MESSAGES_LIST",
+      "canonical_tool_description_hash": "93ad46b939df50180d1d912e64dca1ce0e421ca4240b2dada82b8657bfc24c57",
+      "canonical_tool_input_schema_hash": "9e571632dfe307dd33d495a6770ed3981eb33ccb473c3c7c03c731214fecc831"
+    },
+    "input_schema": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "query": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "q": {
+              "type": "string",
+              "description": "Only return messages matching the specified query. Supports the same query format as the Gmail search box."
+            },
+            "labelIds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Only return messages with labels that match all of the specified label IDs."
+            },
+            "pageToken": {
+              "type": "string",
+              "default": null,
+              "description": "Page token to retrieve a specific page of results"
+            },
+            "maxResults": {
+              "type": "integer",
+              "default": 100,
+              "maximum": 500,
+              "description": "Maximum number of messages to return. Default is 100."
+            },
+            "includeSpamTrash": {
+              "type": "boolean",
+              "default": false,
+              "description": "Include messages from SPAM and TRASH in the results."
+            }
+          },
+          "description": "Query parameters",
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+]
