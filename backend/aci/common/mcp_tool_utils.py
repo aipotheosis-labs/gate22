@@ -67,8 +67,8 @@ def diff_tools(
 ]:
     """
     Diff the two given lists of MCP tools.
-    Match the tools with the tool_name to treat them as as a same tool.
-    Check if the tool has updated fields using the hashes in the tool_metadata.
+    Tools with the `tool.name` will be treated as a same tool.
+    For performance, use the hashes to check if description and input schema has changed.
 
     Returns a tuple of:
         - A list of tools that is new and should be created.
@@ -87,8 +87,8 @@ def diff_tools(
     old_tools_dict = {tool.name: tool for tool in old_tools}
     new_tools_dict = {tool.name: tool for tool in new_tools}
 
-    # Find tools that are new (in new_tools but not in old_tools)
     for new_tool_name, new_tool in new_tools_dict.items():
+        # Tool not found in old_tools_dict, should be created
         if new_tool_name not in old_tools_dict:
             new_tools_to_create.append(new_tool)
         else:
@@ -101,7 +101,7 @@ def diff_tools(
             else:
                 tools_unchanged.append(new_tool)
 
-    # Find tools that should be deleted (in existing_tools but not in new_tools)
+    # Find tools that should be deleted (in old_tools but not in new_tools)
     for tool_name, old_tool in old_tools_dict.items():
         if tool_name not in new_tools_dict:
             old_tools_to_delete.append(old_tool)
@@ -128,8 +128,8 @@ def non_embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpser
 
 def embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpsert) -> bool:
     """
-    Return whether the fields that has been used for embedding has changed. Compare using the hashes
-    of the fields for performance considerations.
+    Return whether the fields that are used for embedding have changed. Compare using the hashes of
+    the fields if available.
 
     Returns:
         True if the fields that has been used for embedding has changed, False otherwise.
