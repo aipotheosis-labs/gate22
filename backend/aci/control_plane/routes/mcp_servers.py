@@ -193,13 +193,12 @@ async def mcp_server_oauth2_dcr(
         context.act_as, required_role=OrganizationRole.ADMIN
     )
 
-    # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
-    # flow. If not provided, we use the default callback URL in our API.
+    ops_account_callback_path = request.url_for(OPS_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
     connected_account_callback_path = request.url_for(
         CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME
     ).path
 
-    ops_account_callback_path = request.url_for(OPS_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME).path
+    # Support both ops account and connected account callback URLs
     redirect_uris: list[AnyUrl] = [
         HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{connected_account_callback_path}"),
         HttpUrl(f"{config.CONTROL_PLANE_BASE_URL}{ops_account_callback_path}"),
