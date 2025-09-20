@@ -120,6 +120,16 @@ def get_mcp_tools_by_ids(
     ]
 
 
+def delete_mcp_tools_by_names(
+    db_session: Session,
+    mcp_tool_names: list[str],
+) -> None:
+    statement = delete(MCPTool).where(MCPTool.name.in_(mcp_tool_names))
+    db_session.execute(statement)
+    db_session.flush()
+    return
+
+
 def search_mcp_tools(
     db_session: Session,
     mcp_server_ids: Sequence[UUID] | None,
