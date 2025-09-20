@@ -63,8 +63,6 @@ async def create_ops_account(
         throw_error_if_not_permitted=True,
     )
 
-    logger.info(f"body={body}")
-
     try:
         match body.auth_type:
             case AuthType.OAUTH2:
