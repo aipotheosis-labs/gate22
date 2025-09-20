@@ -31,8 +31,8 @@ class MCPToolsManager:
         tools = await fetcher.fetch_tools(self.mcp_server, auth_config, auth_credentials)
         logger.info(f"Fetched {len(tools)} tools")
 
-        # Data transformation to upsert the tools
-        mcp_tool_upserts = []
+        # Transform the data into our schema
+        latest_mcp_tool_upserts = []
         for tool in tools:
             sanitized_name = mcp_tool_utils.sanitize_canonical_tool_name(tool.name)
             tool_name = f"{self.mcp_server.name}__{sanitized_name}"
@@ -54,24 +54,65 @@ class MCPToolsManager:
                 ),
             )
             logger.info(f"Fetched MCP tool: {tool.name} --> {mcp_tool_upsert.name}")
-            mcp_tool_upserts.append(mcp_tool_upsert)
+            latest_mcp_tool_upserts.append(mcp_tool_upsert)
 
-        # Embed the tools
-        # TODO: Embed in parallel
-        mcp_tool_embeddings = embeddings.generate_mcp_tool_embeddings(
+        # Diff the tools vs the existing tools in database
+        existing_mcp_tool_upserts = [
+            MCPToolUpsert.model_validate(tool, from_attributes=True)
+            for tool in self.mcp_server.tools
+        ]
+        (
+            tools_to_create,
+            tools_to_delete,
+            tools_updated_embedding_fields,
+            tools_updated_non_embedding_fields,
+            tools_unchanged,
+        ) = mcp_tool_utils.diff_tools(existing_mcp_tool_upserts, latest_mcp_tool_upserts)
+
+        logger.debug(
+            f"Tools to create ({len(tools_to_create)}): {[tool.name for tool in tools_to_create]}"
+        )
+        logger.debug(
+            f"Tools to delete ({len(tools_to_delete)}): {[tool.name for tool in tools_to_delete]}"
+        )
+        logger.debug(
+            f"Tools update with embedding ({len(tools_updated_embedding_fields)}): {[tool.name for tool in tools_updated_embedding_fields]}"  # noqa: E501
+        )
+        logger.debug(
+            f"Tools update without embedding ({len(tools_updated_non_embedding_fields)}): {[tool.name for tool in tools_updated_non_embedding_fields]}"  # noqa: E501
+        )
+        logger.debug(
+            f"Tools unchanged ({len(tools_unchanged)}): {[tool.name for tool in tools_unchanged]}"
+        )
+
+        # TODO: Existing generate_mcp_tool_embeddings() implementation embeds tool sequentailly.
+        # We should modify it to run in parallel.
+        # Then we should parallely embed "new_mcp_tools" and "updated_mcp_tools".
+
+        # Embed and create the tools that are new or updated
+        new_mcp_tool_embeddings = self._embed_mcp_tools(tools_to_create)
+        crud.mcp_tools.create_mcp_tools(db_session, tools_to_create, new_mcp_tool_embeddings)
+
+        # Embed tools that has changed in the embedding fields, and update tools that has changes
+        # in either embedding or non-embedding fields. (Set embedding to `None` for tools that has
+        # no change in non-embedding fields)
+        updated_mcp_tool_embeddings = self._embed_mcp_tools(tools_updated_embedding_fields)
+        crud.mcp_tools.update_mcp_tools(
+            db_session,
+            tools_updated_embedding_fields + tools_updated_non_embedding_fields,
+            updated_mcp_tool_embeddings + [None] * len(tools_updated_non_embedding_fields),
+        )
+
+        # Delete the tools that are old
+        crud.mcp_tools.delete_mcp_tools_by_names(
+            db_session, [mcp_tool.name for mcp_tool in tools_to_delete]
+        )
+
+    def _embed_mcp_tools(self, mcp_tools: list[MCPToolUpsert]) -> list[list[float]]:
+        return embeddings.generate_mcp_tool_embeddings(
             get_openai_client(),
             [
                 MCPToolEmbeddingFields.model_validate(mcp_tool.model_dump())
-                for mcp_tool in mcp_tool_upserts
+                for mcp_tool in mcp_tools
             ],
         )
-
-        # Temp. approach to remove all tools and add all back.
-        # TODO: To be replaced with a Diff approach in next PR right after.
-        crud.mcp_tools.delete_mcp_tools_by_mcp_server_id(db_session, self.mcp_server.id)
-
-        # Store the tools into database
-        crud.mcp_tools.create_mcp_tools(db_session, mcp_tool_upserts, mcp_tool_embeddings)
-
-        # Update the last synced at timestamp
-        crud.mcp_servers.update_mcp_server_last_synced_at_now(db_session, self.mcp_server)

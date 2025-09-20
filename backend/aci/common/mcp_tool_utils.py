@@ -4,6 +4,7 @@ import re
 
 from aci.common.exceptions import MCPToolSanitizationError
 from aci.common.logging_setup import get_logger
+from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
 
 logger = get_logger(__name__)
 
@@ -26,7 +27,8 @@ def normalize_and_hash_content(content: str | dict) -> str:
         normalized = json.dumps(content, sort_keys=True, separators=(",", ":"))
 
     # Generate SHA-256 hash of normalized content
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    # return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    return hashlib.md5(normalized.encode("utf-8")).hexdigest()
 
 
 def sanitize_canonical_tool_name(canonical_tool_name: str) -> str:
@@ -52,3 +54,96 @@ def sanitize_canonical_tool_name(canonical_tool_name: str) -> str:
         )
 
     return sanitized
+
+
+def diff_tools(
+    old_tools: list[MCPToolUpsert], new_tools: list[MCPToolUpsert]
+) -> tuple[
+    list[MCPToolUpsert],
+    list[MCPToolUpsert],
+    list[MCPToolUpsert],
+    list[MCPToolUpsert],
+    list[MCPToolUpsert],
+]:
+    """
+    Diff the two given lists of MCP tools.
+    Match the tools with the tool_name to treat them as as a same tool.
+    Check if the tool has updated fields using the hashes in the tool_metadata.
+
+    Returns a tuple of:
+        - A list of tools that is new and should be created.
+        - A list of tools that is old and should be deleted.
+        - A list of tools that has changed in the embedding fields and should be updated.
+        - A list of tools that has changed in the non-embedding fields and should be updated.
+        - A list of tools that is unchanged.
+    """
+    new_tools_to_create = []
+    old_tools_to_delete = []
+    tools_embedding_fields_updated = []
+    tools_non_embedding_fields_updated = []
+    tools_unchanged = []
+
+    # Create dict for lookup by tool name
+    old_tools_dict = {tool.name: tool for tool in old_tools}
+    new_tools_dict = {tool.name: tool for tool in new_tools}
+
+    # Find tools that are new (in new_tools but not in old_tools)
+    for new_tool_name, new_tool in new_tools_dict.items():
+        if new_tool_name not in old_tools_dict:
+            new_tools_to_create.append(new_tool)
+        else:
+            # Tool exists in both lists, check if any of the fields has changed
+            old_tool = old_tools_dict[new_tool_name]
+            if embedding_fields_changed(old_tool, new_tool):
+                tools_embedding_fields_updated.append(new_tool)
+            elif non_embedding_fields_changed(old_tool, new_tool):
+                tools_non_embedding_fields_updated.append(new_tool)
+            else:
+                tools_unchanged.append(new_tool)
+
+    # Find tools that should be deleted (in existing_tools but not in new_tools)
+    for tool_name, old_tool in old_tools_dict.items():
+        if tool_name not in new_tools_dict:
+            old_tools_to_delete.append(old_tool)
+
+    return (
+        new_tools_to_create,
+        old_tools_to_delete,
+        tools_embedding_fields_updated,
+        tools_non_embedding_fields_updated,
+        tools_unchanged,
+    )
+
+
+def non_embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpsert) -> bool:
+    """
+    Return whether the fields that has not been used for embedding has changed.
+    """
+    non_embedding_fields = set(MCPToolEmbeddingFields.model_fields.keys())
+    non_embedding_fields.difference_update({"name", "description", "input_schema", "tool_metadata"})
+    return old_tool.model_dump(include=non_embedding_fields) != new_tool.model_dump(
+        include=non_embedding_fields
+    )
+
+
+def embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpsert) -> bool:
+    """
+    Return whether the fields that has been used for embedding has changed. Compare using the hashes
+    of the fields for performance considerations.
+
+    Returns:
+        True if the fields that has been used for embedding has changed, False otherwise.
+    """
+    if old_tool.tool_metadata.canonical_tool_name != new_tool.tool_metadata.canonical_tool_name:
+        return True
+    if (
+        old_tool.tool_metadata.canonical_tool_description_hash
+        != new_tool.tool_metadata.canonical_tool_description_hash
+    ):
+        return True
+    if (
+        old_tool.tool_metadata.canonical_tool_input_schema_hash
+        != new_tool.tool_metadata.canonical_tool_input_schema_hash
+    ):
+        return True
+    return False
