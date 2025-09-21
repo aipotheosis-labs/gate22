@@ -70,5 +70,5 @@ class BaseConnector:
             )
             return mcp_types.CallToolResult(
                 isError=True,
-                content=[mcp_types.TextContent(type="text", text=str(e))],
+                content=[mcp_types.TextContent(type="text", text="Internal connector error")],
             )

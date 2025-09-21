@@ -52,6 +52,11 @@ class MCPAuthManager(httpx.Auth):
                     )
                 )
             else:
+                if self.auth_config.root.location != HttpLocation.HEADER:
+                    raise ValueError(
+                        f"Unsupported auth location for remote MCP servers, location={self.auth_config.root.location}"  # noqa: E501
+                    )
+
                 request.headers[self.auth_config.root.name] = (
                     f"{self.auth_config.root.prefix} {self.auth_credentials.root.access_token}"
                     if self.auth_config.root.prefix
@@ -70,6 +75,11 @@ class MCPAuthManager(httpx.Auth):
                     )
                 )
             else:
+                if self.auth_config.root.location != HttpLocation.HEADER:
+                    raise ValueError(
+                        f"Unsupported auth location for remote MCP servers, location={self.auth_config.root.location}"  # noqa: E501
+                    )
+
                 request.headers[self.auth_config.root.name] = (
                     f"{self.auth_config.root.prefix} {self.auth_credentials.root.secret_key}"
                     if self.auth_config.root.prefix

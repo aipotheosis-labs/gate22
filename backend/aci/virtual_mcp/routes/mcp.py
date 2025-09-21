@@ -161,8 +161,15 @@ def _parse_auth_token(x_virtual_mcp_auth_token: str) -> VirtualMCPAuthTokenData:
     token_data = x_virtual_mcp_auth_token.split(" ")
     if len(token_data) != 3 and len(token_data) != 4:
         raise InvalidAuthTokenError()
+
+    try:
+        location = HttpLocation(token_data[0])
+    except ValueError as e:
+        logger.error(f"Invalid auth token location: {token_data[0]}")
+        raise InvalidAuthTokenError() from e
+
     return VirtualMCPAuthTokenData(
-        location=HttpLocation(token_data[0]),
+        location=location,
         name=token_data[1],
         prefix=token_data[2] if len(token_data) == 4 else None,
         token=token_data[3] if len(token_data) == 4 else token_data[2],

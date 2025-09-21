@@ -15,7 +15,9 @@ class RestVirtualMCPToolMetadata(BaseModel):
     endpoint: str
 
 
-class ConnectorVirtualMCPToolMetadata(BaseModel, extra="forbid"):
+class ConnectorVirtualMCPToolMetadata(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     # NOTE: for now we don't allow any fields for connector type
     type: Literal[VirtualMCPToolType.CONNECTOR] = VirtualMCPToolType.CONNECTOR
 

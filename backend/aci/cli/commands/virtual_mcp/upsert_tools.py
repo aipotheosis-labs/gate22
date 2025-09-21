@@ -108,6 +108,7 @@ def update_helper(db_session: Session, tool_upserts: list[VirtualMCPToolUpsert])
     Batch updates virtual mcp tools in the database.
     Returns a list of updated tool names.
     """
+    tools_to_update: list[VirtualMCPToolUpsert] = []
     for tool_upsert in tool_upserts:
         existing_tool = crud.virtual_mcp.tools.get_tool(
             db_session, tool_upsert.name, throw_error_if_not_found=True
@@ -125,14 +126,15 @@ def update_helper(db_session: Session, tool_upserts: list[VirtualMCPToolUpsert])
             )
             console.rule(f"Will update tool '{existing_tool.name}' with the following changes:")
             console.print(diff.pretty())
+            tools_to_update.append(tool_upsert)
 
     # Note: the order matters here because the embeddings need to match the mcp tools
-    tools_updated = crud.virtual_mcp.tools.update_tools(
+    crud.virtual_mcp.tools.update_tools(
         db_session,
-        tool_upserts,
+        tools_to_update,
     )
 
-    return [tool.name for tool in tools_updated]
+    return [tool.name for tool in tools_to_update]
 
 
 def _validate_vms_exists(db_session: Session, vms_name: str) -> None:

@@ -49,10 +49,12 @@ class InterceptorMiddleware(BaseHTTPMiddleware):
                 e,
                 extra={"duration": (datetime.now(UTC) - start_time).total_seconds()},
             )
-            return JSONResponse(
+            error_response = JSONResponse(
                 status_code=500,
                 content={"error": "Internal server error"},
             )
+            error_response.headers["X-Request-ID"] = request_id
+            return error_response
 
         if not is_health_check:
             response_log_data = {
