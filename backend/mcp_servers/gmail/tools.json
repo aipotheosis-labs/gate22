@@ -1,5 +1,56 @@
 [
   {
+    "name": "GMAIL__SEND_EMAIL",
+    "description": "Sends an email on behalf of the user",
+    "tags": [],
+    "tool_metadata": {
+      "canonical_tool_name": "SEND_EMAIL",
+      "canonical_tool_description_hash": "8e38746a9f3cd3f3036bb9c61b93a925ce121a34dd7a3e3fd76f3efb31b3a269",
+      "canonical_tool_input_schema_hash": "6f664efb5f98e1c0b1275d097750ca7e57aa4af1684e0a895074c8407b6436a6"
+    },
+    "input_schema": {
+      "type": "object",
+      "required": ["sender", "recipient", "body"],
+      "properties": {
+        "cc": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "email"
+          },
+          "description": "The email addresses of the cc recipients."
+        },
+        "bcc": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "email"
+          },
+          "description": "The email addresses of the bcc recipients."
+        },
+        "body": {
+          "type": "string",
+          "description": "The body content of the email, for now only plain text is supported."
+        },
+        "sender": {
+          "type": "string",
+          "default": "me",
+          "description": "The user's email address where the email will be sent from. The special value me can be used to indicate the authenticated user."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The subject of the email."
+        },
+        "recipient": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the recipient."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "GMAIL__MESSAGES_LIST",
     "description": "Lists the messages in the user's mailbox",
     "tags": [],
