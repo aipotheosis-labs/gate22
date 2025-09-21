@@ -117,7 +117,8 @@ async def _create_api_key_ops_account(
         user_id,
         mcp_server,
         auth_credentials.model_dump(mode="json"),
-        refresh_tools=True,
+        # Fetch tools if the MCP server has never been synced before
+        should_refresh_tools=mcp_server.last_synced_at is None,
     )
 
 
@@ -132,7 +133,8 @@ async def _create_no_auth_ops_account(
         user_id,
         mcp_server,
         auth_credentials.model_dump(mode="json"),
-        refresh_tools=True,
+        # Fetch tools if the MCP server has never been synced before
+        should_refresh_tools=mcp_server.last_synced_at is None,
     )
 
 
@@ -295,7 +297,8 @@ async def oauth2_callback(
         state.user_id,
         mcp_server,
         auth_credentials.model_dump(mode="json"),
-        refresh_tools=True,
+        # Fetch tools if the MCP server has never been synced before
+        should_refresh_tools=mcp_server.last_synced_at is None,
     )
     db_session.commit()
 
@@ -312,7 +315,7 @@ async def _update_ops_account(
     user_id: UUID,
     mcp_server: MCPServer,
     auth_credentials: dict,
-    refresh_tools: bool = False,
+    should_refresh_tools: bool = False,
 ) -> OpsAccount:
     """
     Remove the existing ops account for the MCP server and create a new one with the new auth
@@ -323,6 +326,7 @@ async def _update_ops_account(
     # if the ops account already exists, delete it and create a new one
     if ops_account:
         crud.ops_accounts.delete_ops_account_by_id(db_session, ops_account.id)
+
     ops_account = crud.ops_accounts.create_ops_account(
         db_session,
         user_id,
@@ -330,7 +334,8 @@ async def _update_ops_account(
         auth_credentials,
     )
 
-    if refresh_tools:
+    # Refresh the tools if the ops account is new or the auth credentials have changed
+    if should_refresh_tools:
         try:
             await MCPToolsManager(mcp_server).refresh_mcp_tools(db_session)
         except Exception as e:

@@ -1,4 +1,6 @@
+from datetime import datetime
 from typing import Any
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,6 +24,7 @@ logger = get_logger(__name__)
     ],
 )
 @pytest.mark.parametrize("is_mcp_server_in_org", [True, False])
+@pytest.mark.parametrize("is_synced_before", [True, False])
 @pytest.mark.parametrize(
     ("auth_type", "api_key", "redirect_url_after_account_creation", "valid_input"),
     [
@@ -37,7 +40,9 @@ logger = get_logger(__name__)
         (AuthType.NO_AUTH, "dummy_api_key", "some_random_url", False),
     ],
 )
+@patch("aci.control_plane.routes.ops_accounts.MCPToolsManager")
 def test_create_ops_account(
+    mock_mcp_tools_manager_class: AsyncMock,
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
@@ -49,7 +54,12 @@ def test_create_ops_account(
     access_token_fixture: str,
     is_mcp_server_in_org: bool,
     dummy_organization: Organization,
+    is_synced_before: bool,
 ) -> None:
+    # Set up the mock
+    mock_mcp_tools_manager_instance = AsyncMock()
+    mock_mcp_tools_manager_class.return_value = mock_mcp_tools_manager_instance
+
     access_token = request.getfixturevalue(access_token_fixture)
 
     body: dict[str, Any] = {
@@ -65,6 +75,10 @@ def test_create_ops_account(
         dummy_mcp_server.organization_id = dummy_organization.id
     else:
         dummy_mcp_server.organization_id = None
+
+    # Set last_synced_at based on is_synced_before parameter
+    dummy_mcp_server.last_synced_at = datetime.now() if is_synced_before else None
+
     db_session.commit()
 
     response = test_client.post(
@@ -91,3 +105,9 @@ def test_create_ops_account(
         assert OpsAccountPublic.model_validate(response.json()) is not None
     elif auth_type == AuthType.OAUTH2:
         assert OAuth2OpsAccountCreateResponse.model_validate(response.json()) is not None
+
+    if auth_type in [AuthType.API_KEY, AuthType.NO_AUTH]:
+        if not is_synced_before:
+            mock_mcp_tools_manager_instance.refresh_mcp_tools.assert_called_once()
+        else:
+            mock_mcp_tools_manager_instance.refresh_mcp_tools.assert_not_called()
