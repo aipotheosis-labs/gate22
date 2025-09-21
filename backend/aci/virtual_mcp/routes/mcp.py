@@ -45,7 +45,6 @@ async def mcp_post(
     auth_token_data = (
         _parse_auth_token(x_virtual_mcp_auth_token) if x_virtual_mcp_auth_token else None
     )
-    logger.info(f"Parsed auth token data: {auth_token_data}")
 
     # parse payload
     try:
@@ -106,12 +105,8 @@ async def mcp_post(
 
         case JSONRPCToolsCallRequest():
             logger.info(f"Received tools/call request={payload.model_dump()}")
-            return JSONRPCErrorResponse(
-                id=payload.id,
-                error=JSONRPCErrorResponse.ErrorData(
-                    code=JSONRPCErrorCode.INVALID_REQUEST,
-                    message="Tools call is not supported",
-                ),
+            return await handlers.handle_tools_call(
+                payload, db_session, server_name, auth_token_data
             )
 
         case JSONRPCNotificationInitialized():
