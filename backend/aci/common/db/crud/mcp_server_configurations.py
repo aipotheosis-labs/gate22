@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerConfiguration, Team
+from aci.common.enums import ConnectedAccountOwnership
 from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationCreate,
     MCPServerConfigurationUpdate,
@@ -121,6 +122,17 @@ def get_mcp_server_configurations(
         statement = statement.limit(limit)
 
     return list(db_session.execute(statement).scalars().all())
+
+
+def get_operational_mcp_server_configuration_by_mcp_server_id(
+    db_session: Session,
+    mcp_server_id: UUID,
+) -> MCPServerConfiguration | None:
+    statement = select(MCPServerConfiguration).where(
+        MCPServerConfiguration.mcp_server_id == mcp_server_id,
+        MCPServerConfiguration.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL,
+    )
+    return db_session.execute(statement).scalar_one_or_none()
 
 
 def delete_mcp_server_configuration(

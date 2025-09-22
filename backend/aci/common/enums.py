@@ -31,6 +31,7 @@ class AuthType(StrEnum):
 class ConnectedAccountOwnership(StrEnum):
     INDIVIDUAL = "individual"
     SHARED = "shared"
+    OPERATIONAL = "operational"
 
 
 class HttpLocation(StrEnum):
