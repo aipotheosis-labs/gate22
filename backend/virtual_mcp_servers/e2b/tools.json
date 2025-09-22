@@ -13,12 +13,7 @@
           "description": "The python code to run in the sandbox"
         }
       },
-      "required": [
-        "code"
-      ],
-      "visible": [
-        "code"
-      ],
+      "required": ["code"],
       "additionalProperties": false
     }
   }

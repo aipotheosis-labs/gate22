@@ -36,6 +36,7 @@ dependencies = [
     "google-auth-oauthlib>=1.2.2",
     "mcp[cli]>=1.13.1",
     "humanize>=4.11.0",
+    "e2b-code-interpreter>=2.0.0",
 ]
 
 [dependency-groups]
@@ -103,6 +104,11 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "authlib.*"
+ignore_missing_imports = true
+
+
+[[tool.mypy.overrides]]
+module = "e2b_code_interpreter"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

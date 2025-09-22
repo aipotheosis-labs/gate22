@@ -43,19 +43,7 @@
           "description": "The email addresses of the bcc recipients."
         }
       },
-      "required": [
-        "sender",
-        "recipient",
-        "body"
-      ],
-      "visible": [
-        "sender",
-        "recipient",
-        "subject",
-        "body",
-        "cc",
-        "bcc"
-      ],
+      "required": ["sender", "recipient", "body"],
       "additionalProperties": false
     }
   },
@@ -103,20 +91,12 @@
             }
           },
           "required": [],
-          "visible": [
-            "maxResults",
-            "pageToken",
-            "q",
-            "labelIds",
-            "includeSpamTrash"
-          ],
+          "visible": ["maxResults", "pageToken", "q", "labelIds", "includeSpamTrash"],
           "additionalProperties": false
         }
       },
       "required": [],
-      "visible": [
-        "query"
-      ],
+      "visible": ["query"],
       "additionalProperties": false
     }
   },
@@ -140,12 +120,8 @@
               "description": "The ID of the message to retrieve"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         },
         "query": {
@@ -155,12 +131,7 @@
             "format": {
               "type": "string",
               "description": "The format to return the message in",
-              "enum": [
-                "full",
-                "metadata",
-                "minimal",
-                "raw"
-              ],
+              "enum": ["full", "metadata", "minimal", "raw"],
               "default": "full"
             },
             "metadataHeaders": {
@@ -171,24 +142,13 @@
               }
             }
           },
-          "required": [
-            "format"
-          ],
-          "visible": [
-            "format",
-            "metadataHeaders"
-          ],
+          "required": ["format"],
+          "visible": ["format", "metadataHeaders"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "query"
-      ],
-      "visible": [
-        "path",
-        "query"
-      ],
+      "required": ["path", "query"],
+      "visible": ["path", "query"],
       "additionalProperties": false
     }
   },
@@ -212,21 +172,13 @@
               "description": "The ID of the message to trash"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -250,21 +202,13 @@
               "description": "The ID of the message to untrash"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -304,21 +248,13 @@
               "description": "The ID of the label to retrieve"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -344,20 +280,13 @@
             "messageListVisibility": {
               "type": "string",
               "description": "The visibility of the label in the message list in the Gmail web interface",
-              "enum": [
-                "hide",
-                "show"
-              ],
+              "enum": ["hide", "show"],
               "default": "show"
             },
             "labelListVisibility": {
               "type": "string",
               "description": "The visibility of the label in the label list in the Gmail web interface",
-              "enum": [
-                "labelHide",
-                "labelShow",
-                "labelShowIfUnread"
-              ],
+              "enum": ["labelHide", "labelShow", "labelShowIfUnread"],
               "default": "labelShow"
             },
             "color": {
@@ -374,31 +303,17 @@
                 }
               },
               "required": [],
-              "visible": [
-                "textColor",
-                "backgroundColor"
-              ],
+              "visible": ["textColor", "backgroundColor"],
               "additionalProperties": false
             }
           },
-          "required": [
-            "name"
-          ],
-          "visible": [
-            "name",
-            "messageListVisibility",
-            "labelListVisibility",
-            "color"
-          ],
+          "required": ["name"],
+          "visible": ["name", "messageListVisibility", "labelListVisibility", "color"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "body"
-      ],
-      "visible": [
-        "body"
-      ],
+      "required": ["body"],
+      "visible": ["body"],
       "additionalProperties": false
     }
   },
@@ -422,12 +337,8 @@
               "description": "The ID of the label to update"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         },
         "body": {
@@ -441,19 +352,12 @@
             "messageListVisibility": {
               "type": "string",
               "description": "The visibility of the label in the message list in the Gmail web interface",
-              "enum": [
-                "hide",
-                "show"
-              ]
+              "enum": ["hide", "show"]
             },
             "labelListVisibility": {
               "type": "string",
               "description": "The visibility of the label in the label list in the Gmail web interface",
-              "enum": [
-                "labelHide",
-                "labelShow",
-                "labelShowIfUnread"
-              ]
+              "enum": ["labelHide", "labelShow", "labelShowIfUnread"]
             },
             "color": {
               "type": "object",
@@ -469,31 +373,17 @@
                 }
               },
               "required": [],
-              "visible": [
-                "textColor",
-                "backgroundColor"
-              ],
+              "visible": ["textColor", "backgroundColor"],
               "additionalProperties": false
             }
           },
           "required": [],
-          "visible": [
-            "name",
-            "messageListVisibility",
-            "labelListVisibility",
-            "color"
-          ],
+          "visible": ["name", "messageListVisibility", "labelListVisibility", "color"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "body"
-      ],
+      "required": ["path", "body"],
+      "visible": ["path", "body"],
       "additionalProperties": false
     }
   },
@@ -517,21 +407,13 @@
               "description": "The ID of the label to delete"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -555,12 +437,8 @@
               "description": "The ID of the message to modify"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         },
         "body": {
@@ -585,21 +463,12 @@
             }
           },
           "required": [],
-          "visible": [
-            "addLabelIds",
-            "removeLabelIds"
-          ],
+          "visible": ["addLabelIds", "removeLabelIds"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "body"
-      ],
+      "required": ["path", "body"],
+      "visible": ["path", "body"],
       "additionalProperties": false
     }
   },
@@ -634,18 +503,12 @@
             }
           },
           "required": [],
-          "visible": [
-            "maxResults",
-            "pageToken",
-            "q"
-          ],
+          "visible": ["maxResults", "pageToken", "q"],
           "additionalProperties": false
         }
       },
       "required": [],
-      "visible": [
-        "query"
-      ],
+      "visible": ["query"],
       "additionalProperties": false
     }
   },
@@ -693,19 +556,7 @@
           "description": "The email addresses of the bcc recipients."
         }
       },
-      "required": [
-        "sender",
-        "recipient",
-        "body"
-      ],
-      "visible": [
-        "sender",
-        "recipient",
-        "subject",
-        "body",
-        "cc",
-        "bcc"
-      ],
+      "required": ["sender", "recipient", "body"],
       "additionalProperties": false
     }
   },
@@ -729,12 +580,8 @@
               "description": "The ID of the draft to retrieve"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         },
         "query": {
@@ -744,29 +591,17 @@
             "format": {
               "type": "string",
               "description": "The format to return the draft message in",
-              "enum": [
-                "full",
-                "metadata",
-                "minimal",
-                "raw"
-              ],
+              "enum": ["full", "metadata", "minimal", "raw"],
               "default": "full"
             }
           },
           "required": [],
-          "visible": [
-            "format"
-          ],
+          "visible": ["format"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path",
-        "query"
-      ],
+      "required": ["path"],
+      "visible": ["path", "query"],
       "additionalProperties": false
     }
   },
@@ -818,21 +653,7 @@
           "description": "The email addresses of the bcc recipients."
         }
       },
-      "required": [
-        "draft_id",
-        "sender",
-        "recipient",
-        "body"
-      ],
-      "visible": [
-        "draft_id",
-        "sender",
-        "recipient",
-        "subject",
-        "body",
-        "cc",
-        "bcc"
-      ],
+      "required": ["draft_id", "sender", "recipient", "body"],
       "additionalProperties": false
     }
   },
@@ -856,21 +677,13 @@
               "description": "The ID of the draft to delete"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -894,21 +707,13 @@
               "description": "The ID of the draft to send"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "body"
-      ],
-      "visible": [
-        "body"
-      ],
+      "required": ["body"],
+      "visible": ["body"],
       "additionalProperties": false
     }
   },
@@ -955,20 +760,12 @@
             }
           },
           "required": [],
-          "visible": [
-            "maxResults",
-            "pageToken",
-            "q",
-            "labelIds",
-            "includeSpamTrash"
-          ],
+          "visible": ["maxResults", "pageToken", "q", "labelIds", "includeSpamTrash"],
           "additionalProperties": false
         }
       },
       "required": [],
-      "visible": [
-        "query"
-      ],
+      "visible": ["query"],
       "additionalProperties": false
     }
   },
@@ -992,12 +789,8 @@
               "description": "The ID of the thread to retrieve"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         },
         "query": {
@@ -1007,28 +800,17 @@
             "format": {
               "type": "string",
               "description": "The format to return the messages in",
-              "enum": [
-                "full",
-                "metadata",
-                "minimal"
-              ],
+              "enum": ["full", "metadata", "minimal"],
               "default": "metadata"
             }
           },
-          "required": [
-            "format"
-          ],
+          "required": ["format"],
           "visible": [],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "query"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path", "query"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -1052,12 +834,8 @@
               "description": "The ID of the thread to modify"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         },
         "body": {
@@ -1080,21 +858,12 @@
             }
           },
           "required": [],
-          "visible": [
-            "addLabelIds",
-            "removeLabelIds"
-          ],
+          "visible": ["addLabelIds", "removeLabelIds"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "body"
-      ],
+      "required": ["path", "body"],
+      "visible": ["path", "body"],
       "additionalProperties": false
     }
   },
@@ -1118,21 +887,13 @@
               "description": "The ID of the thread to trash"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -1156,21 +917,13 @@
               "description": "The ID of the thread to untrash"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -1194,21 +947,13 @@
               "description": "The ID of the thread to delete"
             }
           },
-          "required": [
-            "id"
-          ],
-          "visible": [
-            "id"
-          ],
+          "required": ["id"],
+          "visible": ["id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   }
