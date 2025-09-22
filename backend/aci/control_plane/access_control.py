@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.enums import ConnectedAccountOwnership, OrganizationRole
+from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.auth import ActAsInfo
 from aci.control_plane.exceptions import NotPermittedError
@@ -66,18 +66,6 @@ def check_mcp_server_config_accessibility(
     mcp_server_configuration = crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
         db_session, mcp_server_configuration_id, throw_error_if_not_found=True
     )
-
-    if (
-        mcp_server_configuration.connected_account_ownership
-        == ConnectedAccountOwnership.OPERATIONAL
-    ):
-        # Operational MCP server configuration is only used for system operational purpose, and no
-        # user has accessibility to it.
-        if throw_error_if_not_permitted:
-            raise NotPermittedError(
-                message=f"User {user_id} has no access to the MCP Server Configuration {mcp_server_configuration_id}"  # noqa: E501
-            )
-        return False
 
     user_teams = crud.teams.get_teams_by_user_id(
         db_session, mcp_server_configuration.organization_id, user_id

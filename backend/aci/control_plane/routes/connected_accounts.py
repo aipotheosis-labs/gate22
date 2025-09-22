@@ -50,24 +50,28 @@ async def create_connected_account(
     if not mcp_server_config:
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
-    # check if the MCP server configuration's allowed teams contains team the user belongs to
-    access_control.check_mcp_server_config_accessibility(
-        db_session=context.db_session,
-        user_id=context.user_id,
-        mcp_server_configuration_id=mcp_server_config.id,
-        throw_error_if_not_permitted=True,
-    )
+    if context.act_as.role != OrganizationRole.ADMIN:
+        # check if the MCP server configuration's allowed teams contains team the user belongs to
+        access_control.check_mcp_server_config_accessibility(
+            db_session=context.db_session,
+            user_id=context.user_id,
+            mcp_server_configuration_id=mcp_server_config.id,
+            throw_error_if_not_permitted=True,
+        )
 
-    if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED:
+    if (
+        mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED
+        or mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL
+    ):
         # Only admin can create shared connected accounts
         if context.act_as.role != OrganizationRole.ADMIN:
-            logger.error("Cannot create shared connected accounts when not acting as admin")
-            raise NotPermittedError("Only admin can create shared connected accounts")
+            logger.error("Only admin can create shared or operational accounts")
+            raise NotPermittedError("Only admin can create shared or operational accounts")
     else:
         # Otherwise, must act as member to create individual connected accounts
         if context.act_as.role != OrganizationRole.MEMBER:
-            logger.error("Cannot create individual connected accounts as user not acted as member")
-            raise NotPermittedError("Only member can create individual connected accounts")
+            logger.error("Only member can create individual accounts")
+            raise NotPermittedError("Only member can create individual accounts")
 
     try:
         match mcp_server_config.auth_type:
