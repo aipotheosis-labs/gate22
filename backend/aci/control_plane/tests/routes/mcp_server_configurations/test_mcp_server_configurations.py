@@ -117,6 +117,27 @@ def test_list_mcp_server_configurations(
         assert len(paginated_response.data) == 0
 
 
+def test_list_mcp_server_configurations_by_mcp_server_id(
+    test_client: TestClient,
+    dummy_mcp_server: MCPServer,
+    dummy_mcp_server_configurations: list[MCPServerConfiguration],
+    dummy_access_token_member: str,
+) -> None:
+    response = test_client.get(
+        f"{config.ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS}?mcp_server_id={dummy_mcp_server.id}",
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
+    )
+
+    assert response.status_code == 200
+    paginated_response = PaginationResponse[MCPServerConfigurationPublic].model_validate(
+        response.json(),
+    )
+
+    for response_item in paginated_response.data:
+        logger.info(f"Response item: {response_item}")
+        assert response_item.mcp_server.id == dummy_mcp_server.id
+
+
 @pytest.mark.parametrize(
     "access_token_fixture",
     [

@@ -95,6 +95,7 @@ def get_mcp_server_configurations(
     db_session: Session,
     organization_id: UUID,
     team_ids: list[UUID] | None = None,  # None means no filter
+    mcp_server_id: UUID | None = None,  # None means no filter
     offset: int | None = None,
     limit: int | None = None,
 ) -> list[MCPServerConfiguration]:
@@ -114,6 +115,9 @@ def get_mcp_server_configurations(
         statement = statement.where(
             MCPServerConfiguration.allowed_teams.overlap([team.id for team in teams]),
         )
+
+    if mcp_server_id is not None:
+        statement = statement.where(MCPServerConfiguration.mcp_server_id == mcp_server_id)
 
     statement = statement.order_by(MCPServerConfiguration.created_at.desc())
     if offset is not None:

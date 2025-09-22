@@ -7,6 +7,7 @@ from aci.common.db.sql_models import (
     MCPServerBundle,
     MCPServerConfiguration,
 )
+from aci.common.enums import ConnectedAccountOwnership
 from aci.common.schemas.connected_account import ConnectedAccountPublic
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server import MCPServerPublic
@@ -53,6 +54,19 @@ def construct_mcp_server_configuration_public(
     )
     allowed_teams = crud.teams.get_teams_by_ids(db_session, mcp_server_configuration.allowed_teams)
 
+    if (
+        mcp_server_configuration.connected_account_ownership
+        == ConnectedAccountOwnership.OPERATIONAL
+    ):
+        if crud.connected_accounts.get_operational_connected_account_by_mcp_server_configuration_id(
+            db_session, mcp_server_configuration.id
+        ):
+            has_operational_connected_account = True
+        else:
+            has_operational_connected_account = False
+    else:
+        has_operational_connected_account = None
+
     return MCPServerConfigurationPublic(
         id=mcp_server_configuration.id,
         name=mcp_server_configuration.name,
@@ -76,6 +90,7 @@ def construct_mcp_server_configuration_public(
             for team in allowed_teams
         ],
         mcp_server=construct_mcp_server_public(mcp_server_configuration.mcp_server),
+        has_operational_connected_account=has_operational_connected_account,
         created_at=mcp_server_configuration.created_at,
         updated_at=mcp_server_configuration.updated_at,
     )

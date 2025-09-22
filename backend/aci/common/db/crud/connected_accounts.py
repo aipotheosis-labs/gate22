@@ -54,6 +54,18 @@ def get_connected_account_by_user_id_and_mcp_server_configuration_id(
     return connected_account
 
 
+def get_operational_connected_account_by_mcp_server_configuration_id(
+    db_session: Session,
+    mcp_server_configuration_id: UUID,
+) -> ConnectedAccount | None:
+    statement = select(ConnectedAccount).where(
+        ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration_id,
+        ConnectedAccount.ownership == ConnectedAccountOwnership.OPERATIONAL,
+    )
+    connected_account = db_session.execute(statement).scalar_one_or_none()
+    return connected_account
+
+
 def get_connected_accounts_by_mcp_server_configuration_id(
     db_session: Session,
     mcp_server_configuration_id: UUID,

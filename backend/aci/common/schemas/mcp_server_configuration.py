@@ -101,6 +101,8 @@ class MCPServerConfigurationPublic(BaseModel):
     enabled_tools: list[MCPToolPublicWithoutSchema]
     allowed_teams: list[TeamInfo]
 
+    has_operational_connected_account: bool | None
+
     created_at: datetime
     updated_at: datetime
 

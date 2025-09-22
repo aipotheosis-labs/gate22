@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
@@ -80,6 +80,7 @@ async def create_mcp_server_configuration(
 async def list_mcp_server_configurations(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
+    mcp_server_id: Annotated[UUID | None, Query()] = None,
 ) -> PaginationResponse[MCPServerConfigurationPublic]:
     team_ids: list[UUID] | None
 
@@ -99,6 +100,7 @@ async def list_mcp_server_configurations(
     mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
         context.db_session,
         context.act_as.organization_id,
+        mcp_server_id=mcp_server_id,
         offset=pagination_params.offset,
         limit=pagination_params.limit,
         team_ids=team_ids,
