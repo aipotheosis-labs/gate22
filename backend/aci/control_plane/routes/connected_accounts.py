@@ -127,8 +127,11 @@ async def _create_api_key_connected_account(
     api_key: str,
 ) -> ConnectedAccount:
     auth_credentials = APIKeyCredentials(type=AuthType.API_KEY, secret_key=api_key)
-    return await _create_connected_account(
-        context, mcp_server_config, auth_credentials.model_dump(mode="json")
+    return await _upsert_connected_account(
+        context.db_session,
+        context.user_id,
+        mcp_server_config,
+        auth_credentials.model_dump(mode="json"),
     )
 
 
@@ -137,31 +140,49 @@ async def _create_no_auth_connected_account(
     mcp_server_config: MCPServerConfiguration,
 ) -> ConnectedAccount:
     auth_credentials = NoAuthCredentials(type=AuthType.NO_AUTH)
-    return await _create_connected_account(
-        context, mcp_server_config, auth_credentials.model_dump(mode="json")
+    return await _upsert_connected_account(
+        context.db_session,
+        context.user_id,
+        mcp_server_config,
+        auth_credentials.model_dump(mode="json"),
     )
 
 
-async def _create_connected_account(
-    context: deps.RequestContext,
+async def _upsert_connected_account(
+    db_session: Session,
+    user_id: UUID,
     mcp_server_config: MCPServerConfiguration,
     auth_credentials: dict,
 ) -> ConnectedAccount:
-    connected_account = (
-        crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(
-            context.db_session,
-            context.user_id,
+    # Get existing connected account
+    if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED:
+        connected_account = (
+            crud.connected_accounts.get_shared_connected_account_by_mcp_server_configuration_id(
+                db_session,
+                mcp_server_config.id,
+            )
+        )
+    elif mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
+        connected_account = crud.connected_accounts.get_operational_connected_account_by_mcp_server_configuration_id(  # noqa: E501
+            db_session,
             mcp_server_config.id,
         )
-    )  # if the connected account already exists, update it, otherwise create a new one
+    else:
+        connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
+            db_session,
+            user_id,
+            mcp_server_config.id,
+        )
+
+    # if the connected account already exists, update it, otherwise create a new one
     if connected_account:
         crud.connected_accounts.update_connected_account_auth_credentials(
-            context.db_session, connected_account, auth_credentials
+            db_session, connected_account, auth_credentials
         )
     else:
         connected_account = crud.connected_accounts.create_connected_account(
-            context.db_session,
-            context.user_id,
+            db_session,
+            user_id,
             mcp_server_config.id,
             auth_credentials,
             mcp_server_config.connected_account_ownership,
@@ -314,39 +335,15 @@ async def oauth2_callback(
     )
     auth_credentials = oauth2_manager.parse_fetch_token_response(token_response)
 
-    # if the connected account already exists, update it, otherwise create a new one
     # TODO: consider separating the logic for updating and creating a connected account or give
     # warning to clients if the connected account already exists to avoid accidental overwriting the
     # account
-    # TODO: try/except, retry?
-    connected_account = (
-        crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(
-            db_session,
-            state.user_id,
-            mcp_server_configuration.id,
-        )
+    connected_account = await _upsert_connected_account(
+        db_session,
+        state.user_id,
+        mcp_server_configuration,
+        auth_credentials.model_dump(mode="json"),
     )
-    if connected_account:
-        logger.info(
-            f"Updating oauth2 credentials for connected account, "
-            f"connected_account_id={connected_account.id}"
-        )
-        connected_account = crud.connected_accounts.update_connected_account_auth_credentials(
-            db_session, connected_account, auth_credentials.model_dump(mode="json")
-        )
-    else:
-        logger.info(
-            f"Creating oauth2 connected account, "
-            f"mcp_server_configuration_id={mcp_server_configuration.id}, "
-            f"user_id={state.user_id}"
-        )
-        connected_account = crud.connected_accounts.create_connected_account(
-            db_session,
-            state.user_id,
-            mcp_server_configuration.id,
-            auth_credentials.model_dump(mode="json"),
-            mcp_server_configuration.connected_account_ownership,
-        )
     db_session.commit()
 
     if state.redirect_url_after_account_creation:
