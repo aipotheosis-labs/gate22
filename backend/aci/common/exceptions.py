@@ -33,3 +33,12 @@ class AuthCredentialsManagerError(ACICommonError):
 
     def __init__(self, message: str | None = None):
         super().__init__(title="Auth credentials manager error", message=message)
+
+
+class MCPToolSanitizationError(ACICommonError):
+    """
+    Exception raised when an MCP tool sanitization error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(title="MCP tool sanitization error", message=message)

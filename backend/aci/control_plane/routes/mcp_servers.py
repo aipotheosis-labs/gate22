@@ -29,6 +29,7 @@ from aci.control_plane.exceptions import OAuth2MetadataDiscoveryError
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
 )
+from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsManager
 from aci.control_plane.services.oauth2_client import (
     ClientRegistrator,
     MetadataFetcher,
@@ -251,3 +252,27 @@ async def mcp_server_oauth2_dcr(
         client_id=client_info.client_id,
         client_secret=client_info.client_secret,
     )
+
+
+@router.post("/{mcp_server_id}/refresh-tools")
+async def refresh_mcp_server_tools(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_id: UUID,
+) -> None:
+    mcp_server = crud.mcp_servers.get_mcp_server_by_id(
+        context.db_session, mcp_server_id, throw_error_if_not_found=False
+    )
+
+    if not mcp_server:
+        raise HTTPException(status_code=404, detail="MCP server not found")
+
+    # Enforce only admin to perform this action
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=mcp_server.organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
+
+    await MCPToolsManager(mcp_server).refresh_mcp_tools(context.db_session)
+    context.db_session.commit()
