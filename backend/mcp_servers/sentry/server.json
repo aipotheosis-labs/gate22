@@ -8,7 +8,8 @@
   "auth_configs": [
     {
       "type": "oauth2",
-      "client_id": "{{ SENTRY_MCP_CLIENT_ID }}",
+      "client_id": "{{ CLIENT_ID }}",
+      "client_secret": "{{ CLIENT_SECRET }}",
       "scope": "",
       "authorize_url": "https://mcp.sentry.dev/oauth/authorize",
       "access_token_url": "https://mcp.sentry.dev/oauth/token",
