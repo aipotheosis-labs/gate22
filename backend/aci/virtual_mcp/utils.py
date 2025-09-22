@@ -29,9 +29,6 @@ def filter_visible_properties(parameters_schema: dict) -> dict:
         required: list[str] | None = schema.get("required")
 
         # NOTE: if visible is not present, assume all properties are visible
-        # TODO: this is a temporary backward compatibility fix to handle the case of connector
-        # type tool, where the visible field should not be defined.
-        # Ideally we only call this function for functions of REST protocol.
         if visible is None:
             visible = list(schema.get("properties", {}).keys())
 
