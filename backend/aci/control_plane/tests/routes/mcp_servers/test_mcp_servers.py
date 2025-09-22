@@ -191,7 +191,8 @@ def test_create_custom_mcp_server(
     # Check if the operational MCPServerConfiguration is created
     db_mcp_server_configuration_data = crud.mcp_server_configurations.get_mcp_server_configurations(
         db_session,
-        db_mcp_server_data.id,
+        organization_id=dummy_organization.id,
+        mcp_server_id=db_mcp_server_data.id,
         connected_account_ownerships=[ConnectedAccountOwnership.OPERATIONAL],
     )
     assert len(db_mcp_server_configuration_data) == 1

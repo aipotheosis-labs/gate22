@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     String,
     Text,
     UniqueConstraint,
@@ -441,6 +442,18 @@ class MCPServerConfiguration(Base):
     mcp_server: Mapped[MCPServer] = relationship("MCPServer", init=False)
 
 
+# One OPERATIONAL config per (mcp_server_id, organization_id)
+Index(
+    "ux_operational_cfg_per_server_org",
+    MCPServerConfiguration.mcp_server_id,
+    MCPServerConfiguration.organization_id,
+    unique=True,
+    postgresql_where=(
+        MCPServerConfiguration.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL
+    ),
+)
+
+
 # TODO:
 # - for now, connected account is tied to mcp server configuration, not mcp server
 # - for simplicity, we only support one connected account per user per mcp server configuration
@@ -491,6 +504,22 @@ class ConnectedAccount(Base):
             name="uc_connected_accounts_one_per_user_per_mcp_server_config",
         ),
     )
+
+
+# One Shared Connected Account per (mcp_server_configuration_id)
+Index(
+    "ux_shared_connected_account_per_mcp_server_config",
+    ConnectedAccount.mcp_server_configuration_id,
+    unique=True,
+    postgresql_where=(ConnectedAccount.ownership == ConnectedAccountOwnership.SHARED),
+)
+# One OPERATIONAL Connected Account per (mcp_server_configuration_id)
+Index(
+    "ux_operational_connected_account_per_mcp_server_config",
+    ConnectedAccount.mcp_server_configuration_id,
+    unique=True,
+    postgresql_where=(ConnectedAccount.ownership == ConnectedAccountOwnership.OPERATIONAL),
+)
 
 
 class MCPServerBundle(Base):
