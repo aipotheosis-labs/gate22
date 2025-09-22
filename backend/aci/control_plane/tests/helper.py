@@ -4,7 +4,10 @@ from pathlib import Path
 
 from aci.common import embeddings
 from aci.common.openai_client import get_openai_client
-from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, PublicMCPServerUpsert
+from aci.common.schemas.mcp_server import (
+    MCPServerEmbeddingFields,
+    PublicMCPServerUpsertRequest,
+)
 from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolUpsert
 
 logger = logging.getLogger(__name__)
@@ -13,7 +16,7 @@ DUMMY_MCP_SERVERS_DIR = Path(__file__).parent / "dummy_mcp_servers"
 
 
 def prepare_mcp_servers() -> list[
-    tuple[PublicMCPServerUpsert, list[MCPToolUpsert], list[float], list[list[float]]]
+    tuple[PublicMCPServerUpsertRequest, list[MCPToolUpsert], list[float], list[list[float]]]
 ]:
     """
     Prepare dummy apps and functions for testing.
@@ -24,15 +27,15 @@ def prepare_mcp_servers() -> list[
     - list[list[float]]: the embeddings for each mcp tool
     """
     results: list[
-        tuple[PublicMCPServerUpsert, list[MCPToolUpsert], list[float], list[list[float]]]
+        tuple[PublicMCPServerUpsertRequest, list[MCPToolUpsert], list[float], list[list[float]]]
     ] = []
 
     for app_dir in [*DUMMY_MCP_SERVERS_DIR.glob("*")]:
         server_file = app_dir / "server.json"
         tools_file = app_dir / "tools.json"
         with open(server_file) as f:
-            mcp_server_upsert: PublicMCPServerUpsert = PublicMCPServerUpsert.model_validate(
-                json.load(f)
+            mcp_server_upsert: PublicMCPServerUpsertRequest = (
+                PublicMCPServerUpsertRequest.model_validate(json.load(f))
             )
             mcp_server_embedding_fields = MCPServerEmbeddingFields.model_validate(
                 mcp_server_upsert.model_dump()

@@ -17,8 +17,11 @@ class MCPServerMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class PublicMCPServerUpsert(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+# Used for Upserting data to the database
+
+
+class MCPServerUpsert(BaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     name: str
     url: str
@@ -44,13 +47,19 @@ class PublicMCPServerUpsert(BaseModel):
         return v
 
 
+# Used for API schema validation
+class PublicMCPServerUpsertRequest(MCPServerUpsert):
+    pass
+
+
+# Used for API schema validation
 # Consider not extending PublicMCPServerUpsert in the future if any field in PublicMCPServerUpsert
 # is not needed here.
-class CustomMCPServerCreate(PublicMCPServerUpsert):
+class CustomMCPServerCreateRequest(MCPServerUpsert):
     operational_account_auth_type: AuthType
 
     @model_validator(mode="after")
-    def validate_operational_account_auth_type(self) -> "CustomMCPServerCreate":
+    def validate_operational_account_auth_type(self) -> "CustomMCPServerCreateRequest":
         for auth_config in self.auth_configs:
             if auth_config.root.type == self.operational_account_auth_type:
                 return self

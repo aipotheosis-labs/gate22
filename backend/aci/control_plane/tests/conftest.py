@@ -30,7 +30,10 @@ from aci.common.logging_setup import get_logger
 from aci.common.openai_client import init_openai_client
 from aci.common.schemas.auth import ActAsInfo
 from aci.common.schemas.mcp_auth import APIKeyConfig, AuthConfig, NoAuthConfig
-from aci.common.schemas.mcp_server import CustomMCPServerCreate, MCPServerMetadata
+from aci.common.schemas.mcp_server import (
+    MCPServerMetadata,
+    MCPServerUpsert,
+)
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 from aci.common.test_utils import clear_database
@@ -306,8 +309,11 @@ def dummy_mcp_servers(db_session: Session, dummy_custom_mcp_server: MCPServer) -
         embedding,
         mcp_tool_embeddings,
     ) in dummy_mcp_servers_to_be_inserted:
-        mcp_server = crud.mcp_servers.create_public_mcp_server(
-            db_session=db_session, mcp_server_upsert=mcp_server_upsert, embedding=embedding
+        mcp_server = crud.mcp_servers.create_mcp_server(
+            db_session=db_session,
+            organization_id=None,
+            mcp_server_upsert=mcp_server_upsert,
+            embedding=embedding,
         )
         crud.mcp_tools.create_mcp_tools(
             db_session=db_session,
@@ -325,10 +331,10 @@ def dummy_mcp_servers(db_session: Session, dummy_custom_mcp_server: MCPServer) -
 
 @pytest.fixture(scope="function")
 def dummy_custom_mcp_server(db_session: Session, dummy_organization: Organization) -> MCPServer:
-    mcp_server = crud.mcp_servers.create_custom_mcp_server(
+    mcp_server = crud.mcp_servers.create_mcp_server(
         db_session=db_session,
         organization_id=dummy_organization.id,
-        custom_mcp_server_upsert=CustomMCPServerCreate(
+        mcp_server_upsert=MCPServerUpsert(
             name="TEST_MCP_SERVER",
             url="https://test-mcp-server.com",
             description="Test MCP server",
@@ -344,7 +350,6 @@ def dummy_custom_mcp_server(db_session: Session, dummy_organization: Organizatio
             ],
             logo="https://test-mcp-server.com/logo.png",
             server_metadata=MCPServerMetadata(),
-            operational_account_auth_type=AuthType.API_KEY,
         ),
         embedding=[0.1] * 1024,
     )

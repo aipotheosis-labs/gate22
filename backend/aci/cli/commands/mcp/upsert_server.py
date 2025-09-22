@@ -13,7 +13,7 @@ from aci.common import embeddings, utils
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServer
 from aci.common.openai_client import get_openai_client
-from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, PublicMCPServerUpsert
+from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, PublicMCPServerUpsertRequest
 
 console = Console()
 
@@ -67,7 +67,7 @@ def upsert_mcp_server_helper(
         )
         raise e
 
-    mcp_server_upsert = PublicMCPServerUpsert.model_validate(json.loads(rendered_content))
+    mcp_server_upsert = PublicMCPServerUpsertRequest.model_validate(json.loads(rendered_content))
     existing_mcp_server = crud.mcp_servers.get_mcp_server_by_name(
         db_session, mcp_server_upsert.name, throw_error_if_not_found=False
     )
@@ -83,7 +83,7 @@ def upsert_mcp_server_helper(
 
 
 def create_mcp_server_helper(
-    db_session: Session, mcp_server_upsert: PublicMCPServerUpsert, skip_dry_run: bool
+    db_session: Session, mcp_server_upsert: PublicMCPServerUpsertRequest, skip_dry_run: bool
 ) -> UUID:
     # Generate mcp server embedding using the fields defined in MCPServerEmbeddingFields
     mcp_server_embedding = embeddings.generate_mcp_server_embedding(
@@ -92,8 +92,8 @@ def create_mcp_server_helper(
     )
 
     # Create the mcp server entry in the database
-    mcp_server = crud.mcp_servers.create_public_mcp_server(
-        db_session, mcp_server_upsert, mcp_server_embedding
+    mcp_server = crud.mcp_servers.create_mcp_server(
+        db_session, None, mcp_server_upsert, mcp_server_embedding
     )
 
     if not skip_dry_run:
@@ -111,7 +111,7 @@ def create_mcp_server_helper(
 def update_mcp_server_helper(
     db_session: Session,
     existing_mcp_server: MCPServer,
-    mcp_server_upsert: PublicMCPServerUpsert,
+    mcp_server_upsert: PublicMCPServerUpsertRequest,
     skip_dry_run: bool,
 ) -> UUID:
     """
@@ -120,7 +120,7 @@ def update_mcp_server_helper(
     are changed,
     re-generates the mcp server embedding.
     """
-    existing_mcp_server_upsert = PublicMCPServerUpsert.model_validate(
+    existing_mcp_server_upsert = PublicMCPServerUpsertRequest.model_validate(
         existing_mcp_server, from_attributes=True
     )
     if existing_mcp_server_upsert == mcp_server_upsert:
@@ -179,7 +179,7 @@ def _render_template_to_string(template_path: Path, secrets: dict[str, str]) -> 
 
 
 def _need_embedding_regeneration(
-    old_mcp_server: PublicMCPServerUpsert, new_mcp_server: PublicMCPServerUpsert
+    old_mcp_server: PublicMCPServerUpsertRequest, new_mcp_server: PublicMCPServerUpsertRequest
 ) -> bool:
     fields = set(MCPServerEmbeddingFields.model_fields.keys())
     return bool(
