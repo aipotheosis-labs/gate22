@@ -17,10 +17,9 @@ class MCPServerMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-# Used for Upserting data to the database
-
-
 class MCPServerUpsert(BaseModel):
+    """Used for Upserting data to the database"""
+
     model_config = ConfigDict(extra="ignore")
 
     name: str
@@ -47,15 +46,15 @@ class MCPServerUpsert(BaseModel):
         return v
 
 
-# Used for API schema validation
 class PublicMCPServerUpsertRequest(MCPServerUpsert):
+    """Used for API schema validation"""
+
     pass
 
 
-# Used for API schema validation
-# Consider not extending PublicMCPServerUpsert in the future if any field in PublicMCPServerUpsert
-# is not needed here.
 class CustomMCPServerCreateRequest(MCPServerUpsert):
+    """Used for API schema validation"""
+
     operational_account_auth_type: AuthType
 
     @model_validator(mode="after")

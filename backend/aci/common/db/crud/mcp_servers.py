@@ -69,7 +69,6 @@ def create_mcp_server(
     mcp_server_upsert: MCPServerUpsert,
     embedding: list[float],
 ) -> MCPServer:
-    logger.info(f"Creating MCP Server: {mcp_server_upsert}")
     mcp_server_data = mcp_server_upsert.model_dump(mode="json", exclude_none=True)
     mcp_server = MCPServer(
         **mcp_server_data,

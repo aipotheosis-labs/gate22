@@ -96,6 +96,8 @@ def get_mcp_server_configurations(
     organization_id: UUID,
     team_ids: list[UUID] | None = None,  # None means no filter
     mcp_server_id: UUID | None = None,  # None means no filter
+    connected_account_ownerships: list[ConnectedAccountOwnership]
+    | None = None,  # None means no filter
     offset: int | None = None,
     limit: int | None = None,
 ) -> list[MCPServerConfiguration]:
@@ -119,6 +121,11 @@ def get_mcp_server_configurations(
     if mcp_server_id is not None:
         statement = statement.where(MCPServerConfiguration.mcp_server_id == mcp_server_id)
 
+    if connected_account_ownerships is not None:
+        statement = statement.where(
+            MCPServerConfiguration.connected_account_ownership.in_(connected_account_ownerships),
+        )
+
     statement = statement.order_by(MCPServerConfiguration.created_at.desc())
     if offset is not None:
         statement = statement.offset(offset)
@@ -126,17 +133,6 @@ def get_mcp_server_configurations(
         statement = statement.limit(limit)
 
     return list(db_session.execute(statement).scalars().all())
-
-
-def get_operational_mcp_server_configuration_by_mcp_server_id(
-    db_session: Session,
-    mcp_server_id: UUID,
-) -> MCPServerConfiguration | None:
-    statement = select(MCPServerConfiguration).where(
-        MCPServerConfiguration.mcp_server_id == mcp_server_id,
-        MCPServerConfiguration.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL,
-    )
-    return db_session.execute(statement).scalar_one_or_none()
 
 
 def delete_mcp_server_configuration(

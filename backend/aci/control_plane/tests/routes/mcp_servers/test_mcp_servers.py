@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import Organization
-from aci.common.enums import AuthType, HttpLocation, MCPServerTransportType
+from aci.common.enums import (
+    AuthType,
+    ConnectedAccountOwnership,
+    HttpLocation,
+    MCPServerTransportType,
+)
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import APIKeyConfig, AuthConfig, NoAuthConfig
 from aci.common.schemas.mcp_server import (
@@ -184,10 +189,10 @@ def test_create_custom_mcp_server(
     assert re.fullmatch(f"{input_mcp_server_data.name}_[A-Z0-9]{{8}}", db_mcp_server_data.name)
 
     # Check if the operational MCPServerConfiguration is created
-    db_mcp_server_configuration_data = (
-        crud.mcp_server_configurations.get_operational_mcp_server_configuration_by_mcp_server_id(
-            db_session, db_mcp_server_data.id
-        )
+    db_mcp_server_configuration_data = crud.mcp_server_configurations.get_mcp_server_configurations(
+        db_session,
+        db_mcp_server_data.id,
+        connected_account_ownerships=[ConnectedAccountOwnership.OPERATIONAL],
     )
     assert db_mcp_server_configuration_data is not None
 
