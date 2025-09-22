@@ -20,7 +20,7 @@ class MCPServerMetadata(BaseModel):
 class MCPServerUpsert(BaseModel):
     """Used for Upserting data to the database"""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     name: str
     url: str
