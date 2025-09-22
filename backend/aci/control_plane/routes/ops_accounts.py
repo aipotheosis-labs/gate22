@@ -4,7 +4,6 @@ from uuid import UUID
 from authlib.jose import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
@@ -63,43 +62,38 @@ async def create_ops_account(
         throw_error_if_not_permitted=True,
     )
 
-    try:
-        match body.auth_type:
-            case AuthType.OAUTH2:
-                redirect_url_after_account_creation = OpsAccountOAuth2Create.model_validate(
-                    body.model_dump(exclude_none=True)
-                ).redirect_url_after_account_creation
-                return await _create_oauth2_ops_account(
-                    request,
-                    context,
-                    mcp_server,
-                    redirect_url_after_account_creation,
-                )
-            case AuthType.API_KEY:
-                api_key = OpsAccountAPIKeyCreate.model_validate(
-                    body.model_dump(exclude_none=True)
-                ).api_key
-                ops_account = await _create_api_key_ops_account(
-                    context.db_session,
-                    context.user_id,
-                    mcp_server,
-                    api_key,
-                )
-                context.db_session.commit()
-                return OpsAccountPublic.model_validate(ops_account, from_attributes=True)
-            case AuthType.NO_AUTH:
-                OpsAccountNoAuthCreate.model_validate(body.model_dump(exclude_none=True))
-                ops_account = await _create_no_auth_ops_account(
-                    context.db_session,
-                    context.user_id,
-                    mcp_server,
-                )
-                logger.info(f"ops_account={ops_account}")
-                context.db_session.commit()
-                return OpsAccountPublic.model_validate(ops_account, from_attributes=True)
-    except ValidationError as e:
-        logger.error(f"Invalid auth type, auth_type={body.auth_type}, error={e}")
-        raise HTTPException(status_code=400, detail="Invalid input for mcp server auth type") from e
+    match body.auth_type:
+        case AuthType.OAUTH2:
+            redirect_url_after_account_creation = OpsAccountOAuth2Create.model_validate(
+                body.model_dump(exclude_none=True)
+            ).redirect_url_after_account_creation
+            return await _create_oauth2_ops_account(
+                request,
+                context,
+                mcp_server,
+                redirect_url_after_account_creation,
+            )
+        case AuthType.API_KEY:
+            api_key = OpsAccountAPIKeyCreate.model_validate(
+                body.model_dump(exclude_none=True)
+            ).api_key
+            ops_account = await _create_api_key_ops_account(
+                context.db_session,
+                context.user_id,
+                mcp_server,
+                api_key,
+            )
+            context.db_session.commit()
+            return OpsAccountPublic.model_validate(ops_account, from_attributes=True)
+        case AuthType.NO_AUTH:
+            OpsAccountNoAuthCreate.model_validate(body.model_dump(exclude_none=True))
+            ops_account = await _create_no_auth_ops_account(
+                context.db_session,
+                context.user_id,
+                mcp_server,
+            )
+            context.db_session.commit()
+            return OpsAccountPublic.model_validate(ops_account, from_attributes=True)
 
 
 async def _create_api_key_ops_account(
