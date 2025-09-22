@@ -219,7 +219,7 @@ class OrganizationInvitation(Base):
         PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     email: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
-    inviter_id: Mapped[UUID] = mapped_column(
+    inviter_user_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[OrganizationRole] = mapped_column(
@@ -252,7 +252,7 @@ class OrganizationInvitation(Base):
     )
 
     organization: Mapped[Organization] = relationship(back_populates="invitations", init=False)
-    inviter: Mapped[User] = relationship(foreign_keys=[inviter_id], init=False)
+    inviter: Mapped[User] = relationship(foreign_keys=[inviter_user_id], init=False)
 
     __table_args__ = (UniqueConstraint("organization_id", "email", name="uc_org_invitation_email"),)
 
