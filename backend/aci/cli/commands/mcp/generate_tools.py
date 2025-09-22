@@ -69,9 +69,9 @@ async def _generate_tools_async(mcp_server_name: str) -> None:
         # TODO: handle token refresh for oauth2 credentials
         auth_credentials = await acm.get_auth_credentials(
             db_session,
-            connected_account.user_id,
             mcp_server_configuration.id,
             connected_account.ownership,  # Use the ownership type of whatever account we retrieved
+            connected_account.user_id,
         )
         db_session.commit()
 
