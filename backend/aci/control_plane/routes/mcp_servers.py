@@ -141,7 +141,7 @@ async def create_custom_mcp_server(
         embedding=mcp_server_embedding,
     )
 
-    # We would need a operational MCPServerConfiguration for each custom MCP server
+    # We would need an operational MCPServerConfiguration for each custom MCP server
     crud.mcp_server_configurations.create_mcp_server_configuration(
         context.db_session,
         organization_id=context.act_as.organization_id,

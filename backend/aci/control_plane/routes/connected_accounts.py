@@ -50,14 +50,12 @@ async def create_connected_account(
     if not mcp_server_config:
         raise HTTPException(status_code=404, detail="MCP server configuration not found")
 
-    if context.act_as.role != OrganizationRole.ADMIN:
-        # check if the MCP server configuration's allowed teams contains team the user belongs to
-        access_control.check_mcp_server_config_accessibility(
-            db_session=context.db_session,
-            user_id=context.user_id,
-            mcp_server_configuration_id=mcp_server_config.id,
-            throw_error_if_not_permitted=True,
-        )
+    # Check if the user is acted as the organization of the MCP server configuration
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=mcp_server_config.organization_id,
+        throw_error_if_not_permitted=True,
+    )
 
     if (
         mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED
@@ -67,11 +65,20 @@ async def create_connected_account(
         if context.act_as.role != OrganizationRole.ADMIN:
             logger.error("Only admin can create shared or operational accounts")
             raise NotPermittedError("Only admin can create shared or operational accounts")
+
     else:
         # Otherwise, must act as member to create individual connected accounts
         if context.act_as.role != OrganizationRole.MEMBER:
-            logger.error("Only member can create individual accounts")
-            raise NotPermittedError("Only member can create individual accounts")
+            logger.error("Only members can create individual accounts")
+            raise NotPermittedError("Only members can create individual accounts")
+
+        # check if the MCP server configuration's allowed teams contains team the user belongs to
+        access_control.check_mcp_server_config_accessibility(
+            db_session=context.db_session,
+            user_id=context.user_id,
+            mcp_server_configuration_id=mcp_server_config.id,
+            throw_error_if_not_permitted=True,
+        )
 
     try:
         match mcp_server_config.auth_type:
