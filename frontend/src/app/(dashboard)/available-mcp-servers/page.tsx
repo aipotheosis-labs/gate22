@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,25 @@ export default function AvailableMCPServersPage() {
   });
 
   const { mutateAsync: createBundle } = useCreateMCPServerBundle();
+
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedConfigs((prev) => {
+      const next = new Set(ids);
+      if (next.size === prev.size) {
+        let isSame = true;
+        for (const id of prev) {
+          if (!next.has(id)) {
+            isSame = false;
+            break;
+          }
+        }
+        if (isSame) {
+          return prev;
+        }
+      }
+      return next;
+    });
+  }, []);
 
   // Fetch connected accounts for all configurations
   const { data: connectedAccounts = [] } = useConnectedAccounts();
@@ -381,7 +400,7 @@ export default function AvailableMCPServersPage() {
         availableConfigurations={configurations}
         connectedAccounts={connectedAccounts}
         selectedIds={Array.from(selectedConfigs)}
-        onSelectionChange={(ids) => setSelectedConfigs(new Set(ids))}
+        onSelectionChange={handleSelectionChange}
         onSubmit={handleCreateBundle}
       />
     </div>

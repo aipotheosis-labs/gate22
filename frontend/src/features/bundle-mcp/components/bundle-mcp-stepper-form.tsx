@@ -90,38 +90,30 @@ export function BundleMCPStepperForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!onSelectionChange) {
+      return;
+    }
+
+    onSelectionChange(selections.map((s) => s.configurationId));
+  }, [selections, onSelectionChange]);
+
   // Handle managing configurations (adding/removing)
   const handleManageConfigurations = (
     additions: string[],
     removals: string[],
   ) => {
-    // Remove configurations that are to be removed
-    let updatedSelections = selections.filter(
-      (selection) => !removals.includes(selection.configurationId),
-    );
-
-    // Add new configurations
-    const newSelections: ConfigurationSelection[] = additions.map((id) => ({
-      configurationId: id,
-    }));
-    updatedSelections = [...updatedSelections, ...newSelections];
-
-    setSelections(updatedSelections);
-
-    // Notify parent about selection change
-    const newSelectedIds = updatedSelections.map((s) => s.configurationId);
-    onSelectionChange?.(newSelectedIds);
+    setSelections((prev) => [
+      ...prev.filter(
+        (selection) => !removals.includes(selection.configurationId),
+      ),
+      ...additions.map((id) => ({ configurationId: id })),
+    ]);
   };
 
   // Handle removing a configuration from the bundle
   const handleRemoveConfiguration = (configId: string) => {
     setSelections((prev) => prev.filter((s) => s.configurationId !== configId));
-
-    // Notify parent about selection change
-    const newSelectedIds = selections
-      .filter((s) => s.configurationId !== configId)
-      .map((s) => s.configurationId);
-    onSelectionChange?.(newSelectedIds);
   };
 
   // Get available accounts for a configuration

@@ -165,11 +165,12 @@ export function ManageMCPConfigurationDialog({
                       >
                         {/* Checkbox */}
                         <Checkbox
-                          checked={isSelected && hasAccounts}
+                          checked={isSelected}
                           disabled={!hasAccounts}
-                          onChange={() =>
+                          onCheckedChange={() =>
                             hasAccounts && handleConfigToggle(config.id)
                           }
+                          onClick={(event) => event.stopPropagation()}
                         />
 
                         {/* Logo */}
