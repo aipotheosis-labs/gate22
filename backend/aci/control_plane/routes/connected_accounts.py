@@ -31,6 +31,7 @@ from aci.control_plane.exceptions import (
     NotPermittedError,
     OAuth2Error,
 )
+from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsManager
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -185,6 +186,14 @@ async def _upsert_connected_account(
             auth_credentials,
             mcp_server_config.connected_account_ownership,
         )
+
+    # Automatically fetch tools if not synced before
+    if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
+        if mcp_server_config.mcp_server.last_synced_at is None:
+            await MCPToolsManager(mcp_server_config.mcp_server).refresh_mcp_tools(db_session)
+            crud.mcp_servers.update_mcp_server_last_synced_at_now(
+                db_session, mcp_server_config.mcp_server
+            )
 
     return connected_account
 

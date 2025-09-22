@@ -1,5 +1,7 @@
 import enum
+from datetime import datetime
 from typing import Any
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -40,13 +42,11 @@ logger = get_logger(__name__)
 def test_create_connected_account(
     test_client: TestClient,
     db_session: Session,
-    request: pytest.FixtureRequest,
     auth_type: AuthType,
     api_key: str | None,
     redirect_url_after_account_creation: str | None,
     should_succeed: bool,
     dummy_team: Team,
-    dummy_user: User,
     dummy_access_token_member: str,
     dummy_mcp_server_configuration: MCPServerConfiguration,
     is_team_allowed_by_config: bool,
@@ -59,6 +59,7 @@ def test_create_connected_account(
         config_added_to_team.allowed_teams = []
 
     config_added_to_team.auth_type = auth_type
+
     db_session.commit()
 
     body = {}
@@ -85,12 +86,68 @@ def test_create_connected_account(
             assert response.status_code == 200
             if auth_type == AuthType.API_KEY or auth_type == AuthType.NO_AUTH:
                 assert ConnectedAccountPublic.model_validate(response.json()) is not None
+
             elif auth_type == AuthType.OAUTH2:
                 assert (
                     OAuth2ConnectedAccountCreateResponse.model_validate(response.json()) is not None
                 )
         else:
             assert response.status_code == 400
+
+
+@pytest.mark.parametrize("is_synced_before", [True, False])
+@pytest.mark.parametrize(
+    "connected_account_ownership,access_token_fixture",
+    [
+        (ConnectedAccountOwnership.OPERATIONAL, "dummy_access_token_admin"),
+        (ConnectedAccountOwnership.INDIVIDUAL, "dummy_access_token_member"),
+        (ConnectedAccountOwnership.SHARED, "dummy_access_token_admin"),
+    ],
+)
+@patch("aci.control_plane.routes.connected_accounts.MCPToolsManager")
+def test_create_connected_account_auto_fetch_tools(
+    mock_mcp_tools_manager_class: AsyncMock,
+    test_client: TestClient,
+    db_session: Session,
+    dummy_mcp_server_configuration: MCPServerConfiguration,
+    is_synced_before: bool,
+    connected_account_ownership: ConnectedAccountOwnership,
+    access_token_fixture: str,
+    request: pytest.FixtureRequest,
+) -> None:
+    access_token = request.getfixturevalue(access_token_fixture)
+
+    # Set up the mock
+    mock_mcp_tools_manager_instance = AsyncMock()
+    mock_mcp_tools_manager_class.return_value = mock_mcp_tools_manager_instance
+
+    # Set last_synced_at based on is_synced_before parameter
+    dummy_mcp_server_configuration.connected_account_ownership = connected_account_ownership
+    dummy_mcp_server_configuration.auth_type = AuthType.API_KEY
+    dummy_mcp_server_configuration.mcp_server.last_synced_at = (
+        datetime.now() if is_synced_before else None
+    )
+
+    db_session.commit()
+
+    response = test_client.post(
+        config.ROUTER_PREFIX_CONNECTED_ACCOUNTS,
+        headers={"Authorization": f"Bearer {access_token}"},
+        json={
+            "mcp_server_configuration_id": str(dummy_mcp_server_configuration.id),
+            "api_key": "dummy_api_key",
+        },
+    )
+
+    assert response.status_code == 200
+
+    if connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
+        if not is_synced_before:
+            assert mock_mcp_tools_manager_instance.refresh_mcp_tools.call_count == 1
+        else:
+            assert mock_mcp_tools_manager_instance.refresh_mcp_tools.call_count == 0
+    else:
+        assert mock_mcp_tools_manager_instance.refresh_mcp_tools.call_count == 0
 
 
 @pytest.mark.parametrize(
