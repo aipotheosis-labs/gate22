@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import embeddings, utils
 from aci.common.db import crud
-from aci.common.enums import OrganizationRole
+from aci.common.enums import ConnectedAccountOwnership, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import (
@@ -20,6 +20,7 @@ from aci.common.schemas.mcp_server import (
     MCPServerOAuth2DiscoveryResponse,
     MCPServerPublic,
 )
+from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
@@ -136,7 +137,21 @@ async def create_custom_mcp_server(
         embedding=mcp_server_embedding,
     )
 
-    context.db_session.commit()
+    # We would need a operational MCPServerConfiguration for each custom MCP server
+    crud.mcp_server_configurations.create_mcp_server_configuration(
+        context.db_session,
+        organization_id=context.act_as.organization_id,
+        mcp_server_configuration=MCPServerConfigurationCreate(
+            mcp_server_id=mcp_server.id,
+            name=f"Operational_Configuration_{mcp_server.name}",
+            description=f"Operational MCP Server Configuration for {mcp_server.name}",
+            auth_type=mcp_server_data.operational_account_auth_type,
+            connected_account_ownership=ConnectedAccountOwnership.OPERATIONAL,
+            all_tools_enabled=True,  # Does not matter for operational account
+            enabled_tools=[],  # Does not matter for operational account
+            allowed_teams=[],  # Does not matter for operational account
+        ),
+    )
 
     mcp_server_public = schema_utils.construct_mcp_server_public(mcp_server)
 

@@ -115,6 +115,7 @@ def test_create_custom_mcp_server(
         ],
         logo="https://test-mcp-server.com/logo.png",
         server_metadata=MCPServerMetadata(),
+        operational_account_auth_type=AuthType.NO_AUTH,
     )
 
     response = test_client.post(
@@ -148,6 +149,14 @@ def test_create_custom_mcp_server(
 
     # Check if the MCP server name is generated correctly
     assert re.fullmatch(f"{input_mcp_server_data.name}_[A-Z0-9]{{8}}", db_mcp_server_data.name)
+
+    # Check if the operational MCPServerConfiguration is created
+    db_mcp_server_configuration_data = (
+        crud.mcp_server_configurations.get_operational_mcp_server_configuration_by_mcp_server_id(
+            db_session, db_mcp_server_data.id
+        )
+    )
+    assert db_mcp_server_configuration_data is not None
 
 
 @pytest.mark.parametrize(

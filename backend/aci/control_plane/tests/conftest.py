@@ -344,6 +344,7 @@ def dummy_custom_mcp_server(db_session: Session, dummy_organization: Organizatio
             ],
             logo="https://test-mcp-server.com/logo.png",
             server_metadata=MCPServerMetadata(),
+            operational_account_auth_type=AuthType.API_KEY,
         ),
         embedding=[0.1] * 1024,
     )
