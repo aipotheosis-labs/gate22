@@ -130,7 +130,7 @@ async def _upsert_mcp_server_ops_account(
     # if the ops account already exists, delete it and create a new one
     if ops_account:
         crud.ops_accounts.update_ops_account_auth_credentials(
-            db_session, ops_account.id, auth_credentials, user_id
+            db_session, ops_account, auth_credentials, user_id
         )
     else:
         ops_account = crud.ops_accounts.create_ops_account(
