@@ -87,7 +87,15 @@ async def list_mcp_server_configurations(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
     mcp_server_id: Annotated[UUID | None, Query()] = None,
-    connected_account_ownerships: Annotated[list[ConnectedAccountOwnership] | None, Query()] = None,
+    connected_account_ownerships: Annotated[
+        list[ConnectedAccountOwnership] | None,
+        Query(
+            description="For normal usage do not need to provide this parameter. "
+            "By default it will return `individual` and `shared` MCPServerConfigurations. "
+            "Provide `operational` to get Operational MCPServerConfiguration, used for checking if "
+            "an MCPServer has configured an Operational Connected Account."
+        ),
+    ] = None,
 ) -> PaginationResponse[MCPServerConfigurationPublic]:
     if connected_account_ownerships is None:
         connected_account_ownerships = [
