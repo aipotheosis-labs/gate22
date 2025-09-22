@@ -310,14 +310,6 @@ async def delete_mcp_server_configuration(
     )
 
     if mcp_server_configuration is not None:
-        if (
-            mcp_server_configuration.connected_account_ownership
-            == ConnectedAccountOwnership.OPERATIONAL
-        ):
-            raise NotPermittedError(
-                message="Cannot delete a MCPServerConfiguration of operational type"
-            )
-
         # Check if the user is an admin and is acted as the organization_id of the MCP server
         # configuration
         access_control.check_act_as_organization_role(
@@ -326,6 +318,14 @@ async def delete_mcp_server_configuration(
             required_role=OrganizationRole.ADMIN,
             throw_error_if_not_permitted=True,
         )
+
+        if (
+            mcp_server_configuration.connected_account_ownership
+            == ConnectedAccountOwnership.OPERATIONAL
+        ):
+            raise NotPermittedError(
+                message="Cannot delete a MCPServerConfiguration of operational type"
+            )
 
         crud.mcp_server_configurations.delete_mcp_server_configuration(
             context.db_session, mcp_server_configuration_id
