@@ -16,6 +16,13 @@ class OrganizationRole(StrEnum):
     MEMBER = "member"  # e.g., developer who bundle and use MCP servers
 
 
+class OrganizationInvitationStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    CANCELED = "canceled"
+
+
 class TeamRole(StrEnum):
     # NOTE: currently we don't really need to differentiate between team members
     # keeping the enum structure for future use

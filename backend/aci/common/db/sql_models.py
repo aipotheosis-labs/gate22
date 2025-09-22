@@ -25,6 +25,7 @@ from aci.common.enums import (
     AuthType,
     ConnectedAccountOwnership,
     MCPServerTransportType,
+    OrganizationInvitationStatus,
     OrganizationRole,
     TeamRole,
     UserIdentityProvider,
@@ -169,6 +170,9 @@ class Organization(Base):
     teams: Mapped[list[Team]] = relationship(
         back_populates="organization", cascade="all, delete-orphan", init=False
     )
+    invitations: Mapped[list[OrganizationInvitation]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan", single_parent=True, init=False
+    )
 
 
 class OrganizationMembership(Base):
@@ -203,6 +207,54 @@ class OrganizationMembership(Base):
 
     # NOTE: user can belong to multiple organizations, but not the same organization multiple times
     __table_args__ = (UniqueConstraint("organization_id", "user_id", name="uc_org_user"),)
+
+
+class OrganizationInvitation(Base):
+    __tablename__ = "organization_invitations"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    organization_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    inviter_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[OrganizationRole] = mapped_column(
+        SQLEnum(OrganizationRole, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
+    )
+    token_hash: Mapped[str] = mapped_column(
+        String(MAX_STRING_LENGTH), unique=True, nullable=False
+    )  # HMAC-SHA256(secret, token)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    email_metadata: Mapped[dict | None] = mapped_column(
+        JSONB, nullable=True, default=None
+    )  # email provider, send time, reference id
+    status: Mapped[OrganizationInvitationStatus] = mapped_column(
+        SQLEnum(OrganizationInvitationStatus, native_enum=False, length=MAX_ENUM_LENGTH),
+        nullable=False,
+        default=OrganizationInvitationStatus.PENDING,
+    )
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, init=False
+    )  # when the invitation was accepted(only for accepted or reject invitations)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    organization: Mapped[Organization] = relationship(back_populates="invitations", init=False)
+    inviter: Mapped[User] = relationship(foreign_keys=[inviter_id], init=False)
+
+    __table_args__ = (UniqueConstraint("organization_id", "email", name="uc_org_invitation_email"),)
 
 
 # NOTE: team belongs to exactly one organization, so no need for a join table
