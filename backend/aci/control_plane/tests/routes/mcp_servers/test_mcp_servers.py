@@ -194,7 +194,7 @@ def test_create_custom_mcp_server(
         db_mcp_server_data.id,
         connected_account_ownerships=[ConnectedAccountOwnership.OPERATIONAL],
     )
-    assert db_mcp_server_configuration_data is not None
+    assert len(db_mcp_server_configuration_data) == 1
 
 
 @pytest.mark.parametrize(
