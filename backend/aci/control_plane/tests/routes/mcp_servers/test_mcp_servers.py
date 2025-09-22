@@ -99,7 +99,7 @@ def test_create_custom_mcp_server_with_invalid_operational_account_auth_type(
     response = test_client.post(
         config.ROUTER_PREFIX_MCP_SERVERS,
         headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
-        data={
+        json={
             "name": "TEST_MCP_SERVER",
             "url": "https://test-mcp-server.com",
             "description": "Test MCP server",
@@ -114,7 +114,7 @@ def test_create_custom_mcp_server_with_invalid_operational_account_auth_type(
             ],
             "logo": "https://test-mcp-server.com/logo.png",
             "server_metadata": MCPServerMetadata().model_dump(),
-            "operational_account_auth_type": AuthType.NO_AUTH,
+            "operational_account_auth_type": AuthType.NO_AUTH.value,
             # Invalid operational_account_auth_type (not in auth_configs)
         },
     )
