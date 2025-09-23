@@ -15,6 +15,9 @@ import {
   AlertCircle,
   Package,
   Terminal,
+  Eye,
+  EyeOff,
+  Shield,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useMemo } from "react";
@@ -25,6 +28,7 @@ export default function BundleDetailPage() {
   const router = useRouter();
   const bundleId = params.id as string;
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isUrlVisible, setIsUrlVisible] = useState(false);
 
   const { data: bundle, isLoading, error } = useMCPServerBundle(bundleId);
 
@@ -33,6 +37,15 @@ export default function BundleDetailPage() {
     if (bundle) {
       const baseUrl = getMcpBaseUrl();
       return `${baseUrl}/mcp?bundle_id=${bundle.id}`;
+    }
+    return "";
+  }, [bundle]);
+
+  // Generate masked MCP URL for display
+  const maskedMcpUrl = useMemo(() => {
+    if (bundle) {
+      const baseUrl = getMcpBaseUrl();
+      return `${baseUrl}/mcp?bundle_id=••••••••••••••••••••••••••••••••••••••••`;
     }
     return "";
   }, [bundle]);
@@ -96,6 +109,19 @@ export default function BundleDetailPage() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleMcpUrlCopy = () => {
+    if (!isUrlVisible) {
+      toast.error("Please show the URL first to copy it");
+      return;
+    }
+    handleCopy(mcpUrl, "mcp-url");
+  };
+
+  const handleConfigCopy = (editor: string) => {
+    const config = generateConfig(mcpUrl, bundle!.name, editor);
+    handleCopy(config, `${editor}-config`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -157,56 +183,80 @@ export default function BundleDetailPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* MCP URL - Primary Focus */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              MCP URL
-            </label>
-            <div className="flex items-center gap-3">
-              <code className="flex-1 text-sm font-mono px-3 py-2 rounded border bg-muted/20">
-                {mcpUrl}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleCopy(mcpUrl, "mcp-url")}
-                className="flex-shrink-0"
-              >
-                {copiedField === "mcp-url" ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2 text-green-600" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy
-                  </>
-                )}
-              </Button>
+          {/* Security Warning */}
+          <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-amber-800">
+                Security Notice
+              </p>
+              <p className="text-sm text-amber-700">
+                The MCP URL below contains a secret bundle ID that should be
+                treated as a service token.
+                <strong> Do not share this URL with others</strong> as it
+                provides access to your MCP server bundle.
+              </p>
             </div>
           </div>
 
-          {/* Additional Details */}
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center justify-between py-2 border-b">
-              <span className="text-muted-foreground">Bundle ID</span>
+          {/* MCP URL - Primary Focus */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-muted-foreground">
+                MCP URL
+              </label>
               <div className="flex items-center gap-2">
-                <code className="font-mono text-xs">{bundle.id}</code>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={() => handleCopy(bundle.id, "bundle-id")}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsUrlVisible(!isUrlVisible)}
+                  className="flex-shrink-0"
                 >
-                  {copiedField === "bundle-id" ? (
-                    <Check className="h-3 w-3 text-green-600" />
+                  {isUrlVisible ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      Hide
+                    </>
                   ) : (
-                    <Copy className="h-3 w-3" />
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Show
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMcpUrlCopy}
+                  className="flex-shrink-0"
+                >
+                  {copiedField === "mcp-url" ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2 text-green-600" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </>
                   )}
                 </Button>
               </div>
             </div>
+            <code className="block w-full text-sm font-mono px-3 py-2 rounded border bg-muted/20">
+              {isUrlVisible ? mcpUrl : maskedMcpUrl}
+            </code>
+            {!isUrlVisible && (
+              <p className="text-xs text-muted-foreground">
+                Click &quot;Show&quot; to reveal the MCP URL with the secret
+                bundle ID
+              </p>
+            )}
+          </div>
+
+          {/* Additional Details */}
+          <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between py-2 border-b">
               <span className="text-muted-foreground">Created</span>
               <span>{new Date(bundle.created_at).toLocaleDateString()}</span>
@@ -240,7 +290,7 @@ export default function BundleDetailPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="cursor" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="w-full grid grid-cols-4 h-auto">
               {editorConfigs.map((editor) => (
                 <TabsTrigger key={editor.id} value={editor.id}>
                   {editor.name}
@@ -249,7 +299,11 @@ export default function BundleDetailPage() {
             </TabsList>
 
             {editorConfigs.map((editor) => {
-              const config = generateConfig(mcpUrl, bundle.name, editor.id);
+              const config = generateConfig(
+                isUrlVisible ? mcpUrl : maskedMcpUrl,
+                bundle.name,
+                editor.id,
+              );
               const configId = `${editor.id}-config`;
 
               return (
@@ -284,7 +338,7 @@ export default function BundleDetailPage() {
                       variant="outline"
                       size="sm"
                       className="absolute top-2 right-2"
-                      onClick={() => handleCopy(config, configId)}
+                      onClick={() => handleConfigCopy(editor.id)}
                     >
                       {copiedField === configId ? (
                         <>

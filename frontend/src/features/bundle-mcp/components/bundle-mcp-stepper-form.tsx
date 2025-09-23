@@ -10,13 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,12 +30,11 @@ import {
   ConnectedAccountOwnership,
 } from "@/features/mcp/types/mcp.types";
 import { ConnectedAccount } from "@/features/connected-accounts/types/connectedaccount.types";
-import { ConfigurationSelectionDialog } from "./configuration-selection-dialog";
+import { ManageMCPConfigurationDialog } from "@/features/mcp/components/manage-mcp-configuration-dialog";
 import { getOwnershipLabel } from "@/utils/configuration-labels";
 
 interface ConfigurationSelection {
   configurationId: string;
-  connectedAccountId?: string;
 }
 
 interface BundleMCPStepperProps {
@@ -87,67 +79,41 @@ export function BundleMCPStepperForm({
       setNameError("");
       setDescription("");
 
-      // Initialize selections with default account for each configuration
+      // Initialize selections with configuration IDs only
       const initialSelections =
-        selectedIds?.map((id) => {
-          const selection: ConfigurationSelection = { configurationId: id };
-
-          // Auto-select the first available account for both shared and individual configs
-          const accounts = connectedAccounts.filter(
-            (account) => account.mcp_server_configuration_id === id,
-          );
-
-          if (accounts.length > 0) {
-            selection.connectedAccountId = accounts[0].id;
-          }
-
-          return selection;
-        }) || [];
+        selectedIds?.map((id) => ({
+          configurationId: id,
+        })) || [];
 
       setSelections(initialSelections);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Handle adding a new configuration to the bundle
-  const handleAddConfiguration = (configId: string) => {
-    // Auto-select the first available account for both shared and individual configs
-    const newSelection: ConfigurationSelection = { configurationId: configId };
-    const accounts = getAccountsForConfiguration(configId);
-    if (accounts.length > 0) {
-      newSelection.connectedAccountId = accounts[0].id;
+  useEffect(() => {
+    if (!onSelectionChange) {
+      return;
     }
 
-    setSelections((prev) => [...prev, newSelection]);
+    onSelectionChange(selections.map((s) => s.configurationId));
+  }, [selections, onSelectionChange]);
 
-    // Notify parent about selection change
-    const newSelectedIds = [
-      ...selections.map((s) => s.configurationId),
-      configId,
-    ];
-    onSelectionChange?.(newSelectedIds);
+  // Handle managing configurations (adding/removing)
+  const handleManageConfigurations = (
+    additions: string[],
+    removals: string[],
+  ) => {
+    setSelections((prev) => [
+      ...prev.filter(
+        (selection) => !removals.includes(selection.configurationId),
+      ),
+      ...additions.map((id) => ({ configurationId: id })),
+    ]);
   };
 
   // Handle removing a configuration from the bundle
   const handleRemoveConfiguration = (configId: string) => {
     setSelections((prev) => prev.filter((s) => s.configurationId !== configId));
-
-    // Notify parent about selection change
-    const newSelectedIds = selections
-      .filter((s) => s.configurationId !== configId)
-      .map((s) => s.configurationId);
-    onSelectionChange?.(newSelectedIds);
-  };
-
-  // Handle account selection for individual configs
-  const handleAccountSelection = (configId: string, accountId: string) => {
-    setSelections((prev) =>
-      prev.map((s) =>
-        s.configurationId === configId
-          ? { ...s, connectedAccountId: accountId }
-          : s,
-      ),
-    );
   };
 
   // Get available accounts for a configuration
@@ -305,7 +271,7 @@ export function BundleMCPStepperForm({
                           onClick={() => setShowConfigSelectionDialog(true)}
                         >
                           <Plus className="h-4 w-4 mr-2" />
-                          Add MCP Configuration
+                          Manage MCP Configuration
                         </Button>
                       </div>
                     ) : (
@@ -316,7 +282,7 @@ export function BundleMCPStepperForm({
                               <TableHead className="w-[300px]">
                                 Configuration
                               </TableHead>
-                              <TableHead className="w-[250px]">
+                              <TableHead className="w-[200px]">
                                 Connected Account
                               </TableHead>
                               <TableHead className="w-[80px]">
@@ -376,39 +342,19 @@ export function BundleMCPStepperForm({
                                         Shared Account
                                       </Badge>
                                     ) : (
-                                      <Select
-                                        value={
-                                          selection.connectedAccountId || ""
-                                        }
-                                        onValueChange={(value) =>
-                                          handleAccountSelection(
-                                            config.id,
-                                            value,
-                                          )
-                                        }
-                                      >
-                                        <SelectTrigger className="w-full max-w-[220px]">
-                                          <SelectValue placeholder="Select account..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {accounts.length === 0 ? (
-                                            <div className="px-2 py-4 text-sm text-muted-foreground text-center">
-                                              No accounts available
-                                            </div>
-                                          ) : (
-                                            accounts.map((account) => (
-                                              <SelectItem
-                                                key={account.id}
-                                                value={account.id}
-                                              >
-                                                {account.user?.email ||
-                                                  account.user?.name ||
-                                                  "Unknown"}
-                                              </SelectItem>
-                                            ))
-                                          )}
-                                        </SelectContent>
-                                      </Select>
+                                      <div className="text-sm">
+                                        {accounts.length > 0 ? (
+                                          <span>
+                                            {accounts[0].user?.email ||
+                                              accounts[0].user?.name ||
+                                              "Connected"}
+                                          </span>
+                                        ) : (
+                                          <span className="text-muted-foreground">
+                                            No account connected
+                                          </span>
+                                        )}
+                                      </div>
                                     )}
                                   </TableCell>
                                   <TableCell>
@@ -439,7 +385,7 @@ export function BundleMCPStepperForm({
                             className="w-full"
                           >
                             <Plus className="h-4 w-4 mr-2" />
-                            Add MCP Configuration
+                            Manage MCP Configuration
                           </Button>
                         </div>
                       </>
@@ -508,14 +454,14 @@ export function BundleMCPStepperForm({
         </DialogContent>
       </Dialog>
 
-      {/* Configuration Selection Dialog */}
-      <ConfigurationSelectionDialog
+      {/* Configuration Management Dialog */}
+      <ManageMCPConfigurationDialog
         isOpen={showConfigSelectionDialog}
         onClose={() => setShowConfigSelectionDialog(false)}
         availableConfigurations={availableConfigurations}
         connectedAccounts={connectedAccounts}
         alreadySelectedIds={selections.map((s) => s.configurationId)}
-        onConfirm={handleAddConfiguration}
+        onConfirm={handleManageConfigurations}
         hasValidSharedAccount={hasValidSharedAccount}
       />
     </>

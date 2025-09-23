@@ -166,6 +166,7 @@ export function ManageTeamsDialog({
                     variant="outline"
                     size="icon"
                     title="Create New Team"
+                    className="min-h-[40px] w-[40px] shrink-0"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

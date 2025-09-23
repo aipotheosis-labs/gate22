@@ -115,20 +115,23 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("id", {
         id: "mcp_url",
-        header: () => "MCP URL",
+        header: () => (
+          <div className="flex items-center gap-1">
+            <span>MCP URL</span>
+          </div>
+        ),
         cell: (info) => {
           const id = info.getValue();
           const baseUrl = getMcpBaseUrl();
-          const url = `${baseUrl}/mcp?bundle_id=${id}`;
-          // Show shortened version: ...?bundle_id={id}
-          const displayUrl = `...?bundle_id=${id}`;
+          const maskedUrl = `${baseUrl}/mcp?bundle_id=••••••••••••••••••••••••••••••••••••••••`;
+
           return (
             <div className="flex items-center gap-1">
               <div
                 className="font-mono text-xs truncate max-w-[200px]"
-                title={url}
+                title="Hidden for security - use copy button to copy full URL"
               >
-                {displayUrl}
+                {maskedUrl}
               </div>
               <Button
                 variant="ghost"

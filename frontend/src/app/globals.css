@@ -48,6 +48,15 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
+  /* Custom semantic button variants */
+  --color-button-outline: hsl(var(--button-outline));
+  --color-button-outline-foreground: hsl(var(--button-outline-foreground));
+  --color-button-outline-border: hsl(var(--button-outline-border));
+  --color-button-outline-hover: hsl(var(--button-outline-hover));
+  --color-button-disabled: hsl(var(--button-disabled));
+  --color-button-disabled-foreground: hsl(var(--button-disabled-foreground));
+  --color-button-disabled-border: hsl(var(--button-disabled-border));
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -114,6 +123,15 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom semantic button variants */
+    --button-outline: 0 0% 100%;
+    --button-outline-foreground: 0 0% 9%;
+    --button-outline-border: 0 0% 89.8%;
+    --button-outline-hover: 0 0% 96.1%;
+    --button-disabled: 0 0% 96.1%;
+    --button-disabled-foreground: 0 0% 45.1%;
+    --button-disabled-border: 0 0% 89.8%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -148,6 +166,15 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom semantic button variants - dark mode */
+    --button-outline: 0 0% 14.9%;
+    --button-outline-foreground: 0 0% 98%;
+    --button-outline-border: 0 0% 27.9%;
+    --button-outline-hover: 0 0% 20.9%;
+    --button-disabled: 0 0% 14.9%;
+    --button-disabled-foreground: 0 0% 45.1%;
+    --button-disabled-border: 0 0% 27.9%;
   }
 }
 
@@ -250,6 +277,23 @@
 /* Override react-json-view default colors for better contrast */
 .react-json-view .string-value {
   color: hsl(142 76% 36%) !important;
+}
+
+/* Enhanced tab styling for better visual distinction */
+[role="tablist"] {
+  @apply bg-muted p-1 rounded-lg;
+}
+
+[role="tab"] {
+  @apply px-3 py-2 rounded-md text-sm font-medium transition-colors;
+}
+
+[role="tab"][data-state="active"] {
+  @apply bg-background text-foreground shadow-sm border border-border;
+}
+
+[role="tab"][data-state="inactive"] {
+  @apply text-muted-foreground hover:text-foreground hover:bg-muted/50;
 }
 
 .react-json-view .integer-value,

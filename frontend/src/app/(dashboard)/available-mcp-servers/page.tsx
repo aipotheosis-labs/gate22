@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,25 @@ export default function AvailableMCPServersPage() {
   });
 
   const { mutateAsync: createBundle } = useCreateMCPServerBundle();
+
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedConfigs((prev) => {
+      const next = new Set(ids);
+      if (next.size === prev.size) {
+        let isSame = true;
+        for (const id of prev) {
+          if (!next.has(id)) {
+            isSame = false;
+            break;
+          }
+        }
+        if (isSame) {
+          return prev;
+        }
+      }
+      return next;
+    });
+  }, []);
 
   // Fetch connected accounts for all configurations
   const { data: connectedAccounts = [] } = useConnectedAccounts();
@@ -226,10 +245,10 @@ export default function AvailableMCPServersPage() {
                         className={cn(
                           "flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all h-[34px] shrink-0",
                           hasNoAccounts
-                            ? "opacity-40 cursor-not-allowed bg-gray-100 border-gray-200 text-gray-400"
+                            ? "opacity-40 cursor-not-allowed bg-button-disabled border-button-disabled-border text-button-disabled-foreground"
                             : isSelected
                               ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm"
-                              : "bg-white text-foreground hover:bg-gray-50 border-black hover:shadow-sm",
+                              : "bg-button-outline text-button-outline-foreground border-button-outline-border hover:bg-button-outline-hover hover:shadow-sm",
                         )}
                         disabled={hasNoAccounts}
                         onClick={(e) => {
@@ -248,10 +267,10 @@ export default function AvailableMCPServersPage() {
                           className={cn(
                             "h-5 w-5 rounded border flex items-center justify-center transition-all",
                             hasNoAccounts
-                              ? "bg-gray-50 border-gray-300"
+                              ? "bg-button-disabled border-button-disabled-border"
                               : isSelected
                                 ? "bg-primary-foreground border-primary-foreground"
-                                : "bg-white border-black",
+                                : "bg-button-outline border-button-outline-border",
                           )}
                         >
                           {isSelected && !hasNoAccounts && (
@@ -381,7 +400,7 @@ export default function AvailableMCPServersPage() {
         availableConfigurations={configurations}
         connectedAccounts={connectedAccounts}
         selectedIds={Array.from(selectedConfigs)}
-        onSelectionChange={(ids) => setSelectedConfigs(new Set(ids))}
+        onSelectionChange={handleSelectionChange}
         onSubmit={handleCreateBundle}
       />
     </div>

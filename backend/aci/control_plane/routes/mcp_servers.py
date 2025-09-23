@@ -136,9 +136,7 @@ async def create_custom_mcp_server(
         context.db_session,
         organization_id=context.act_as.organization_id,
         # `operational_account_auth_type` is not needed for the MCP server upsert
-        mcp_server_upsert=MCPServerUpsert.model_validate(
-            mcp_server_data.model_dump(exclude={"operational_account_auth_type"})
-        ),
+        mcp_server_upsert=MCPServerUpsert.model_validate(mcp_server_data.model_dump()),
         embedding=mcp_server_embedding,
     )
 

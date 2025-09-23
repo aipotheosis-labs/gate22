@@ -62,13 +62,11 @@ async def create_connected_account(
         mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED
         or mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL
     ):
-        # Only admin can create shared connected accounts
         if context.act_as.role != OrganizationRole.ADMIN:
             logger.error("Only admin can create shared or operational accounts")
             raise NotPermittedError("Only admin can create shared or operational accounts")
 
     else:
-        # Otherwise, must act as member to create individual connected accounts
         if context.act_as.role != OrganizationRole.MEMBER:
             logger.error("Only members can create individual accounts")
             raise NotPermittedError("Only members can create individual accounts")

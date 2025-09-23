@@ -441,6 +441,18 @@ class MCPServerConfiguration(Base):
     # one way relationship to the mcp server
     mcp_server: Mapped[MCPServer] = relationship("MCPServer", init=False)
 
+    __table_args__ = (
+        # One OPERATIONAL config per (mcp_server_id)
+        # In SQLAlchemy, UniqueConstraint itself does not accept postgresql_where so we use Index
+        # for Partial unique index instead
+        Index(
+            "ux_mcp_server_config_per_server_org",
+            "mcp_server_id",
+            unique=True,
+            postgresql_where=(connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL),
+        ),
+    )
+
 
 # One OPERATIONAL config per (mcp_server_id, organization_id)
 Index(
@@ -503,23 +515,25 @@ class ConnectedAccount(Base):
             "mcp_server_configuration_id",
             name="uc_connected_accounts_one_per_user_per_mcp_server_config",
         ),
+        # One Shared Connected Account per (mcp_server_configuration_id)
+        # In SQLAlchemy, UniqueConstraint itself does not accept postgresql_where so we use Index
+        # for Partial unique index instead
+        Index(
+            "ux_shared_connected_accounts_one_per_mcp_server_config",
+            "mcp_server_configuration_id",
+            unique=True,
+            postgresql_where=(ownership == ConnectedAccountOwnership.SHARED),
+        ),
+        # One OPERATIONAL Connected Account per (mcp_server_configuration_id)
+        # In SQLAlchemy, UniqueConstraint itself does not accept postgresql_where so we use Index
+        # for Partial unique index instead
+        Index(
+            "ux_operational_connected_accounts_one_per_mcp_server_config",
+            "mcp_server_configuration_id",
+            unique=True,
+            postgresql_where=(ownership == ConnectedAccountOwnership.OPERATIONAL),
+        ),
     )
-
-
-# One Shared Connected Account per (mcp_server_configuration_id)
-Index(
-    "ux_shared_connected_account_per_mcp_server_config",
-    ConnectedAccount.mcp_server_configuration_id,
-    unique=True,
-    postgresql_where=(ConnectedAccount.ownership == ConnectedAccountOwnership.SHARED),
-)
-# One OPERATIONAL Connected Account per (mcp_server_configuration_id)
-Index(
-    "ux_operational_connected_account_per_mcp_server_config",
-    ConnectedAccount.mcp_server_configuration_id,
-    unique=True,
-    postgresql_where=(ConnectedAccount.ownership == ConnectedAccountOwnership.OPERATIONAL),
-)
 
 
 class MCPServerBundle(Base):
