@@ -600,7 +600,7 @@ export default function AddCustomMCPServerPage() {
                     No Auth
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <Checkbox
                     id="api_key"
                     checked={authMethods.api_key}
@@ -612,7 +612,7 @@ export default function AddCustomMCPServerPage() {
                   <Label htmlFor="api_key" className="text-sm font-normal">
                     API Key
                   </Label>
-                </div>
+                </div> */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="oauth2"
