@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from sqlalchemy.orm import Session
 
 from aci.common import auth_credentials_manager as acm
@@ -14,11 +16,19 @@ from aci.control_plane.services.mcp_tools.mcp_tools_fetcher import MCPToolsFetch
 logger = get_logger(__name__)
 
 
+@dataclass
+class MCPToolsDiff:
+    tools_created: list[str]
+    tools_deleted: list[str]
+    tools_updated: list[str]
+    tools_unchanged: list[str]
+
+
 class MCPToolsManager:
     def __init__(self, mcp_server: MCPServer):
         self.mcp_server = mcp_server
 
-    async def refresh_mcp_tools(self, db_session: Session) -> None:
+    async def refresh_mcp_tools(self, db_session: Session) -> MCPToolsDiff:
         if self.mcp_server.organization_id is None:
             raise MCPToolsManagerError("MCP server has no organization id")
 
@@ -141,6 +151,16 @@ class MCPToolsManager:
 
         # Update the last synced at time
         crud.mcp_servers.update_mcp_server_last_synced_at_now(db_session, self.mcp_server)
+
+        return MCPToolsDiff(
+            tools_created=[tool.name for tool in tools_to_create],
+            tools_deleted=[tool.name for tool in tools_to_delete],
+            tools_updated=[
+                tool.name
+                for tool in tools_updated_embedding_fields + tools_updated_non_embedding_fields
+            ],
+            tools_unchanged=[tool.name for tool in tools_unchanged],
+        )
 
     def _embed_mcp_tools(self, mcp_tools: list[MCPToolUpsert]) -> list[list[float]]:
         return embeddings.generate_mcp_tool_embeddings(
