@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { createAuthenticatedRequest } from "@/lib/api-client";
@@ -32,7 +33,15 @@ export default function AddCustomMCPServerPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [name, setName] = useState("");
-  const [authType, setAuthType] = useState<string>("");
+  const [authMethods, setAuthMethods] = useState<{
+    no_auth: boolean;
+    api_key: boolean;
+    oauth2: boolean;
+  }>({
+    no_auth: false,
+    api_key: false,
+    oauth2: false,
+  });
   const [url, setUrl] = useState("");
   const [transportType, setTransportType] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -48,6 +57,31 @@ export default function AddCustomMCPServerPage() {
   const [tokenUrl, setTokenUrl] = useState("");
 
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
+
+  // Auth method management functions
+  const handleAuthMethodChange = (
+    method: keyof typeof authMethods,
+    checked: boolean,
+  ) => {
+    setAuthMethods((prev) => ({
+      ...prev,
+      [method]: checked,
+    }));
+  };
+
+  const hasSelectedAuthMethod = () => {
+    return Object.values(authMethods).some((method) => method);
+  };
+
+  const needsStep2 = () => {
+    return authMethods.api_key || authMethods.oauth2;
+  };
+
+  const getSelectedAuthMethods = () => {
+    return Object.entries(authMethods)
+      .filter(([, selected]) => selected)
+      .map(([method]) => method);
+  };
 
   // Category management functions
   const addCategory = (category: string) => {
@@ -112,9 +146,9 @@ export default function AddCustomMCPServerPage() {
       return;
     }
 
-    // Validate auth type
-    if (!authType) {
-      toast.error("Please select an authentication method");
+    // Validate auth methods
+    if (!hasSelectedAuthMethod()) {
+      toast.error("Please select at least one authentication method");
       return;
     }
 
@@ -136,43 +170,49 @@ export default function AddCustomMCPServerPage() {
       return;
     }
 
-    // If OAuth2, perform discovery and go to step 2
-    if (authType === "oauth2") {
-      setIsDiscovering(true);
+    // If needs step 2 (API Key or OAuth2), proceed to step 2
+    if (needsStep2()) {
+      // If OAuth2 is selected, perform discovery
+      if (authMethods.oauth2) {
+        setIsDiscovering(true);
 
-      try {
-        const api = createAuthenticatedRequest(
-          accessToken,
-          activeOrg?.orgId,
-          activeRole,
-        );
+        try {
+          const api = createAuthenticatedRequest(
+            accessToken,
+            activeOrg?.orgId,
+            activeRole,
+          );
 
-        const response = await api.post<OAuth2DiscoveryResponse>(
-          "/mcp-servers/oauth2-discovery",
-          {
-            mcp_server_url: url.trim(),
-          },
-        );
+          const response = await api.post<OAuth2DiscoveryResponse>(
+            "/mcp-servers/oauth2-discovery",
+            {
+              mcp_server_url: url.trim(),
+            },
+          );
 
-        setOauth2Config(response);
-        // Pre-populate fields with discovered values
-        setAuthorizeUrl(response.authorize_url || "");
-        setTokenUrl(response.access_token_url || "");
+          setOauth2Config(response);
+          // Pre-populate fields with discovered values
+          setAuthorizeUrl(response.authorize_url || "");
+          setTokenUrl(response.access_token_url || "");
 
+          setCurrentStep(2);
+          toast.success("OAuth2 configuration discovered successfully");
+        } catch (error) {
+          console.error("Failed to discover OAuth2 configuration:", error);
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to discover OAuth2 configuration",
+          );
+        } finally {
+          setIsDiscovering(false);
+        }
+      } else {
+        // For API Key only, go directly to step 2
         setCurrentStep(2);
-        toast.success("OAuth2 configuration discovered successfully");
-      } catch (error) {
-        console.error("Failed to discover OAuth2 configuration:", error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to discover OAuth2 configuration",
-        );
-      } finally {
-        setIsDiscovering(false);
       }
     } else {
-      // For non-OAuth2, create server directly
+      // For No Auth only, create server directly
       await createServer();
     }
   };
@@ -189,7 +229,7 @@ export default function AddCustomMCPServerPage() {
 
       const payload: {
         name: string;
-        auth_type: string;
+        auth_methods: string[];
         url: string;
         transport_type: string;
         description?: string;
@@ -200,7 +240,7 @@ export default function AddCustomMCPServerPage() {
         token_endpoint_auth_method_supported?: string[];
       } = {
         name: name.trim(),
-        auth_type: authType,
+        auth_methods: getSelectedAuthMethods(),
         url: url.trim(),
         transport_type: transportType,
       };
@@ -217,7 +257,7 @@ export default function AddCustomMCPServerPage() {
       }
 
       // Add OAuth2 fields if applicable
-      if (authType === "oauth2") {
+      if (authMethods.oauth2) {
         payload.authorize_url = authorizeUrl.trim() || undefined;
         payload.access_token_url = tokenUrl.trim() || undefined;
         payload.token_endpoint_auth_method_supported =
@@ -262,9 +302,11 @@ export default function AddCustomMCPServerPage() {
         <div>
           <h1 className="text-2xl font-semibold">Add Custom MCP Server</h1>
           <p className="text-muted-foreground mt-1">
-            {authType === "oauth2"
-              ? `Step ${currentStep} of 2: ${currentStep === 1 ? "Server Details" : "OAuth2 Configuration"}`
-              : "Create a new custom MCP server configuration"}
+            {needsStep2() && currentStep === 1
+              ? `Step ${currentStep} of 2: Server Details`
+              : needsStep2() && currentStep === 2
+                ? `Step ${currentStep} of 2: Setup Auth Method`
+                : "Create a new custom MCP server configuration"}
           </p>
         </div>
       </div>
@@ -285,7 +327,13 @@ export default function AddCustomMCPServerPage() {
                 type="text"
                 placeholder="MY_CUSTOM_SERVER"
                 value={name}
-                onChange={(e) => setName(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  // Only allow uppercase letters, digits, and underscores
+                  const filteredValue = e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9_]/g, "");
+                  setName(filteredValue);
+                }}
                 disabled={isDiscovering}
                 required
                 className="max-w-md"
@@ -297,24 +345,54 @@ export default function AddCustomMCPServerPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="authType">
-                Authentication Method <span className="text-red-500">*</span>
+              <Label>
+                Authentication Methods <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={authType}
-                onValueChange={setAuthType}
-                disabled={isDiscovering}
-                required
-              >
-                <SelectTrigger className="max-w-md">
-                  <SelectValue placeholder="Select authentication method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no_auth">No Auth</SelectItem>
-                  <SelectItem value="api_key">API Key</SelectItem>
-                  <SelectItem value="oauth2">OAuth2</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="no_auth"
+                    checked={authMethods.no_auth}
+                    onCheckedChange={(checked) =>
+                      handleAuthMethodChange("no_auth", checked as boolean)
+                    }
+                    disabled={isDiscovering}
+                  />
+                  <Label htmlFor="no_auth" className="text-sm font-normal">
+                    No Auth
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="api_key"
+                    checked={authMethods.api_key}
+                    onCheckedChange={(checked) =>
+                      handleAuthMethodChange("api_key", checked as boolean)
+                    }
+                    disabled={isDiscovering}
+                  />
+                  <Label htmlFor="api_key" className="text-sm font-normal">
+                    API Key
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="oauth2"
+                    checked={authMethods.oauth2}
+                    onCheckedChange={(checked) =>
+                      handleAuthMethodChange("oauth2", checked as boolean)
+                    }
+                    disabled={isDiscovering}
+                  />
+                  <Label htmlFor="oauth2" className="text-sm font-normal">
+                    OAuth2
+                  </Label>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Select one or more authentication methods supported by your
+                server.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -437,7 +515,7 @@ export default function AddCustomMCPServerPage() {
                   isDiscovering ||
                   isSubmitting ||
                   !name.trim() ||
-                  !authType ||
+                  !hasSelectedAuthMethod() ||
                   !url.trim() ||
                   !transportType
                 }
@@ -452,8 +530,8 @@ export default function AddCustomMCPServerPage() {
                   ? "Discovering..."
                   : isSubmitting
                     ? "Creating..."
-                    : authType === "oauth2"
-                      ? "Next: Configure OAuth2"
+                    : needsStep2()
+                      ? "Next: Setup Auth Method"
                       : "Create Server"}
               </Button>
               <Button
@@ -469,55 +547,73 @@ export default function AddCustomMCPServerPage() {
         </div>
       )}
 
-      {/* Step 2: OAuth2 Configuration */}
+      {/* Step 2: Setup Auth Method */}
       {currentStep === 2 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">OAuth2 Configuration</h2>
+          <h2 className="text-lg font-semibold mb-4">Setup Auth Method</h2>
           <form onSubmit={handleStep2Submit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="authorizeUrl">Authorization URL</Label>
-              <Input
-                id="authorizeUrl"
-                type="url"
-                placeholder="https://example.com/oauth/authorize"
-                value={authorizeUrl}
-                onChange={(e) => setAuthorizeUrl(e.target.value)}
-                disabled={isSubmitting}
-                className="max-w-md"
-              />
-            </div>
+            {authMethods.api_key && (
+              <div className="space-y-4">
+                <h3 className="text-md font-medium">API Key Configuration</h3>
+                <p className="text-sm text-muted-foreground">
+                  API Key authentication will be configured. No additional setup
+                  required at this time.
+                </p>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="tokenUrl">Token URL</Label>
-              <Input
-                id="tokenUrl"
-                type="url"
-                placeholder="https://example.com/oauth/token"
-                value={tokenUrl}
-                onChange={(e) => setTokenUrl(e.target.value)}
-                disabled={isSubmitting}
-                className="max-w-md"
-              />
-            </div>
+            {authMethods.oauth2 && (
+              <div className="space-y-4">
+                <h3 className="text-md font-medium">OAuth2 Configuration</h3>
 
-            <div className="space-y-2">
-              <Label htmlFor="authMethods">Token Endpoint Auth Methods</Label>
-              <Input
-                id="authMethods"
-                type="text"
-                value={
-                  oauth2Config.token_endpoint_auth_method_supported?.join(
-                    ", ",
-                  ) || "None"
-                }
-                disabled
-                readOnly
-                className="max-w-md bg-muted"
-              />
-              <p className="text-sm text-muted-foreground">
-                Supported authentication methods discovered from the server.
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="authorizeUrl">Authorization URL</Label>
+                  <Input
+                    id="authorizeUrl"
+                    type="url"
+                    placeholder="https://example.com/oauth/authorize"
+                    value={authorizeUrl}
+                    onChange={(e) => setAuthorizeUrl(e.target.value)}
+                    disabled={isSubmitting}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tokenUrl">Token URL</Label>
+                  <Input
+                    id="tokenUrl"
+                    type="url"
+                    placeholder="https://example.com/oauth/token"
+                    value={tokenUrl}
+                    onChange={(e) => setTokenUrl(e.target.value)}
+                    disabled={isSubmitting}
+                    className="max-w-md"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="authMethodsSupported">
+                    Token Endpoint Auth Methods
+                  </Label>
+                  <Input
+                    id="authMethodsSupported"
+                    type="text"
+                    value={
+                      oauth2Config.token_endpoint_auth_method_supported?.join(
+                        ", ",
+                      ) || "None"
+                    }
+                    disabled
+                    readOnly
+                    className="max-w-md bg-muted"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Supported authentication methods discovered from the server.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 pt-4">
               <Button
