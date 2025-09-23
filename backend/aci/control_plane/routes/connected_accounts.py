@@ -196,6 +196,7 @@ async def _upsert_connected_account(
     try:
         if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
             if mcp_server_config.mcp_server.last_synced_at is None:
+                # TODO: Run in async background instead of blocking the main procedure
                 await MCPToolsManager(mcp_server_config.mcp_server).refresh_mcp_tools(db_session)
                 crud.mcp_servers.update_mcp_server_last_synced_at_now(
                     db_session, mcp_server_config.mcp_server
