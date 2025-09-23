@@ -38,7 +38,7 @@ class MCPServerUpsert(BaseModel):
             "have consecutive underscores, and not start or end with an underscore"
         )
 
-        if len(mcp_tool_utils.sanitize_canonical_name(v)) == 0:
+        if v != mcp_tool_utils.sanitize_canonical_name(v):
             raise ValueError(msg)
 
         return v
