@@ -33,7 +33,10 @@ class MCPToolsManager:
 
         auth_config = acm.get_auth_config(self.mcp_server, mcp_server_configuration)
         auth_credentials = await acm.get_auth_credentials(
-            db_session, mcp_server_configuration.id, ConnectedAccountOwnership.OPERATIONAL
+            db_session,
+            mcp_server_configuration.id,
+            ConnectedAccountOwnership.OPERATIONAL,
+            user_id=None,
         )
 
         # Fetch the tools

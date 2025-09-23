@@ -216,7 +216,8 @@ async def get_auth_credentials(
     db_session: Session,
     mcp_server_configuration_id: UUID,
     connected_account_ownership: ConnectedAccountOwnership,
-    user_id: UUID | None = None,  # Provide user_id if the connected account is individual
+    *,
+    user_id: UUID | None = None,  # Required for individual ownership
 ) -> AuthCredentials:
     """
     Get the auth credentials. (part of the connected account)
