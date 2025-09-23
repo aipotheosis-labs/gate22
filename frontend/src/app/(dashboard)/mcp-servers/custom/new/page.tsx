@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { createAuthenticatedRequest } from "@/lib/api-client";
@@ -33,6 +34,20 @@ interface OAuth2DCRResponse {
   token_endpoint_auth_method: string;
   client_id?: string;
   client_secret?: string;
+}
+
+interface AuthConfig {
+  type: string;
+  location?: string;
+  name?: string;
+  prefix?: string;
+  authorize_url?: string;
+  access_token_url?: string;
+  refresh_token_url?: string;
+  scope?: string;
+  client_id?: string;
+  client_secret?: string;
+  token_endpoint_auth_method?: string;
 }
 
 export default function AddCustomMCPServerPage() {
@@ -63,6 +78,15 @@ export default function AddCustomMCPServerPage() {
   const [tokenUrl, setTokenUrl] = useState("");
   const [dcrResult, setDcrResult] = useState<OAuth2DCRResponse | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [oauth2RegistrationMode, setOauth2RegistrationMode] =
+    useState<string>("");
+
+  // Manual OAuth2 registration fields
+  const [manualEndpointAuthMethod, setManualEndpointAuthMethod] =
+    useState<string>("");
+  const [manualClientId, setManualClientId] = useState("");
+  const [manualClientSecret, setManualClientSecret] = useState("");
+  const [manualScope, setManualScope] = useState("");
 
   // Step 2 fields - API Key
   const [apiKeyLocation, setApiKeyLocation] = useState<string>("");
@@ -74,6 +98,17 @@ export default function AddCustomMCPServerPage() {
     useState<string>("");
 
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
+
+  const isAutomaticRegistrationAvailable = useCallback(() => {
+    return !!(
+      oauth2Config.registration_url &&
+      oauth2Config.token_endpoint_auth_method_supported &&
+      oauth2Config.token_endpoint_auth_method_supported.length > 0
+    );
+  }, [
+    oauth2Config.registration_url,
+    oauth2Config.token_endpoint_auth_method_supported,
+  ]);
 
   // Auth method management functions
   const handleAuthMethodChange = (
@@ -102,6 +137,35 @@ export default function AddCustomMCPServerPage() {
     return Object.entries(authMethods)
       .filter(([, selected]) => selected)
       .map(([method]) => method);
+  };
+
+  // Check if Step 2 form is valid
+  const isStep2Valid = () => {
+    // API Key validation
+    if (authMethods.api_key) {
+      if (!apiKeyLocation || !apiKeyName.trim()) {
+        return false;
+      }
+    }
+
+    // OAuth2 validation
+    if (authMethods.oauth2) {
+      if (!authorizeUrl.trim() || !tokenUrl.trim()) {
+        return false;
+      }
+
+      if (oauth2RegistrationMode === "automatic") {
+        if (!dcrResult) {
+          return false;
+        }
+      } else if (oauth2RegistrationMode === "manual") {
+        if (!manualEndpointAuthMethod || !manualClientId.trim()) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   };
 
   // Category management functions
@@ -216,6 +280,17 @@ export default function AddCustomMCPServerPage() {
           setAuthorizeUrl(response.authorize_url || "");
           setTokenUrl(response.access_token_url || "");
 
+          // Set default registration mode based on discovery results
+          if (
+            response.registration_url &&
+            response.token_endpoint_auth_method_supported &&
+            response.token_endpoint_auth_method_supported.length > 0
+          ) {
+            setOauth2RegistrationMode("automatic");
+          } else {
+            setOauth2RegistrationMode("manual");
+          }
+
           setCurrentStep(2);
           toast.success("OAuth2 configuration discovered successfully");
         } catch (error) {
@@ -225,6 +300,9 @@ export default function AddCustomMCPServerPage() {
               ? error.message
               : "Failed to discover OAuth2 configuration",
           );
+          // Set manual mode as fallback when discovery fails
+          setOauth2RegistrationMode("manual");
+          setCurrentStep(2);
         } finally {
           setIsDiscovering(false);
         }
@@ -248,78 +326,77 @@ export default function AddCustomMCPServerPage() {
         activeRole,
       );
 
+      const authConfigs: AuthConfig[] = [];
+
+      // Build auth configs for each selected auth method
+      if (authMethods.no_auth) {
+        authConfigs.push({
+          type: "no_auth",
+        });
+      }
+
+      if (authMethods.api_key) {
+        authConfigs.push({
+          type: "api_key",
+          location: apiKeyLocation,
+          name: apiKeyName.trim(),
+          prefix: apiKeyPrefix.trim() || undefined,
+        });
+      }
+
+      if (authMethods.oauth2) {
+        const oauth2AuthConfig: AuthConfig = {
+          type: "oauth2",
+          location: "header",
+          name: "Authorization",
+          prefix: "Bearer",
+          authorize_url: authorizeUrl.trim(),
+          access_token_url: tokenUrl.trim(),
+          refresh_token_url: oauth2Config.refresh_token_url || undefined,
+          scope: "",
+        };
+
+        if (oauth2RegistrationMode === "automatic" && dcrResult) {
+          oauth2AuthConfig.client_id = dcrResult.client_id;
+          oauth2AuthConfig.client_secret = dcrResult.client_secret;
+          oauth2AuthConfig.token_endpoint_auth_method =
+            dcrResult.token_endpoint_auth_method;
+        } else if (oauth2RegistrationMode === "manual") {
+          oauth2AuthConfig.client_id = manualClientId.trim();
+          oauth2AuthConfig.client_secret =
+            manualClientSecret.trim() || undefined;
+          oauth2AuthConfig.scope = manualScope.trim() || "";
+          oauth2AuthConfig.token_endpoint_auth_method =
+            manualEndpointAuthMethod;
+        }
+
+        authConfigs.push(oauth2AuthConfig);
+      }
+
       const payload: {
         name: string;
-        auth_methods: string[];
         url: string;
         transport_type: string;
-        description?: string;
+        description: string;
         logo?: string;
-        categories?: string[];
-        // API Key fields
-        api_key_location?: string;
-        api_key_name?: string;
-        api_key_prefix?: string;
-        // OAuth2 fields
-        authorize_url?: string;
-        access_token_url?: string;
-        token_endpoint_auth_method_supported?: string[];
-        // OAuth2 DCR fields
-        oauth2_client_id?: string;
-        oauth2_client_secret?: string;
-        oauth2_token_endpoint_auth_method?: string;
-        // Operational Account
-        operational_account_auth_type?: string;
+        categories: string[];
+        auth_configs: AuthConfig[];
+        server_metadata: object;
+        operational_account_auth_type: string;
       } = {
         name: name.trim(),
-        auth_methods: getSelectedAuthMethods(),
         url: url.trim(),
         transport_type: transportType,
+        description: description.trim(),
+        categories: categories,
+        auth_configs: authConfigs,
+        server_metadata: {},
+        operational_account_auth_type: operationalAccountAuthType,
       };
 
       // Add optional fields
-      if (description.trim()) {
-        payload.description = description.trim();
-      }
       if (logoUrl.trim()) {
         payload.logo = logoUrl.trim();
-      }
-      if (categories.length > 0) {
-        payload.categories = categories;
-      }
-
-      // Add API Key fields if applicable
-      if (authMethods.api_key) {
-        if (apiKeyLocation) {
-          payload.api_key_location = apiKeyLocation;
-        }
-        if (apiKeyName.trim()) {
-          payload.api_key_name = apiKeyName.trim();
-        }
-        if (apiKeyPrefix.trim()) {
-          payload.api_key_prefix = apiKeyPrefix.trim();
-        }
-      }
-
-      // Add OAuth2 fields if applicable
-      if (authMethods.oauth2) {
-        payload.authorize_url = authorizeUrl.trim() || undefined;
-        payload.access_token_url = tokenUrl.trim() || undefined;
-        payload.token_endpoint_auth_method_supported =
-          oauth2Config.token_endpoint_auth_method_supported;
-
-        // Add DCR results if available
-        if (dcrResult) {
-          payload.oauth2_client_id = dcrResult.client_id || undefined;
-          payload.oauth2_client_secret = dcrResult.client_secret || undefined;
-          payload.oauth2_token_endpoint_auth_method =
-            dcrResult.token_endpoint_auth_method;
-        }
-      }
-
-      // Add operational account auth type
-      if (operationalAccountAuthType) {
-        payload.operational_account_auth_type = operationalAccountAuthType;
       }
 
       await api.post("/mcp-servers", payload);
@@ -384,6 +461,49 @@ export default function AddCustomMCPServerPage() {
 
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate API Key fields if API Key is selected
+    if (authMethods.api_key) {
+      if (!apiKeyLocation) {
+        toast.error("Please select an API key location");
+        return;
+      }
+      if (!apiKeyName.trim()) {
+        toast.error("Please enter an API key name");
+        return;
+      }
+    }
+
+    // Validate OAuth2 fields if OAuth2 is selected
+    if (authMethods.oauth2) {
+      if (!authorizeUrl.trim()) {
+        toast.error("Please enter an authorization URL");
+        return;
+      }
+      if (!tokenUrl.trim()) {
+        toast.error("Please enter a token URL");
+        return;
+      }
+
+      if (oauth2RegistrationMode === "automatic") {
+        if (!dcrResult) {
+          toast.error(
+            "Please complete auto client registration before proceeding",
+          );
+          return;
+        }
+      } else if (oauth2RegistrationMode === "manual") {
+        if (!manualEndpointAuthMethod) {
+          toast.error("Please select an endpoint auth method");
+          return;
+        }
+        if (!manualClientId.trim()) {
+          toast.error("Please enter a client ID");
+          return;
+        }
+      }
+    }
+
     setCurrentStep(3);
   };
 
@@ -675,7 +795,9 @@ export default function AddCustomMCPServerPage() {
                 <h3 className="text-md font-medium">API Key Configuration</h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="apiKeyLocation">Location</Label>
+                  <Label htmlFor="apiKeyLocation">
+                    Location <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={apiKeyLocation}
                     onValueChange={setApiKeyLocation}
@@ -698,7 +820,9 @@ export default function AddCustomMCPServerPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="apiKeyName">Name</Label>
+                  <Label htmlFor="apiKeyName">
+                    Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="apiKeyName"
                     type="text"
@@ -738,7 +862,9 @@ export default function AddCustomMCPServerPage() {
                 <h3 className="text-md font-medium">OAuth2 Configuration</h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="authorizeUrl">Authorization URL</Label>
+                  <Label htmlFor="authorizeUrl">
+                    Authorization URL <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="authorizeUrl"
                     type="url"
@@ -751,7 +877,9 @@ export default function AddCustomMCPServerPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tokenUrl">Token URL</Label>
+                  <Label htmlFor="tokenUrl">
+                    Token URL <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="tokenUrl"
                     type="url"
@@ -765,7 +893,7 @@ export default function AddCustomMCPServerPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="authMethodsSupported">
-                    Token Endpoint Auth Methods
+                    Token Endpoint Auth Methods Supported
                   </Label>
                   <Input
                     id="authMethodsSupported"
@@ -784,70 +912,193 @@ export default function AddCustomMCPServerPage() {
                   </p>
                 </div>
 
-                {oauth2Config.registration_url && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAutoRegisterClient}
-                        disabled={isRegistering || isSubmitting}
-                        className="flex items-center gap-2"
+                {/* Client Registration Mode */}
+                <div className="space-y-4">
+                  <Label>Client Registration</Label>
+                  <RadioGroup
+                    value={oauth2RegistrationMode}
+                    onValueChange={setOauth2RegistrationMode}
+                    disabled={isSubmitting}
+                    className="flex flex-row space-x-6"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        value="automatic"
+                        id="automatic"
+                        disabled={
+                          !isAutomaticRegistrationAvailable() || isSubmitting
+                        }
+                      />
+                      <Label
+                        htmlFor="automatic"
+                        className={`text-sm font-normal ${
+                          !isAutomaticRegistrationAvailable()
+                            ? "text-muted-foreground"
+                            : ""
+                        }`}
                       >
-                        {isRegistering ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Plus className="h-4 w-4" />
+                        Automatic
+                        {!isAutomaticRegistrationAvailable() && (
+                          <span className="text-xs text-muted-foreground ml-1">
+                            (Not available)
+                          </span>
                         )}
-                        {isRegistering
-                          ? "Registering..."
-                          : "Auto Register Client"}
-                      </Button>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="manual" id="manual" />
+                      <Label htmlFor="manual" className="text-sm font-normal">
+                        Manual
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  {!isAutomaticRegistrationAvailable() && (
+                    <p className="text-sm text-muted-foreground">
+                      Automatic registration is not available because the server
+                      did not provide a registration URL or supported
+                      authentication methods during discovery.
+                    </p>
+                  )}
+                </div>
+
+                {oauth2RegistrationMode === "automatic" &&
+                  oauth2Config.registration_url && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleAutoRegisterClient}
+                          disabled={isRegistering || isSubmitting}
+                          className="flex items-center gap-2"
+                        >
+                          {isRegistering ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                          {isRegistering
+                            ? "Registering..."
+                            : "Auto Register Client"}
+                        </Button>
+                        {dcrResult && (
+                          <span className="text-sm text-green-600 font-medium">
+                            ✓ Client registered successfully
+                          </span>
+                        )}
+                      </div>
+
                       {dcrResult && (
-                        <span className="text-sm text-green-600 font-medium">
-                          ✓ Client registered successfully
-                        </span>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                          <h4 className="text-sm font-medium text-green-800">
+                            Registration Results
+                          </h4>
+                          <div className="grid grid-cols-1 gap-3 text-sm">
+                            <div>
+                              <span className="font-medium text-green-700">
+                                Auth Method:
+                              </span>{" "}
+                              <span className="text-green-600">
+                                {dcrResult.token_endpoint_auth_method}
+                              </span>
+                            </div>
+                            {dcrResult.client_id && (
+                              <div>
+                                <span className="font-medium text-green-700">
+                                  Client ID:
+                                </span>{" "}
+                                <span className="text-green-600 font-mono text-xs">
+                                  {dcrResult.client_id}
+                                </span>
+                              </div>
+                            )}
+                            {dcrResult.client_secret && (
+                              <div>
+                                <span className="font-medium text-green-700">
+                                  Client Secret:
+                                </span>{" "}
+                                <span className="text-green-600 font-mono text-xs">
+                                  {"•".repeat(8)}...
+                                  {dcrResult.client_secret.slice(-4)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
+                  )}
 
-                    {dcrResult && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                        <h4 className="text-sm font-medium text-green-800">
-                          Registration Results
-                        </h4>
-                        <div className="grid grid-cols-1 gap-3 text-sm">
-                          <div>
-                            <span className="font-medium text-green-700">
-                              Auth Method:
-                            </span>{" "}
-                            <span className="text-green-600">
-                              {dcrResult.token_endpoint_auth_method}
-                            </span>
-                          </div>
-                          {dcrResult.client_id && (
-                            <div>
-                              <span className="font-medium text-green-700">
-                                Client ID:
-                              </span>{" "}
-                              <span className="text-green-600 font-mono text-xs">
-                                {dcrResult.client_id}
-                              </span>
-                            </div>
+                {/* Manual Registration */}
+                {oauth2RegistrationMode === "manual" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="manualEndpointAuthMethod">
+                        Endpoint Auth Method{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={manualEndpointAuthMethod}
+                        onValueChange={setManualEndpointAuthMethod}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger className="max-w-md">
+                          <SelectValue placeholder="Select auth method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {oauth2Config.token_endpoint_auth_method_supported?.map(
+                            (method) => (
+                              <SelectItem key={method} value={method}>
+                                {method}
+                              </SelectItem>
+                            ),
                           )}
-                          {dcrResult.client_secret && (
-                            <div>
-                              <span className="font-medium text-green-700">
-                                Client Secret:
-                              </span>{" "}
-                              <span className="text-green-600 font-mono text-xs">
-                                {"•".repeat(8)}...
-                                {dcrResult.client_secret.slice(-4)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="manualClientId">
+                        Client ID <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="manualClientId"
+                        type="text"
+                        placeholder="Enter client ID"
+                        value={manualClientId}
+                        onChange={(e) => setManualClientId(e.target.value)}
+                        disabled={isSubmitting}
+                        className="max-w-md"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="manualClientSecret">
+                        Client Secret (optional)
+                      </Label>
+                      <Input
+                        id="manualClientSecret"
+                        type="password"
+                        placeholder="Enter client secret"
+                        value={manualClientSecret}
+                        onChange={(e) => setManualClientSecret(e.target.value)}
+                        disabled={isSubmitting}
+                        className="max-w-md"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="manualScope">Scope</Label>
+                      <Input
+                        id="manualScope"
+                        type="text"
+                        placeholder="Enter scope (e.g., read write)"
+                        value={manualScope}
+                        onChange={(e) => setManualScope(e.target.value)}
+                        disabled={isSubmitting}
+                        className="max-w-md"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -864,7 +1115,7 @@ export default function AddCustomMCPServerPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isStep2Valid()}
                 className="flex items-center gap-2"
               >
                 {isSubmitting ? (
