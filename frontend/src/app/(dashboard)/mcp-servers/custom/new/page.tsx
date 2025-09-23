@@ -69,6 +69,10 @@ export default function AddCustomMCPServerPage() {
   const [apiKeyName, setApiKeyName] = useState("");
   const [apiKeyPrefix, setApiKeyPrefix] = useState("");
 
+  // Step 3 fields - Operational Account
+  const [operationalAccountAuthType, setOperationalAccountAuthType] =
+    useState<string>("");
+
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
 
   // Auth method management functions
@@ -88,6 +92,10 @@ export default function AddCustomMCPServerPage() {
 
   const needsStep2 = () => {
     return authMethods.api_key || authMethods.oauth2;
+  };
+
+  const needsStep3 = () => {
+    return hasSelectedAuthMethod(); // Always show step 3 if any auth method is selected
   };
 
   const getSelectedAuthMethods = () => {
@@ -225,8 +233,8 @@ export default function AddCustomMCPServerPage() {
         setCurrentStep(2);
       }
     } else {
-      // For No Auth only, create server directly
-      await createServer();
+      // For No Auth only, go to step 3 (operational account)
+      setCurrentStep(3);
     }
   };
 
@@ -260,6 +268,8 @@ export default function AddCustomMCPServerPage() {
         oauth2_client_id?: string;
         oauth2_client_secret?: string;
         oauth2_token_endpoint_auth_method?: string;
+        // Operational Account
+        operational_account_auth_type?: string;
       } = {
         name: name.trim(),
         auth_methods: getSelectedAuthMethods(),
@@ -305,6 +315,11 @@ export default function AddCustomMCPServerPage() {
           payload.oauth2_token_endpoint_auth_method =
             dcrResult.token_endpoint_auth_method;
         }
+      }
+
+      // Add operational account auth type
+      if (operationalAccountAuthType) {
+        payload.operational_account_auth_type = operationalAccountAuthType;
       }
 
       await api.post("/mcp-servers", payload);
@@ -369,6 +384,18 @@ export default function AddCustomMCPServerPage() {
 
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCurrentStep(3);
+  };
+
+  const handleStep3Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate operational account auth type
+    if (!operationalAccountAuthType) {
+      toast.error("Please select an operational account authentication method");
+      return;
+    }
+
     await createServer();
   };
 
@@ -389,11 +416,15 @@ export default function AddCustomMCPServerPage() {
         <div>
           <h1 className="text-2xl font-semibold">Add Custom MCP Server</h1>
           <p className="text-muted-foreground mt-1">
-            {needsStep2() && currentStep === 1
-              ? `Step ${currentStep} of 2: Server Details`
-              : needsStep2() && currentStep === 2
-                ? `Step ${currentStep} of 2: Setup Auth Method`
-                : "Create a new custom MCP server configuration"}
+            {currentStep === 1
+              ? needsStep3()
+                ? `Step ${currentStep} of ${needsStep2() ? "3" : "2"}: Server Details`
+                : "Create a new custom MCP server configuration"
+              : currentStep === 2
+                ? `Step ${currentStep} of 3: Setup Auth Method`
+                : currentStep === 3
+                  ? `Step ${currentStep} of ${needsStep2() ? "3" : "2"}: Operational Account`
+                  : "Create a new custom MCP server configuration"}
           </p>
         </div>
       </div>
@@ -616,10 +647,10 @@ export default function AddCustomMCPServerPage() {
                 {isDiscovering
                   ? "Discovering..."
                   : isSubmitting
-                    ? "Creating..."
+                    ? "Registering..."
                     : needsStep2()
                       ? "Next: Setup Auth Method"
-                      : "Create Server"}
+                      : "Next: Operational Account"}
               </Button>
               <Button
                 type="button"
@@ -640,7 +671,7 @@ export default function AddCustomMCPServerPage() {
           <h2 className="text-lg font-semibold mb-4">Setup Auth Method</h2>
           <form onSubmit={handleStep2Submit} className="space-y-6">
             {authMethods.api_key && (
-              <div className="space-y-4">
+              <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
                 <h3 className="text-md font-medium">API Key Configuration</h3>
 
                 <div className="space-y-2">
@@ -703,7 +734,7 @@ export default function AddCustomMCPServerPage() {
             )}
 
             {authMethods.oauth2 && (
-              <div className="space-y-4">
+              <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
                 <h3 className="text-md font-medium">OAuth2 Configuration</h3>
 
                 <div className="space-y-2">
@@ -841,7 +872,87 @@ export default function AddCustomMCPServerPage() {
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {isSubmitting ? "Creating..." : "Create Server"}
+                {isSubmitting ? "Registering..." : "Next: Operational Account"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/mcp-servers")}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Step 3: Operational Account */}
+      {currentStep === 3 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4">Operational Account</h2>
+          <form onSubmit={handleStep3Submit} className="space-y-6">
+            <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Operational Account is an account primarily used for fetching
+                  MCP server information and listening any server changes, for
+                  example obtaining tool list. Please select the authentication
+                  method used to connect Operational Account.
+                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="operationalAccountAuthType">
+                    Operational Account Auth Method{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={operationalAccountAuthType}
+                    onValueChange={setOperationalAccountAuthType}
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <SelectTrigger className="max-w-md">
+                      <SelectValue placeholder="Select auth method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getSelectedAuthMethods().map((method) => (
+                        <SelectItem key={method} value={method}>
+                          {method === "no_auth"
+                            ? "No Auth"
+                            : method === "api_key"
+                              ? "API Key"
+                              : method === "oauth2"
+                                ? "OAuth2"
+                                : method}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(needsStep2() ? 2 : 1)}
+                disabled={isSubmitting}
+              >
+                Back
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !operationalAccountAuthType}
+                className="flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {isSubmitting ? "Registering..." : "Register Server"}
               </Button>
               <Button
                 type="button"
