@@ -178,6 +178,9 @@ def update_mcp_tools_helper(
         mcp_tool_embeddings + [None] * len(mcp_tools_without_new_embeddings),
     )
 
+    # TODO: When there is any update to the mcp tools, storing the version (or the diff) of the
+    # mcp tools in the database
+
     return [mcp_tool.name for mcp_tool in mcp_tools_updated]
 
 
