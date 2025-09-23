@@ -4,11 +4,14 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 
+from aci.common.logging_setup import get_logger
 from aci.control_plane.exceptions import OAuth2MetadataDiscoveryError
 from aci.control_plane.services.oauth2_client.schema import (
     OAuthMetadata,
     ProtectedResourceMetadata,
 )
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -164,7 +167,14 @@ class MetadataFetcher:
             init_response = httpx.get(self.context.server_url, timeout=httpx.Timeout(5.0))
 
             # Step 1: Discover protected resource metadata (RFC9728 with WWW-Authenticate support)
-            self._discover_protected_resource(init_response)
+            try:
+                self._discover_protected_resource(init_response)
+            except Exception:
+                logger.error(
+                    f"Protected resource metadata discovery failed: {self.context.server_url}"
+                )
+                # Do not raise an error, as this is not a critical error, we can still proceed with
+                # the discovery process
 
             # Step 2: Discover OAuth metadata (with fallback for legacy servers)
             discovery_urls = self._get_discovery_urls()
