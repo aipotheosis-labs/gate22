@@ -67,7 +67,7 @@ class MCPToolsManager:
                     ),
                 ),
             )
-            logger.info(f"Fetched MCP tool: {tool.name} --> {mcp_tool_upsert.name}")
+            logger.debug(f"Fetched MCP tool: {tool.name} --> {mcp_tool_upsert.name}")
 
             # TODO: Check and handle for duplicate tool names after sanitization
             latest_mcp_tool_upserts.append(mcp_tool_upsert)
