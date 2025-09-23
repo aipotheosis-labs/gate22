@@ -1,6 +1,6 @@
 {
   "name": "SLACK",
-  "url": "http://mcp.aci.dev/virtual/mcp?server_name=SLACK",
+  "url": "https://mcp.aci.dev/virtual/mcp?server_name=SLACK",
   "transport_type": "streamable_http",
   "description": "Slack is a team communication and collaboration tool. This API allows you to interact with Slack in two ways: as a bot for automated tasks and workflows, or as a user to perform actions on behalf of a real Slack user. Whether you're building chatbots, automating workflows, or integrating Slack with other tools, this API provides the flexibility to suit your needs.",
   "logo": "https://raw.githubusercontent.com/aipotheosis-labs/aipolabs-icons/refs/heads/main/apps/slack.svg",

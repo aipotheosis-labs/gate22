@@ -1,6 +1,6 @@
 {
   "name": "REDDIT",
-  "url": "http://mcp.aci.dev/virtual/mcp?server_name=REDDIT",
+  "url": "https://mcp.aci.dev/virtual/mcp?server_name=REDDIT",
   "transport_type": "streamable_http",
   "description": "The Reddit API allows you to interact with Reddit programmatically, including post management, comments, user interactions, and subreddit operations.",
   "logo": "https://raw.githubusercontent.com/aipotheosis-labs/aipolabs-icons/refs/heads/main/apps/reddit.svg",

@@ -1,12 +1,10 @@
 {
   "name": "NOTTE",
-  "url": "http://mcp.aci.dev/virtual/mcp?server_name=NOTTE",
+  "url": "https://mcp.aci.dev/virtual/mcp?server_name=NOTTE",
   "transport_type": "streamable_http",
   "description": "Notte transforms the internet into a space where each website becomes a structured, navigable map for intelligent agents.",
   "logo": "https://raw.githubusercontent.com/aipotheosis-labs/aipolabs-icons/refs/heads/main/apps/notte.png",
-  "categories": [
-    "Search & Scraping"
-  ],
+  "categories": ["Search & Scraping"],
   "auth_configs": [
     {
       "type": "api_key",

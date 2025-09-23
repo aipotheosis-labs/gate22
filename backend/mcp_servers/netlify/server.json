@@ -1,14 +1,10 @@
 {
   "name": "NETLIFY",
-  "url": "http://mcp.aci.dev/virtual/mcp?server_name=NETLIFY",
+  "url": "https://mcp.aci.dev/virtual/mcp?server_name=NETLIFY",
   "transport_type": "streamable_http",
   "description": "Netlify is a cloud hosting platform for web applications and static sites with continuous deployment, forms, and serverless functions.",
   "logo": "https://raw.githubusercontent.com/aipotheosis-labs/aipolabs-icons/refs/heads/main/apps/netlify.svg",
-  "categories": [
-    "Dev Tools",
-    "Cloud Infrastructure",
-    "Web Development"
-  ],
+  "categories": ["Dev Tools", "Cloud Infrastructure", "Web Development"],
   "auth_configs": [
     {
       "type": "api_key",

@@ -1,6 +1,6 @@
 {
   "name": "CALENDLY",
-  "url": "http://mcp.aci.dev/virtual/mcp?server_name=CALENDLY",
+  "url": "https://mcp.aci.dev/virtual/mcp?server_name=CALENDLY",
   "transport_type": "streamable_http",
   "description": "Calendly integration for scheduling and managing meetings. This app allows you to automate your scheduling process, embed Calendly on your website, and manage your availability.",
   "logo": "https://raw.githubusercontent.com/aipotheosis-labs/aipolabs-icons/refs/heads/main/apps/calendly.svg",

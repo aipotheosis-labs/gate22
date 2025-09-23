@@ -68,7 +68,7 @@ def _transform_app(app_data: Any) -> dict[str, Any]:
 
     server_data: dict[str, Any] = {
         "name": name,
-        "url": f"http://mcp.aci.dev/virtual/mcp?server_name={name}",
+        "url": f"https://mcp.aci.dev/virtual/mcp?server_name={name}",
         "transport_type": "streamable_http",
         "description": description,
         "logo": logo if logo is not None else "",
