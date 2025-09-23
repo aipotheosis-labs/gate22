@@ -538,12 +538,12 @@ export default function AddCustomMCPServerPage() {
           <p className="text-muted-foreground mt-1">
             {currentStep === 1
               ? needsStep3()
-                ? `Step ${currentStep} of ${needsStep2() ? "3" : "2"}: Server Details`
+                ? `Step ${currentStep} of 3: Server Details`
                 : "Create a new custom MCP server configuration"
               : currentStep === 2
                 ? `Step ${currentStep} of 3: Setup Auth Method`
                 : currentStep === 3
-                  ? `Step ${currentStep} of ${needsStep2() ? "3" : "2"}: Operational Account`
+                  ? `Step ${currentStep} of 3: Operational Account`
                   : "Create a new custom MCP server configuration"}
           </p>
         </div>
