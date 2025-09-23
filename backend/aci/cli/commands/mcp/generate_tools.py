@@ -17,6 +17,7 @@ from aci.common.db.sql_models import (
     MCPServerConfiguration,
 )
 from aci.common.enums import MCPServerTransportType
+from aci.common.exceptions import MCPToolSanitizationError
 from aci.common.mcp_auth_manager import MCPAuthManager
 from aci.common.schemas.mcp_auth import (
     AuthConfig,
@@ -138,7 +139,7 @@ def _create_tools_json_file(mcp_server_name: str, canonical_tools: list[mcp_type
     for canonical_tool in canonical_tools:
         try:
             sanitized = mcp_tool_utils.sanitize_canonical_tool_name(canonical_tool.name)
-        except mcp_tool_utils.MCPToolSanitizationError:
+        except MCPToolSanitizationError:
             console.print(
                 f"[yellow]Warning: Tool name '{canonical_tool.name}' is empty after sanitization. Using 'UNKNOWN_TOOL' as placeholder. Need manual fix after generation.[/yellow]"  # noqa: E501
             )
