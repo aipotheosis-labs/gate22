@@ -27,8 +27,8 @@ def normalize_and_hash_content(content: str | dict) -> str:
         normalized = json.dumps(content, sort_keys=True, separators=(",", ":"))
 
     # Generate SHA-256 hash of normalized content
-    # return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-    return hashlib.md5(normalized.encode("utf-8")).hexdigest()
+    # Note: switch to md5 if this causes performance issues in the future
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def sanitize_canonical_tool_name(canonical_tool_name: str) -> str:
