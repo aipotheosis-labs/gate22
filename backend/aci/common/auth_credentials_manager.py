@@ -232,6 +232,14 @@ async def get_auth_credentials(
                 mcp_server_configuration_id,
             )
         )
+    elif connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
+        logger.info(
+            f"Getting auth credentials for operational connected account, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
+        )
+        connected_account = crud.connected_accounts.get_operational_connected_account_by_mcp_server_configuration_id(  # noqa: E501
+            db_session,
+            mcp_server_configuration_id,
+        )
     elif connected_account_ownership == ConnectedAccountOwnership.INDIVIDUAL:
         if user_id is None:
             logger.error("User ID is required for individual connected account")
