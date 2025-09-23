@@ -8,7 +8,7 @@ from aci.common.enums import ConnectedAccountOwnership
 from aci.common.logging_setup import get_logger
 from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolMetadata, MCPToolUpsert
-from aci.control_plane.exceptions import MCPToolsManagerError
+from aci.control_plane.exceptions import MCPToolsManagerError, MCPToolsNormalizationError
 from aci.control_plane.services.mcp_tools.mcp_tools_fetcher import MCPToolsFetcher
 
 logger = get_logger(__name__)
@@ -46,31 +46,35 @@ class MCPToolsManager:
 
         # Transform the data into our schema
         latest_mcp_tool_upserts = []
-        for tool in tools:
-            sanitized_name = mcp_tool_utils.sanitize_canonical_tool_name(tool.name)
-            # Note: Assume mcp_server.name should be checked in MCPServerUpsert.validate_name()
-            tool_name = f"{self.mcp_server.name}__{sanitized_name}"
-            mcp_tool_upsert = MCPToolUpsert(
-                name=tool_name,
-                description=tool.description if tool.description is not None else "",
-                input_schema=tool.inputSchema,
-                tags=[],
-                tool_metadata=MCPToolMetadata(
-                    canonical_tool_name=tool.name,
-                    canonical_tool_description_hash=mcp_tool_utils.normalize_and_hash_content(
-                        tool.description
-                    )
-                    if tool.description is not None
-                    else "",
-                    canonical_tool_input_schema_hash=mcp_tool_utils.normalize_and_hash_content(
-                        tool.inputSchema
-                    ),
-                ),
-            )
-            logger.debug(f"Fetched MCP tool: {tool.name} --> {mcp_tool_upsert.name}")
 
-            # TODO: Check and handle for duplicate tool names after sanitization
-            latest_mcp_tool_upserts.append(mcp_tool_upsert)
+        try:
+            for tool in tools:
+                sanitized_name = mcp_tool_utils.sanitize_canonical_tool_name(tool.name)
+                # Note: Assume mcp_server.name should be checked in MCPServerUpsert.validate_name()
+                tool_name = f"{self.mcp_server.name}__{sanitized_name}"
+                mcp_tool_upsert = MCPToolUpsert(
+                    name=tool_name,
+                    description=tool.description if tool.description is not None else "",
+                    input_schema=tool.inputSchema,
+                    tags=[],
+                    tool_metadata=MCPToolMetadata(
+                        canonical_tool_name=tool.name,
+                        canonical_tool_description_hash=mcp_tool_utils.normalize_and_hash_content(
+                            tool.description
+                        )
+                        if tool.description is not None
+                        else "",
+                        canonical_tool_input_schema_hash=mcp_tool_utils.normalize_and_hash_content(
+                            tool.inputSchema
+                        ),
+                    ),
+                )
+                logger.debug(f"Fetched MCP tool: {tool.name} --> {mcp_tool_upsert.name}")
+
+                # TODO: Check and handle for duplicate tool names after sanitization
+                latest_mcp_tool_upserts.append(mcp_tool_upsert)
+        except Exception as e:
+            raise MCPToolsNormalizationError(f"Error transforming tools: {e}") from e
 
         # Diff the tools vs the existing tools in database
         existing_mcp_tool_upserts = [
