@@ -124,6 +124,11 @@ class MCPToolsManager:
             db_session, [mcp_tool.name for mcp_tool in tools_to_delete]
         )
 
+        # TODO: Remove stale records from mcp_tool_configurations.enabled_tools that are no longer
+        # exists after deletion
+
+        # TODO: Storing the version history of the mcp tools after tool updates detected
+
         # Update the last synced at time
         crud.mcp_servers.update_mcp_server_last_synced_at_now(db_session, self.mcp_server)
 
