@@ -2,9 +2,11 @@ import json
 from pathlib import Path
 from uuid import UUID
 
+import boto3  # type: ignore[import-untyped]
 import click
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 from deepdiff import DeepDiff
-from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template, meta
 from rich.console import Console
 from sqlalchemy.orm import Session
 
@@ -16,6 +18,7 @@ from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import MCPServerEmbeddingFields, PublicMCPServerUpsertRequest
 
 console = Console()
+AWS_SSM_OAUTH2_PREFIX = "/ACI/PROD/MCP-GATEWAY/OAUTH2"
 
 
 @click.command()
@@ -27,19 +30,14 @@ console = Console()
     help="Path to the mcp server JSON file",
 )
 @click.option(
-    "--secrets-file",
-    "secrets_file",
-    type=click.Path(exists=True, path_type=Path),
-    default=None,
-    show_default=True,
-    help="Path to the secrets JSON file",
-)
-@click.option(
     "--skip-dry-run",
     is_flag=True,
     help="Provide this flag to run the command and apply changes to the database",
 )
-def upsert_mcp_server(server_file: Path, secrets_file: Path | None, skip_dry_run: bool) -> UUID:
+def upsert_mcp_server(
+    server_file: Path,
+    skip_dry_run: bool,
+) -> UUID:
     """
     Insert or update an MCPServer in the DB from a JSON file, optionally injecting secrets.
     If an mcp server with the given name already exists, performs an update; otherwise, creates a
@@ -47,17 +45,31 @@ def upsert_mcp_server(server_file: Path, secrets_file: Path | None, skip_dry_run
     For changing the mcp server name of an existing mcp server, use the <PLACEHOLDER> command.
     """
     with utils.create_db_session(config.DB_FULL_URL) as db_session:
-        return upsert_mcp_server_helper(db_session, server_file, secrets_file, skip_dry_run)
+        return upsert_mcp_server_helper(
+            db_session,
+            server_file,
+            skip_dry_run,
+        )
 
 
 def upsert_mcp_server_helper(
-    db_session: Session, server_file: Path, secrets_file: Path | None, skip_dry_run: bool
+    db_session: Session,
+    server_file: Path,
+    skip_dry_run: bool,
 ) -> UUID:
-    # Load secrets if provided
-    secrets = {}
-    if secrets_file:
-        with open(secrets_file) as f:
-            secrets = json.load(f)
+    server_name = _extract_server_name(server_file)
+    required_placeholders = _discover_template_placeholders(server_file)
+
+    if required_placeholders:
+        console.rule(
+            f"Required placeholders for [bold green]{server_name}[/bold green]: {required_placeholders}"  # noqa: E501
+        )
+        secrets = _load_secrets(
+            server_name,
+            required_placeholders,
+        )
+    else:
+        secrets = {}
     # Render the template in-memory and load JSON data
     try:
         rendered_content = _render_template_to_string(server_file, secrets)
@@ -159,6 +171,89 @@ def update_mcp_server_helper(
     console.print(diff.pretty())
 
     return updated_mcp_server.id
+
+
+def _load_secrets(
+    server_name: str,
+    required_placeholders: set[str],
+) -> dict[str, str]:
+    if not required_placeholders:
+        return {}
+
+    parameter_names = {
+        placeholder: f"{AWS_SSM_OAUTH2_PREFIX}/{server_name}/{placeholder}"
+        for placeholder in required_placeholders
+    }
+
+    secrets = _fetch_placeholders_from_parameter_store(parameter_names)
+
+    missing_values = [
+        placeholder for placeholder, value in secrets.items() if value is None or value == ""
+    ]
+    if missing_values:
+        missing = ", ".join(sorted(missing_values))
+        error_message = (
+            f"AWS Parameter Store did not provide values for placeholders: {missing}, "
+            "please upload the secrets to AWS Parameter Store first"
+        )
+        console.rule(f"[bold red]Failed to Upsert MCP Server:[/bold red] {server_name}")
+        console.print(f"[bold red]Error: {error_message}[/bold red]")
+
+        raise click.ClickException("Aborting...")
+
+    return {key: value for key, value in secrets.items() if value is not None}
+
+
+def _fetch_placeholders_from_parameter_store(
+    parameter_names: dict[str, str],
+) -> dict[str, str | None]:
+    client = boto3.client("ssm")
+    try:
+        console.print(f"Fetching values from AWS Parameter Store: {list(parameter_names.values())}")
+        response = client.get_parameters(Names=list(parameter_names.values()), WithDecryption=True)
+    except ClientError as exc:  # pragma: no cover - boto3 error paths
+        raise click.ClickException(
+            f"Unable to read parameters from AWS Parameter Store: {exc}"
+        ) from exc
+
+    value_by_name: dict[str, str | None] = {}
+    for parameter in response.get("Parameters", []):
+        name = parameter.get("Name")
+        value_by_name[name] = parameter.get("Value")
+
+    invalid_parameters = set(response.get("InvalidParameters", []))
+
+    secrets: dict[str, str | None] = {}
+    for placeholder, parameter_name in parameter_names.items():
+        if parameter_name in invalid_parameters:
+            secrets[placeholder] = None
+        else:
+            secrets[placeholder] = value_by_name.get(parameter_name)
+
+    return secrets
+
+
+def _extract_server_name(server_file: Path) -> str:
+    with open(server_file) as f:
+        server_data = json.load(f)
+
+    if not isinstance(server_data, dict):
+        raise click.ClickException("Unable to determine server name")
+
+    server_name = server_data.get("name", None)
+    if server_name is None:
+        raise click.ClickException("name is not in the server data")
+    if not isinstance(server_name, str):
+        raise click.ClickException("name is not a string")
+    return server_name
+
+
+def _discover_template_placeholders(template_path: Path) -> set[str]:
+    env = Environment(autoescape=False, trim_blocks=True, lstrip_blocks=True)
+    template_source = template_path.read_text()
+    parsed_content = env.parse(template_source)
+    declared = meta.find_undeclared_variables(parsed_content)
+    return {var for var in declared if var not in env.globals}
 
 
 def _render_template_to_string(template_path: Path, secrets: dict[str, str]) -> str:
