@@ -84,7 +84,8 @@ def diff_tools(
     tools_unchanged = []
 
     # Create dict for lookup by tool name
-    # Tools with same `tool.name` will be treated as a same tool.
+    # Tools with same `tool.name` will be treated as a same tool. Also, assume the `tool.name` is
+    # unique in each list.
     old_tools_dict = {tool.name: tool for tool in old_tools}
     new_tools_dict = {tool.name: tool for tool in new_tools}
 
