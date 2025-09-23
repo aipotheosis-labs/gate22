@@ -185,3 +185,116 @@ class EmailService:
         """
 
         return await self.send_email(recipient, subject, body_text, body_html)
+
+    async def send_organization_invitation_email(
+        self,
+        recipient: str,
+        organization_name: str,
+        inviter_name: str,
+        accept_url: str,
+        reject_url: str,
+        expires_label: str,
+    ) -> dict[str, Any] | None:
+        subject = f"You're invited to join {organization_name}"
+
+        body_text = textwrap.dedent(
+            f"""
+            Hi,
+
+            {inviter_name} has invited you to join the organization "{organization_name}" on
+            ACI.dev. Use the link below to accept the invitation:
+
+            Accept: {accept_url}
+
+            If you prefer not to join, you can reject the invitation here:
+
+            Reject: {reject_url}
+
+            This invitation will expire in {expires_label}.
+
+            If the links above do not work, copy and paste them into your browser.
+
+            Best regards,
+            The ACI.dev Team
+            """
+        ).strip()
+
+        safe_org = html.escape(organization_name)
+        safe_inviter = html.escape(inviter_name)
+        safe_accept = html.escape(accept_url, quote=True)
+        safe_reject = html.escape(reject_url, quote=True)
+        safe_expires = html.escape(expires_label)
+
+        body_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                        'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .container {{
+                    background-color: #ffffff;
+                    border-radius: 8px;
+                    padding: 40px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                }}
+                .button {{
+                    display: inline-block;
+                    padding: 14px 30px;
+                    background-color: #007bff;
+                    color: #ffffff !important;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    margin: 20px 0;
+                }}
+                .button.reject {{
+                    background-color: #6c757d;
+                }}
+                .footer {{
+                    margin-top: 40px;
+                    padding-top: 20px;
+                    border-top: 1px solid #e0e0e0;
+                    font-size: 14px;
+                    color: #666;
+                    text-align: center;
+                }}
+                .link {{
+                    color: #007bff;
+                    word-break: break-all;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>You're invited to join {safe_org}</h2>
+                <p><strong>{safe_inviter}</strong> invited you to collaborate on ACI.dev.</p>
+                <p>Please choose an option below:</p>
+                <div style="text-align: center;">
+                    <a href="{safe_accept}" class="button">Accept Invitation</a>
+                </div>
+                <div style="text-align: center;">
+                    <a href="{safe_reject}" class="button reject">Reject Invitation</a>
+                </div>
+                <p><strong>This invitation expires in {safe_expires}.</strong></p>
+                <p>If the buttons above do not work, copy and paste these links:</p>
+                <p class="link">Accept: {safe_accept}</p>
+                <p class="link">Reject: {safe_reject}</p>
+                <div class="footer">
+                    <p>Best regards,<br>The ACI.dev Team</p>
+                    <p>© 2025 ACI.dev. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return await self.send_email(recipient, subject, body_text, body_html)

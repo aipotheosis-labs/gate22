@@ -5,6 +5,7 @@ Authentication utility functions for token generation, validation, and hashing.
 import datetime
 import hashlib
 import hmac
+import secrets
 from typing import Any
 from uuid import UUID
 
@@ -37,6 +38,17 @@ def generate_verification_token(
     token = jwt.encode(payload, config.JWT_SIGNING_KEY, algorithm=config.JWT_ALGORITHM)
     token_hash = hash_token(token)
 
+    return token, token_hash, expires_at
+
+
+def generate_invitation_token(
+    expires_in_minutes: int,
+) -> tuple[str, str, datetime.datetime]:
+    """Generate a random invitation token and its hash."""
+    now = datetime.datetime.now(datetime.UTC)
+    expires_at = now + datetime.timedelta(minutes=expires_in_minutes)
+    token = secrets.token_urlsafe(32)
+    token_hash = hash_token(token)
     return token, token_hash, expires_at
 
 

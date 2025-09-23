@@ -275,3 +275,36 @@ class MCPToolsRefreshTooFrequent(ControlPlaneException):
             message=message,
             error_code=status.HTTP_429_TOO_MANY_REQUESTS,
         )
+
+
+class InvitationNotPendingError(ControlPlaneException):
+    """Raised when an organization invitation has already been acted upon."""
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Invitation not pending",
+            message=message,
+            error_code=status.HTTP_409_CONFLICT,
+        )
+
+
+class InvitationExpiredError(ControlPlaneException):
+    """Raised when an organization invitation has expired."""
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Invitation expired",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class InvalidInvitationTokenError(ControlPlaneException):
+    """Raised when an organization invitation token fails validation."""
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Invalid invitation token",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
