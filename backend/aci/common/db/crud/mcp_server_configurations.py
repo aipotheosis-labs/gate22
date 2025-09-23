@@ -91,6 +91,17 @@ def get_mcp_server_configurations_by_ids(
     ]
 
 
+def get_operational_mcp_server_configuration_mcp_server_id(
+    db_session: Session,
+    mcp_server_id: UUID,
+) -> MCPServerConfiguration | None:
+    statement = select(MCPServerConfiguration).where(
+        MCPServerConfiguration.mcp_server_id == mcp_server_id,
+        MCPServerConfiguration.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL,
+    )
+    return db_session.execute(statement).scalar_one_or_none()
+
+
 def get_mcp_server_configurations(
     db_session: Session,
     organization_id: UUID,

@@ -8,7 +8,6 @@ from aci.common.db import crud
 from aci.common.db.sql_models import Organization
 from aci.common.enums import (
     AuthType,
-    ConnectedAccountOwnership,
     HttpLocation,
     MCPServerTransportType,
 )
@@ -189,13 +188,13 @@ def test_create_custom_mcp_server(
     assert re.fullmatch(f"{input_mcp_server_data.name}_[A-Z0-9]{{8}}", db_mcp_server_data.name)
 
     # Check if the operational MCPServerConfiguration is created
-    db_mcp_server_configuration_data = crud.mcp_server_configurations.get_mcp_server_configurations(
-        db_session,
-        organization_id=dummy_organization.id,
-        mcp_server_id=db_mcp_server_data.id,
-        connected_account_ownerships=[ConnectedAccountOwnership.OPERATIONAL],
+    db_mcp_server_configuration_data = (
+        crud.mcp_server_configurations.get_operational_mcp_server_configuration_mcp_server_id(
+            db_session,
+            mcp_server_id=db_mcp_server_data.id,
+        )
     )
-    assert len(db_mcp_server_configuration_data) == 1
+    assert db_mcp_server_configuration_data is not None
 
 
 @pytest.mark.parametrize(

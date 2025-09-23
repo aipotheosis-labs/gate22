@@ -190,12 +190,16 @@ async def _upsert_connected_account(
         )
 
     # Automatically fetch tools if not synced before
-    if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
-        if mcp_server_config.mcp_server.last_synced_at is None:
-            await MCPToolsManager(mcp_server_config.mcp_server).refresh_mcp_tools(db_session)
-            crud.mcp_servers.update_mcp_server_last_synced_at_now(
-                db_session, mcp_server_config.mcp_server
-            )
+    try:
+        if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
+            if mcp_server_config.mcp_server.last_synced_at is None:
+                await MCPToolsManager(mcp_server_config.mcp_server).refresh_mcp_tools(db_session)
+                crud.mcp_servers.update_mcp_server_last_synced_at_now(
+                    db_session, mcp_server_config.mcp_server
+                )
+    except Exception as e:
+        # Should not block the account creation.
+        logger.error(f"Error refreshing tools: {e}")
 
     return connected_account
 

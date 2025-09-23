@@ -19,17 +19,21 @@ class MCPToolsManager:
         self.mcp_server = mcp_server
 
     async def refresh_mcp_tools(self, db_session: Session) -> None:
-        mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
-            db_session,
-            self.mcp_server.id,
-            connected_account_ownerships=[ConnectedAccountOwnership.OPERATIONAL],
+        if self.mcp_server.organization_id is None:
+            raise MCPToolsManagerError("MCP server has no organization id")
+
+        mcp_server_configuration = (
+            crud.mcp_server_configurations.get_operational_mcp_server_configuration_mcp_server_id(
+                db_session,
+                mcp_server_id=self.mcp_server.id,
+            )
         )
-        if len(mcp_server_configurations) == 0:
+        if mcp_server_configuration is None:
             raise MCPToolsManagerError("MCP server has no operational mcp server configuration")
 
-        auth_config = acm.get_auth_config(self.mcp_server, mcp_server_configurations[0])
+        auth_config = acm.get_auth_config(self.mcp_server, mcp_server_configuration)
         auth_credentials = await acm.get_auth_credentials(
-            db_session, mcp_server_configurations[0].id, ConnectedAccountOwnership.OPERATIONAL
+            db_session, mcp_server_configuration.id, ConnectedAccountOwnership.OPERATIONAL
         )
 
         # Fetch the tools
