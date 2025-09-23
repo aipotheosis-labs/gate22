@@ -37,6 +37,7 @@ dependencies = [
     "mcp[cli]>=1.13.1",
     "humanize>=4.11.0",
     "e2b-code-interpreter>=2.0.0",
+    "elevenlabs>=2.16.0",
 ]
 
 [dependency-groups]

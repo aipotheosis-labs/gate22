@@ -499,6 +499,23 @@ wheels = [
 ]
 
 [[package]]
+name = "elevenlabs"
+version = "2.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c3/cf/d44f4d3089adad95089026fe5d8247836daa441a0de174c0c64fa40fb5cb/elevenlabs-2.16.0.tar.gz", hash = "sha256:3a26ea20a3ce4a30ffada125f77b102bd88dc2d3230a912bd144017087d36795", size = 356398, upload-time = "2025-09-18T14:00:11.644Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/a9/f98999d95b3b0b0cb6ac7f03d9f2b424a2d5892a361a55079d6801c9cf21/elevenlabs-2.16.0-py3-none-any.whl", hash = "sha256:ba46cb8029c11f3fff5c8e083f5857a90adf0aa463bbd4cf01f5511017940d58", size = 955598, upload-time = "2025-09-18T14:00:09.832Z" },
+]
+
+[[package]]
 name = "email-validator"
 version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1188,6 +1205,7 @@ dependencies = [
     { name = "click" },
     { name = "deepdiff" },
     { name = "e2b-code-interpreter" },
+    { name = "elevenlabs" },
     { name = "fastapi", extra = ["standard"] },
     { name = "google-api-python-client" },
     { name = "google-auth-oauthlib" },
@@ -1239,6 +1257,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.8" },
     { name = "deepdiff", specifier = ">=8.5.0" },
     { name = "e2b-code-interpreter", specifier = ">=2.0.0" },
+    { name = "elevenlabs", specifier = ">=2.16.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.12" },
     { name = "google-api-python-client", specifier = ">=2.167.0" },
     { name = "google-auth-oauthlib", specifier = ">=1.2.2" },

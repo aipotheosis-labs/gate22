@@ -1,5 +1,4 @@
 import json
-import shutil
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
@@ -9,68 +8,6 @@ import click
 DEFAULT_OAUTH2_LOCATION = "header"
 DEFAULT_OAUTH2_NAME = "Authorization"
 DEFAULT_OAUTH2_PREFIX = "Bearer"
-
-allowed_apps = [
-    "accredible",
-    "active_campaign",
-    "aero_workflow",
-    "agent_mail",
-    "aidbase",
-    "airtable",
-    "akkio",
-    "all_images",
-    "apaleo",
-    "api_template",
-    "arxiv",
-    "baidu_map",
-    "baserow",
-    "breezy",
-    "browserbase",
-    "cal",
-    "calendly",
-    "clickup",
-    "cloudflare",
-    "coda",
-    "cognito_forms",
-    "coinmarketcap",
-    "daytona",
-    "dexscreener",
-    "dify",
-    "discord",
-    "eleven_labs",
-    "factorialhr",
-    "feishu",
-    "figma",
-    "google_analytics_admin",
-    "google_calendar",
-    "google_docs",
-    "google_maps",
-    "google_meet",
-    "google_sheets",
-    "google_tasks",
-    "hackernews",
-    "holded",
-    "lmnt",
-    "notte",
-    "one_signal",
-    "open_weather_map",
-    "reddit",
-    "resend",
-    "scrapybara",
-    "sendgrid",
-    "serpapi",
-    "share_point",
-    "slack",
-    "steel",
-    "supabase",
-    "typefully",
-    "ultra_msg",
-    "vercel",
-    "youtube",
-    "zenrows",
-    "gmail",
-    "brave_search",
-]
 
 
 @click.command()
@@ -83,10 +20,6 @@ allowed_apps = [
 )
 def convert(directory: Path) -> None:
     """Convert app.json to server.json in the provided directory."""
-    if not _is_allowed_app(directory):
-        click.echo(f"Directory {directory} is not allowed, will delete it")
-        shutil.rmtree(directory)
-        return
     try:
         _convert(directory)
     except ValueError as exc:
@@ -276,8 +209,3 @@ def _write_json(path: Path, payload: Any) -> None:
     with path.open("w") as file:
         json.dump(payload, file, indent=2)
         file.write("\n")
-
-
-def _is_allowed_app(path: Path) -> bool:
-    allowed_apps_set = set(allowed_apps)
-    return path.name in allowed_apps_set

@@ -1,151 +1,90 @@
 [
   {
     "name": "ELEVEN_LABS__CREATE_SPEECH",
-    "description": "Converts text into speech using a specified voice and returns the audio.",
+    "description": "Converts text into speech using a specified voice and returns base64-encoded audio in the specified output format (see output_format).",
     "tool_metadata": {
-      "type": "rest",
-      "method": "POST",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+      "type": "connector"
     },
     "input_schema": {
       "type": "object",
       "properties": {
-        "path": {
-          "type": "object",
-          "description": "Path parameters",
-          "properties": {
-            "voice_id": {
-              "type": "string",
-              "description": "ID of the voice to be used. Use the Get voices endpoint to list all available voices."
-            }
-          },
-          "required": [
-            "voice_id"
-          ],
-          "visible": [
-            "voice_id"
-          ],
-          "additionalProperties": false
+        "voice_id": {
+          "type": "string",
+          "description": "ID of the voice to be used. Use the List voices endpoint to find available voices."
         },
-        "query": {
+        "text": {
+          "type": "string",
+          "description": "The text that will be converted into speech."
+        },
+        "model_id": {
+          "type": "string",
+          "description": "Identifier of the model that will be used. Defaults to eleven_multilingual_v2.",
+          "default": "eleven_multilingual_v2"
+        },
+        "output_format": {
+          "type": "string",
+          "description": "Output format of the generated audio. Formatted as codec_sample_rate_bitrate. So an mp3 with 22.05kHz sample rate at 32kbs is represented as mp3_22050_32. MP3 with 192kbps bitrate requires you to be subscribed to Creator tier or above. PCM with 44.1kHz sample rate requires you to be subscribed to Pro tier or above. Note that the \u03bc-law format (sometimes written mu-law, often approximated as u-law) is commonly used for Twilio audio inputs.",
+          "enum": [
+            "mp3_22050_32",
+            "mp3_44100_32",
+            "mp3_44100_64",
+            "mp3_44100_96",
+            "mp3_44100_128",
+            "mp3_44100_192",
+            "pcm_8000",
+            "pcm_16000",
+            "pcm_22050",
+            "pcm_24000",
+            "pcm_44100",
+            "pcm_48000",
+            "ulaw_8000",
+            "alaw_8000",
+            "opus_48000_32",
+            "opus_48000_64",
+            "opus_48000_96",
+            "opus_48000_128",
+            "opus_48000_192"
+          ],
+          "default": "mp3_44100_128"
+        },
+        "voice_settings": {
           "type": "object",
-          "description": "Query parameters",
+          "description": "Voice settings overriding stored settings for the given voice. They are applied only on the given request.",
           "properties": {
-            "enable_logging": {
-              "type": "boolean",
-              "description": "When set to false, zero retention mode will be used for the request, making history features unavailable, including request stitching. Zero retention mode may only be used by enterprise customers.",
-              "default": true
+            "stability": {
+              "type": "number",
+              "description": "Controls the stability of the voice output.",
+              "minimum": 0,
+              "maximum": 1
             },
-            "output_format": {
-              "type": "string",
-              "description": "Output format of the generated audio. Formatted as codec_sample_rate_bitrate. For example, an mp3 with 22.05kHz sample rate at 32kbps is represented as mp3_22050_32.",
-              "default": "mp3_44100_128"
+            "similarity_boost": {
+              "type": "number",
+              "description": "Controls the similarity boost of the voice output.",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "style": {
+              "type": "number",
+              "description": "Controls the style of the voice output.",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "use_speaker_boost": {
+              "type": "boolean",
+              "description": "Whether to use speaker boost."
+            },
+            "speed": {
+              "type": "number",
+              "description": "Controls the speed of the voice output.",
+              "minimum": 0.7,
+              "maximum": 1.2
             }
           },
           "required": [],
-          "visible": [
-            "enable_logging",
-            "output_format"
-          ],
-          "additionalProperties": false
-        },
-        "header": {
-          "type": "object",
-          "description": "Header parameters",
-          "properties": {
-            "Content-Type": {
-              "type": "string",
-              "description": "The content type of the request, typically application/json.",
-              "default": "application/json"
-            }
-          },
-          "required": [
-            "Content-Type"
-          ],
-          "visible": [
-            "Content-Type"
-          ],
-          "additionalProperties": false
-        },
-        "body": {
-          "type": "object",
-          "description": "Request body parameters",
-          "properties": {
-            "text": {
-              "type": "string",
-              "description": "The text that will be converted into speech."
-            },
-            "model_id": {
-              "type": "string",
-              "description": "Identifier of the model that will be used. Defaults to eleven_monolingual_v1.",
-              "default": "eleven_monolingual_v1"
-            },
-            "voice_settings": {
-              "type": "object",
-              "description": "Voice settings overriding stored settings for the given voice. They are applied only on the given request.",
-              "properties": {
-                "stability": {
-                  "type": "number",
-                  "description": "Controls the stability of the voice output.",
-                  "minimum": 0,
-                  "maximum": 1
-                },
-                "similarity_boost": {
-                  "type": "number",
-                  "description": "Controls the similarity boost of the voice output.",
-                  "minimum": 0,
-                  "maximum": 1
-                },
-                "style": {
-                  "type": "number",
-                  "description": "Controls the style of the voice output.",
-                  "minimum": 0,
-                  "maximum": 1
-                },
-                "use_speaker_boost": {
-                  "type": "boolean",
-                  "description": "Whether to use speaker boost."
-                },
-                "speed": {
-                  "type": "number",
-                  "description": "Controls the speed of the voice output.",
-                  "minimum": 0.5,
-                  "maximum": 2.0
-                }
-              },
-              "required": [],
-              "visible": [
-                "stability",
-                "similarity_boost",
-                "style",
-                "use_speaker_boost",
-                "speed"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "text"
-          ],
-          "visible": [
-            "text",
-            "model_id",
-            "voice_settings"
-          ],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "header",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "query",
-        "header",
-        "body"
-      ],
+      "required": ["voice_id", "text"],
       "additionalProperties": false
     }
   },
@@ -218,9 +157,7 @@
         }
       },
       "required": [],
-      "visible": [
-        "query"
-      ],
+      "visible": ["query"],
       "additionalProperties": false
     }
   },
@@ -244,21 +181,13 @@
               "description": "The ID of the voice whose settings are to be retrieved. Use the Get Voices endpoint to list all available voices."
             }
           },
-          "required": [
-            "voice_id"
-          ],
-          "visible": [
-            "voice_id"
-          ],
+          "required": ["voice_id"],
+          "visible": ["voice_id"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path"
-      ],
-      "visible": [
-        "path"
-      ],
+      "required": ["path"],
+      "visible": ["path"],
       "additionalProperties": false
     }
   },
@@ -282,12 +211,8 @@
               "description": "The ID of the voice whose settings are to be edited. Use the Get Voices endpoint to list all available voices."
             }
           },
-          "required": [
-            "voice_id"
-          ],
-          "visible": [
-            "voice_id"
-          ],
+          "required": ["voice_id"],
+          "visible": ["voice_id"],
           "additionalProperties": false
         },
         "header": {
@@ -300,12 +225,8 @@
               "default": "application/json"
             }
           },
-          "required": [
-            "Content-Type"
-          ],
-          "visible": [
-            "Content-Type"
-          ],
+          "required": ["Content-Type"],
+          "visible": ["Content-Type"],
           "additionalProperties": false
         },
         "body": {
@@ -343,26 +264,12 @@
             }
           },
           "required": [],
-          "visible": [
-            "stability",
-            "similarity_boost",
-            "style",
-            "use_speaker_boost",
-            "speed"
-          ],
+          "visible": ["stability", "similarity_boost", "style", "use_speaker_boost", "speed"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "header",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "header",
-        "body"
-      ],
+      "required": ["path", "header", "body"],
+      "visible": ["path", "header", "body"],
       "additionalProperties": false
     }
   },
@@ -386,12 +293,8 @@
               "description": "ID of the voice to be used"
             }
           },
-          "required": [
-            "voice_id"
-          ],
-          "visible": [
-            "voice_id"
-          ],
+          "required": ["voice_id"],
+          "visible": ["voice_id"],
           "additionalProperties": false
         },
         "query": {
@@ -412,11 +315,7 @@
             }
           },
           "required": [],
-          "visible": [
-            "enable_logging",
-            "optimize_streaming_latency",
-            "output_format"
-          ],
+          "visible": ["enable_logging", "optimize_streaming_latency", "output_format"],
           "additionalProperties": false
         },
         "header": {
@@ -429,9 +328,7 @@
             }
           },
           "required": [],
-          "visible": [
-            "Content-Type"
-          ],
+          "visible": ["Content-Type"],
           "additionalProperties": false
         },
         "body": {
@@ -484,13 +381,7 @@
                 }
               },
               "required": [],
-              "visible": [
-                "stability",
-                "similarity_boost",
-                "style",
-                "use_speaker_boost",
-                "speed"
-              ],
+              "visible": ["stability", "similarity_boost", "style", "use_speaker_boost", "speed"],
               "additionalProperties": false
             },
             "pronunciation_dictionary_locators": {
@@ -536,11 +427,7 @@
             },
             "apply_text_normalization": {
               "type": "string",
-              "enum": [
-                "auto",
-                "on",
-                "off"
-              ],
+              "enum": ["auto", "on", "off"],
               "description": "Controls text normalization"
             },
             "apply_language_text_normalization": {
@@ -552,9 +439,7 @@
               "description": "Use IVC version instead of PVC (deprecated)"
             }
           },
-          "required": [
-            "text"
-          ],
+          "required": ["text"],
           "visible": [
             "text",
             "model_id",
@@ -573,17 +458,8 @@
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "header",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "query",
-        "header",
-        "body"
-      ],
+      "required": ["path", "header", "body"],
+      "visible": ["path", "query", "header", "body"],
       "additionalProperties": false
     }
   },
@@ -607,12 +483,8 @@
               "description": "ID of the voice to be used. Use the Get voices endpoint to list all available voices."
             }
           },
-          "required": [
-            "voice_id"
-          ],
-          "visible": [
-            "voice_id"
-          ],
+          "required": ["voice_id"],
+          "visible": ["voice_id"],
           "additionalProperties": false
         },
         "query": {
@@ -633,21 +505,11 @@
               "type": "string",
               "description": "Output format of the generated audio, formatted as codec_sample_rate_bitrate. For example, 'mp3_22050_32' represents an MP3 with a 22.05kHz sample rate at 32kbps. Some formats require specific subscription tiers.",
               "default": "mp3_44100_128",
-              "enum": [
-                "mp3_44100_128",
-                "mp3_22050_32",
-                "mp3_44100_192",
-                "pcm_44100",
-                "mulaw_8000"
-              ]
+              "enum": ["mp3_44100_128", "mp3_22050_32", "mp3_44100_192", "pcm_44100", "mulaw_8000"]
             }
           },
           "required": [],
-          "visible": [
-            "enable_logging",
-            "optimize_streaming_latency",
-            "output_format"
-          ],
+          "visible": ["enable_logging", "optimize_streaming_latency", "output_format"],
           "additionalProperties": false
         },
         "header": {
@@ -660,12 +522,8 @@
               "default": "multipart/form-data"
             }
           },
-          "required": [
-            "Content-Type"
-          ],
-          "visible": [
-            "Content-Type"
-          ],
+          "required": ["Content-Type"],
+          "visible": ["Content-Type"],
           "additionalProperties": false
         },
         "body": {
@@ -696,30 +554,13 @@
               "default": false
             }
           },
-          "required": [
-            "audio"
-          ],
-          "visible": [
-            "audio",
-            "model_id",
-            "voice_settings",
-            "seed",
-            "remove_background_noise"
-          ],
+          "required": ["audio"],
+          "visible": ["audio", "model_id", "voice_settings", "seed", "remove_background_noise"],
           "additionalProperties": false
         }
       },
-      "required": [
-        "path",
-        "header",
-        "body"
-      ],
-      "visible": [
-        "path",
-        "query",
-        "header",
-        "body"
-      ],
+      "required": ["path", "header", "body"],
+      "visible": ["path", "query", "header", "body"],
       "additionalProperties": false
     }
   }
