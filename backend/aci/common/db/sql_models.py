@@ -454,18 +454,6 @@ class MCPServerConfiguration(Base):
     )
 
 
-# One OPERATIONAL config per (mcp_server_id, organization_id)
-Index(
-    "ux_operational_cfg_per_server_org",
-    MCPServerConfiguration.mcp_server_id,
-    MCPServerConfiguration.organization_id,
-    unique=True,
-    postgresql_where=(
-        MCPServerConfiguration.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL
-    ),
-)
-
-
 # TODO:
 # - for now, connected account is tied to mcp server configuration, not mcp server
 # - for simplicity, we only support one connected account per user per mcp server configuration
