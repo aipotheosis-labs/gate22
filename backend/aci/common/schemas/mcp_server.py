@@ -72,6 +72,9 @@ class CustomMCPServerCreateRequest(MCPServerUpsert):
 
     operational_account_auth_type: AuthType
 
+    # Logo will be attempted to be discovered in API logic
+    logo: str | None = None  # type: ignore[assignment]
+
     @model_validator(mode="after")
     def validate_operational_account_auth_type(self) -> "CustomMCPServerCreateRequest":
         for auth_config in self.auth_configs:
@@ -131,5 +134,6 @@ class MCPServerOAuth2DCRRequest(BaseModel):
 
 
 class MCPServerOAuth2DCRResponse(BaseModel):
+    token_endpoint_auth_method: str  # The method we finally used to register the client
     client_id: str | None = None
     client_secret: str | None = None

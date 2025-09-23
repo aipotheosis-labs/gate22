@@ -2,6 +2,7 @@ import string
 from typing import Annotated, Literal
 from uuid import UUID
 
+import favicon  # type: ignore[import-untyped]
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import AnyUrl, HttpUrl
 from sqlalchemy.orm import Session
@@ -132,10 +133,20 @@ async def create_custom_mcp_server(
 
     mcp_server_data.name = canonical_name
 
+    if not mcp_server_data.logo:
+        try:
+            icons = favicon.get(mcp_server_data.url)
+            if len(icons) > 0:
+                # sort icons by width, so we can use the largest one
+                icons.sort(key=lambda x: x.width, reverse=True)
+                mcp_server_data.logo = icons[0].url
+        except Exception:
+            logger.info(f"Failed to discover MCP server logo, mcp_server_url={mcp_server_data.url}")
+            mcp_server_data.logo = config.DEFAULT_MCP_SERVER_LOGO
+
     mcp_server = crud.mcp_servers.create_mcp_server(
         context.db_session,
         organization_id=context.act_as.organization_id,
-        # `operational_account_auth_type` is not needed for the MCP server upsert
         mcp_server_upsert=MCPServerUpsert.model_validate(mcp_server_data.model_dump()),
         embedding=mcp_server_embedding,
     )
@@ -183,13 +194,20 @@ async def mcp_server_oauth2_discovery(
         oauth2_metadata_fetcher = MetadataFetcher(str(body.mcp_server_url))
         oauth2_metadata = oauth2_metadata_fetcher.metadata_discovery()
 
+        # Since we only support none and client_secret_post, only return these two
+        if oauth2_metadata.token_endpoint_auth_methods_supported:
+            methods_supported = {"none", "client_secret_post"}.intersection(
+                oauth2_metadata.token_endpoint_auth_methods_supported
+            )
+        else:
+            methods_supported = {"none"}
+
         return MCPServerOAuth2DiscoveryResponse(
             authorize_url=oauth2_metadata.authorization_endpoint,
             access_token_url=oauth2_metadata.token_endpoint,
             refresh_token_url=oauth2_metadata.token_endpoint,
             registration_url=oauth2_metadata.registration_endpoint,
-            token_endpoint_auth_method_supported=oauth2_metadata.token_endpoint_auth_methods_supported
-            or [],
+            token_endpoint_auth_method_supported=list(methods_supported),
         )
     except OAuth2MetadataDiscoveryError as e:
         # Return 200 with empty fields, as the action is actually success, but the discovery failed
@@ -201,7 +219,7 @@ async def mcp_server_oauth2_discovery(
             access_token_url=None,
             refresh_token_url=None,
             registration_url=None,
-            token_endpoint_auth_method_supported=[] or [],
+            token_endpoint_auth_method_supported=[],
         )
 
 
@@ -249,6 +267,7 @@ async def mcp_server_oauth2_dcr(
     )
     client_info = oauth2_client_registrator.dynamic_client_registration()
     return MCPServerOAuth2DCRResponse(
+        token_endpoint_auth_method=token_endpoint_auth_method,
         client_id=client_info.client_id,
         client_secret=client_info.client_secret,
     )

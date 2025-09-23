@@ -51,3 +51,7 @@ OPENAI_API_KEY = check_and_get_env_variable("CONTROL_PLANE_OPENAI_API_KEY")
 
 SENDER_EMAIL = check_and_get_env_variable("CONTROL_PLANE_SENDER_EMAIL")
 SENDER_NAME = "ACI.dev Team"
+
+DEFAULT_MCP_SERVER_LOGO = (
+    "https://github.com/aipotheosis-labs/aipolabs-icons/blob/main/apps/aci.png"
+)
