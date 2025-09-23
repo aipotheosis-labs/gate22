@@ -74,6 +74,8 @@ class MCPToolsManager:
                 # TODO: Check and handle for duplicate tool names after sanitization
                 latest_mcp_tool_upserts.append(mcp_tool_upsert)
         except Exception as e:
+            # If any tool failed, abort the whole operation.
+            logger.error(f"Error transforming tools: {e}")
             raise MCPToolsNormalizationError(f"Error transforming tools: {e}") from e
 
         # Diff the tools vs the existing tools in database
