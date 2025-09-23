@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
@@ -125,7 +125,7 @@ def test_create_connected_account_auto_fetch_tools(
     dummy_mcp_server_configuration.connected_account_ownership = connected_account_ownership
     dummy_mcp_server_configuration.auth_type = AuthType.API_KEY
     dummy_mcp_server_configuration.mcp_server.last_synced_at = (
-        datetime.now() if is_synced_before else None
+        datetime.now(UTC) - timedelta(hours=1) if is_synced_before else None
     )
 
     db_session.commit()

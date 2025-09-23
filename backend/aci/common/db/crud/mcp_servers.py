@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal, overload
 from uuid import UUID
 
@@ -140,7 +140,7 @@ def update_mcp_server_last_synced_at_now(
     db_session: Session,
     mcp_server: MCPServer,
 ) -> MCPServer:
-    mcp_server.last_synced_at = datetime.now()
+    mcp_server.last_synced_at = datetime.now(UTC)
     db_session.flush()
     db_session.refresh(mcp_server)
     return mcp_server
