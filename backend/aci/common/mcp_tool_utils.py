@@ -67,7 +67,7 @@ def diff_tools(
 ]:
     """
     Diff the two given lists of MCP tools.
-    Tools with the `tool.name` will be treated as a same tool.
+    Note: Tools with same `tool.name` will be treated as a same tool.
     For performance, use the hashes to check if description and input schema has changed.
 
     Returns a tuple of:
@@ -84,6 +84,7 @@ def diff_tools(
     tools_unchanged = []
 
     # Create dict for lookup by tool name
+    # Tools with same `tool.name` will be treated as a same tool.
     old_tools_dict = {tool.name: tool for tool in old_tools}
     new_tools_dict = {tool.name: tool for tool in new_tools}
 
