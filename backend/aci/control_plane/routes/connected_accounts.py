@@ -154,24 +154,29 @@ async def _upsert_connected_account(
     auth_credentials: dict,
 ) -> ConnectedAccount:
     # Get existing connected account
-    if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.SHARED:
-        connected_account = (
-            crud.connected_accounts.get_shared_connected_account_by_mcp_server_configuration_id(
+    match mcp_server_config.connected_account_ownership:
+        case ConnectedAccountOwnership.SHARED:
+            connected_account = (
+                crud.connected_accounts.get_shared_connected_account_by_mcp_server_configuration_id(
+                    db_session,
+                    mcp_server_config.id,
+                )
+            )
+        case ConnectedAccountOwnership.OPERATIONAL:
+            connected_account = crud.connected_accounts.get_operational_connected_account_by_mcp_server_configuration_id(  # noqa: E501
                 db_session,
                 mcp_server_config.id,
             )
-        )
-    elif mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
-        connected_account = crud.connected_accounts.get_operational_connected_account_by_mcp_server_configuration_id(  # noqa: E501
-            db_session,
-            mcp_server_config.id,
-        )
-    else:
-        connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
-            db_session,
-            user_id,
-            mcp_server_config.id,
-        )
+        case ConnectedAccountOwnership.INDIVIDUAL:
+            connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
+                db_session,
+                user_id,
+                mcp_server_config.id,
+            )
+        case _:
+            raise ValueError(
+                f"Invalid connected account ownership: {mcp_server_config.connected_account_ownership}"  # noqa: E501
+            )
 
     # if the connected account already exists, update it, otherwise create a new one
     if connected_account:
