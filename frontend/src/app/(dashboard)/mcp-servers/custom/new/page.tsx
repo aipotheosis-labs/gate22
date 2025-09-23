@@ -29,6 +29,12 @@ interface OAuth2DiscoveryResponse {
   token_endpoint_auth_method_supported?: string[];
 }
 
+interface OAuth2DCRResponse {
+  token_endpoint_auth_method: string;
+  client_id?: string;
+  client_secret?: string;
+}
+
 export default function AddCustomMCPServerPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -55,6 +61,8 @@ export default function AddCustomMCPServerPage() {
   const [oauth2Config, setOauth2Config] = useState<OAuth2DiscoveryResponse>({});
   const [authorizeUrl, setAuthorizeUrl] = useState("");
   const [tokenUrl, setTokenUrl] = useState("");
+  const [dcrResult, setDcrResult] = useState<OAuth2DCRResponse | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   // Step 2 fields - API Key
   const [apiKeyLocation, setApiKeyLocation] = useState<string>("");
@@ -248,6 +256,10 @@ export default function AddCustomMCPServerPage() {
         authorize_url?: string;
         access_token_url?: string;
         token_endpoint_auth_method_supported?: string[];
+        // OAuth2 DCR fields
+        oauth2_client_id?: string;
+        oauth2_client_secret?: string;
+        oauth2_token_endpoint_auth_method?: string;
       } = {
         name: name.trim(),
         auth_methods: getSelectedAuthMethods(),
@@ -285,6 +297,14 @@ export default function AddCustomMCPServerPage() {
         payload.access_token_url = tokenUrl.trim() || undefined;
         payload.token_endpoint_auth_method_supported =
           oauth2Config.token_endpoint_auth_method_supported;
+
+        // Add DCR results if available
+        if (dcrResult) {
+          payload.oauth2_client_id = dcrResult.client_id || undefined;
+          payload.oauth2_client_secret = dcrResult.client_secret || undefined;
+          payload.oauth2_token_endpoint_auth_method =
+            dcrResult.token_endpoint_auth_method;
+        }
       }
 
       await api.post("/mcp-servers", payload);
@@ -300,6 +320,50 @@ export default function AddCustomMCPServerPage() {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAutoRegisterClient = async () => {
+    if (!oauth2Config.registration_url) {
+      toast.error("Registration URL not available from OAuth2 discovery");
+      return;
+    }
+
+    if (!accessToken) {
+      toast.error("Authentication required. Please log in.");
+      return;
+    }
+
+    setIsRegistering(true);
+
+    try {
+      const api = createAuthenticatedRequest(
+        accessToken,
+        activeOrg?.orgId,
+        activeRole,
+      );
+
+      const response = await api.post<OAuth2DCRResponse>(
+        "/mcp-servers/oauth2-dcr",
+        {
+          mcp_server_url: url.trim(),
+          registration_url: oauth2Config.registration_url,
+          token_endpoint_auth_method_supported:
+            oauth2Config.token_endpoint_auth_method_supported || [],
+        },
+      );
+
+      setDcrResult(response);
+      toast.success("Client registered successfully");
+    } catch (error) {
+      console.error("Failed to register OAuth2 client:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to register OAuth2 client",
+      );
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -688,6 +752,73 @@ export default function AddCustomMCPServerPage() {
                     Supported authentication methods discovered from the server.
                   </p>
                 </div>
+
+                {oauth2Config.registration_url && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAutoRegisterClient}
+                        disabled={isRegistering || isSubmitting}
+                        className="flex items-center gap-2"
+                      >
+                        {isRegistering ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                        {isRegistering
+                          ? "Registering..."
+                          : "Auto Register Client"}
+                      </Button>
+                      {dcrResult && (
+                        <span className="text-sm text-green-600 font-medium">
+                          ✓ Client registered successfully
+                        </span>
+                      )}
+                    </div>
+
+                    {dcrResult && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                        <h4 className="text-sm font-medium text-green-800">
+                          Registration Results
+                        </h4>
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div>
+                            <span className="font-medium text-green-700">
+                              Auth Method:
+                            </span>{" "}
+                            <span className="text-green-600">
+                              {dcrResult.token_endpoint_auth_method}
+                            </span>
+                          </div>
+                          {dcrResult.client_id && (
+                            <div>
+                              <span className="font-medium text-green-700">
+                                Client ID:
+                              </span>{" "}
+                              <span className="text-green-600 font-mono text-xs">
+                                {dcrResult.client_id}
+                              </span>
+                            </div>
+                          )}
+                          {dcrResult.client_secret && (
+                            <div>
+                              <span className="font-medium text-green-700">
+                                Client Secret:
+                              </span>{" "}
+                              <span className="text-green-600 font-mono text-xs">
+                                {"•".repeat(8)}...
+                                {dcrResult.client_secret.slice(-4)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
