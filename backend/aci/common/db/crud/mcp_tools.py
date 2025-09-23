@@ -174,11 +174,3 @@ def search_mcp_tools(
 
     statement = statement.limit(limit).offset(offset)
     return list(db_session.execute(statement).scalars().all())
-
-
-def delete_mcp_tools_by_mcp_server_id(
-    db_session: Session,
-    mcp_server_id: UUID,
-) -> None:
-    statement = delete(MCPTool).where(MCPTool.mcp_server_id == mcp_server_id)
-    db_session.execute(statement)
