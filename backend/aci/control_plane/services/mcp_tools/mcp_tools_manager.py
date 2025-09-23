@@ -124,6 +124,9 @@ class MCPToolsManager:
             db_session, [mcp_tool.name for mcp_tool in tools_to_delete]
         )
 
+        # Update the last synced at time
+        crud.mcp_servers.update_mcp_server_last_synced_at_now(db_session, self.mcp_server)
+
     def _embed_mcp_tools(self, mcp_tools: list[MCPToolUpsert]) -> list[list[float]]:
         return embeddings.generate_mcp_tool_embeddings(
             get_openai_client(),
