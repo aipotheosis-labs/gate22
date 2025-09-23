@@ -10,7 +10,7 @@
       "type": "oauth2",
       "client_id": "{{ CLIENT_ID }}",
       "client_secret": "{{ CLIENT_SECRET }}",
-      "scope": "https://www.googleapis.com/auth/gmail.labels https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/gmail.insert https://www.googleapis.com/auth/gmail.modify https://mail.google.com/",
+      "scope": "https://mail.google.com/",
       "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
       "access_token_url": "https://oauth2.googleapis.com/token",
       "refresh_token_url": "https://oauth2.googleapis.com/token"
