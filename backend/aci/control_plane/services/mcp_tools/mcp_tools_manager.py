@@ -48,6 +48,7 @@ class MCPToolsManager:
         latest_mcp_tool_upserts = []
         for tool in tools:
             sanitized_name = mcp_tool_utils.sanitize_canonical_tool_name(tool.name)
+            # Note: Assume mcp_server.name should be checked in MCPServerUpsert.validate_name()
             tool_name = f"{self.mcp_server.name}__{sanitized_name}"
             mcp_tool_upsert = MCPToolUpsert(
                 name=tool_name,
