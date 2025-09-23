@@ -51,10 +51,15 @@ export default function AddCustomMCPServerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
 
-  // Step 2 fields
+  // Step 2 fields - OAuth2
   const [oauth2Config, setOauth2Config] = useState<OAuth2DiscoveryResponse>({});
   const [authorizeUrl, setAuthorizeUrl] = useState("");
   const [tokenUrl, setTokenUrl] = useState("");
+
+  // Step 2 fields - API Key
+  const [apiKeyLocation, setApiKeyLocation] = useState<string>("");
+  const [apiKeyName, setApiKeyName] = useState("");
+  const [apiKeyPrefix, setApiKeyPrefix] = useState("");
 
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
 
@@ -235,6 +240,11 @@ export default function AddCustomMCPServerPage() {
         description?: string;
         logo?: string;
         categories?: string[];
+        // API Key fields
+        api_key_location?: string;
+        api_key_name?: string;
+        api_key_prefix?: string;
+        // OAuth2 fields
         authorize_url?: string;
         access_token_url?: string;
         token_endpoint_auth_method_supported?: string[];
@@ -254,6 +264,19 @@ export default function AddCustomMCPServerPage() {
       }
       if (categories.length > 0) {
         payload.categories = categories;
+      }
+
+      // Add API Key fields if applicable
+      if (authMethods.api_key) {
+        if (apiKeyLocation) {
+          payload.api_key_location = apiKeyLocation;
+        }
+        if (apiKeyName.trim()) {
+          payload.api_key_name = apiKeyName.trim();
+        }
+        if (apiKeyPrefix.trim()) {
+          payload.api_key_prefix = apiKeyPrefix.trim();
+        }
       }
 
       // Add OAuth2 fields if applicable
@@ -555,10 +578,63 @@ export default function AddCustomMCPServerPage() {
             {authMethods.api_key && (
               <div className="space-y-4">
                 <h3 className="text-md font-medium">API Key Configuration</h3>
-                <p className="text-sm text-muted-foreground">
-                  API Key authentication will be configured. No additional setup
-                  required at this time.
-                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="apiKeyLocation">Location</Label>
+                  <Select
+                    value={apiKeyLocation}
+                    onValueChange={setApiKeyLocation}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="max-w-md">
+                      <SelectValue placeholder="Select API key location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="path">PATH</SelectItem>
+                      <SelectItem value="query">QUERY</SelectItem>
+                      <SelectItem value="header">HEADER</SelectItem>
+                      <SelectItem value="cookie">COOKIE</SelectItem>
+                      <SelectItem value="body">BODY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    The location of the API key in the request.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="apiKeyName">Name</Label>
+                  <Input
+                    id="apiKeyName"
+                    type="text"
+                    placeholder="X-Subscription-Token"
+                    value={apiKeyName}
+                    onChange={(e) => setApiKeyName(e.target.value)}
+                    disabled={isSubmitting}
+                    className="max-w-md"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The name of the API key in the request, e.g.,
+                    &apos;X-Subscription-Token&apos;.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="apiKeyPrefix">Prefix</Label>
+                  <Input
+                    id="apiKeyPrefix"
+                    type="text"
+                    placeholder="Bearer"
+                    value={apiKeyPrefix}
+                    onChange={(e) => setApiKeyPrefix(e.target.value)}
+                    disabled={isSubmitting}
+                    className="max-w-md"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The prefix of the API key in the request, e.g.,
+                    &apos;Bearer&apos;.
+                  </p>
+                </div>
               </div>
             )}
 
