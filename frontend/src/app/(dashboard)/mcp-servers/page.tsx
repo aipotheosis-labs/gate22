@@ -26,6 +26,7 @@ import {
 import Image from "next/image";
 import { useMCPServers } from "@/features/mcp/hooks/use-mcp-servers";
 import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default function MCPServersPage() {
   const router = useRouter();
@@ -99,11 +100,22 @@ export default function MCPServersPage() {
     <div>
       {/* Header */}
       <div className="px-4 py-3 border-b">
-        <h2 className="text-2xl font-bold">MCP Servers</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Browse and configure Model Context Protocol servers to extend your AI
-          agent&apos;s capabilities
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold">MCP Servers</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Browse and configure Model Context Protocol servers to extend your
+              AI agent&apos;s capabilities
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push("/mcp-servers/custom/new")}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add a custom MCP Server
+          </Button>
+        </div>
       </div>
 
       <div className="p-4 space-y-4">
