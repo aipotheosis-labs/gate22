@@ -35,11 +35,11 @@ class TestNormalizeAndHashContent:
             ({"key": [3, 1, 2]}, '{"key":[3,1,2]}'),  # Arrays not sorted
         ],
     )
-    def test_normalize_string_content(self, content: str, expected_normalized: str) -> None:
+    def test_normalize_string_content(self, content: str | dict, expected_normalized: str) -> None:
         """Test string content normalization and hashing."""
         result = normalize_and_hash_content(content)
 
-        expected_hash = hashlib.md5(expected_normalized.encode("utf-8")).hexdigest()
+        expected_hash = hashlib.sha256(expected_normalized.encode("utf-8")).hexdigest()
 
         assert result == expected_hash
 
