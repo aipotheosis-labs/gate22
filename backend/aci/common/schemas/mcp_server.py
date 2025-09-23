@@ -1,9 +1,9 @@
-import re
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import AnyHttpUrl, BaseModel, ConfigDict, field_validator, model_validator
 
+from aci.common import mcp_tool_utils
 from aci.common.enums import AuthType, MCPServerTransportType
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
@@ -38,11 +38,9 @@ class MCPServerUpsert(BaseModel):
             "have consecutive underscores, and not start or end with an underscore"
         )
 
-        if v.startswith("_") or v.endswith("_"):
+        if len(mcp_tool_utils.sanitize_canonical_name(v)) == 0:
             raise ValueError(msg)
 
-        if not re.match(r"^[A-Z0-9_]+$", v) or "__" in v:
-            raise ValueError(msg)
         return v
 
 

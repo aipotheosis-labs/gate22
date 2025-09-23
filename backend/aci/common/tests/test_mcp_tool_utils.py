@@ -8,7 +8,7 @@ from aci.common.mcp_tool_utils import (
     embedding_fields_changed,
     non_embedding_fields_changed,
     normalize_and_hash_content,
-    sanitize_canonical_tool_name,
+    sanitize_canonical_name,
 )
 from aci.common.schemas.mcp_tool import MCPToolMetadata, MCPToolUpsert
 
@@ -78,8 +78,8 @@ class TestNormalizeAndHashContent:
         assert hash1 == hash2
 
 
-class TestSanitizeCanonicalToolName:
-    """Test the sanitize_canonical_tool_name function."""
+class TestSanitizeCanonicalName:
+    """Test the sanitize_canonical_name function."""
 
     @pytest.mark.parametrize(
         "input_name,expected_output",
@@ -122,9 +122,9 @@ class TestSanitizeCanonicalToolName:
         if expected_output == "":
             # Test that empty result raises an error
             with pytest.raises(MCPToolSanitizationError, match="empty after sanitization"):
-                sanitize_canonical_tool_name(input_name)
+                sanitize_canonical_name(input_name)
         else:
-            result = sanitize_canonical_tool_name(input_name)
+            result = sanitize_canonical_name(input_name)
             assert result == expected_output
 
 

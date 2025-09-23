@@ -31,13 +31,13 @@ def normalize_and_hash_content(content: str | dict) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
-def sanitize_canonical_tool_name(canonical_tool_name: str) -> str:
+def sanitize_canonical_name(canonical_name: str) -> str:
     """
-    Convert MCP tool name to comply with naming rules: uppercase letters, numbers, underscores only,
-    no consecutive underscores
+    Convert MCP tool name / MCP server name to comply with naming rules: uppercase letters, numbers,
+    underscores only, no consecutive underscores
     """
     # Convert to uppercase
-    sanitized = canonical_tool_name.upper()
+    sanitized = canonical_name.upper()
 
     # Replace any non-alphanumeric characters (except underscores) with underscores
     sanitized = re.sub(r"[^A-Z0-9_]", "_", sanitized)
@@ -49,9 +49,7 @@ def sanitize_canonical_tool_name(canonical_tool_name: str) -> str:
     sanitized = sanitized.strip("_")
 
     if not sanitized:
-        raise MCPToolSanitizationError(
-            f"Tool name '{canonical_tool_name}' is empty after sanitization."
-        )
+        raise MCPToolSanitizationError(f"Tool name '{canonical_name}' is empty after sanitization.")
 
     return sanitized
 
