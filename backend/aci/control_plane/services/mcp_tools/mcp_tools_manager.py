@@ -60,12 +60,9 @@ class MCPToolsManager:
         try:
             for tool in tools:
                 sanitized_tool_name = mcp_tool_utils.sanitize_canonical_name(tool.name)
+
                 # Note: mcp_server.name should be validated in MCPServerUpsert.validate_name()
-                # Doing it again just in case there is any abnormal case
-                sanitized_mcp_server_name = mcp_tool_utils.sanitize_canonical_name(
-                    self.mcp_server.name
-                )
-                tool_name = f"{sanitized_mcp_server_name}__{sanitized_tool_name}"
+                tool_name = f"{self.mcp_server.name}__{sanitized_tool_name}"
                 mcp_tool_upsert = MCPToolUpsert(
                     name=tool_name,
                     description=tool.description if tool.description is not None else "",
