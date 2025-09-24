@@ -139,5 +139,20 @@ export const mcpService = {
       const api = createAuthenticatedRequest(token);
       return api.delete(`${API_ENDPOINTS.CONFIGURATIONS}/${configurationId}`);
     },
+
+    listOperational: async (
+      token: string,
+      params?: PaginationParams,
+    ): Promise<PaginationResponse<MCPServerConfigurationPublic>> => {
+      return fetcherWithAuth<PaginationResponse<MCPServerConfigurationPublic>>(
+        token,
+      )(API_ENDPOINTS.CONFIGURATIONS, {
+        params: {
+          connected_account_ownerships: "operational",
+          offset: params?.offset?.toString() || "0",
+          limit: params?.limit?.toString() || "100",
+        },
+      });
+    },
   },
 };
