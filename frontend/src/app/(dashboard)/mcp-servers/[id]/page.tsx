@@ -50,7 +50,7 @@ export default function MCPServerDetailPage() {
   const [, setForceUpdate] = useState(0);
 
   // Get organization context and permissions
-  const { activeOrg, checkPermission } = useMetaInfo();
+  const { activeOrg } = useMetaInfo();
 
   // Fetch server data using the new hook
   const { data: server, isLoading, error } = useMCPServer(serverId);
@@ -245,14 +245,18 @@ export default function MCPServerDetailPage() {
                 <Settings className="h-5 w-5" />
                 <h2 className="text-lg font-semibold">Operational Account</h2>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsOperationalDialogOpen(true)}
+              <PermissionGuard
+                permission={PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OPERATIONAL}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                {hasOperationalAccount ? "Update Account" : "Setup Account"}
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsOperationalDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {hasOperationalAccount ? "Update Account" : "Setup Account"}
+                </Button>
+              </PermissionGuard>
             </div>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
@@ -292,8 +296,8 @@ export default function MCPServerDetailPage() {
               Available Tools ({server.tools?.length || 0})
             </h2>
           </div>
-          {checkPermission(PERMISSIONS.MCP_CONFIGURATION_CREATE) &&
-            server.organization_id === activeOrg?.orgId && (
+          {server.organization_id === activeOrg?.orgId && (
+            <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
@@ -333,7 +337,8 @@ export default function MCPServerDetailPage() {
                   </TooltipContent>
                 )}
               </Tooltip>
-            )}
+            </PermissionGuard>
+          )}
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">

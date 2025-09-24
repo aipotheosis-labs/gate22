@@ -2,6 +2,9 @@ export const PERMISSIONS = {
   // MCP Server permissions
   MCP_SERVER_PAGE_VIEW: "mcp_server:page_view",
 
+  CUSTOM_MCP_SERVER_CREATE: "custom_mcp_server:create",
+  CUSTOM_MCP_SERVER_SYNC: "custom_mcp_server:sync_tools",
+
   // MCP Configuration permissions
   MCP_CONFIGURATION_PAGE_VIEW: "mcp_configuration:page_view",
   MCP_CONFIGURATION_CREATE: "mcp_configuration:create",
@@ -11,6 +14,7 @@ export const PERMISSIONS = {
   CONNECTED_ACCOUNT_PAGE_VIEW: "connected_account:page_view",
   CONNECTED_ACCOUNT_CREATE_OWN: "connected_account:create_own",
   CONNECTED_ACCOUNT_CREATE_SHARED: "connected_account:create_shared",
+  CONNECTED_ACCOUNT_CREATE_OPERATIONAL: "connected_account:create_operational",
   CONNECTED_ACCOUNT_DELETE_OWN: "connected_account:delete_own",
 
   // Bundle permissions
@@ -27,6 +31,9 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     // MCP Server - Admins can see all
     PERMISSIONS.MCP_SERVER_PAGE_VIEW,
 
+    PERMISSIONS.CUSTOM_MCP_SERVER_CREATE,
+    PERMISSIONS.CUSTOM_MCP_SERVER_SYNC,
+
     // MCP Configuration - Admins can view, create and delete configurations
     PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
     PERMISSIONS.MCP_CONFIGURATION_CREATE,
@@ -35,6 +42,7 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     // Connected Accounts - Admins can see all accounts
     PERMISSIONS.CONNECTED_ACCOUNT_PAGE_VIEW,
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_SHARED,
+    PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OPERATIONAL,
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OWN,
     PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN,
 

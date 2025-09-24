@@ -27,6 +27,7 @@ import Image from "next/image";
 import { useMCPServers } from "@/features/mcp/hooks/use-mcp-servers";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { PermissionGuard } from "@/components/rbac/permission-guard";
 
 export default function MCPServersPage() {
   const router = useRouter();
@@ -108,13 +109,15 @@ export default function MCPServersPage() {
               AI agent&apos;s capabilities
             </p>
           </div>
-          <Button
-            onClick={() => router.push("/mcp-servers/custom/new")}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add a custom MCP Server
-          </Button>
+          <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_CREATE}>
+            <Button
+              onClick={() => router.push("/mcp-servers/custom/new")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Custom MCP Server
+            </Button>
+          </PermissionGuard>
         </div>
       </div>
 
