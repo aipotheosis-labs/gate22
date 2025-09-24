@@ -65,8 +65,11 @@ def diff_tools(
 ]:
     """
     Diff the two given lists of MCP tools.
-    Note: Tools with same `tool.name` will be treated as a same tool.
-    For performance, use the hashes to check if description and input schema has changed.
+    Note:
+    - Tools with same `tool.name` will be treated as a same tool.
+    - Tools renamed will be treated as a removal of the old tool and a creationg of a new tool, even
+      if the description and input schema are the same.
+    - For performance, use the hashes to check if description and input schema has changed.
 
     Returns a tuple of:
         - A list of tools that is new and should be created.
