@@ -39,6 +39,7 @@ dependencies = [
     "e2b-code-interpreter>=2.0.0",
     "elevenlabs>=2.16.0",
     "favicon>=0.7.0",
+    "tldextract>=5.3.0",
 ]
 
 [dependency-groups]
