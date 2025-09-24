@@ -95,9 +95,9 @@ async def _get_auth(
         # TODO: handle token refresh for oauth2 credentials
         auth_credentials = await acm.get_auth_credentials(
             db_session,
-            connected_account.user_id,
             mcp_server_configuration.id,
             connected_account.ownership,  # Use the ownership type of whatever account we retrieved
+            user_id=connected_account.user_id,
         )
 
         return auth_config, auth_credentials
