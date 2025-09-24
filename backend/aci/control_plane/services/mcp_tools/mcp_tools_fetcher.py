@@ -5,9 +5,6 @@ This service provides functionality to fetch tool lists from MCP servers using t
 It supports both STREAMABLE_HTTP and SSE transport types with proper authentication.
 """
 
-import asyncio
-from typing import Any
-
 from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
@@ -72,10 +69,7 @@ class MCPToolsFetcher:
             )
 
             # Fetch tools with timeout
-            tools = await asyncio.wait_for(
-                self._fetch_tools_internal(mcp_server, mcp_auth_manager),
-                timeout=self.timeout_seconds,
-            )
+            tools = await self._fetch_tools_internal(mcp_server, mcp_auth_manager)
 
             logger.info(f"Successfully fetched {len(tools)} tools from {mcp_server.name}")
             return tools
@@ -109,8 +103,6 @@ class MCPToolsFetcher:
                 return await self._fetch_tools_streamable_http(mcp_server.url, mcp_auth_manager)
             case MCPServerTransportType.SSE:
                 return await self._fetch_tools_sse(mcp_server.url, mcp_auth_manager)
-            case _:
-                raise ValueError(f"Unsupported transport type: {mcp_server.transport_type}")
 
     async def _fetch_tools_streamable_http(
         self,
@@ -129,7 +121,9 @@ class MCPToolsFetcher:
         """
         logger.debug(f"Connecting to MCP server via STREAMABLE_HTTP: {url}")
 
-        async with streamablehttp_client(url, auth=mcp_auth_manager) as (read, write, _):
+        async with streamablehttp_client(
+            url, auth=mcp_auth_manager, timeout=self.timeout_seconds
+        ) as (read, write, _):
             async with ClientSession(read, write) as session:
                 return await self._gather_tools(session)
 
@@ -150,7 +144,10 @@ class MCPToolsFetcher:
         """
         logger.debug(f"Connecting to MCP server via SSE: {url}")
 
-        async with sse_client(url, auth=mcp_auth_manager) as (read, write):
+        async with sse_client(url, auth=mcp_auth_manager, timeout=self.timeout_seconds) as (
+            read,
+            write,
+        ):
             async with ClientSession(read, write) as session:
                 return await self._gather_tools(session)
 
@@ -191,99 +188,3 @@ class MCPToolsFetcher:
 
         logger.debug(f"Completed pagination: {page_count} pages, {len(all_tools)} total tools")
         return all_tools
-
-    async def test_connection(
-        self,
-        mcp_server: MCPServer,
-        auth_config: AuthConfig,
-        auth_credentials: AuthCredentials,
-    ) -> dict[str, Any]:
-        """
-        Test connection to an MCP server and return basic information.
-
-        Args:
-            mcp_server: The MCP server configuration
-            auth_config: Authentication configuration
-            auth_credentials: Authentication credentials
-
-        Returns:
-            Dictionary containing connection test results
-        """
-        logger.info(f"Testing connection to MCP server: {mcp_server.name}")
-
-        try:
-            start_time = asyncio.get_event_loop().time()
-
-            # Create auth manager
-            mcp_auth_manager = MCPAuthManager(
-                mcp_server=mcp_server,
-                auth_config=auth_config,
-                auth_credentials=auth_credentials,
-            )
-
-            # Test connection with a shorter timeout
-            test_timeout = min(10, self.timeout_seconds)
-
-            match mcp_server.transport_type:
-                case MCPServerTransportType.STREAMABLE_HTTP:
-                    result = await asyncio.wait_for(
-                        self._test_connection_streamable_http(mcp_server.url, mcp_auth_manager),
-                        timeout=test_timeout,
-                    )
-                case MCPServerTransportType.SSE:
-                    result = await asyncio.wait_for(
-                        self._test_connection_sse(mcp_server.url, mcp_auth_manager),
-                        timeout=test_timeout,
-                    )
-                case _:
-                    raise ValueError(f"Unsupported transport type: {mcp_server.transport_type}")
-
-            end_time = asyncio.get_event_loop().time()
-            connection_time = end_time - start_time
-
-            return {
-                "success": True,
-                "connection_time_seconds": round(connection_time, 3),
-                "server_info": result,
-                "transport_type": mcp_server.transport_type.value,
-            }
-
-        except Exception as e:
-            logger.warning(f"Connection test failed for {mcp_server.name}: {e!s}")
-            return {
-                "success": False,
-                "error": f"{e!s}",
-                "transport_type": mcp_server.transport_type.value,
-            }
-
-    async def _test_connection_streamable_http(
-        self,
-        url: str,
-        mcp_auth_manager: MCPAuthManager,
-    ) -> dict[str, Any]:
-        """Test connection using STREAMABLE_HTTP transport."""
-        async with streamablehttp_client(url, auth=mcp_auth_manager) as (read, write, _):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                # Try to get server info if available
-                try:
-                    # Some servers may not support this, so we'll catch any errors
-                    return {"status": "connected", "initialized": True}
-                except Exception:
-                    return {"status": "connected", "initialized": True}
-
-    async def _test_connection_sse(
-        self,
-        url: str,
-        mcp_auth_manager: MCPAuthManager,
-    ) -> dict[str, Any]:
-        """Test connection using SSE transport."""
-        async with sse_client(url, auth=mcp_auth_manager) as (read, write):
-            async with ClientSession(read, write) as session:
-                await session.initialize()
-                # Try to get server info if available
-                try:
-                    # Some servers may not support this, so we'll catch any errors
-                    return {"status": "connected", "initialized": True}
-                except Exception:
-                    return {"status": "connected", "initialized": True}
