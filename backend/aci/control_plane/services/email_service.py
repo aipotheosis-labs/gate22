@@ -14,6 +14,117 @@ from aci.control_plane.exceptions import EmailSendError
 logger = get_logger(__name__)
 
 
+EMAIL_BASE_STYLES = textwrap.dedent(
+    """
+    :root {
+        color-scheme: light dark;
+    }
+    body {
+        margin: 0;
+        padding: 32px 0;
+        background-color: #f5f5f5;
+        color: #0a0a0a;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.6;
+    }
+    .email-wrapper {
+        padding: 0 24px;
+    }
+    .card {
+        margin: 0 auto;
+        max-width: 600px;
+        background-color: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e5e5e5;
+        padding: 32px;
+    }
+    h1 {
+        font-size: 24px;
+        margin: 0 0 16px;
+        color: #0a0a0a;
+    }
+    p {
+        margin: 0 0 16px;
+    }
+    .button-row {
+        margin: 32px 0;
+        text-align: center;
+    }
+    .button {
+        display: inline-block;
+        padding: 14px 28px;
+        border-radius: 999px;
+        background-color: #0a0a0a;
+        color: #fafafa !important;
+        text-decoration: none;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+    }
+    .button:hover {
+        background-color: #171717;
+    }
+    .link {
+        color: hsl(221.2, 83.2%, 53.3%);
+        word-break: break-all;
+        text-decoration: none;
+    }
+    .link:hover {
+        text-decoration: underline;
+    }
+    .muted {
+        color: #737373;
+    }
+    .footer {
+        margin: 24px auto 0;
+        max-width: 600px;
+        padding: 16px 24px 0;
+        border-top: 1px solid #e5e5e5;
+        color: #737373;
+        font-size: 13px;
+        text-align: center;
+    }
+    @media (max-width: 480px) {
+        body {
+            padding: 24px 0;
+        }
+        .card {
+            padding: 24px;
+        }
+    }
+    @media (prefers-color-scheme: dark) {
+        body {
+            background-color: #0a0a0a;
+            color: #fafafa;
+        }
+        .card {
+            background-color: #171717;
+            border-color: #262626;
+        }
+        h1 {
+            color: #fafafa;
+        }
+        .button {
+            background-color: #fafafa;
+            color: #171717 !important;
+        }
+        .button:hover {
+            background-color: #e5e5e5;
+        }
+        .footer {
+            border-color: #262626;
+            color: #a3a3a3;
+        }
+        .muted {
+            color: #a3a3a3;
+        }
+        .link {
+            color: hsl(212, 95%, 68%);
+        }
+    }
+    """
+).strip()
+
+
 class EmailService:
     def __init__(self) -> None:
         self.charset = "UTF-8"
@@ -103,80 +214,34 @@ class EmailService:
 
         body_html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
             <meta charset="utf-8">
-            <style>
-                body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                        'Helvetica Neue', Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 20px;
-                }}
-                .container {{
-                    background-color: #ffffff;
-                    border-radius: 8px;
-                    padding: 40px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                }}
-                .header {{
-                    text-align: center;
-                    margin-bottom: 30px;
-                }}
-                .button {{
-                    display: inline-block;
-                    padding: 14px 30px;
-                    background-color: #007bff;
-                    color: #ffffff !important;
-                    text-decoration: none;
-                    border-radius: 6px;
-                    font-weight: 600;
-                    margin: 20px 0;
-                }}
-                .button:hover {{
-                    background-color: #0056b3;
-                }}
-                .footer {{
-                    margin-top: 40px;
-                    padding-top: 20px;
-                    border-top: 1px solid #e0e0e0;
-                    font-size: 14px;
-                    color: #666;
-                    text-align: center;
-                }}
-                .link {{
-                    color: #007bff;
-                    word-break: break-all;
-                }}
-            </style>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="color-scheme" content="light dark">
+            <meta name="supported-color-schemes" content="light dark">
+            <style>{EMAIL_BASE_STYLES}</style>
         </head>
         <body>
-            <div class="container">
-                <div class="header">
-                    <h2>Verify Your Email Address</h2>
-                </div>
-
-                <p>Hi {safe_name},</p>
-
-                <p>Thank you for signing up! Please verify your email address to complete
-                   your registration.</p>
-
-                <div style="text-align: center;">
-                    <a href="{safe_url}" class="button">Verify Email Address</a>
-                </div>
-
-                <p>Or copy and paste this link into your browser:</p>
-                <p class="link">{safe_url}</p>
-
-                <p><strong>This link will expire in {html.escape(expires_label)}.</strong></p>
-
-                <p>If you didn't create an account, you can safely ignore this email.</p>
-
-                <div class="footer">
+            <div class="email-wrapper">
+                <div class="card">
+                    <h1>Verify your email</h1>
+                    <p>Hi {safe_name},</p>
+                    <p>
+                        Thanks for signing up for Aipolabs.
+                        Confirm your email address to finish setting up your account.
+                    </p>
+                    <p class="button-row">
+                        <a href="{safe_url}" class="button">Verify email</a>
+                    </p>
+                    <p class="muted">This link expires in {html.escape(expires_label)}.</p>
+                    <p>If the button does not work, copy and paste this link into your browser:</p>
+                    <p><a href="{safe_url}" class="link">{safe_url}</a></p>
+                    <p>If you didn't create an account, you can safely ignore this message.</p>
                     <p>Best regards,<br>The Aipolabs Team</p>
+                </div>
+                <div class="footer">
+                    <p>Sent with care by Aipolabs</p>
                     <p>© 2025 Aipolabs. All rights reserved.</p>
                 </div>
             </div>
@@ -191,8 +256,7 @@ class EmailService:
         recipient: str,
         organization_name: str,
         inviter_name: str,
-        accept_url: str,
-        reject_url: str,
+        invitation_url: str,
         expires_label: str,
     ) -> dict[str, Any] | None:
         subject = f"You're invited to join {organization_name}"
@@ -202,17 +266,13 @@ class EmailService:
             Hi,
 
             {inviter_name} has invited you to join the organization "{organization_name}" on
-            ACI.dev. Use the link below to accept the invitation:
+            ACI.dev. View the invitation below to respond:
 
-            Accept: {accept_url}
-
-            If you prefer not to join, you can reject the invitation here:
-
-            Reject: {reject_url}
+            View invitation: {invitation_url}
 
             This invitation will expire in {expires_label}.
 
-            If the links above do not work, copy and paste them into your browser.
+            If the link above does not work, copy and paste it into your browser.
 
             Best regards,
             The ACI.dev Team
@@ -221,75 +281,42 @@ class EmailService:
 
         safe_org = html.escape(organization_name)
         safe_inviter = html.escape(inviter_name)
-        safe_accept = html.escape(accept_url, quote=True)
-        safe_reject = html.escape(reject_url, quote=True)
+        safe_invitation_url = html.escape(invitation_url, quote=True)
         safe_expires = html.escape(expires_label)
 
         body_html = f"""
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
             <meta charset="utf-8">
-            <style>
-                body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                        'Helvetica Neue', Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 20px;
-                }}
-                .container {{
-                    background-color: #ffffff;
-                    border-radius: 8px;
-                    padding: 40px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                }}
-                .button {{
-                    display: inline-block;
-                    padding: 14px 30px;
-                    background-color: #007bff;
-                    color: #ffffff !important;
-                    text-decoration: none;
-                    border-radius: 6px;
-                    font-weight: 600;
-                    margin: 20px 0;
-                }}
-                .button.reject {{
-                    background-color: #6c757d;
-                }}
-                .footer {{
-                    margin-top: 40px;
-                    padding-top: 20px;
-                    border-top: 1px solid #e0e0e0;
-                    font-size: 14px;
-                    color: #666;
-                    text-align: center;
-                }}
-                .link {{
-                    color: #007bff;
-                    word-break: break-all;
-                }}
-            </style>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="color-scheme" content="light dark">
+            <meta name="supported-color-schemes" content="light dark">
+            <style>{EMAIL_BASE_STYLES}</style>
         </head>
         <body>
-            <div class="container">
-                <h2>You're invited to join {safe_org}</h2>
-                <p><strong>{safe_inviter}</strong> invited you to collaborate on ACI.dev.</p>
-                <p>Please choose an option below:</p>
-                <div style="text-align: center;">
-                    <a href="{safe_accept}" class="button">Accept Invitation</a>
-                </div>
-                <div style="text-align: center;">
-                    <a href="{safe_reject}" class="button reject">Reject Invitation</a>
-                </div>
-                <p><strong>This invitation expires in {safe_expires}.</strong></p>
-                <p>If the buttons above do not work, copy and paste these links:</p>
-                <p class="link">Accept: {safe_accept}</p>
-                <p class="link">Reject: {safe_reject}</p>
-                <div class="footer">
+            <div class="email-wrapper">
+                <div class="card">
+                    <h1>Join {safe_org}</h1>
+                    <p>Hi there,</p>
+                    <p>
+                        <strong>{safe_inviter}</strong> invited you to collaborate with
+                        <strong>{safe_org}</strong> on ACI.dev.
+                    </p>
+                    <p>
+                        Open the invitation to review the details and sign in.
+                        Choose how you'd like to participate.
+                    </p>
+                    <p class="button-row">
+                        <a href="{safe_invitation_url}" class="button">View invitation</a>
+                    </p>
+                    <p class="muted">This invitation expires in {safe_expires}.</p>
+                    <p>If the button does not work, copy and paste this link into your browser:</p>
+                    <p><a href="{safe_invitation_url}" class="link">{safe_invitation_url}</a></p>
                     <p>Best regards,<br>The ACI.dev Team</p>
+                </div>
+                <div class="footer">
+                    <p>You're receiving this email because someone invited you to ACI.dev.</p>
                     <p>© 2025 ACI.dev. All rights reserved.</p>
                 </div>
             </div>
