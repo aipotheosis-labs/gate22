@@ -1,8 +1,11 @@
+import os
 import string
 from typing import Annotated, Literal
+from urllib.parse import urlparse
 from uuid import UUID
 
 import favicon  # type: ignore[import-untyped]
+import tldextract
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import AnyUrl, HttpUrl
 from sqlalchemy.orm import Session
@@ -108,6 +111,42 @@ def _generate_unique_mcp_server_canonical_name(
     )
 
 
+def _discover_mcp_server_logo(url: str) -> str:
+    """
+    Discover the MCP server logo from the given URL.
+    """
+    # It is quite common for MCP Servers that the endpoint is not returning a HTML, the url is in a
+    # subdomain that does not have a favicon. We also attemp to fallback to look for root domain
+    # for a relevant icon.
+    parsed = urlparse(url)
+    ext = tldextract.extract(url)
+    root_domain = f"{parsed.scheme}://{ext.domain}.{ext.suffix}"
+
+    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"  # noqa: E501
+
+    for attempt_url in [url, root_domain]:
+        try:
+            icons = favicon.get(attempt_url, headers={"User-Agent": user_agent}, timeout=5.0)
+
+            if len(icons) > 0:
+                # The icons returned sometimes contain irrelvant image. Try to match using filename.
+                for icon in icons:
+                    filename = os.path.basename(urlparse(icon.url).path)
+                    if (
+                        filename.endswith(".ico")
+                        or "icon" in filename.lower()
+                        or "logo" in filename.lower()
+                    ):
+                        return str(icon.url)
+
+                # Otherwise use the first icon returned.
+                return str(icons[0].url)
+        except Exception:
+            logger.info(f"Failed to discover MCP server logo, url={attempt_url}")
+
+    return config.DEFAULT_MCP_SERVER_LOGO
+
+
 @router.post("", response_model=MCPServerPublic)
 async def create_custom_mcp_server(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
@@ -134,15 +173,7 @@ async def create_custom_mcp_server(
     mcp_server_data.name = canonical_name
 
     if not mcp_server_data.logo:
-        try:
-            icons = favicon.get(mcp_server_data.url)
-            if len(icons) > 0:
-                # sort icons by width, so we can use the largest one
-                icons.sort(key=lambda x: x.width, reverse=True)
-                mcp_server_data.logo = icons[0].url
-        except Exception:
-            logger.info(f"Failed to discover MCP server logo, mcp_server_url={mcp_server_data.url}")
-            mcp_server_data.logo = config.DEFAULT_MCP_SERVER_LOGO
+        mcp_server_data.logo = _discover_mcp_server_logo(mcp_server_data.url)
 
     mcp_server = crud.mcp_servers.create_mcp_server(
         context.db_session,
