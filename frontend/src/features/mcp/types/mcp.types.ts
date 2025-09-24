@@ -43,6 +43,8 @@ export interface MCPServerPublic extends MCPServerPublicBasic {
   tools: MCPToolBasic[];
   created_at: string;
   updated_at: string;
+  last_synced_at: string | null;
+  organization_id: string | null;
 }
 
 export interface TeamInfo {

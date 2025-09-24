@@ -154,6 +154,28 @@ export function useDeleteMCPServerConfiguration() {
   });
 }
 
+// Hook to sync MCP server tools
+export function useSyncMCPServerTools() {
+  const { accessToken } = useMetaInfo();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (serverId: string) => {
+      return mcpService.servers.syncTools(accessToken!, serverId);
+    },
+    onSuccess: (data, serverId) => {
+      // Invalidate and refetch the specific server to get updated sync time and tools
+      queryClient.invalidateQueries({
+        queryKey: mcpQueryKeys.servers.detail(serverId),
+      });
+      // Also invalidate the servers list in case it affects the list view
+      queryClient.invalidateQueries({
+        queryKey: mcpQueryKeys.servers.all,
+      });
+    },
+  });
+}
+
 // Hook to get a specific MCP tool by name
 export function useMCPTool(toolName: string) {
   const { accessToken } = useMetaInfo();
