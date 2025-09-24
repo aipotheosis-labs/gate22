@@ -600,6 +600,7 @@ export default function AddCustomMCPServerPage() {
                     No Auth
                   </Label>
                 </div>
+                {/* Commenting out API Key for now as it would bring in more complexity for users to setup */}
                 {/* <div className="flex items-center space-x-2">
                   <Checkbox
                     id="api_key"
