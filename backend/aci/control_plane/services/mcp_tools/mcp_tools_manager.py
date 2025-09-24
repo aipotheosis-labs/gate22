@@ -74,6 +74,12 @@ class MCPToolsManager:
 
                 # Note: mcp_server.name should be validated in MCPServerUpsert.validate_name()
                 tool_name = f"{self.mcp_server.name}__{sanitized_tool_name}"
+
+                tags = (
+                    existing_mcp_tool_upserts_dict[tool_name].tags
+                    if tool_name in existing_mcp_tool_upserts_dict
+                    else []
+                )
                 mcp_tool_upsert = MCPToolUpsert(
                     name=tool_name,
                     description=tool.description if tool.description is not None else "",
@@ -81,7 +87,7 @@ class MCPToolsManager:
                     # Tags are not provided in MCP Server, and is set by users. So here we fill the
                     # tags from the existing tools if present, to avoid treating it as a change and
                     # avoid updating it unnecessarily.
-                    tags=existing_mcp_tool_upserts_dict[tool_name].tags or [],
+                    tags=tags,
                     tool_metadata=MCPToolMetadata(
                         canonical_tool_name=tool.name,
                         canonical_tool_description_hash=mcp_tool_utils.normalize_and_hash_content(
