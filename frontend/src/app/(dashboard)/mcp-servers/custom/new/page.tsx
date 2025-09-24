@@ -1060,10 +1060,10 @@ export default function AddCustomMCPServerPage() {
             <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Operational Account is an account primarily used for fetching
-                  MCP server information and listening any server changes, for
-                  example obtaining tool list. Please select the authentication
-                  method used to connect Operational Account.
+                  Operational Account is a service account used for fetching MCP
+                  server information and listening to any server changes, for
+                  example fetching the MCP tool list. Please select the
+                  authentication method used to connect Operational Account.
                 </p>
 
                 <div className="space-y-2">

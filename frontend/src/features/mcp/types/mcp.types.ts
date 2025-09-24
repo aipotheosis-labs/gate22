@@ -111,3 +111,10 @@ export interface PaginationResponse<T> {
   offset: number;
   total?: number;
 }
+
+export interface ToolsSyncResult {
+  tools_created: string[];
+  tools_deleted: string[];
+  tools_updated: string[];
+  tools_unchanged: string[];
+}

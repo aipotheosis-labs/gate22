@@ -14,6 +14,7 @@ import {
   Settings,
   CheckCircle2,
   XCircle,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -21,10 +22,11 @@ import {
   useSyncMCPServerTools,
   useOperationalMCPServerConfigurations,
 } from "@/features/mcp/hooks/use-mcp-servers";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
 import { ToolsTable } from "@/features/mcp/components/tools-table";
 import { OperationalAccountDialog } from "@/features/mcp/components/operational-account-dialog";
+import { SyncResultsDialog } from "@/features/mcp/components/sync-results-dialog";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import {
@@ -35,6 +37,7 @@ import {
 import { getAuthTypeLabel, getAuthTypeDetailedInfo } from "@/utils/auth-labels";
 import { toast } from "sonner";
 import { useMetaInfo } from "@/components/context/metainfo";
+import { ToolsSyncResult } from "@/features/mcp/types/mcp.types";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
@@ -42,6 +45,9 @@ export default function MCPServerDetailPage() {
   const serverId = params.id as string;
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isOperationalDialogOpen, setIsOperationalDialogOpen] = useState(false);
+  const [syncResults, setSyncResults] = useState<ToolsSyncResult | null>(null);
+  const [isSyncResultsOpen, setIsSyncResultsOpen] = useState(false);
+  const [, setForceUpdate] = useState(0);
 
   // Get organization context and permissions
   const { activeOrg, checkPermission } = useMetaInfo();
@@ -63,10 +69,57 @@ export default function MCPServerDetailPage() {
   const hasOperationalAccount =
     operationalConfig?.has_operational_connected_account || false;
 
+  // Check if enough time has passed since last sync (1 hour = 60 minutes)
+  const canSyncByTime =
+    !server?.last_synced_at ||
+    new Date().getTime() - new Date(server.last_synced_at).getTime() >=
+      60 * 60 * 1000;
+
+  // Calculate remaining time until next sync is allowed
+  const getTimeUntilNextSync = () => {
+    if (!server?.last_synced_at) return null;
+    const lastSync = new Date(server.last_synced_at).getTime();
+    const now = new Date().getTime();
+    const oneHour = 60 * 60 * 1000;
+    const timePassed = now - lastSync;
+    const timeRemaining = oneHour - timePassed;
+
+    if (timeRemaining <= 0) return null;
+
+    const minutes = Math.ceil(timeRemaining / (60 * 1000));
+    return minutes;
+  };
+
+  // Update timer every minute when sync is on cooldown
+  useEffect(() => {
+    if (!server?.last_synced_at || canSyncByTime) return;
+
+    const interval = setInterval(() => {
+      // Force re-render to update the countdown
+      setForceUpdate((prev) => prev + 1);
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [server?.last_synced_at, canSyncByTime]);
+
   const handleSync = () => {
     syncMutation.mutate(serverId, {
-      onSuccess: () => {
-        toast.success("Tools synced successfully");
+      onSuccess: (results) => {
+        setSyncResults(results);
+        setIsSyncResultsOpen(true);
+
+        const totalChanges =
+          results.tools_created.length +
+          results.tools_deleted.length +
+          results.tools_updated.length;
+
+        if (totalChanges === 0) {
+          toast.success("Tools are already up to date");
+        } else {
+          toast.success(
+            `Tools synced successfully - ${totalChanges} changes made`,
+          );
+        }
       },
       onError: (error) => {
         console.error("Sync failed:", error);
@@ -101,7 +154,7 @@ export default function MCPServerDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       {/* Back Button */}
       <Button
         variant="outline"
@@ -183,42 +236,52 @@ export default function MCPServerDetailPage() {
 
       <Separator className="mb-4" />
 
-      {/* Operational Account */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Operational Account</h2>
+      {/* Operational Account - Only show for servers belonging to active organization */}
+      {server.organization_id === activeOrg?.orgId && (
+        <>
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                <h2 className="text-lg font-semibold">Operational Account</h2>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsOperationalDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {hasOperationalAccount ? "Update Account" : "Setup Account"}
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Operational Account is a service account used for fetching MCP
+                server information and listening to any server changes.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 my-4">
+              {hasOperationalAccount ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">
+                    Operational account is configured
+                  </span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm text-muted-foreground">
+                    No operational account configured
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsOperationalDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {hasOperationalAccount ? "Update Account" : "Setup Account"}
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          {hasOperationalAccount ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-muted-foreground">
-                Operational account is configured
-              </span>
-            </>
-          ) : (
-            <>
-              <XCircle className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-muted-foreground">
-                No operational account configured
-              </span>
-            </>
-          )}
-        </div>
-      </div>
 
-      <Separator className="mb-4" />
+          <Separator className="mb-4" />
+        </>
+      )}
 
       {/* Tools */}
       <div className="mb-8">
@@ -230,8 +293,7 @@ export default function MCPServerDetailPage() {
             </h2>
           </div>
           {checkPermission(PERMISSIONS.MCP_CONFIGURATION_CREATE) &&
-            (server.organization_id === null ||
-              server.organization_id === activeOrg?.orgId) && (
+            server.organization_id === activeOrg?.orgId && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
@@ -240,11 +302,15 @@ export default function MCPServerDetailPage() {
                       size="sm"
                       onClick={handleSync}
                       disabled={
-                        syncMutation.isPending || !hasOperationalAccount
+                        syncMutation.isPending ||
+                        !hasOperationalAccount ||
+                        !canSyncByTime
                       }
                     >
                       {syncMutation.isPending ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : !canSyncByTime ? (
+                        <Clock className="h-4 w-4 mr-2" />
                       ) : (
                         <RefreshCw className="h-4 w-4 mr-2" />
                       )}
@@ -252,9 +318,18 @@ export default function MCPServerDetailPage() {
                     </Button>
                   </div>
                 </TooltipTrigger>
-                {!hasOperationalAccount && (
+                {(!hasOperationalAccount || !canSyncByTime) && (
                   <TooltipContent>
-                    <p>Setup an operational account first to enable syncing</p>
+                    {!hasOperationalAccount ? (
+                      <p>
+                        Setup an operational account first to enable syncing
+                      </p>
+                    ) : !canSyncByTime ? (
+                      <p>
+                        Please wait {getTimeUntilNextSync()} more minute(s)
+                        before syncing again
+                      </p>
+                    ) : null}
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -283,8 +358,8 @@ export default function MCPServerDetailPage() {
         />
       )}
 
-      {/* Operational Account Dialog */}
-      {server && (
+      {/* Operational Account Dialog - Only for servers belonging to active organization */}
+      {server && server.organization_id === activeOrg?.orgId && (
         <OperationalAccountDialog
           open={isOperationalDialogOpen}
           onOpenChange={setIsOperationalDialogOpen}
@@ -300,6 +375,14 @@ export default function MCPServerDetailPage() {
           }}
         />
       )}
+
+      {/* Sync Results Dialog */}
+      <SyncResultsDialog
+        open={isSyncResultsOpen}
+        onOpenChange={setIsSyncResultsOpen}
+        results={syncResults}
+        serverName={server?.name || ""}
+      />
     </div>
   );
 }

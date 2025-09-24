@@ -8,6 +8,7 @@ import {
   MCPToolPublic,
   PaginationParams,
   PaginationResponse,
+  ToolsSyncResult,
 } from "../types/mcp.types";
 import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
@@ -78,10 +79,10 @@ export const mcpService = {
     syncTools: async (
       token: string,
       serverId: string,
-    ): Promise<MCPServerPublic> => {
+    ): Promise<ToolsSyncResult> => {
       const api = createAuthenticatedRequest(token);
-      return api.post<MCPServerPublic>(
-        `${API_ENDPOINTS.SERVERS}/${serverId}/sync`,
+      return api.post<ToolsSyncResult>(
+        `${API_ENDPOINTS.SERVERS}/${serverId}/refresh-tools`,
         {},
       );
     },
