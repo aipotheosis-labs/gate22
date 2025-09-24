@@ -31,7 +31,6 @@ from aci.control_plane.exceptions import (
     NotPermittedError,
     OAuth2Error,
 )
-from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsManager
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -191,16 +190,6 @@ async def _upsert_connected_account(
             auth_credentials,
             mcp_server_config.connected_account_ownership,
         )
-
-    # Automatically fetch tools if not synced before
-    try:
-        if mcp_server_config.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
-            if mcp_server_config.mcp_server.last_synced_at is None:
-                # TODO: Run in async background instead of blocking the main procedure
-                await MCPToolsManager(mcp_server_config.mcp_server).refresh_mcp_tools(db_session)
-    except Exception as e:
-        # Should not block the account creation.
-        logger.error(f"Error refreshing tools: {e}")
 
     return connected_account
 

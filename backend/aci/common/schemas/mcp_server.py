@@ -21,7 +21,7 @@ class MCPServerMetadata(BaseModel):
 class MCPServerPartialUpdate(BaseModel):
     """Used for Partial Updating data to the database"""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     description: str | PydanticUndefinedType = Field(default=PydanticUndefined)
     logo: str | PydanticUndefinedType = Field(default=PydanticUndefined)
