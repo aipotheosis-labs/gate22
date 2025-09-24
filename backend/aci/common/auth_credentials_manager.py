@@ -224,7 +224,7 @@ async def get_auth_credentials(
     For now, connected account is unique per user and mcp server configuration.
     """
     if connected_account_ownership == ConnectedAccountOwnership.SHARED:
-        logger.info(
+        logger.debug(
             f"Getting auth credentials for shared connected account, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
         )
         connected_account = (
@@ -234,7 +234,7 @@ async def get_auth_credentials(
             )
         )
     elif connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
-        logger.info(
+        logger.debug(
             f"Getting auth credentials for operational connected account, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
         )
         connected_account = crud.connected_accounts.get_operational_connected_account_by_mcp_server_configuration_id(  # noqa: E501
@@ -247,7 +247,7 @@ async def get_auth_credentials(
             raise AuthCredentialsManagerError(
                 "User ID is required for individual connected account"
             )
-        logger.info(
+        logger.debug(
             f"Getting auth credentials for individual connected account, user_id={user_id}, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
         )
         connected_account = crud.connected_accounts.get_connected_account_by_user_id_and_mcp_server_configuration_id(  # noqa: E501
