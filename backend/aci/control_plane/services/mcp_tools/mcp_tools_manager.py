@@ -29,7 +29,9 @@ class MCPToolsManager:
         self.mcp_server = mcp_server
 
     async def refresh_mcp_tools(self, db_session: Session) -> MCPToolsDiff:
+        # Remove this check if we want to support refreshing tools for Public MCP servers
         if self.mcp_server.organization_id is None:
+            logger.error(f"MCP server has no organization id: {self.mcp_server.id}")
             raise MCPToolsManagerError("MCP server has no organization id")
 
         mcp_server_configuration = (
