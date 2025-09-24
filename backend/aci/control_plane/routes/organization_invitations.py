@@ -2,14 +2,14 @@
 
 import datetime
 from typing import Annotated
-from urllib.parse import urlencode
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from aci.common import utils
 from aci.common.db import crud
-from aci.common.db.sql_models import OrganizationInvitation
+from aci.common.db.sql_models import OrganizationInvitation, User
 from aci.common.enums import OrganizationInvitationStatus, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.organization_invitation import (
@@ -59,6 +59,69 @@ def _validate_invitation_token(invitation: OrganizationInvitation, token: str) -
         raise InvitationExpiredError()
     if token_utils.hash_token(token) != invitation.token_hash:
         raise InvalidInvitationTokenError()
+
+
+def _require_invitation_access(
+    context: deps.RequestContextWithoutActAs,
+    invitation_id: UUID,
+    *,
+    expected_organization_id: UUID | None = None,
+) -> OrganizationInvitation:
+    invitation = crud.organization_invitations.get_invitation_by_id(
+        context.db_session, invitation_id
+    )
+    if invitation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+
+    _ensure_user_can_access_invitation(
+        context, invitation, expected_organization_id=expected_organization_id
+    )
+
+    return invitation
+
+
+def _ensure_user_can_access_invitation(
+    context: deps.RequestContextWithoutActAs,
+    invitation: OrganizationInvitation,
+    *,
+    expected_organization_id: UUID | None = None,
+) -> User:
+    if expected_organization_id and invitation.organization_id != expected_organization_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+
+    user = crud.users.get_user_by_id(context.db_session, context.user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    membership = crud.organizations.get_organization_membership(
+        context.db_session, invitation.organization_id, context.user_id
+    )
+    is_admin = membership is not None and membership.role == OrganizationRole.ADMIN
+
+    if not is_admin and user.email.lower() != invitation.email.lower():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not permitted")
+
+    return user
+
+
+def _require_invitation_access_by_token(
+    context: deps.RequestContextWithoutActAs,
+    token: str,
+    *,
+    expected_organization_id: UUID | None = None,
+) -> tuple[OrganizationInvitation, User]:
+    token_hash = token_utils.hash_token(token)
+    invitation = crud.organization_invitations.get_invitation_by_token_hash(
+        context.db_session, token_hash
+    )
+    if invitation is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+
+    user = _ensure_user_can_access_invitation(
+        context, invitation, expected_organization_id=expected_organization_id
+    )
+
+    return invitation, user
 
 
 @router.post(
@@ -141,17 +204,14 @@ async def invite_member(
         config.ORGANIZATION_INVITATION_EXPIRE_MINUTES
     )
 
-    params = urlencode({"invitation_id": str(invitation.id), "token": token})
-    accept_url = f"{config.FRONTEND_URL.rstrip('/')}/invitations/accept?{params}"
-    reject_url = f"{config.FRONTEND_URL.rstrip('/')}/invitations/reject?{params}"
+    invitation_url = f"{config.FRONTEND_URL.rstrip('/')}/invite/{quote(token)}"
 
     try:
         email_metadata = await email_service.send_organization_invitation_email(
             recipient=target_email,
             organization_name=organization.name,
             inviter_name=inviter_name,
-            accept_url=accept_url,
-            reject_url=reject_url,
+            invitation_url=invitation_url,
             expires_label=expires_label,
         )
     except Exception:
@@ -179,19 +239,16 @@ async def accept_invitation(
     organization_id: UUID,
     request: RespondOrganizationInvitationRequest,
 ) -> OrganizationInvitationDetail:
-    invitation = crud.organization_invitations.get_invitation_by_id(
-        context.db_session, request.invitation_id
+    invitation, user = _require_invitation_access_by_token(
+        context, request.token, expected_organization_id=organization_id
     )
-    if invitation is None or invitation.organization_id != organization_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
     _validate_invitation_token(invitation, request.token)
 
     now = datetime.datetime.now(datetime.UTC)
 
-    user = crud.users.get_user_by_id(context.db_session, context.user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    organization_id = invitation.organization_id
+
     if not user.email_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -242,17 +299,12 @@ async def reject_invitation(
     organization_id: UUID,
     request: RespondOrganizationInvitationRequest,
 ) -> OrganizationInvitationDetail:
-    invitation = crud.organization_invitations.get_invitation_by_id(
-        context.db_session, request.invitation_id
+    invitation, user = _require_invitation_access_by_token(
+        context, request.token, expected_organization_id=organization_id
     )
-    if invitation is None or invitation.organization_id != organization_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
     _validate_invitation_token(invitation, request.token)
 
-    user = crud.users.get_user_by_id(context.db_session, context.user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if user.email.lower() != invitation.email.lower():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -321,8 +373,8 @@ async def list_invitations(
     organization_id: UUID,
     status_filter: Annotated[
         OrganizationInvitationStatus | None,
-        Query(None, description="Filter by invitation status"),
-    ],
+        Query(description="Filter by invitation status"),
+    ] = None,
 ) -> list[OrganizationInvitationDetail]:
     access_control.check_act_as_organization_role(
         context.act_as, requested_organization_id=organization_id
@@ -357,23 +409,39 @@ async def get_invitation(
     organization_id: UUID,
     invitation_id: Annotated[UUID, Query(..., description="Invitation identifier")],
 ) -> OrganizationInvitationDetail:
-    invitation = crud.organization_invitations.get_invitation_by_id(
-        context.db_session, invitation_id
+    invitation = _require_invitation_access(
+        context, invitation_id, expected_organization_id=organization_id
     )
-    if invitation is None or invitation.organization_id != organization_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
 
-    user = crud.users.get_user_by_id(context.db_session, context.user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return _serialize_invitation(invitation)
 
-    # Allow admins (through act_as) as well as the invitee to view details
-    membership = crud.organizations.get_organization_membership(
-        context.db_session, organization_id, context.user_id
-    )
-    is_admin = membership is not None and membership.role == OrganizationRole.ADMIN
 
-    if not is_admin and user.email.lower() != invitation.email.lower():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not permitted")
+@router.get(
+    "/invitations/by-id",
+    response_model=OrganizationInvitationDetail,
+    status_code=status.HTTP_200_OK,
+)
+async def get_invitation_by_id(
+    context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
+    invitation_id: Annotated[UUID, Query(..., description="Invitation identifier")],
+) -> OrganizationInvitationDetail:
+    invitation = _require_invitation_access(context, invitation_id)
+
+    return _serialize_invitation(invitation)
+
+
+@router.get(
+    "/invitations/by-token",
+    response_model=OrganizationInvitationDetail,
+    status_code=status.HTTP_200_OK,
+)
+async def get_invitation_by_token(
+    context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
+    token: Annotated[
+        str,
+        Query(..., min_length=1, description="Raw invitation token supplied via email"),
+    ],
+) -> OrganizationInvitationDetail:
+    invitation, _ = _require_invitation_access_by_token(context, token)
 
     return _serialize_invitation(invitation)

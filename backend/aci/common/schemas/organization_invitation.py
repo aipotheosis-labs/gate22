@@ -15,7 +15,6 @@ class SendOrganizationInvitationRequest(BaseModel):
 
 
 class RespondOrganizationInvitationRequest(BaseModel):
-    invitation_id: UUID = Field(description="Identifier of the invitation")
     token: str = Field(min_length=1, description="Raw invitation token supplied via email")
 
 

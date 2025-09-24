@@ -17,62 +17,67 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useOrganizationMembers } from "@/features/members/hooks/use-organization-members";
 
-interface InviteMemberDialogProps {
+interface MemberInvitationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  onInvite: (payload: { email: string; role: string }) => Promise<unknown>;
+  isInviting?: boolean;
 }
 
-export function InviteMemberDialog({
+export function MemberInvitationDialog({
   open,
   onOpenChange,
   onSuccess,
-}: InviteMemberDialogProps) {
-  const { inviteMemberAsync, isInviting } = useOrganizationMembers();
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<string>("admin");
+  onInvite,
+  isInviting = false,
+}: MemberInvitationDialogProps) {
+  const [invitationEmail, setInvitationEmail] = useState("");
+  const [invitationRole, setInvitationRole] = useState<string>("admin");
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) {
+  const handleSendInvitation = async () => {
+    if (!invitationEmail.trim()) {
       toast.error("Please enter an email address");
       return;
     }
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail.trim())) {
+    if (!emailRegex.test(invitationEmail.trim())) {
       toast.error("Please enter a valid email address");
       return;
     }
 
     try {
-      await inviteMemberAsync({
-        email: inviteEmail.trim(),
-        role: inviteRole,
+      await onInvite({
+        email: invitationEmail.trim(),
+        role: invitationRole,
       });
-      setInviteEmail("");
-      setInviteRole("admin");
+      setInvitationEmail("");
+      setInvitationRole("admin");
       onSuccess?.();
     } catch {
       // Error handling is done in the hook
     }
   };
 
-  const handleClose = () => {
-    if (!isInviting) {
-      setInviteEmail("");
-      setInviteRole("admin");
-      onOpenChange(false);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (isInviting) {
+      return;
     }
+    if (!nextOpen) {
+      setInvitationEmail("");
+      setInvitationRole("admin");
+    }
+    onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Invite Member</DialogTitle>
+          <DialogTitle>Send Member Invitation</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
@@ -85,15 +90,15 @@ export function InviteMemberDialog({
               id="email"
               type="email"
               placeholder="name@example.com"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
+              value={invitationEmail}
+              onChange={(e) => setInvitationEmail(e.target.value)}
               disabled={isInviting}
               className="col-span-3"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !isInviting && inviteEmail) {
+                if (e.key === "Enter" && !isInviting && invitationEmail) {
                   e.preventDefault();
-                  handleInvite();
+                  handleSendInvitation();
                 }
               }}
             />
@@ -105,8 +110,8 @@ export function InviteMemberDialog({
               Role
             </Label>
             <Select
-              value={inviteRole}
-              onValueChange={setInviteRole}
+              value={invitationRole}
+              onValueChange={setInvitationRole}
               disabled={isInviting}
             >
               <SelectTrigger id="role" className="col-span-3">
@@ -121,14 +126,18 @@ export function InviteMemberDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isInviting}>
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isInviting}
+          >
             Cancel
           </Button>
           <Button
-            onClick={handleInvite}
-            disabled={isInviting || !inviteEmail.trim()}
+            onClick={handleSendInvitation}
+            disabled={isInviting || !invitationEmail.trim()}
           >
-            {isInviting ? "Sending..." : "Send Invite"}
+            {isInviting ? "Sending..." : "Send Invitation"}
           </Button>
         </DialogFooter>
       </DialogContent>

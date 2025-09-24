@@ -22,6 +22,7 @@ import {
 } from "@/lib/rbac/rbac-service";
 import { Permission } from "@/lib/rbac/permissions";
 import { mcpQueryKeys } from "@/features/mcp/hooks/use-mcp-servers";
+import { connectedAccountKeys } from "@/features/connected-accounts/hooks/use-connected-account";
 
 export interface UserClass {
   userId: string;
@@ -61,6 +62,8 @@ const MetaInfoContext = createContext<MetaInfoContextType | undefined>(
   undefined,
 );
 
+const MCP_BUNDLE_QUERY_KEY = ["mcp-server-bundles"] as const;
+
 interface MetaInfoProviderProps {
   children: ReactNode;
 }
@@ -78,139 +81,6 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     OrganizationRole.Admin,
   );
   const [isTokenRefreshing, setIsTokenRefreshing] = useState(false);
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const checkExistingSession = async () => {
-      try {
-        // IMPORTANT: Load stored preferences FIRST before requesting token
-        // This ensures we have the correct act_as context from the start
-        const storedOrg = organizationManager.getActiveOrganization();
-        const storedRole = storedOrg
-          ? roleManager.getActiveRole(storedOrg.orgId)
-          : null;
-
-        // Get initial token with proper role context if available
-        const token = await tokenManager.getAccessToken(
-          storedOrg?.orgId,
-          storedOrg?.userRole as OrganizationRole,
-        );
-
-        if (token) {
-          // Get user profile with the new token
-          const userProfile = await getProfile(token);
-
-          // Transform the profile to match the expected format
-          const user: UserClass = {
-            userId: userProfile.user_id,
-            email: userProfile.email,
-            firstName: userProfile.name.split(" ")[0],
-            lastName: userProfile.name.split(" ").slice(1).join(" "),
-            username: userProfile.email.split("@")[0],
-            pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
-          };
-          // If the user has no organizations, send them to onboarding
-          if (
-            !userProfile.organizations ||
-            userProfile.organizations.length === 0
-          ) {
-            setAccessToken(token);
-            setUser(user);
-            setOrgs([]);
-            setActiveOrg(null);
-            setIsAuthenticated(true);
-            setIsLoading(false);
-            router.push("/onboarding/organization");
-            return;
-          }
-
-          let org: OrgMemberInfoClass;
-
-          if (storedOrg && userProfile.organizations) {
-            // Try to find the stored org in user's organizations
-            const matchingOrg = userProfile.organizations.find(
-              (o) => o.organization_id === storedOrg.orgId,
-            );
-
-            if (matchingOrg) {
-              org = {
-                orgId: matchingOrg.organization_id,
-                orgName: matchingOrg.organization_name,
-                userRole: matchingOrg.role,
-                userPermissions: [],
-              };
-            } else {
-              // Stored org not found, use first org
-              org =
-                userProfile.organizations.length > 0
-                  ? {
-                      orgId: userProfile.organizations[0].organization_id,
-                      orgName: userProfile.organizations[0].organization_name,
-                      userRole: userProfile.organizations[0].role,
-                      userPermissions: [],
-                    }
-                  : {
-                      orgId: "",
-                      orgName: "",
-                      userRole: "",
-                      userPermissions: [],
-                    };
-            }
-          } else {
-            // No stored preference, use first org
-            org =
-              userProfile.organizations && userProfile.organizations.length > 0
-                ? {
-                    orgId: userProfile.organizations[0].organization_id,
-                    orgName: userProfile.organizations[0].organization_name,
-                    userRole: userProfile.organizations[0].role,
-                    userPermissions: [],
-                  }
-                : {
-                    orgId: "",
-                    orgName: "",
-                    userRole: "",
-                    userPermissions: [],
-                  };
-          }
-
-          setAccessToken(token);
-          setUser(user);
-          setOrgs([org]);
-          setActiveOrg(org);
-          setIsAuthenticated(true);
-
-          // Save the active org to localStorage if it wasn't already stored
-          if (org.orgId && !storedOrg) {
-            organizationManager.setActiveOrganization(
-              org.orgId,
-              org.orgName,
-              org.userRole,
-            );
-          }
-
-          // Set the active role - either from storage or user's actual role
-          if (
-            org.userRole === OrganizationRole.Admin &&
-            org.orgId &&
-            storedRole
-          ) {
-            setActiveRole(storedRole.role);
-          } else {
-            setActiveRole(org.userRole as OrganizationRole);
-          }
-        } else {
-          // No valid session - this is expected for non-authenticated users
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkExistingSession();
-  }, [router]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -269,6 +139,152 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
     [router],
   );
 
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        // IMPORTANT: Load stored preferences FIRST before requesting token
+        // This ensures we have the correct act_as context from the start
+        const storedOrg = organizationManager.getActiveOrganization();
+        const storedRole = storedOrg
+          ? roleManager.getActiveRole(storedOrg.orgId)
+          : null;
+
+        // Reset any stale act_as context from previous sessions before
+        // requesting a fresh token.
+        tokenManager.clearToken();
+
+        // Always start by fetching a base token; we'll align org context after
+        // verifying the stored preference still exists for this user.
+        const token = await tokenManager.getAccessToken();
+
+        if (token) {
+          // Get user profile with the new token
+          const userProfile = await getProfile(token);
+
+          // Transform the profile to match the expected format
+          const user: UserClass = {
+            userId: userProfile.user_id,
+            email: userProfile.email,
+            firstName: userProfile.name.split(" ")[0],
+            lastName: userProfile.name.split(" ").slice(1).join(" "),
+            username: userProfile.email.split("@")[0],
+            pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
+          };
+          // If the user has no organizations, send them to onboarding
+          if (
+            !userProfile.organizations ||
+            userProfile.organizations.length === 0
+          ) {
+            setAccessToken(token);
+            setUser(user);
+            setOrgs([]);
+            setActiveOrg(null);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            router.push("/onboarding/organization");
+            return;
+          }
+
+          const organizations = (userProfile.organizations ?? []).map(
+            (org) => ({
+              orgId: org.organization_id,
+              orgName: org.organization_name,
+              userRole: org.role,
+              userPermissions: [],
+            }),
+          );
+
+          let selectedOrg: OrgMemberInfoClass | null = null;
+          const storedOrgMatch = storedOrg
+            ? (organizations.find((org) => org.orgId === storedOrg.orgId) ??
+              null)
+            : null;
+
+          if (!storedOrgMatch && storedOrg) {
+            organizationManager.clearActiveOrganization();
+            roleManager.clearActiveRole();
+          }
+
+          if (storedOrgMatch) {
+            selectedOrg = storedOrgMatch;
+          } else if (organizations.length > 0) {
+            selectedOrg = organizations[0];
+          }
+
+          setUser(user);
+          setOrgs(organizations);
+
+          if (selectedOrg) {
+            setActiveOrg(selectedOrg);
+            setIsAuthenticated(true);
+
+            if (!storedOrg || storedOrg.orgId !== selectedOrg.orgId) {
+              organizationManager.setActiveOrganization(
+                selectedOrg.orgId,
+                selectedOrg.orgName,
+                selectedOrg.userRole,
+              );
+            }
+
+            const storedRoleForSelectedOrg =
+              storedRole && storedRole.organizationId === selectedOrg.orgId
+                ? storedRole
+                : null;
+
+            if (
+              selectedOrg.userRole === OrganizationRole.Admin &&
+              storedRoleForSelectedOrg &&
+              selectedOrg.orgId
+            ) {
+              setActiveRole(storedRoleForSelectedOrg.role);
+            } else {
+              setActiveRole(selectedOrg.userRole as OrganizationRole);
+            }
+
+            const expectedRoleForActAs =
+              selectedOrg.userRole === OrganizationRole.Admin &&
+              storedRoleForSelectedOrg
+                ? storedRoleForSelectedOrg.role
+                : (selectedOrg.userRole as OrganizationRole);
+            const currentActAs = tokenManager.getCurrentActAs();
+            const needsOrgContextRefresh =
+              !currentActAs ||
+              currentActAs.organization_id !== selectedOrg.orgId ||
+              currentActAs.role !== expectedRoleForActAs;
+
+            if (needsOrgContextRefresh) {
+              const refreshedToken = await refreshTokenWithContext(
+                selectedOrg.orgId,
+                selectedOrg.userRole as OrganizationRole,
+              );
+
+              if (!refreshedToken) {
+                throw new Error(
+                  "Failed to refresh token with organization context",
+                );
+              }
+            } else {
+              setAccessToken(token);
+            }
+          } else {
+            setActiveOrg(null);
+            setIsAuthenticated(true);
+            setAccessToken(token);
+          }
+        } else {
+          // No valid session - this is expected for non-authenticated users
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkExistingSession();
+  }, [router, refreshTokenWithContext]);
+
   const switchOrganization = useCallback(
     async (org: OrgMemberInfoClass) => {
       // Save to localStorage
@@ -291,10 +307,13 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         org.userRole as OrganizationRole,
       );
 
-      // Invalidate MCP configuration queries to force refetch with new token
+      // Invalidate queries that depend on organization-bound auth context
       queryClient.invalidateQueries({
         queryKey: mcpQueryKeys.configurations.all,
       });
+      queryClient.invalidateQueries({ queryKey: mcpQueryKeys.servers.all });
+      queryClient.invalidateQueries({ queryKey: connectedAccountKeys.all() });
+      queryClient.invalidateQueries({ queryKey: MCP_BUNDLE_QUERY_KEY });
     },
     [refreshTokenWithContext, queryClient],
   );
@@ -327,10 +346,13 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       activeOrg.userRole as OrganizationRole,
     );
 
-    // Invalidate MCP configuration queries to force refetch with new token
+    // Invalidate queries that depend on organization-bound auth context
     queryClient.invalidateQueries({
       queryKey: mcpQueryKeys.configurations.all,
     });
+    queryClient.invalidateQueries({ queryKey: mcpQueryKeys.servers.all });
+    queryClient.invalidateQueries({ queryKey: connectedAccountKeys.all() });
+    queryClient.invalidateQueries({ queryKey: MCP_BUNDLE_QUERY_KEY });
 
     // Return the new state so callers can use it immediately
     return newActiveRole;

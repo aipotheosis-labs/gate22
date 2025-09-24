@@ -65,6 +65,7 @@ export const sidebarItems = [
     title: "Settings",
     url: "/settings/organization",
     icon: RiSettings3Line,
+    adminOnly: true,
   },
 ];
 

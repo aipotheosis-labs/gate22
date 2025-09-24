@@ -43,13 +43,18 @@ export function useOrganizationMembers() {
     },
   });
 
-  const inviteMemberMutation = useMutation({
+  const memberInvitationMutation = useMutation({
     mutationFn: ({ email, role }: { email: string; role: string }) =>
       inviteToOrganization(accessToken, activeOrg.orgId, email, role),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.MEMBERS(activeOrg?.orgId || ""),
       });
+      if (activeOrg?.orgId) {
+        queryClient.invalidateQueries({
+          queryKey: ["org-invitations", activeOrg.orgId],
+        });
+      }
       toast.success(`Invitation sent to ${variables.email}`);
     },
     onError: (error) => {
@@ -66,8 +71,8 @@ export function useOrganizationMembers() {
     refetch: membersQuery.refetch,
     removeMember: removeMemberMutation.mutate,
     isRemoving: removeMemberMutation.isPending,
-    inviteMember: inviteMemberMutation.mutate,
-    isInviting: inviteMemberMutation.isPending,
-    inviteMemberAsync: inviteMemberMutation.mutateAsync,
+    createMemberInvitation: memberInvitationMutation.mutate,
+    isInviting: memberInvitationMutation.isPending,
+    createMemberInvitationAsync: memberInvitationMutation.mutateAsync,
   };
 }

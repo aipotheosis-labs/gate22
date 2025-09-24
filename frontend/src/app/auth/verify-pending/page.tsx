@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 
 export default function VerifyPendingPage() {
   const [email, setEmail] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  const nextPath = useMemo(
+    () => sanitizeRedirectPath(searchParams.get("next")),
+    [searchParams],
+  );
 
   useEffect(() => {
     const pendingEmail =
@@ -85,7 +93,15 @@ export default function VerifyPendingPage() {
             {/* Actions */}
             <div className="space-y-3">
               <Button asChild variant="outline" className="w-full h-11">
-                <Link href="/login">Go to Sign In</Link>
+                <Link
+                  href={
+                    nextPath
+                      ? `/login?next=${encodeURIComponent(nextPath)}`
+                      : "/login"
+                  }
+                >
+                  Go to Sign In
+                </Link>
               </Button>
 
               <div className="relative">
@@ -100,7 +116,15 @@ export default function VerifyPendingPage() {
               </div>
 
               <Button asChild variant="ghost" className="w-full h-11">
-                <Link href="/signup">Sign Up with Different Email</Link>
+                <Link
+                  href={
+                    nextPath
+                      ? `/signup?next=${encodeURIComponent(nextPath)}`
+                      : "/signup"
+                  }
+                >
+                  Sign Up with Different Email
+                </Link>
               </Button>
             </div>
 

@@ -15,16 +15,16 @@ import { useOrganizationMembers } from "@/features/members/hooks/use-organizatio
 import { toast } from "sonner";
 import { Plus, Link2 } from "lucide-react";
 
-interface InviteMemberFormProps {
+interface MemberInvitationFormProps {
   onSuccess?: () => void;
 }
 
-export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
-  const { inviteMemberAsync, isInviting } = useOrganizationMembers();
+export function MemberInvitationForm({ onSuccess }: MemberInvitationFormProps) {
+  const { createMemberInvitationAsync, isInviting } = useOrganizationMembers();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrganizationRole>(OrganizationRole.Admin);
 
-  const handleInvite = async () => {
+  const handleCreateMemberInvitation = async () => {
     if (!email.trim()) {
       toast.error("Please enter an email address");
       return;
@@ -37,7 +37,7 @@ export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
     }
 
     try {
-      await inviteMemberAsync({
+      await createMemberInvitationAsync({
         email: email.trim(),
         role: role,
       });
@@ -82,7 +82,7 @@ export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !isInviting && email) {
                     e.preventDefault();
-                    handleInvite();
+                    handleCreateMemberInvitation();
                   }
                 }}
               />
@@ -120,8 +120,11 @@ export function InviteMemberForm({ onSuccess }: InviteMemberFormProps) {
               Team Members
             </a>
           </p>
-          <Button onClick={handleInvite} disabled={isInviting || !email.trim()}>
-            {isInviting ? "Inviting..." : "Invite"}
+          <Button
+            onClick={handleCreateMemberInvitation}
+            disabled={isInviting || !email.trim()}
+          >
+            {isInviting ? "Sending..." : "Send Invitation"}
           </Button>
         </div>
       </div>

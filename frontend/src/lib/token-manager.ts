@@ -33,47 +33,67 @@ class TokenManager {
     organizationId?: string,
     userActualRole?: OrganizationRole,
   ): Promise<string | null> {
-    // Determine act_as based on RoleManager
-    let act_as: IssueTokenRequest["act_as"] | undefined;
+    // Determine act_as payload. Default to the previously used act_as so
+    // subsequent calls without explicit context keep the same organization.
+    let nextActAs: IssueTokenRequest["act_as"] | undefined = this.currentActAs;
 
-    if (organizationId && userActualRole === OrganizationRole.Admin) {
-      const activeRole = roleManager.getActiveRole(organizationId);
-      if (activeRole && activeRole.role === OrganizationRole.Member) {
-        // Admin is acting as member
-        act_as = {
-          organization_id: organizationId,
-          role: OrganizationRole.Member,
-        };
+    if (organizationId) {
+      let desiredRole: OrganizationRole | undefined;
+
+      if (userActualRole === OrganizationRole.Admin) {
+        const activeRole = roleManager.getActiveRole(organizationId);
+        desiredRole = activeRole?.role ?? OrganizationRole.Admin;
+      } else if (userActualRole) {
+        desiredRole = userActualRole;
+      } else if (
+        this.currentActAs?.organization_id === organizationId &&
+        this.currentActAs.role
+      ) {
+        desiredRole = this.currentActAs.role as OrganizationRole;
       }
-      // If activeRole is null or admin, don't pass act_as (use default)
+
+      // Fallback to member to make sure act_as always carries the org context.
+      if (!desiredRole) {
+        desiredRole = OrganizationRole.Member;
+      }
+
+      nextActAs = {
+        organization_id: organizationId,
+        role: desiredRole,
+      };
     }
 
-    // Check if we need to refresh due to role change
     const actAsChanged =
-      JSON.stringify(act_as) !== JSON.stringify(this.currentActAs);
+      JSON.stringify(nextActAs ?? null) !==
+      JSON.stringify(this.currentActAs ?? null);
 
-    // If we have a token and act_as hasn't changed, return it
+    if (actAsChanged) {
+      this.accessToken = null;
+      this.refreshPromise = null;
+    }
+
+    this.currentActAs = nextActAs;
+
+    // If we already have a valid token for the current act_as, reuse it.
     if (this.accessToken && !actAsChanged) {
       return this.accessToken;
     }
 
-    // If act_as changed, clear the token to force refresh
-    if (actAsChanged) {
-      this.clearToken();
-      this.currentActAs = act_as;
-    }
-
-    // If already refreshing, wait for the existing promise
+    // If a refresh is already running, share the promise.
     if (this.refreshPromise) {
       return this.refreshPromise;
     }
 
-    // Otherwise, refresh the token
-    return this.refreshAccessToken(act_as);
+    // Otherwise, refresh the token with the resolved act_as context.
+    return this.refreshAccessToken(nextActAs);
   }
 
   setAccessToken(token: string | null): void {
     this.accessToken = token;
+  }
+
+  getCurrentActAs(): IssueTokenRequest["act_as"] | undefined {
+    return this.currentActAs;
   }
 
   clearToken(): void {

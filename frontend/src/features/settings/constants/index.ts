@@ -13,6 +13,8 @@ export const QUERY_KEYS = {
     ["team-members", orgId, teamId] as const,
   ORGANIZATION: (orgId: string) => ["organization", orgId] as const,
   MEMBERS: (orgId: string) => ["members", orgId] as const,
+  ORGANIZATION_INVITATIONS: (orgId: string, status: string = "all") =>
+    ["org-invitations", orgId, status] as const,
 } as const;
 
 export const UI_TEXT = {

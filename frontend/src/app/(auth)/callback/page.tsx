@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { issueToken, getProfile } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 
 // Error code mapping to user-friendly messages
 const ERROR_MESSAGES: Record<
@@ -27,6 +27,11 @@ function CallbackContent() {
   const [error, setError] = useState<string | null>(null);
   const [redirectPath, setRedirectPath] = useState<string>("/login");
   const [loadingMessage, setLoadingMessage] = useState("Completing sign in...");
+
+  const nextPath = useMemo(
+    () => sanitizeRedirectPath(searchParams.get("next")),
+    [searchParams],
+  );
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -73,14 +78,12 @@ function CallbackContent() {
 
         const userProfile = await getProfile(token);
 
-        if (
-          !userProfile.organizations ||
-          userProfile.organizations.length === 0
-        ) {
-          router.push("/onboarding/organization");
-        } else {
-          router.push("/mcp-servers");
-        }
+        const fallbackPath =
+          userProfile.organizations && userProfile.organizations.length > 0
+            ? "/mcp-servers"
+            : "/onboarding/organization";
+
+        router.push(nextPath ?? fallbackPath);
       } catch (error: unknown) {
         console.error("OAuth callback error:", error);
 
@@ -98,7 +101,7 @@ function CallbackContent() {
     };
 
     handleOAuthCallback();
-  }, [router, searchParams]);
+  }, [nextPath, router, searchParams]);
 
   return (
     <div className="min-h-screen relative">

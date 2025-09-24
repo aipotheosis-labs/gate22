@@ -1,4 +1,8 @@
 import { OrganizationUser } from "@/features/settings/types/organization.types";
+import {
+  OrganizationInvitationDetail,
+  OrganizationInvitationStatus,
+} from "@/features/invitations/types/invitation.types";
 import { getApiBaseUrl } from "@/lib/api-client";
 import { throwApiError } from "@/lib/api-error-handler";
 import { CONTROL_PLANE_PATH } from "@/config/api.constants";
@@ -47,10 +51,10 @@ export async function inviteToOrganization(
   orgId: string,
   email: string,
   role: string,
-): Promise<void> {
+): Promise<OrganizationInvitationDetail> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invite`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invite-member`,
     {
       method: "POST",
       headers: {
@@ -64,6 +68,56 @@ export async function inviteToOrganization(
   if (!response.ok) {
     await throwApiError(response, "Failed to invite user to organization");
   }
+
+  return response.json();
+}
+
+export async function listOrganizationInvitations(
+  accessToken: string,
+  orgId: string,
+  status?: OrganizationInvitationStatus,
+): Promise<OrganizationInvitationDetail[]> {
+  const baseUrl = getApiBaseUrl();
+  const query = status ? `?status_filter=${encodeURIComponent(status)}` : "";
+  const response = await fetch(
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/list-invitations${query}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to fetch organization invitations");
+  }
+
+  return response.json();
+}
+
+export async function cancelOrganizationInvitation(
+  accessToken: string,
+  orgId: string,
+  invitationId: string,
+): Promise<OrganizationInvitationDetail> {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/cancel-invitation`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ invitation_id: invitationId }),
+    },
+  );
+
+  if (!response.ok) {
+    await throwApiError(response, "Failed to cancel organization invitation");
+  }
+
+  return response.json();
 }
 
 export async function removeUser(

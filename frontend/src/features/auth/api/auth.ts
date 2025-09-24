@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import { CONTROL_PLANE_PATH } from "@/config/api.constants";
+import { storePendingInvitation } from "@/features/invitations/utils/pending-invitation";
 
 // Request/Response types
 export interface EmailLoginRequest {
@@ -90,7 +91,15 @@ export async function register(
   return true;
 }
 
-export async function login(email: string, password: string): Promise<boolean> {
+export interface LoginResult {
+  success: boolean;
+  redirectTo?: string | null;
+}
+
+export async function login(
+  email: string,
+  password: string,
+): Promise<LoginResult> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
     `${baseUrl}${CONTROL_PLANE_PATH}/auth/login/email`,
@@ -123,7 +132,7 @@ export async function login(email: string, password: string): Promise<boolean> {
           normalizedError.includes("incorrect")
         ) {
           toast.error("Invalid email or password. Please try again.");
-          return false;
+          return { success: false };
         }
         if (
           normalizedError === "email_not_verified" ||
@@ -132,7 +141,7 @@ export async function login(email: string, password: string): Promise<boolean> {
           toast.error(
             "Please verify your email before logging in. Check your inbox or request a new verification email.",
           );
-          return false;
+          return { success: false };
         }
         if (
           normalizedError === "user_not_found" ||
@@ -141,7 +150,7 @@ export async function login(email: string, password: string): Promise<boolean> {
           toast.error(
             "No account found with this email. Please sign up first.",
           );
-          return false;
+          return { success: false };
         }
         if (
           normalizedError === "account_deletion_in_progress" ||
@@ -150,21 +159,52 @@ export async function login(email: string, password: string): Promise<boolean> {
           toast.error(
             "Your account is currently being deleted. Please try again later or contact support.",
           );
-          return false;
+          return { success: false };
         }
         toast.error(errorMessage);
-        return false;
+        return { success: false };
       }
       toast.error("Login failed. Please try again.");
-      return false;
+      return { success: false };
     } catch {
       toast.error("Login failed. Please try again.");
-      return false;
+      return { success: false };
+    }
+  }
+
+  let redirectTo: string | null = null;
+
+  try {
+    const payload = await response.json();
+    const rawRedirect = payload?.redirect_to;
+
+    if (typeof rawRedirect === "string" && rawRedirect.trim().length > 0) {
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "http://localhost";
+      const redirectUrl = new URL(rawRedirect, origin);
+      const invitationId = redirectUrl.searchParams.get("invitation_id");
+      const token = redirectUrl.searchParams.get("token");
+
+      if (invitationId && token) {
+        storePendingInvitation({
+          invitationId,
+          token,
+          organizationId: null,
+        });
+      }
+
+      redirectTo = `${redirectUrl.pathname}${redirectUrl.search}`;
+    }
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) {
+      console.error("Failed to parse login response", error);
     }
   }
 
   toast.success("Login successful!");
-  return true;
+  return { success: true, redirectTo };
 }
 
 export async function issueToken(
@@ -243,9 +283,15 @@ export async function getProfile(token: string): Promise<UserInfo> {
 }
 
 // Google OAuth helper function
-export function getGoogleAuthUrl(): string {
+export function getGoogleAuthUrl(nextPath?: string): string {
   const baseUrl = getApiBaseUrl();
-  const callbackUrl = `${window.location.origin}/callback?provider=google`;
-  const redirectUri = encodeURIComponent(callbackUrl);
+  const callbackUrl = new URL(`${window.location.origin}/callback`);
+  callbackUrl.searchParams.set("provider", "google");
+
+  if (nextPath && nextPath.startsWith("/")) {
+    callbackUrl.searchParams.set("next", nextPath);
+  }
+
+  const redirectUri = encodeURIComponent(callbackUrl.toString());
   return `${baseUrl}${CONTROL_PLANE_PATH}/auth/google/authorize?redirect_uri=${redirectUri}`;
 }
