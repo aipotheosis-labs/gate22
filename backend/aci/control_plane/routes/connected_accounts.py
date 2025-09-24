@@ -172,10 +172,6 @@ async def _upsert_connected_account(
                 user_id,
                 mcp_server_config.id,
             )
-        case _:
-            raise ValueError(
-                f"Invalid connected account ownership: {mcp_server_config.connected_account_ownership}"  # noqa: E501
-            )
 
     # if the connected account already exists, update it, otherwise create a new one
     if connected_account:
