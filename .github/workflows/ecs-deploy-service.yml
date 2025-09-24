@@ -68,5 +68,5 @@ jobs:
           service: ${{ inputs.ecs_service }}
           cluster: ${{ inputs.ecs_cluster }}
           wait-for-service-stability: true
-          wait-for-minutes: 5
+          wait-for-minutes: 10
           force-new-deployment: true
