@@ -18,6 +18,8 @@ export const getOwnershipLabel = (
       return "Individual";
     case ConnectedAccountOwnership.SHARED:
       return "Shared";
+    case ConnectedAccountOwnership.OPERATIONAL:
+      return "Operational";
     default:
       return "Unknown";
   }

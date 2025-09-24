@@ -7,6 +7,7 @@ export enum AuthType {
 export enum ConnectedAccountOwnership {
   INDIVIDUAL = "individual",
   SHARED = "shared",
+  OPERATIONAL = "operational",
 }
 
 export interface AuthConfig {
