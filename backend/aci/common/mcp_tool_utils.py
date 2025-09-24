@@ -55,7 +55,8 @@ def sanitize_canonical_name(canonical_name: str) -> str:
 
 
 def diff_tools(
-    old_tools: list[MCPToolUpsert], new_tools: list[MCPToolUpsert]
+    old_tools: list[MCPToolUpsert],
+    new_tools: list[MCPToolUpsert],
 ) -> tuple[
     list[MCPToolUpsert],
     list[MCPToolUpsert],
@@ -81,7 +82,7 @@ def diff_tools(
     new_tools_to_create = []
     old_tools_to_delete = []
     tools_to_update_with_re_embedding = []
-    tools_to_update_wihtout_re_embedding = []
+    tools_to_update_without_re_embedding = []
     tools_unchanged = []
 
     # Create dict for lookup by tool name
@@ -101,7 +102,7 @@ def diff_tools(
             if embedding_fields_changed:
                 tools_to_update_with_re_embedding.append(new_tool)
             elif fields_changed:
-                tools_to_update_wihtout_re_embedding.append(new_tool)
+                tools_to_update_without_re_embedding.append(new_tool)
             else:
                 tools_unchanged.append(new_tool)
 
@@ -114,7 +115,7 @@ def diff_tools(
         new_tools_to_create,
         old_tools_to_delete,
         tools_to_update_with_re_embedding,
-        tools_to_update_wihtout_re_embedding,
+        tools_to_update_without_re_embedding,
         tools_unchanged,
     )
 

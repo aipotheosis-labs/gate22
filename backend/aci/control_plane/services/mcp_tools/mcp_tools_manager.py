@@ -59,6 +59,13 @@ class MCPToolsManager:
         # Transform the data into our schema
         latest_mcp_tool_upserts = []
 
+        # Get the existing tools in the database
+        existing_mcp_tool_upserts = [
+            MCPToolUpsert.model_validate(tool, from_attributes=True)
+            for tool in self.mcp_server.tools
+        ]
+        existing_mcp_tool_upserts_dict = {tool.name: tool for tool in existing_mcp_tool_upserts}
+
         try:
             for tool in tools:
                 sanitized_tool_name = mcp_tool_utils.sanitize_canonical_name(tool.name)
@@ -69,7 +76,10 @@ class MCPToolsManager:
                     name=tool_name,
                     description=tool.description if tool.description is not None else "",
                     input_schema=tool.inputSchema,
-                    tags=[],
+                    # Tags are not provided in MCP Server, and is set by users. So here we fill the
+                    # tags from the existing tools if present, to avoid treating it as a change and
+                    # avoid updating it unnecessarily.
+                    tags=existing_mcp_tool_upserts_dict[tool.name].tags or [],
                     tool_metadata=MCPToolMetadata(
                         canonical_tool_name=tool.name,
                         canonical_tool_description_hash=mcp_tool_utils.normalize_and_hash_content(
@@ -91,11 +101,7 @@ class MCPToolsManager:
             logger.error(f"Error transforming tools: {e}")
             raise MCPToolsNormalizationError(f"Error transforming tools: {e}") from e
 
-        # Diff the tools vs the existing tools in database
-        existing_mcp_tool_upserts = [
-            MCPToolUpsert.model_validate(tool, from_attributes=True)
-            for tool in self.mcp_server.tools
-        ]
+        # Diff the latest tools vs the existing tools in database
         (
             tools_to_create,
             tools_to_delete,
