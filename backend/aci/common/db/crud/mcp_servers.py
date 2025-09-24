@@ -1,7 +1,7 @@
 from typing import Literal, overload
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import case, or_, select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServer
@@ -114,7 +114,7 @@ def list_mcp_servers(
         organization.
         If not provided, returns all Public MCP Servers.
     """
-    statement = select(MCPServer).order_by(MCPServer.name.asc())
+    statement = select(MCPServer)
 
     if offset is not None:
         statement = statement.offset(offset)
@@ -128,8 +128,17 @@ def list_mcp_servers(
                 MCPServer.organization_id.is_(None),
             )
         )
+        # Sort by: custom servers first, then public servers, then alphabetically by name
+        statement = statement.order_by(
+            case(
+                (MCPServer.organization_id == organization_id, 0),
+                (MCPServer.organization_id.is_(None), 1),
+            ),
+            MCPServer.name.asc(),
+        )
     else:
         statement = statement.where(MCPServer.organization_id.is_(None))
+        statement = statement.order_by(MCPServer.name.asc())
 
     servers = list(db_session.execute(statement).scalars().all())
     return servers
