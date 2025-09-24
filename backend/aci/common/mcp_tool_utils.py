@@ -80,8 +80,8 @@ def diff_tools(
     """
     new_tools_to_create = []
     old_tools_to_delete = []
-    tools_embedding_fields_updated = []
-    tools_non_embedding_fields_updated = []
+    tools_to_update_with_re_embedding = []
+    tools_to_update_wihtout_re_embedding = []
     tools_unchanged = []
 
     # Create dict for lookup by tool name
@@ -97,10 +97,11 @@ def diff_tools(
         else:
             # Tool exists in both lists, check if any of the fields has changed
             old_tool = old_tools_dict[new_tool_name]
-            if embedding_fields_changed(old_tool, new_tool):
-                tools_embedding_fields_updated.append(new_tool)
-            elif non_embedding_fields_changed(old_tool, new_tool):
-                tools_non_embedding_fields_updated.append(new_tool)
+            fields_changed, embedding_fields_changed = compare_tool_fields(old_tool, new_tool)
+            if embedding_fields_changed:
+                tools_to_update_with_re_embedding.append(new_tool)
+            elif fields_changed:
+                tools_to_update_wihtout_re_embedding.append(new_tool)
             else:
                 tools_unchanged.append(new_tool)
 
@@ -112,41 +113,47 @@ def diff_tools(
     return (
         new_tools_to_create,
         old_tools_to_delete,
-        tools_embedding_fields_updated,
-        tools_non_embedding_fields_updated,
+        tools_to_update_with_re_embedding,
+        tools_to_update_wihtout_re_embedding,
         tools_unchanged,
     )
 
 
-def non_embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpsert) -> bool:
+def compare_tool_fields(old_tool: MCPToolUpsert, new_tool: MCPToolUpsert) -> tuple[bool, bool]:
     """
-    Return whether the fields that has not been used for embedding has changed.
-    """
-    non_embedding_fields = set(MCPToolUpsert.model_fields.keys())
-    non_embedding_fields.difference_update({"name", "description", "input_schema", "tool_metadata"})
-    return old_tool.model_dump(include=non_embedding_fields) != new_tool.model_dump(
-        include=non_embedding_fields
-    )
+    Return whether any of the fields has been changed, and whether any of the changes involves the
+    fields that has been used for embedding.
 
-
-def embedding_fields_changed(old_tool: MCPToolUpsert, new_tool: MCPToolUpsert) -> bool:
-    """
-    Return whether the fields that are used for embedding have changed. Compare using the hashes of
-    the fields if available.
+    Note: For large fields like description / input schema, we compare using the hashes if available
 
     Returns:
-        True if the fields that has been used for embedding has changed, False otherwise.
+        - A tuple of:
+            - Whether any of the fields has been changed.
+            - Whether any of the changes involves the fields that has been used for embedding.
     """
+
+    non_embedding_fields = set(MCPToolUpsert.model_fields.keys())
+    # Obtain non-embedding fields by removing the following fields from all model fields
+    non_embedding_fields.difference_update({"name", "description", "input_schema", "tool_metadata"})
+
+    non_embedding_fields_changed = old_tool.model_dump(
+        include=non_embedding_fields
+    ) != new_tool.model_dump(include=non_embedding_fields)
+
+    # Embedding fields includes: canonical_tool_name, description, input_schema
     if old_tool.tool_metadata.canonical_tool_name != new_tool.tool_metadata.canonical_tool_name:
-        return True
-    if (
+        embedding_fields_changed = True
+    elif (
         old_tool.tool_metadata.canonical_tool_description_hash
         != new_tool.tool_metadata.canonical_tool_description_hash
     ):
-        return True
-    if (
+        embedding_fields_changed = True
+    elif (
         old_tool.tool_metadata.canonical_tool_input_schema_hash
         != new_tool.tool_metadata.canonical_tool_input_schema_hash
     ):
-        return True
-    return False
+        embedding_fields_changed = True
+    else:
+        embedding_fields_changed = False
+
+    return non_embedding_fields_changed or embedding_fields_changed, embedding_fields_changed

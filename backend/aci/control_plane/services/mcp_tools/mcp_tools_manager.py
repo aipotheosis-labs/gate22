@@ -122,8 +122,8 @@ class MCPToolsManager:
         )
 
         # TODO: Existing generate_mcp_tool_embeddings() implementation embeds tool sequentailly.
-        # We should modify it to run in parallel.
-        # Then we should parallely embed "new_mcp_tools" and "updated_mcp_tools".
+        # We should make use of OpenAI API with batch embedding. Then we should put "new_mcp_tools"
+        # and "updated_mcp_tools" into a same batch to improve performance.
 
         # Embed and create the tools that are new or updated
         new_mcp_tool_embeddings = self._embed_mcp_tools(tools_to_create)

@@ -4,9 +4,8 @@ import pytest
 
 from aci.common.exceptions import MCPToolSanitizationError
 from aci.common.mcp_tool_utils import (
+    compare_tool_fields,
     diff_tools,
-    embedding_fields_changed,
-    non_embedding_fields_changed,
     normalize_and_hash_content,
     sanitize_canonical_name,
 )
@@ -356,8 +355,8 @@ class TestDiffTools:
         assert unchanged[0].name == "TOOL__UNCHANGED"
 
 
-class TestNonEmbeddingFieldsChanged:
-    """Test the non_embedding_fields_changed function."""
+class TestCompareToolFields:
+    """Test the compare_tool_fields function."""
 
     def create_test_tool(
         self,
@@ -392,14 +391,18 @@ class TestNonEmbeddingFieldsChanged:
         tool1 = self.create_test_tool()
         tool2 = self.create_test_tool()
 
-        assert not non_embedding_fields_changed(tool1, tool2)
+        fields_changed, embedding_fields_changed = compare_tool_fields(tool1, tool2)
+        assert not fields_changed
+        assert not embedding_fields_changed
 
     def test_tags_changed(self) -> None:
         """Test when tags field has changed."""
         tool1 = self.create_test_tool(tags=["tag1", "tag2"])
         tool2 = self.create_test_tool(tags=["tag1", "tag3"])
 
-        assert non_embedding_fields_changed(tool1, tool2)
+        fields_changed, embedding_fields_changed = compare_tool_fields(tool1, tool2)
+        assert fields_changed
+        assert not embedding_fields_changed
 
     def test_embedding_fields_ignored(self) -> None:
         """Test that changes to embedding fields don't affect this function."""
@@ -415,8 +418,10 @@ class TestNonEmbeddingFieldsChanged:
         )
 
         # Even though name, description, and input_schema changed,
-        # these are embedding fields so should return False
-        assert not non_embedding_fields_changed(tool1, tool2)
+        # the hashes in metadata did not change, so should return False
+        fields_changed, embedding_fields_changed = compare_tool_fields(tool1, tool2)
+        assert not fields_changed
+        assert not embedding_fields_changed
 
     def test_tool_metadata_changes_ignored(self) -> None:
         """Test that tool_metadata changes don't affect this function."""
@@ -434,99 +439,28 @@ class TestNonEmbeddingFieldsChanged:
         tool1 = self.create_test_tool(tool_metadata=metadata1)
         tool2 = self.create_test_tool(tool_metadata=metadata2)
 
-        # tool_metadata is an embedding field, so changes should be ignored
-        assert not non_embedding_fields_changed(tool1, tool2)
-
-
-class TestEmbeddingFieldsChanged:
-    """Test the embedding_fields_changed function."""
-
-    def create_test_tool(
-        self,
-        canonical_tool_name: str = "TEST_TOOL",
-        canonical_tool_description_hash: str = "desc_hash",
-        canonical_tool_input_schema_hash: str = "schema_hash",
-    ) -> MCPToolUpsert:
-        """Helper to create a test MCPToolUpsert with custom metadata."""
-        return MCPToolUpsert(
-            name="TEST__TOOL",
-            description="Test description",
-            input_schema={"type": "object"},
-            tags=["test"],
-            tool_metadata=MCPToolMetadata(
-                canonical_tool_name=canonical_tool_name,
-                canonical_tool_description_hash=canonical_tool_description_hash,
-                canonical_tool_input_schema_hash=canonical_tool_input_schema_hash,
-            ),
-        )
-
-    def test_no_changes(self) -> None:
-        """Test when no embedding fields have changed."""
-        tool1 = self.create_test_tool()
-        tool2 = self.create_test_tool()
-
-        assert not embedding_fields_changed(tool1, tool2)
-
-    @pytest.mark.parametrize(
-        "field_name,old_value,new_value",
-        [
-            ("canonical_tool_name", "OLD_NAME", "NEW_NAME"),
-            ("canonical_tool_description_hash", "old_desc_hash", "new_desc_hash"),
-            ("canonical_tool_input_schema_hash", "old_schema_hash", "new_schema_hash"),
-        ],
-    )
-    def test_individual_field_changes(
-        self, field_name: str, old_value: str, new_value: str
-    ) -> None:
-        """Test changes to individual embedding fields."""
-        tool1 = self.create_test_tool(**{field_name: old_value})
-        tool2 = self.create_test_tool(**{field_name: new_value})
-
-        assert embedding_fields_changed(tool1, tool2)
-
-    def test_multiple_field_changes(self) -> None:
-        """Test when multiple embedding fields change."""
-        tool1 = self.create_test_tool(
-            canonical_tool_name="OLD_NAME",
-            canonical_tool_description_hash="old_desc",
-        )
-        tool2 = self.create_test_tool(
-            canonical_tool_name="NEW_NAME",
-            canonical_tool_description_hash="new_desc",
-        )
-
-        assert embedding_fields_changed(tool1, tool2)
-
-    def test_non_embedding_fields_ignored(self) -> None:
-        """Test that changes to non-embedding fields don't affect this function."""
-        metadata = MCPToolMetadata(
-            canonical_tool_name="TEST_TOOL",
-            canonical_tool_description_hash="desc_hash",
-            canonical_tool_input_schema_hash="schema_hash",
-        )
-
-        tool1 = MCPToolUpsert(
-            name="TEST__TOOL1",
-            description="Description 1",
-            input_schema={"type": "string"},
-            tags=["tag1"],
-            tool_metadata=metadata,
-        )
-        tool2 = MCPToolUpsert(
-            name="TEST__TOOL2",
-            description="Description 2",
-            input_schema={"type": "number"},
-            tags=["tag2"],
-            tool_metadata=metadata,
-        )
-
-        # Even though name, description, input_schema, and tags changed,
-        # the metadata (embedding fields) is the same, so should return False
-        assert not embedding_fields_changed(tool1, tool2)
+        # the hashes in metadata changed, so should return True
+        fields_changed, embedding_fields_changed = compare_tool_fields(tool1, tool2)
+        assert fields_changed
+        assert embedding_fields_changed
 
     def test_canonical_name_case_sensitivity(self) -> None:
         """Test that canonical tool name comparison is case sensitive."""
-        tool1 = self.create_test_tool(canonical_tool_name="test_tool")
-        tool2 = self.create_test_tool(canonical_tool_name="TEST_TOOL")
+        tool1 = self.create_test_tool(
+            tool_metadata=MCPToolMetadata(
+                canonical_tool_name="test_tool",
+                canonical_tool_description_hash="desc_hash",
+                canonical_tool_input_schema_hash="schema_hash",
+            )
+        )
+        tool2 = self.create_test_tool(
+            tool_metadata=MCPToolMetadata(
+                canonical_tool_name="TEST_TOOL",
+                canonical_tool_description_hash="desc_hash",
+                canonical_tool_input_schema_hash="schema_hash",
+            )
+        )
 
-        assert embedding_fields_changed(tool1, tool2)
+        fields_changed, embedding_fields_changed = compare_tool_fields(tool1, tool2)
+        assert fields_changed
+        assert embedding_fields_changed
