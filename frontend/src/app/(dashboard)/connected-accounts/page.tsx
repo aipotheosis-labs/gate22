@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect, useCallback } from "react";
+import { Suspense, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,24 @@ import { useOperationalMCPServerConfigurations } from "@/features/mcp/hooks/use-
 const columnHelper = createColumnHelper<ConnectedAccount>();
 
 export default function ConnectedAccountsPage() {
+  return (
+    <Suspense fallback={<ConnectedAccountsFallback />}>
+      <ConnectedAccountsPageContent />
+    </Suspense>
+  );
+}
+
+function ConnectedAccountsFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <span className="text-sm text-muted-foreground">
+        Loading connected accounts...
+      </span>
+    </div>
+  );
+}
+
+function ConnectedAccountsPageContent() {
   const searchParams = useSearchParams();
   const { data: accounts, isLoading } = useConnectedAccounts();
   const { data: mcpConfigurationsResponse } = useMCPServerConfigurations({

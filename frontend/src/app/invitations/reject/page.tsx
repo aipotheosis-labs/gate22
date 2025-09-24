@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ShieldX } from "lucide-react";
@@ -102,6 +109,32 @@ function formatIsoDate(value: string) {
 }
 
 export default function RejectInvitationPage() {
+  return (
+    <Suspense fallback={<RejectInvitationLoadingFallback />}>
+      <RejectInvitationPageContent />
+    </Suspense>
+  );
+}
+
+function RejectInvitationLoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <Card className="max-w-lg w-full">
+        <CardHeader>
+          <CardTitle>Loading invitation</CardTitle>
+          <CardDescription>
+            Please wait while we prepare the invitation details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="py-8 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function RejectInvitationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 

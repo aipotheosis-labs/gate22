@@ -1,21 +1,27 @@
 import { redirect } from "next/navigation";
 
-type InvitePageProps = {
-  params: { token: string };
-  searchParams?: Record<string, string | string[] | undefined>;
+type InvitePageParams = {
+  token?: string;
 };
 
-export default function InviteRedirectPage({
+type InvitePageProps = {
+  params: Promise<InvitePageParams>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function InviteRedirectPage({
   params,
   searchParams,
-}: InvitePageProps): never {
-  const rawToken = params.token?.trim();
+}: InvitePageProps): Promise<never> {
+  const resolvedParams = await params;
+  const rawToken = resolvedParams.token?.trim();
 
   if (!rawToken) {
     redirect("/invitations/accept");
   }
 
-  const invitationIdParam = searchParams?.invitation_id;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const invitationIdParam = resolvedSearchParams?.invitation_id;
   const invitationId = Array.isArray(invitationIdParam)
     ? invitationIdParam.at(0)
     : invitationIdParam;

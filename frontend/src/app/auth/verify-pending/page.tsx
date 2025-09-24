@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -8,6 +8,24 @@ import { Button } from "@/components/ui/button";
 import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 
 export default function VerifyPendingPage() {
+  return (
+    <Suspense fallback={<VerifyPendingFallback />}>
+      <VerifyPendingPageContent />
+    </Suspense>
+  );
+}
+
+function VerifyPendingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <span className="text-sm text-muted-foreground">
+        Loading verification status...
+      </span>
+    </div>
+  );
+}
+
+function VerifyPendingPageContent() {
   const [email, setEmail] = useState<string | null>(null);
   const searchParams = useSearchParams();
 

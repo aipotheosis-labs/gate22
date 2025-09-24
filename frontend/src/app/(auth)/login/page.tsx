@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/features/auth/components/login-form";
 import Link from "next/link";
@@ -13,6 +13,24 @@ import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 const DEFAULT_REDIRECT = "/mcp-servers";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <span className="text-sm text-muted-foreground">
+        Preparing sign-in experience...
+      </span>
+    </div>
+  );
+}
+
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
