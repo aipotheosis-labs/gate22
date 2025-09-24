@@ -4,9 +4,19 @@ import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Wrench, Loader2, Plus, HelpCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Wrench,
+  Loader2,
+  Plus,
+  HelpCircle,
+  RefreshCw,
+} from "lucide-react";
 import Image from "next/image";
-import { useMCPServer } from "@/features/mcp/hooks/use-mcp-servers";
+import {
+  useMCPServer,
+  useSyncMCPServerTools,
+} from "@/features/mcp/hooks/use-mcp-servers";
 import { useState } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
 import { ToolsTable } from "@/features/mcp/components/tools-table";
@@ -18,6 +28,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getAuthTypeLabel, getAuthTypeDetailedInfo } from "@/utils/auth-labels";
+import { toast } from "sonner";
+import { useMetaInfo } from "@/components/context/metainfo";
 
 export default function MCPServerDetailPage() {
   const params = useParams();
@@ -25,8 +37,33 @@ export default function MCPServerDetailPage() {
   const serverId = params.id as string;
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
+  // Get organization context and permissions
+  const { activeOrg, checkPermission } = useMetaInfo();
+
   // Fetch server data using the new hook
   const { data: server, isLoading, error } = useMCPServer(serverId);
+
+  // Sync mutation
+  const syncMutation = useSyncMCPServerTools();
+
+  // Check if user can sync this server
+  const canSync =
+    server &&
+    checkPermission(PERMISSIONS.MCP_CONFIGURATION_CREATE) &&
+    (server.organization_id !== null ||
+      server.organization_id === activeOrg?.orgId);
+
+  const handleSync = () => {
+    syncMutation.mutate(serverId, {
+      onSuccess: () => {
+        toast.success("Tools synced successfully");
+      },
+      onError: (error) => {
+        console.error("Sync failed:", error);
+        toast.error("Failed to sync tools. Please try again.");
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -138,12 +175,37 @@ export default function MCPServerDetailPage() {
 
       {/* Tools */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Wrench className="h-5 w-5" />
-          <h2 className="text-lg font-semibold">
-            Available Tools ({server.tools?.length || 0})
-          </h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            <h2 className="text-lg font-semibold">
+              Available Tools ({server.tools?.length || 0})
+            </h2>
+          </div>
+          {canSync && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSync}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              {server.last_synced_at ? "Re-sync now" : "Sync now"}
+            </Button>
+          )}
         </div>
+
+        <p className="text-sm text-muted-foreground mb-4">
+          Last synced:{" "}
+          {server.last_synced_at
+            ? new Date(server.last_synced_at).toLocaleString()
+            : "Never"}
+        </p>
+
         <ToolsTable
           tools={server.tools || []}
           emptyMessage="No tools available for this server"

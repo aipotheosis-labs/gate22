@@ -74,6 +74,17 @@ export const mcpService = {
         (s) => s.name.toLowerCase() === serverName.toLowerCase(),
       );
     },
+
+    syncTools: async (
+      token: string,
+      serverId: string,
+    ): Promise<MCPServerPublic> => {
+      const api = createAuthenticatedRequest(token);
+      return api.post<MCPServerPublic>(
+        `${API_ENDPOINTS.SERVERS}/${serverId}/sync`,
+        {},
+      );
+    },
   },
 
   // MCP Server Configurations endpoints (requires auth)
