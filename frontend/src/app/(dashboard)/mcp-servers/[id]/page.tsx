@@ -297,7 +297,7 @@ export default function MCPServerDetailPage() {
             </h2>
           </div>
           {server.organization_id === activeOrg?.orgId && (
-            <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
+            <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_SYNC}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>

@@ -141,9 +141,10 @@ export default function ConnectedAccountsPage() {
         cell: (info) => {
           const configId = info.getValue();
           const config = mcpConfigMap[configId];
+          if (!config) return null;
           return (
             <div className="flex items-center gap-2">
-              {config?.logo && (
+              {config.logo && (
                 <div className="relative h-5 w-5 shrink-0 overflow-hidden">
                   <Image
                     src={config.logo}
@@ -160,7 +161,7 @@ export default function ConnectedAccountsPage() {
                     className="text-primary hover:underline"
                   >
                     <span className="font-medium">
-                      {config?.name || "Unknown"}
+                      {config.name || "Unknown"}
                     </span>
                   </Link>
                   <span className="text-muted-foreground">(</span>
@@ -168,7 +169,7 @@ export default function ConnectedAccountsPage() {
                     href={`/mcp-configuration/${configId}`}
                     className="text-primary hover:underline"
                   >
-                    {config?.configName || "Unknown"}
+                    {config.configName || "Unknown"}
                   </Link>
                   <span className="text-muted-foreground">)</span>
                 </div>
@@ -179,7 +180,7 @@ export default function ConnectedAccountsPage() {
                     className="text-primary hover:underline"
                   >
                     <span className="font-medium">
-                      {config?.name || "Unknown"}
+                      {config.name || "Unknown"}
                     </span>
                   </Link>
                 </div>
