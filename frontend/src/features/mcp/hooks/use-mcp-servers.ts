@@ -176,6 +176,25 @@ export function useSyncMCPServerTools() {
   });
 }
 
+// Hook to list operational MCP server configurations
+export function useOperationalMCPServerConfigurations(
+  params?: PaginationParams,
+) {
+  const { accessToken, activeOrg, activeRole } = useMetaInfo();
+
+  // Create auth context key for cache separation without exposing token
+  const authContextKey = activeOrg
+    ? `${activeOrg.orgId}:${activeRole}`
+    : undefined;
+
+  return useQuery({
+    queryKey: ["mcp", "configurations", "operational", params, authContextKey],
+    queryFn: () =>
+      mcpService.configurations.listOperational(accessToken!, params),
+    enabled: !!accessToken,
+  });
+}
+
 // Hook to get a specific MCP tool by name
 export function useMCPTool(toolName: string) {
   const { accessToken } = useMetaInfo();

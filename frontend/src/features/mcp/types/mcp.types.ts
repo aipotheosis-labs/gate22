@@ -87,6 +87,7 @@ export interface MCPServerConfigurationPublic {
   created_at: string;
   updated_at: string;
   mcp_server: MCPServerPublicBasic;
+  has_operational_connected_account?: boolean;
 }
 
 export interface MCPServerConfigurationPublicBasic {
