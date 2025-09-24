@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from aci.cli import config
 from aci.common import auth_credentials_manager as acm
@@ -22,7 +23,10 @@ from aci.common.mcp_auth_manager import MCPAuthManager
 from aci.common.schemas.mcp_auth import (
     AuthConfig,
     AuthCredentials,
+    NoAuthConfig,
+    NoAuthCredentials,
 )
+from aci.common.schemas.mcp_server import MCPServerMetadata
 from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
@@ -45,33 +49,7 @@ async def _generate_tools_async(mcp_server_name: str) -> None:
         if mcp_server is None:
             raise click.ClickException(f"MCP server {mcp_server_name} not found")
 
-        # find one of the mcp server configurations
-        mcp_server_configuration = db_session.execute(
-            select(MCPServerConfiguration)
-            .where(MCPServerConfiguration.mcp_server_id == mcp_server.id)
-            .limit(1)
-        ).scalar()
-        if mcp_server_configuration is None:
-            raise click.ClickException(f"MCP server configuration for {mcp_server_name} not found")
-
-        # find one connected account for the mcp server configuration
-        connected_account = db_session.execute(
-            select(ConnectedAccount)
-            .where(ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration.id)
-            .limit(1)
-        ).scalar()
-        if connected_account is None:
-            raise click.ClickException(f"Connected account for {mcp_server_name} not found")
-
-        # Get the auth config and credentials
-        auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
-        # TODO: handle token refresh for oauth2 credentials
-        auth_credentials = await acm.get_auth_credentials(
-            db_session,
-            mcp_server_configuration.id,
-            connected_account.ownership,  # Use the ownership type of whatever account we retrieved
-            user_id=connected_account.user_id,
-        )
+        auth_config, auth_credentials = await _get_auth(mcp_server, db_session)
         db_session.commit()
 
         # get list of tools from the mcp server
@@ -83,6 +61,46 @@ async def _generate_tools_async(mcp_server_name: str) -> None:
 
         # create the tools.json file
         _create_tools_json_file(mcp_server_name, tools)
+
+
+async def _get_auth(
+    mcp_server: MCPServer, db_session: Session
+) -> tuple[AuthConfig, AuthCredentials]:
+    server_metadata = MCPServerMetadata.model_validate(mcp_server.server_metadata)
+    # TODO: for now, virtual mcp servers tools/list doesn't require auth
+    # so we just return some mock auth config and credentials
+    if server_metadata.is_virtual_mcp_server:
+        return AuthConfig(root=NoAuthConfig()), AuthCredentials(root=NoAuthCredentials())
+    else:
+        # find one of the mcp server configurations
+        mcp_server_configuration = db_session.execute(
+            select(MCPServerConfiguration)
+            .where(MCPServerConfiguration.mcp_server_id == mcp_server.id)
+            .limit(1)
+        ).scalar()
+        if mcp_server_configuration is None:
+            raise click.ClickException(f"MCP server configuration for {mcp_server.name} not found")
+
+        # find one connected account for the mcp server configuration
+        connected_account = db_session.execute(
+            select(ConnectedAccount)
+            .where(ConnectedAccount.mcp_server_configuration_id == mcp_server_configuration.id)
+            .limit(1)
+        ).scalar()
+        if connected_account is None:
+            raise click.ClickException(f"Connected account for {mcp_server.name} not found")
+
+        # Get the auth config and credentials
+        auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
+        # TODO: handle token refresh for oauth2 credentials
+        auth_credentials = await acm.get_auth_credentials(
+            db_session,
+            connected_account.user_id,
+            mcp_server_configuration.id,
+            connected_account.ownership,  # Use the ownership type of whatever account we retrieved
+        )
+
+        return auth_config, auth_credentials
 
 
 async def _list_tools(
