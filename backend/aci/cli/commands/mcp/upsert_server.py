@@ -138,7 +138,7 @@ def update_mcp_server_helper(
         )
 
     # Update the mcp server in the database with the new fields and optional embedding update
-    updated_mcp_server = crud.mcp_servers.update_public_mcp_server(
+    updated_mcp_server = crud.mcp_servers.update_mcp_server(
         db_session, existing_mcp_server, mcp_server_upsert, new_embedding
     )
 

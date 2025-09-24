@@ -1,7 +1,8 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
 from aci.common import mcp_tool_utils
 from aci.common.enums import AuthType, MCPServerTransportType
@@ -15,6 +16,17 @@ class MCPServerMetadata(BaseModel):
     is_virtual_mcp_server: bool | None = None
 
     model_config = ConfigDict(extra="forbid")
+
+
+class MCPServerPartialUpdate(BaseModel):
+    """Used for Partial Updating data to the database"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: str | PydanticUndefinedType = Field(default=PydanticUndefined)
+    logo: str | PydanticUndefinedType = Field(default=PydanticUndefined)
+    categories: list[str] | PydanticUndefinedType = Field(default=PydanticUndefined)
+    last_synced_at: datetime | PydanticUndefinedType = Field(default=PydanticUndefined)
 
 
 class MCPServerUpsert(BaseModel):

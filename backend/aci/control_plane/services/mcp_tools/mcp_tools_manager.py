@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -9,6 +10,7 @@ from aci.common.db.sql_models import MCPServer
 from aci.common.enums import ConnectedAccountOwnership
 from aci.common.logging_setup import get_logger
 from aci.common.openai_client import get_openai_client
+from aci.common.schemas.mcp_server import MCPServerPartialUpdate
 from aci.common.schemas.mcp_tool import MCPToolEmbeddingFields, MCPToolMetadata, MCPToolUpsert
 from aci.control_plane.exceptions import MCPToolsManagerError, MCPToolsNormalizationError
 from aci.control_plane.services.mcp_tools.mcp_tools_fetcher import MCPToolsFetcher
@@ -79,7 +81,7 @@ class MCPToolsManager:
                     # Tags are not provided in MCP Server, and is set by users. So here we fill the
                     # tags from the existing tools if present, to avoid treating it as a change and
                     # avoid updating it unnecessarily.
-                    tags=existing_mcp_tool_upserts_dict[tool.name].tags or [],
+                    tags=existing_mcp_tool_upserts_dict[tool_name].tags or [],
                     tool_metadata=MCPToolMetadata(
                         canonical_tool_name=tool.name,
                         canonical_tool_description_hash=mcp_tool_utils.normalize_and_hash_content(
@@ -155,7 +157,9 @@ class MCPToolsManager:
         # TODO: Storing the version history of the mcp tools after tool updates detected
 
         # Update the last synced at time
-        crud.mcp_servers.update_mcp_server_last_synced_at_now(db_session, self.mcp_server)
+        crud.mcp_servers.update_mcp_server(
+            db_session, self.mcp_server, MCPServerPartialUpdate(last_synced_at=datetime.now(UTC))
+        )
 
         return MCPToolsDiff(
             tools_created=[tool.name for tool in tools_to_create],
