@@ -19,36 +19,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
-import { createAuthenticatedRequest } from "@/lib/api-client";
 import { toast } from "sonner";
-
-interface OAuth2DiscoveryResponse {
-  authorize_url?: string;
-  access_token_url?: string;
-  refresh_token_url?: string;
-  registration_url?: string;
-  token_endpoint_auth_method_supported?: string[];
-}
-
-interface OAuth2DCRResponse {
-  token_endpoint_auth_method: string;
-  client_id?: string;
-  client_secret?: string;
-}
-
-interface AuthConfig {
-  type: string;
-  location?: string;
-  name?: string;
-  prefix?: string;
-  authorize_url?: string;
-  access_token_url?: string;
-  refresh_token_url?: string;
-  scope?: string;
-  client_id?: string;
-  client_secret?: string;
-  token_endpoint_auth_method?: string;
-}
+import {
+  useOAuth2Discovery,
+  useOAuth2ClientRegistration,
+  useCreateCustomMCPServer,
+} from "@/features/mcp/hooks/use-custom-mcp-server";
+import {
+  OAuth2DiscoveryResponse,
+  OAuth2DCRResponse,
+  AuthConfig,
+} from "@/features/mcp/api/custom-mcp.service";
 
 export default function AddCustomMCPServerPage() {
   const router = useRouter();
@@ -69,15 +50,12 @@ export default function AddCustomMCPServerPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryInput, setCategoryInput] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDiscovering, setIsDiscovering] = useState(false);
 
   // Step 2 fields - OAuth2
   const [oauth2Config, setOauth2Config] = useState<OAuth2DiscoveryResponse>({});
   const [authorizeUrl, setAuthorizeUrl] = useState("");
   const [tokenUrl, setTokenUrl] = useState("");
   const [dcrResult, setDcrResult] = useState<OAuth2DCRResponse | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
   const [oauth2RegistrationMode, setOauth2RegistrationMode] =
     useState<string>("");
 
@@ -97,7 +75,12 @@ export default function AddCustomMCPServerPage() {
   const [operationalAccountAuthType, setOperationalAccountAuthType] =
     useState<string>("");
 
-  const { accessToken, activeOrg, activeRole } = useMetaInfo();
+  const { accessToken } = useMetaInfo();
+
+  // Hooks for API calls
+  const oAuth2Discovery = useOAuth2Discovery();
+  const oAuth2ClientRegistration = useOAuth2ClientRegistration();
+  const createCustomMCPServer = useCreateCustomMCPServer();
 
   const isAutomaticRegistrationAvailable = useCallback(() => {
     return !!(
@@ -259,21 +242,10 @@ export default function AddCustomMCPServerPage() {
     if (needsStep2()) {
       // If OAuth2 is selected, perform discovery
       if (authMethods.oauth2) {
-        setIsDiscovering(true);
-
         try {
-          const api = createAuthenticatedRequest(
-            accessToken,
-            activeOrg?.orgId,
-            activeRole,
-          );
-
-          const response = await api.post<OAuth2DiscoveryResponse>(
-            "/mcp-servers/oauth2-discovery",
-            {
-              mcp_server_url: url.trim(),
-            },
-          );
+          const response = await oAuth2Discovery.mutateAsync({
+            mcp_server_url: url.trim(),
+          });
 
           setOauth2Config(response);
           // Pre-populate fields with discovered values
@@ -292,19 +264,11 @@ export default function AddCustomMCPServerPage() {
           }
 
           setCurrentStep(2);
-          toast.success("OAuth2 configuration discovered successfully");
-        } catch (error) {
-          console.error("Failed to discover OAuth2 configuration:", error);
-          toast.error(
-            error instanceof Error
-              ? error.message
-              : "Failed to discover OAuth2 configuration",
-          );
+        } catch {
+          // Error handling is done in the hook
           // Set manual mode as fallback when discovery fails
           setOauth2RegistrationMode("manual");
           setCurrentStep(2);
-        } finally {
-          setIsDiscovering(false);
         }
       } else {
         // For API Key only, go directly to step 2
@@ -317,102 +281,64 @@ export default function AddCustomMCPServerPage() {
   };
 
   const createServer = async () => {
-    setIsSubmitting(true);
+    const authConfigs: AuthConfig[] = [];
 
-    try {
-      const api = createAuthenticatedRequest(
-        accessToken,
-        activeOrg?.orgId,
-        activeRole,
-      );
+    // Build auth configs for each selected auth method
+    if (authMethods.no_auth) {
+      authConfigs.push({
+        type: "no_auth",
+      });
+    }
 
-      const authConfigs: AuthConfig[] = [];
+    if (authMethods.api_key) {
+      authConfigs.push({
+        type: "api_key",
+        location: apiKeyLocation,
+        name: apiKeyName.trim(),
+        prefix: apiKeyPrefix.trim() || undefined,
+      });
+    }
 
-      // Build auth configs for each selected auth method
-      if (authMethods.no_auth) {
-        authConfigs.push({
-          type: "no_auth",
-        });
-      }
-
-      if (authMethods.api_key) {
-        authConfigs.push({
-          type: "api_key",
-          location: apiKeyLocation,
-          name: apiKeyName.trim(),
-          prefix: apiKeyPrefix.trim() || undefined,
-        });
-      }
-
-      if (authMethods.oauth2) {
-        const oauth2AuthConfig: AuthConfig = {
-          type: "oauth2",
-          location: "header",
-          name: "Authorization",
-          prefix: "Bearer",
-          authorize_url: authorizeUrl.trim(),
-          access_token_url: tokenUrl.trim(),
-          refresh_token_url: oauth2Config.refresh_token_url || undefined,
-          scope: "",
-        };
-
-        if (oauth2RegistrationMode === "automatic" && dcrResult) {
-          oauth2AuthConfig.client_id = dcrResult.client_id;
-          oauth2AuthConfig.client_secret = dcrResult.client_secret;
-          oauth2AuthConfig.token_endpoint_auth_method =
-            dcrResult.token_endpoint_auth_method;
-        } else if (oauth2RegistrationMode === "manual") {
-          oauth2AuthConfig.client_id = manualClientId.trim();
-          oauth2AuthConfig.client_secret =
-            manualClientSecret.trim() || undefined;
-          oauth2AuthConfig.scope = manualScope.trim() || "";
-          oauth2AuthConfig.token_endpoint_auth_method =
-            manualEndpointAuthMethod;
-        }
-
-        authConfigs.push(oauth2AuthConfig);
-      }
-
-      const payload: {
-        name: string;
-        url: string;
-        transport_type: string;
-        description: string;
-        logo?: string;
-        categories: string[];
-        auth_configs: AuthConfig[];
-        server_metadata: object;
-        operational_account_auth_type: string;
-      } = {
-        name: name.trim(),
-        url: url.trim(),
-        transport_type: transportType,
-        description: description.trim(),
-        categories: categories,
-        auth_configs: authConfigs,
-        server_metadata: {},
-        operational_account_auth_type: operationalAccountAuthType,
+    if (authMethods.oauth2) {
+      const oauth2AuthConfig: AuthConfig = {
+        type: "oauth2",
+        location: "header",
+        name: "Authorization",
+        prefix: "Bearer",
+        authorize_url: authorizeUrl.trim(),
+        access_token_url: tokenUrl.trim(),
+        refresh_token_url: oauth2Config.refresh_token_url || undefined,
+        scope: "",
       };
 
-      // Add optional fields
-      if (logoUrl.trim()) {
-        payload.logo = logoUrl.trim();
+      if (oauth2RegistrationMode === "automatic" && dcrResult) {
+        oauth2AuthConfig.client_id = dcrResult.client_id;
+        oauth2AuthConfig.client_secret = dcrResult.client_secret;
+        oauth2AuthConfig.token_endpoint_auth_method =
+          dcrResult.token_endpoint_auth_method;
+      } else if (oauth2RegistrationMode === "manual") {
+        oauth2AuthConfig.client_id = manualClientId.trim();
+        oauth2AuthConfig.client_secret = manualClientSecret.trim() || undefined;
+        oauth2AuthConfig.scope = manualScope.trim() || "";
+        oauth2AuthConfig.token_endpoint_auth_method = manualEndpointAuthMethod;
       }
 
-      await api.post("/mcp-servers", payload);
-
-      toast.success("Custom MCP server added successfully");
-      router.push("/mcp-servers");
-    } catch (error) {
-      console.error("Failed to create custom MCP server:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create custom MCP server",
-      );
-    } finally {
-      setIsSubmitting(false);
+      authConfigs.push(oauth2AuthConfig);
     }
+
+    const payload = {
+      name: name.trim(),
+      url: url.trim(),
+      transport_type: transportType,
+      description: description.trim(),
+      categories: categories,
+      auth_configs: authConfigs,
+      server_metadata: {},
+      operational_account_auth_type: operationalAccountAuthType,
+      ...(logoUrl.trim() && { logo: logoUrl.trim() }),
+    };
+
+    await createCustomMCPServer.mutateAsync(payload);
   };
 
   const handleAutoRegisterClient = async () => {
@@ -421,41 +347,17 @@ export default function AddCustomMCPServerPage() {
       return;
     }
 
-    if (!accessToken) {
-      toast.error("Authentication required. Please log in.");
-      return;
-    }
-
-    setIsRegistering(true);
-
     try {
-      const api = createAuthenticatedRequest(
-        accessToken,
-        activeOrg?.orgId,
-        activeRole,
-      );
-
-      const response = await api.post<OAuth2DCRResponse>(
-        "/mcp-servers/oauth2-dcr",
-        {
-          mcp_server_url: url.trim(),
-          registration_url: oauth2Config.registration_url,
-          token_endpoint_auth_method_supported:
-            oauth2Config.token_endpoint_auth_method_supported || [],
-        },
-      );
+      const response = await oAuth2ClientRegistration.mutateAsync({
+        mcp_server_url: url.trim(),
+        registration_url: oauth2Config.registration_url,
+        token_endpoint_auth_method_supported:
+          oauth2Config.token_endpoint_auth_method_supported || [],
+      });
 
       setDcrResult(response);
-      toast.success("Client registered successfully");
-    } catch (error) {
-      console.error("Failed to register OAuth2 client:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to register OAuth2 client",
-      );
-    } finally {
-      setIsRegistering(false);
+    } catch {
+      // Error handling is done in the hook
     }
   };
 
@@ -572,7 +474,7 @@ export default function AddCustomMCPServerPage() {
                     .replace(/[^A-Z0-9_]/g, "");
                   setName(filteredValue);
                 }}
-                disabled={isDiscovering}
+                disabled={oAuth2Discovery.isPending}
                 required
                 className="max-w-md"
               />
@@ -594,7 +496,7 @@ export default function AddCustomMCPServerPage() {
                     onCheckedChange={(checked) =>
                       handleAuthMethodChange("no_auth", checked as boolean)
                     }
-                    disabled={isDiscovering}
+                    disabled={oAuth2Discovery.isPending}
                   />
                   <Label htmlFor="no_auth" className="text-sm font-normal">
                     No Auth
@@ -608,7 +510,7 @@ export default function AddCustomMCPServerPage() {
                     onCheckedChange={(checked) =>
                       handleAuthMethodChange("api_key", checked as boolean)
                     }
-                    disabled={isDiscovering}
+                    disabled={oAuth2Discovery.isPending}
                   />
                   <Label htmlFor="api_key" className="text-sm font-normal">
                     API Key
@@ -621,7 +523,7 @@ export default function AddCustomMCPServerPage() {
                     onCheckedChange={(checked) =>
                       handleAuthMethodChange("oauth2", checked as boolean)
                     }
-                    disabled={isDiscovering}
+                    disabled={oAuth2Discovery.isPending}
                   />
                   <Label htmlFor="oauth2" className="text-sm font-normal">
                     OAuth2
@@ -644,7 +546,7 @@ export default function AddCustomMCPServerPage() {
                 placeholder="http://mcp.example.com/mcp"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                disabled={isDiscovering}
+                disabled={oAuth2Discovery.isPending}
                 required
                 className="max-w-md"
               />
@@ -660,7 +562,7 @@ export default function AddCustomMCPServerPage() {
               <Select
                 value={transportType}
                 onValueChange={setTransportType}
-                disabled={isDiscovering}
+                disabled={oAuth2Discovery.isPending}
                 required
               >
                 <SelectTrigger className="max-w-md">
@@ -682,7 +584,7 @@ export default function AddCustomMCPServerPage() {
                 placeholder="Enter a description for your MCP server..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                disabled={isDiscovering}
+                disabled={oAuth2Discovery.isPending}
                 className="max-w-md"
                 rows={3}
               />
@@ -696,7 +598,7 @@ export default function AddCustomMCPServerPage() {
                 placeholder="https://example.com/logo.png"
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
-                disabled={isDiscovering}
+                disabled={oAuth2Discovery.isPending}
                 className="max-w-md"
               />
             </div>
@@ -716,7 +618,7 @@ export default function AddCustomMCPServerPage() {
                         type="button"
                         onClick={() => removeCategory(category)}
                         className="ml-1 hover:bg-muted rounded-full p-0.5"
-                        disabled={isDiscovering}
+                        disabled={oAuth2Discovery.isPending}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -731,7 +633,7 @@ export default function AddCustomMCPServerPage() {
                     value={categoryInput}
                     onChange={(e) => setCategoryInput(e.target.value)}
                     onKeyPress={handleCategoryKeyPress}
-                    disabled={isDiscovering}
+                    disabled={oAuth2Discovery.isPending}
                     className="max-w-md"
                   />
                   <Button
@@ -739,7 +641,9 @@ export default function AddCustomMCPServerPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => addCategory(categoryInput)}
-                    disabled={isDiscovering || !categoryInput.trim()}
+                    disabled={
+                      oAuth2Discovery.isPending || !categoryInput.trim()
+                    }
                   >
                     Add
                   </Button>
@@ -751,8 +655,8 @@ export default function AddCustomMCPServerPage() {
               <Button
                 type="submit"
                 disabled={
-                  isDiscovering ||
-                  isSubmitting ||
+                  oAuth2Discovery.isPending ||
+                  createCustomMCPServer.isPending ||
                   !name.trim() ||
                   !hasSelectedAuthMethod() ||
                   !url.trim() ||
@@ -760,14 +664,15 @@ export default function AddCustomMCPServerPage() {
                 }
                 className="flex items-center gap-2"
               >
-                {isDiscovering || isSubmitting ? (
+                {oAuth2Discovery.isPending ||
+                createCustomMCPServer.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {isDiscovering
+                {oAuth2Discovery.isPending
                   ? "Discovering..."
-                  : isSubmitting
+                  : createCustomMCPServer.isPending
                     ? "Registering..."
                     : needsStep2()
                       ? "Next: Setup Auth Method"
@@ -777,7 +682,9 @@ export default function AddCustomMCPServerPage() {
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/mcp-servers")}
-                disabled={isDiscovering || isSubmitting}
+                disabled={
+                  oAuth2Discovery.isPending || createCustomMCPServer.isPending
+                }
               >
                 Cancel
               </Button>
@@ -802,7 +709,7 @@ export default function AddCustomMCPServerPage() {
                   <Select
                     value={apiKeyLocation}
                     onValueChange={setApiKeyLocation}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                   >
                     <SelectTrigger className="max-w-md">
                       <SelectValue placeholder="Select API key location" />
@@ -830,7 +737,7 @@ export default function AddCustomMCPServerPage() {
                     placeholder="X-Subscription-Token"
                     value={apiKeyName}
                     onChange={(e) => setApiKeyName(e.target.value)}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                     className="max-w-md"
                   />
                   <p className="text-sm text-muted-foreground">
@@ -847,7 +754,7 @@ export default function AddCustomMCPServerPage() {
                     placeholder="Bearer"
                     value={apiKeyPrefix}
                     onChange={(e) => setApiKeyPrefix(e.target.value)}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                     className="max-w-md"
                   />
                   <p className="text-sm text-muted-foreground">
@@ -872,7 +779,7 @@ export default function AddCustomMCPServerPage() {
                     placeholder="https://example.com/oauth/authorize"
                     value={authorizeUrl}
                     onChange={(e) => setAuthorizeUrl(e.target.value)}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                     className="max-w-md"
                   />
                 </div>
@@ -887,7 +794,7 @@ export default function AddCustomMCPServerPage() {
                     placeholder="https://example.com/oauth/token"
                     value={tokenUrl}
                     onChange={(e) => setTokenUrl(e.target.value)}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                     className="max-w-md"
                   />
                 </div>
@@ -919,7 +826,7 @@ export default function AddCustomMCPServerPage() {
                   <RadioGroup
                     value={oauth2RegistrationMode}
                     onValueChange={setOauth2RegistrationMode}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                     className="flex flex-row space-x-6"
                   >
                     <div className="flex items-center space-x-2">
@@ -927,7 +834,8 @@ export default function AddCustomMCPServerPage() {
                         value="automatic"
                         id="automatic"
                         disabled={
-                          !isAutomaticRegistrationAvailable() || isSubmitting
+                          !isAutomaticRegistrationAvailable() ||
+                          createCustomMCPServer.isPending
                         }
                       />
                       <Label
@@ -970,15 +878,18 @@ export default function AddCustomMCPServerPage() {
                           type="button"
                           variant="outline"
                           onClick={handleAutoRegisterClient}
-                          disabled={isRegistering || isSubmitting}
+                          disabled={
+                            oAuth2ClientRegistration.isPending ||
+                            createCustomMCPServer.isPending
+                          }
                           className="flex items-center gap-2"
                         >
-                          {isRegistering ? (
+                          {oAuth2ClientRegistration.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Plus className="h-4 w-4" />
                           )}
-                          {isRegistering
+                          {oAuth2ClientRegistration.isPending
                             ? "Registering..."
                             : "Auto Register Client"}
                         </Button>
@@ -1041,7 +952,7 @@ export default function AddCustomMCPServerPage() {
                       <Select
                         value={manualEndpointAuthMethod}
                         onValueChange={setManualEndpointAuthMethod}
-                        disabled={isSubmitting}
+                        disabled={createCustomMCPServer.isPending}
                       >
                         <SelectTrigger className="max-w-md">
                           <SelectValue placeholder="Select auth method" />
@@ -1068,7 +979,7 @@ export default function AddCustomMCPServerPage() {
                         placeholder="Enter client ID"
                         value={manualClientId}
                         onChange={(e) => setManualClientId(e.target.value)}
-                        disabled={isSubmitting}
+                        disabled={createCustomMCPServer.isPending}
                         className="max-w-md"
                       />
                     </div>
@@ -1083,7 +994,7 @@ export default function AddCustomMCPServerPage() {
                         placeholder="Enter client secret"
                         value={manualClientSecret}
                         onChange={(e) => setManualClientSecret(e.target.value)}
-                        disabled={isSubmitting}
+                        disabled={createCustomMCPServer.isPending}
                         className="max-w-md"
                       />
                     </div>
@@ -1096,7 +1007,7 @@ export default function AddCustomMCPServerPage() {
                         placeholder="Enter scope (e.g., read write)"
                         value={manualScope}
                         onChange={(e) => setManualScope(e.target.value)}
-                        disabled={isSubmitting}
+                        disabled={createCustomMCPServer.isPending}
                         className="max-w-md"
                       />
                     </div>
@@ -1110,27 +1021,29 @@ export default function AddCustomMCPServerPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(1)}
-                disabled={isSubmitting}
+                disabled={createCustomMCPServer.isPending}
               >
                 Back
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !isStep2Valid()}
+                disabled={createCustomMCPServer.isPending || !isStep2Valid()}
                 className="flex items-center gap-2"
               >
-                {isSubmitting ? (
+                {createCustomMCPServer.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {isSubmitting ? "Registering..." : "Next: Operational Account"}
+                {createCustomMCPServer.isPending
+                  ? "Registering..."
+                  : "Next: Operational Account"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/mcp-servers")}
-                disabled={isSubmitting}
+                disabled={createCustomMCPServer.isPending}
               >
                 Cancel
               </Button>
@@ -1161,7 +1074,7 @@ export default function AddCustomMCPServerPage() {
                   <Select
                     value={operationalAccountAuthType}
                     onValueChange={setOperationalAccountAuthType}
-                    disabled={isSubmitting}
+                    disabled={createCustomMCPServer.isPending}
                     required
                   >
                     <SelectTrigger className="max-w-md">
@@ -1190,27 +1103,31 @@ export default function AddCustomMCPServerPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(needsStep2() ? 2 : 1)}
-                disabled={isSubmitting}
+                disabled={createCustomMCPServer.isPending}
               >
                 Back
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !operationalAccountAuthType}
+                disabled={
+                  createCustomMCPServer.isPending || !operationalAccountAuthType
+                }
                 className="flex items-center gap-2"
               >
-                {isSubmitting ? (
+                {createCustomMCPServer.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {isSubmitting ? "Registering..." : "Register Server"}
+                {createCustomMCPServer.isPending
+                  ? "Registering..."
+                  : "Register Server"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/mcp-servers")}
-                disabled={isSubmitting}
+                disabled={createCustomMCPServer.isPending}
               >
                 Cancel
               </Button>
