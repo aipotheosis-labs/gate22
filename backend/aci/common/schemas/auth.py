@@ -36,9 +36,7 @@ class EmailRegistrationRequest(BaseModel):
     redirect_path: str | None = Field(
         default=None,
         max_length=2048,
-        description=(
-            "Optional relative path used to redirect the user after email verification."
-        ),
+        description=("Optional relative path used to redirect the user after email verification."),
     )
 
     # TODO: Define password strength requirements
