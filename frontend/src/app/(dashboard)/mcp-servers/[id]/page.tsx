@@ -209,18 +209,21 @@ export default function MCPServerDetailPage() {
       <Separator className="mb-4" />
 
       {/* Categories */}
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold mb-3">Categories</h2>
-        <div className="flex flex-wrap gap-2">
-          {server.categories.map((category) => (
-            <Badge key={category} variant="secondary" className="text-sm">
-              {category}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      <Separator className="mb-4" />
+      {server.categories.length > 0 && (
+        <>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold mb-3">Categories</h2>
+            <div className="flex flex-wrap gap-2">
+              {server.categories.map((category) => (
+                <Badge key={category} variant="secondary" className="text-sm">
+                  {category}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <Separator className="mb-4" />
+        </>
+      )}
 
       {/* Operational Account - Only show for servers belonging to active organization */}
       {server.organization_id === activeOrg?.orgId && (

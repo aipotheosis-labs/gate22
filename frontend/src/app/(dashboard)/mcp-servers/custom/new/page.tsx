@@ -14,10 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
+import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
 import {
@@ -48,8 +47,8 @@ export default function AddCustomMCPServerPage() {
   const [transportType, setTransportType] = useState<string>("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [categoryInput, setCategoryInput] = useState("");
+  const [categories] = useState<string[]>([]);
+  // const [setCategoryInput] = useState("");
 
   // Step 2 fields - OAuth2
   const [oauth2Config, setOauth2Config] = useState<OAuth2DiscoveryResponse>({});
@@ -152,24 +151,24 @@ export default function AddCustomMCPServerPage() {
   };
 
   // Category management functions
-  const addCategory = (category: string) => {
-    const trimmedCategory = category.trim();
-    if (trimmedCategory && !categories.includes(trimmedCategory)) {
-      setCategories([...categories, trimmedCategory]);
-      setCategoryInput("");
-    }
-  };
+  // const addCategory = (category: string) => {
+  //   const trimmedCategory = category.trim();
+  //   if (trimmedCategory && !categories.includes(trimmedCategory)) {
+  //     setCategories([...categories, trimmedCategory]);
+  //     setCategoryInput("");
+  //   }
+  // };
 
-  const removeCategory = (categoryToRemove: string) => {
-    setCategories(categories.filter((cat) => cat !== categoryToRemove));
-  };
+  // const removeCategory = (categoryToRemove: string) => {
+  //   setCategories(categories.filter((cat) => cat !== categoryToRemove));
+  // };
 
-  const handleCategoryKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addCategory(categoryInput);
-    }
-  };
+  // const handleCategoryKeyPress = (e: React.KeyboardEvent) => {
+  //   if (e.key === "Enter") {
+  //     e.preventDefault();
+  //     addCategory(categoryInput);
+  //   }
+  // };
 
   // Name validation function
   const validateName = (name: string): string | null => {
@@ -603,7 +602,7 @@ export default function AddCustomMCPServerPage() {
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="categories">Categories</Label>
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -649,7 +648,7 @@ export default function AddCustomMCPServerPage() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="flex gap-2 pt-4">
               <Button
