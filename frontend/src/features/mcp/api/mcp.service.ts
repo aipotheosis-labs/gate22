@@ -63,6 +63,11 @@ export const mcpService = {
       const api = createAuthenticatedRequest(token);
       return api.post<ToolsSyncResult>(`${API_ENDPOINTS.SERVERS}/${serverId}/refresh-tools`, {});
     },
+
+    delete: async (token: string, serverId: string): Promise<void> => {
+      const api = createAuthenticatedRequest(token);
+      return api.delete(`${API_ENDPOINTS.SERVERS}/${serverId}`);
+    },
   },
 
   // MCP Server Configurations endpoints (requires auth)

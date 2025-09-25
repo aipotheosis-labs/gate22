@@ -186,3 +186,26 @@ export function useMCPTool(toolName: string) {
     enabled: !!accessToken && !!toolName,
   });
 }
+
+// Hook to delete an MCP server with permission check
+export function useDeleteMCPServer() {
+  const { accessToken, checkPermission } = useMetaInfo();
+  const queryClient = useQueryClient();
+
+  const canDelete = checkPermission(PERMISSIONS.CUSTOM_MCP_SERVER_DELETE);
+
+  return useMutation({
+    mutationFn: (serverId: string) => {
+      if (!canDelete) {
+        throw new Error("You do not have permission to delete MCP servers");
+      }
+      return mcpService.servers.delete(accessToken!, serverId);
+    },
+    onSuccess: () => {
+      // Invalidate servers list to refetch
+      queryClient.invalidateQueries({
+        queryKey: mcpQueryKeys.servers.all,
+      });
+    },
+  });
+}

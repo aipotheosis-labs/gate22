@@ -4,6 +4,8 @@ export const PERMISSIONS = {
 
   CUSTOM_MCP_SERVER_CREATE: "custom_mcp_server:create",
   CUSTOM_MCP_SERVER_SYNC: "custom_mcp_server:sync_tools",
+  CUSTOM_MCP_SERVER_DELETE: "custom_mcp_server:delete",
+  CUSTOM_MCP_SERVER_UPDATE: "custom_mcp_server:update",
 
   // MCP Configuration permissions
   MCP_CONFIGURATION_PAGE_VIEW: "mcp_configuration:page_view",
@@ -34,6 +36,8 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 
     PERMISSIONS.CUSTOM_MCP_SERVER_CREATE,
     PERMISSIONS.CUSTOM_MCP_SERVER_SYNC,
+    PERMISSIONS.CUSTOM_MCP_SERVER_DELETE,
+    PERMISSIONS.CUSTOM_MCP_SERVER_UPDATE,
 
     // MCP Configuration - Admins can view, create and delete configurations
     PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,

@@ -15,18 +15,21 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import {
   useMCPServer,
   useSyncMCPServerTools,
   useOperationalMCPServerConfigurations,
+  useDeleteMCPServer,
 } from "@/features/mcp/hooks/use-mcp-servers";
 import { useState, useEffect } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
 import { ToolsTable } from "@/features/mcp/components/tools-table";
 import { OperationalAccountDialog } from "@/features/mcp/components/operational-account-dialog";
 import { SyncResultsDialog } from "@/features/mcp/components/sync-results-dialog";
+import { DeleteServerDialog } from "@/features/mcp/components/delete-server-dialog";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -43,6 +46,7 @@ export default function MCPServerDetailPage() {
   const [isOperationalDialogOpen, setIsOperationalDialogOpen] = useState(false);
   const [syncResults, setSyncResults] = useState<ToolsSyncResult | null>(null);
   const [isSyncResultsOpen, setIsSyncResultsOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [, setForceUpdate] = useState(0);
 
   // Get organization context and permissions
@@ -57,6 +61,9 @@ export default function MCPServerDetailPage() {
 
   // Sync mutation
   const syncMutation = useSyncMCPServerTools();
+
+  // Delete mutation
+  const deleteMutation = useDeleteMCPServer();
 
   // Check if there's an operational account for this server
   const operationalConfig = operationalConfigs?.data?.find(
@@ -102,6 +109,19 @@ export default function MCPServerDetailPage() {
       onError: (error) => {
         console.error("Sync failed:", error);
         toast.error("Failed to sync tools. Please try again.");
+      },
+    });
+  };
+
+  const handleDelete = () => {
+    deleteMutation.mutate(serverId, {
+      onSuccess: () => {
+        toast.success(`MCP server "${server?.name}" deleted successfully`);
+        router.push("/mcp-servers");
+      },
+      onError: (error) => {
+        console.error("Delete failed:", error);
+        toast.error("Failed to delete MCP server. Please try again.");
       },
     });
   };
@@ -180,12 +200,36 @@ export default function MCPServerDetailPage() {
             )}
           </div>
         </div>
-        <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
-          <Button onClick={() => setIsConfigModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Configure Server
-          </Button>
-        </PermissionGuard>
+        <div className="flex items-center gap-2">
+          <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
+            <Button onClick={() => setIsConfigModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Configure Server
+            </Button>
+          </PermissionGuard>
+          {/* Delete button - only show for custom servers (user's organization) and admin permission */}
+          {server.organization_id === activeOrg?.orgId && (
+            <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_DELETE}>
+              <Button
+                variant="destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </PermissionGuard>
+          )}
+        </div>
       </div>
 
       {/* Description */}
@@ -350,6 +394,17 @@ export default function MCPServerDetailPage() {
         results={syncResults}
         serverName={server?.name || ""}
       />
+
+      {/* Delete Server Dialog */}
+      {server && (
+        <DeleteServerDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          serverName={server.name}
+          onConfirm={handleDelete}
+          isPending={deleteMutation.isPending}
+        />
+      )}
     </div>
   );
 }
