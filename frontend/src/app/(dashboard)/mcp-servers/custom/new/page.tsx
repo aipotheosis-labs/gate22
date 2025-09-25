@@ -16,7 +16,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ArrowLeft, HelpCircle, Loader2, Plus } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
 import {
@@ -986,13 +991,27 @@ export default function AddCustomMCPServerPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="manualClientId">
-                        Client ID <span className="text-red-500">*</span>
-                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="manualClientId">
+                          Client ID <span className="text-red-500">*</span>
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-sm">
+                              Enter the Client ID from your OAuth2 provider
+                              registration results. This is the unique
+                              identifier for your application.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <Input
                         id="manualClientId"
                         type="text"
-                        placeholder="Enter client ID"
+                        placeholder="Paste client ID from registration results"
                         value={manualClientId}
                         onChange={(e) => setManualClientId(e.target.value)}
                         disabled={createCustomMCPServer.isPending}
@@ -1003,13 +1022,29 @@ export default function AddCustomMCPServerPage() {
                     {/* Client Secret - only show when auth method requires it */}
                     {manualEndpointAuthMethod.includes("client_secret_") && (
                       <div className="space-y-2">
-                        <Label htmlFor="manualClientSecret">
-                          Client Secret <span className="text-red-500">*</span>
-                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="manualClientSecret">
+                            Client Secret{" "}
+                            <span className="text-red-500">*</span>
+                          </Label>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p className="text-sm">
+                                Enter the Client Secret from your OAuth2
+                                provider registration results. This confidential
+                                key is required for client_secret_*
+                                authentication methods.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
                         <Input
                           id="manualClientSecret"
                           type="password"
-                          placeholder="Enter client secret"
+                          placeholder="Paste client secret from registration results"
                           value={manualClientSecret}
                           onChange={(e) =>
                             setManualClientSecret(e.target.value)
@@ -1021,11 +1056,25 @@ export default function AddCustomMCPServerPage() {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="manualScope">Scope</Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="manualScope">Scope</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-sm">
+                              Enter the OAuth2 scope you used to register the
+                              client, or copy the scope from the registration
+                              results.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <Input
                         id="manualScope"
                         type="text"
-                        placeholder="Enter scope (e.g., read write)"
+                        placeholder="Enter the scope you used to register the client."
                         value={manualScope}
                         onChange={(e) => setManualScope(e.target.value)}
                         disabled={createCustomMCPServer.isPending}
@@ -1078,44 +1127,49 @@ export default function AddCustomMCPServerPage() {
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">Operational Account</h2>
           <form onSubmit={handleStep3Submit} className="space-y-6">
-            <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+            <div className="space-y-4">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Operational Account is a service account used for fetching MCP
-                  server information and listening to any server changes, for
-                  example fetching the MCP tool list. Please select the
-                  authentication method used to connect Operational Account.
+                  The operational account is exclusively used by the system for
+                  administrative purposes such as fetching MCP server metadata
+                  and monitoring server status. It will never be used by any
+                  users.
                 </p>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="operationalAccountAuthType">
-                    Operational Account Auth Method{" "}
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={operationalAccountAuthType}
-                    onValueChange={setOperationalAccountAuthType}
-                    disabled={createCustomMCPServer.isPending}
-                    required
-                  >
-                    <SelectTrigger className="max-w-md">
-                      <SelectValue placeholder="Select auth method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getSelectedAuthMethods().map((method) => (
-                        <SelectItem key={method} value={method}>
-                          {method === "no_auth"
-                            ? "No Auth"
-                            : method === "api_key"
-                              ? "API Key"
-                              : method === "oauth2"
-                                ? "OAuth2"
-                                : method}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <p className="text-sm text-muted-foreground">
+                Please select the authentication method used to connect
+                Operational Account.
+              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="operationalAccountAuthType">
+                  Operational Account Auth Method{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={operationalAccountAuthType}
+                  onValueChange={setOperationalAccountAuthType}
+                  disabled={createCustomMCPServer.isPending}
+                  required
+                >
+                  <SelectTrigger className="max-w-md">
+                    <SelectValue placeholder="Select auth method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getSelectedAuthMethods().map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method === "no_auth"
+                          ? "No Auth"
+                          : method === "api_key"
+                            ? "API Key"
+                            : method === "oauth2"
+                              ? "OAuth2"
+                              : method}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
