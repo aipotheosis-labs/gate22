@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useMetaInfo } from "@/components/context/metainfo";
 import {
   customMCPService,
@@ -74,7 +73,6 @@ export function useOAuth2ClientRegistration() {
 export function useCreateCustomMCPServer() {
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   return useMutation({
     mutationFn: (request: CreateCustomMCPServerRequest) => {
@@ -88,7 +86,7 @@ export function useCreateCustomMCPServer() {
         request,
       );
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast.success("Custom MCP server added successfully");
       // Invalidate relevant queries to refetch data
       queryClient.invalidateQueries({
@@ -97,7 +95,8 @@ export function useCreateCustomMCPServer() {
       queryClient.invalidateQueries({
         queryKey: mcpQueryKeys.configurations.all,
       });
-      router.push("/mcp-servers");
+      // Don't redirect immediately - let the component handle the next step
+      return response;
     },
     onError: (error) => {
       console.error("Failed to create custom MCP server:", error);

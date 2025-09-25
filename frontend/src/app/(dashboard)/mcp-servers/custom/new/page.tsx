@@ -29,11 +29,14 @@ import {
   useOAuth2ClientRegistration,
   useCreateCustomMCPServer,
 } from "@/features/mcp/hooks/use-custom-mcp-server";
+import { useOperationalMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
+import { OperationalAccountDialog } from "@/features/mcp/components/operational-account-dialog";
 import {
   OAuth2DiscoveryResponse,
   OAuth2DCRResponse,
   AuthConfig,
 } from "@/features/mcp/api/custom-mcp.service";
+import { AuthType, MCPServerPublic } from "@/features/mcp/types/mcp.types";
 
 export default function AddCustomMCPServerPage() {
   const router = useRouter();
@@ -78,12 +81,30 @@ export default function AddCustomMCPServerPage() {
   const [operationalAccountAuthType, setOperationalAccountAuthType] =
     useState<string>("");
 
+  // Step 4 fields - Created server info
+  const [createdServer, setCreatedServer] = useState<MCPServerPublic | null>(
+    null,
+  );
+  const [serverCreated, setServerCreated] = useState<boolean>(false);
+
   const { accessToken } = useMetaInfo();
 
   // Hooks for API calls
   const oAuth2Discovery = useOAuth2Discovery();
   const oAuth2ClientRegistration = useOAuth2ClientRegistration();
   const createCustomMCPServer = useCreateCustomMCPServer();
+  const { data: operationalConfigs, refetch: refetchOperationalConfigs } =
+    useOperationalMCPServerConfigurations();
+
+  // Step 4 state
+  const [isOperationalDialogOpen, setIsOperationalDialogOpen] = useState(false);
+
+  // Check if there's an operational account for the created server
+  const operationalConfig = operationalConfigs?.data?.find(
+    (config) => config.mcp_server.name === createdServer?.name,
+  );
+  const hasOperationalAccount =
+    operationalConfig?.has_operational_connected_account || false;
 
   const isAutomaticRegistrationAvailable = useCallback(() => {
     return !!(
@@ -118,6 +139,8 @@ export default function AddCustomMCPServerPage() {
   const needsStep3 = () => {
     return hasSelectedAuthMethod(); // Always show step 3 if any auth method is selected
   };
+
+  // Remove unused needsStep4 function as we directly check serverCreated
 
   const getSelectedAuthMethods = () => {
     return Object.entries(authMethods)
@@ -284,7 +307,7 @@ export default function AddCustomMCPServerPage() {
     }
   };
 
-  const createServer = async () => {
+  const createServer = async (): Promise<void> => {
     const authConfigs: AuthConfig[] = [];
 
     // Build auth configs for each selected auth method
@@ -341,7 +364,13 @@ export default function AddCustomMCPServerPage() {
       ...(logoUrl.trim() && { logo: logoUrl.trim() }),
     };
 
-    await createCustomMCPServer.mutateAsync(payload);
+    const response = await createCustomMCPServer.mutateAsync(payload);
+
+    setCreatedServer(response);
+    setServerCreated(true);
+    setCurrentStep(4);
+
+    // Store the created server info and proceed to step 4
   };
 
   const handleAutoRegisterClient = async () => {
@@ -453,13 +482,15 @@ export default function AddCustomMCPServerPage() {
           <p className="text-muted-foreground mt-1">
             {currentStep === 1
               ? needsStep3()
-                ? `Step ${currentStep} of 3: Server Details`
+                ? `Step ${currentStep} of 4: Server Details`
                 : "Create a new custom MCP server configuration"
               : currentStep === 2
-                ? `Step ${currentStep} of 3: Setup Auth Method`
+                ? `Step ${currentStep} of 4: Setup Auth Method`
                 : currentStep === 3
-                  ? `Step ${currentStep} of 3: Operational Account`
-                  : "Create a new custom MCP server configuration"}
+                  ? `Step ${currentStep} of 4: Operational Account`
+                  : currentStep === 4
+                    ? `Step ${currentStep} of 4: Setup Operational Account (Optional)`
+                    : "Create a new custom MCP server configuration"}
           </p>
         </div>
       </div>
@@ -1178,6 +1209,106 @@ export default function AddCustomMCPServerPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Step 4: Setup Operational Account (Optional) */}
+      {currentStep === 4 && serverCreated && createdServer && (
+        <div className="mb-8">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium text-green-800">
+                Server Created Successfully
+              </span>
+            </div>
+            <p className="text-sm text-green-700">
+              Your MCP server &ldquo;{createdServer.name}&rdquo; has been
+              created and is ready to use.
+            </p>
+          </div>
+          <h2 className="text-lg font-semibold mb-4">
+            Setup Operational Account (Optional)
+          </h2>
+
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  The operational account is exclusively used by the system for
+                  administrative purposes such as fetching MCP server metadata
+                  and monitoring server status. It will never be used by any
+                  users.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  You can set this up now or skip and configure it later from
+                  the server details page.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                {hasOperationalAccount ? (
+                  <>
+                    <div className="flex items-center gap-2 text-green-600">
+                      <div className="h-4 w-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="h-2 w-2 bg-white rounded-full"></div>
+                      </div>
+                      <span className="text-sm">
+                        Operational account is configured
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-red-600">
+                      <div className="h-4 w-4 border-2 border-red-500 rounded-full"></div>
+                      <span className="text-sm">
+                        No operational account configured
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/mcp-servers/${createdServer.id}`)}
+                className="flex items-center gap-2"
+              >
+                Go to MCP Server
+              </Button>
+              {!hasOperationalAccount && (
+                <Button
+                  onClick={() => setIsOperationalDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Setup Operational Account
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Operational Account Dialog for Step 4 */}
+      {serverCreated && createdServer && operationalConfig && (
+        <OperationalAccountDialog
+          open={isOperationalDialogOpen}
+          onOpenChange={setIsOperationalDialogOpen}
+          server={{
+            id: operationalConfig.mcp_server_id,
+            name: createdServer?.name,
+            auth_type: operationalAccountAuthType as AuthType,
+          }}
+          operationalConfigId={operationalConfig.id}
+          onSuccess={() => {
+            // Refresh operational configs to update the status
+            refetchOperationalConfigs();
+            setIsOperationalDialogOpen(false);
+          }}
+        />
       )}
     </div>
   );

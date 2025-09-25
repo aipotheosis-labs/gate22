@@ -1,5 +1,6 @@
 import { createAuthenticatedRequest } from "@/lib/api-client";
 import { CONTROL_PLANE_PATH } from "@/config/api.constants";
+import { MCPServerPublic } from "../types/mcp.types";
 
 export interface OAuth2DiscoveryResponse {
   authorize_url?: string;
@@ -88,8 +89,8 @@ export const customMCPService = {
     orgId: string | undefined,
     role: string | undefined,
     request: CreateCustomMCPServerRequest,
-  ): Promise<void> => {
+  ): Promise<MCPServerPublic> => {
     const api = createAuthenticatedRequest(token, orgId, role);
-    return api.post<void>(API_ENDPOINTS.MCP_SERVERS, request);
+    return api.post<MCPServerPublic>(API_ENDPOINTS.MCP_SERVERS, request);
   },
 };
