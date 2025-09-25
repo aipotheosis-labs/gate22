@@ -370,8 +370,13 @@ function RejectInvitationPageContent() {
       return;
     }
 
+    // Sanitize redirect path to prevent open redirect attacks
+    const sanitizedPath = rejectPath.startsWith('/invitations/reject')
+      ? rejectPath
+      : '/invitations/reject';
+
     redirectingRef.current = true;
-    router.replace(`/login?next=${encodeURIComponent(rejectPath)}`);
+    router.replace(`/login?next=${encodeURIComponent(sanitizedPath)}`);
   }, [authState, pendingInvitation, rejectPath, router]);
 
   const handleReject = async () => {
@@ -492,12 +497,16 @@ function RejectInvitationPageContent() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3 sm:flex-row">
             <Button asChild className="w-full sm:w-auto">
-              <Link href={`/login?next=${encodeURIComponent(rejectPath)}`}>
+              <Link href={`/login?next=${encodeURIComponent(
+                rejectPath.startsWith('/invitations/reject') ? rejectPath : '/invitations/reject'
+              )}`}>
                 Sign in
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href={`/signup?next=${encodeURIComponent(rejectPath)}`}>
+              <Link href={`/signup?next=${encodeURIComponent(
+                rejectPath.startsWith('/invitations/reject') ? rejectPath : '/invitations/reject'
+              )}`}>
                 Create account
               </Link>
             </Button>

@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { useMetaInfo } from "@/components/context/metainfo";
 import {
   cancelOrganizationInvitation,
-  inviteToOrganization,
   listOrganizationInvitations,
 } from "@/features/settings/api/organization";
 import { QUERY_KEYS } from "@/features/settings/constants";
@@ -12,6 +11,7 @@ import {
   OrganizationInvitationDetail,
   OrganizationInvitationStatus,
 } from "@/features/invitations/types/invitation.types";
+import { useMemberInvitationMutation } from "@/features/members/hooks/use-member-invitation-mutation";
 
 interface UseOrganizationInvitationsOptions {
   status?: OrganizationInvitationStatus;
@@ -53,23 +53,7 @@ export function useOrganizationMemberInvitations(
     };
   }, [activeOrg?.orgId, queryClient]);
 
-  const memberInvitationMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      if (!accessToken || !activeOrg?.orgId) {
-        throw new Error("Organization context unavailable");
-      }
-      return inviteToOrganization(accessToken, activeOrg.orgId, email, role);
-    },
-    onSuccess: (invitation, variables) => {
-      invalidateInvitations();
-      toast.success(`Invitation sent to ${variables.email}`);
-      return invitation;
-    },
-    onError: (error) => {
-      console.error("Failed to invite member:", error);
-      toast.error("Failed to send invitation. Please try again.");
-    },
-  });
+  const memberInvitationMutation = useMemberInvitationMutation();
 
   const cancelInvitationMutation = useMutation({
     mutationFn: async (invitationId: string) => {

@@ -371,8 +371,13 @@ function AcceptInvitationPageContent() {
       return;
     }
 
+    // Sanitize redirect path to prevent open redirect attacks
+    const sanitizedPath = acceptPath.startsWith('/invitations/accept')
+      ? acceptPath
+      : '/invitations/accept';
+
     redirectingRef.current = true;
-    router.replace(`/login?next=${encodeURIComponent(acceptPath)}`);
+    router.replace(`/login?next=${encodeURIComponent(sanitizedPath)}`);
   }, [acceptPath, authState, pendingInvitation, router]);
 
   const handleAccept = async () => {
@@ -496,12 +501,16 @@ function AcceptInvitationPageContent() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3 sm:flex-row">
             <Button asChild className="w-full sm:w-auto">
-              <Link href={`/signup?next=${encodeURIComponent(acceptPath)}`}>
+              <Link href={`/signup?next=${encodeURIComponent(
+                acceptPath.startsWith('/invitations/accept') ? acceptPath : '/invitations/accept'
+              )}`}>
                 Create account
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href={`/login?next=${encodeURIComponent(acceptPath)}`}>
+              <Link href={`/login?next=${encodeURIComponent(
+                acceptPath.startsWith('/invitations/accept') ? acceptPath : '/invitations/accept'
+              )}`}>
                 Sign in
               </Link>
             </Button>

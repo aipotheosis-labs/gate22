@@ -69,6 +69,13 @@ class TokenManager {
 
     if (actAsChanged) {
       this.accessToken = null;
+
+      // Wait for any existing refresh to complete before starting new one
+      // to prevent older in-flight requests from overwriting newer tokens
+      if (this.refreshPromise) {
+        await this.refreshPromise;
+      }
+
       this.refreshPromise = null;
     }
 
