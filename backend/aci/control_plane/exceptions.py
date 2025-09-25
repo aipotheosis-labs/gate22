@@ -262,3 +262,16 @@ class MCPToolsNormalizationError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+class MCPToolsRefreshTooFrequent(ControlPlaneException):
+    """
+    Exception raised when an MCP tools refresh is too frequent
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="MCP tools refresh too frequent",
+            message=message,
+            error_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )

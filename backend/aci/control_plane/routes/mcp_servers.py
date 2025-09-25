@@ -1,5 +1,6 @@
 import os
 import string
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from urllib.parse import urlparse
 from uuid import UUID
@@ -29,7 +30,7 @@ from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCr
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
-from aci.control_plane.exceptions import OAuth2MetadataDiscoveryError
+from aci.control_plane.exceptions import MCPToolsRefreshTooFrequent, OAuth2MetadataDiscoveryError
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
 )
@@ -316,6 +317,9 @@ async def refresh_mcp_server_tools(
     if not mcp_server:
         raise HTTPException(status_code=404, detail="MCP server not found")
 
+    if mcp_server.organization_id is None:
+        raise HTTPException(status_code=403, detail="MCP server is public")
+
     # Enforce only admin to perform this action
     access_control.check_act_as_organization_role(
         context.act_as,
@@ -323,6 +327,18 @@ async def refresh_mcp_server_tools(
         required_role=OrganizationRole.ADMIN,
         throw_error_if_not_permitted=True,
     )
+
+    # Basic rate limiting by checking the last synced at time
+    # TODO: Handle case if last_synced_at is null and keeps failing, in this case this check does
+    # not work.
+    if mcp_server.last_synced_at is not None:
+        if mcp_server.last_synced_at + timedelta(minutes=1) > datetime.now(UTC):
+            logger.error(
+                f"MCP server {mcp_server.name} has been refreshed too frequently, last_synced_at={mcp_server.last_synced_at}"  # noqa: E501
+            )
+            raise MCPToolsRefreshTooFrequent(
+                f"MCP server {mcp_server.name} has been refreshed too frequently"
+            )
 
     mcp_tools_diff = await MCPToolsManager(mcp_server).refresh_mcp_tools(context.db_session)
 

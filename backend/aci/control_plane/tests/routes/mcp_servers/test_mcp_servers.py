@@ -1,11 +1,13 @@
 import re
+from datetime import UTC, datetime, timedelta
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import Organization
+from aci.common.db.sql_models import MCPServer, Organization
 from aci.common.enums import (
     AuthType,
     HttpLocation,
@@ -20,6 +22,7 @@ from aci.common.schemas.mcp_server import (
 )
 from aci.common.schemas.pagination import PaginationResponse
 from aci.control_plane import config
+from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsDiff
 
 logger = get_logger(__name__)
 
@@ -255,3 +258,52 @@ def test_get_mcp_server(
     assert mcp_server_data.id == dummy_mcp_server.id
     assert mcp_server_data.name == dummy_mcp_server.name
     assert mcp_server_data.url == dummy_mcp_server.url
+
+
+@pytest.mark.parametrize("is_mcp_server_same_org", [True, False])
+@pytest.mark.parametrize("is_too_frequent", [True, False])
+@patch("aci.control_plane.routes.mcp_servers.MCPToolsManager")
+def test_refresh_mcp_server_tools(
+    mock_mcp_tools_manager_class: AsyncMock,
+    test_client: TestClient,
+    db_session: Session,
+    dummy_access_token_admin: str,
+    is_too_frequent: bool,
+    is_mcp_server_same_org: bool,
+    dummy_organization: Organization,
+    dummy_mcp_server: MCPServer,
+) -> None:
+    # Set up the mock
+    mock_mcp_tools_manager_instance = AsyncMock()
+    mock_mcp_tools_manager_instance.refresh_mcp_tools.return_value = MCPToolsDiff(
+        tools_created=[],
+        tools_deleted=[],
+        tools_updated=[],
+        tools_unchanged=[],
+    )
+    mock_mcp_tools_manager_class.return_value = mock_mcp_tools_manager_instance
+
+    dummy_mcp_server.organization_id = dummy_organization.id if is_mcp_server_same_org else None
+    dummy_mcp_server.last_synced_at = (
+        datetime.now(UTC) - timedelta(seconds=30)
+        if is_too_frequent
+        else datetime.now(UTC) - timedelta(days=30)
+    )
+
+    db_session.commit()
+
+    response = test_client.post(
+        f"{config.ROUTER_PREFIX_MCP_SERVERS}/{dummy_mcp_server.id}/refresh-tools",
+        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+    )
+
+    if not is_mcp_server_same_org:
+        assert response.status_code == 403
+        return
+
+    if is_too_frequent:
+        assert response.status_code == 429
+        return
+
+    assert response.status_code == 200
+    assert mock_mcp_tools_manager_instance.refresh_mcp_tools.call_count == 1
