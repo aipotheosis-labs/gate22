@@ -101,6 +101,14 @@ def update_mcp_server(
     return mcp_server
 
 
+def delete_mcp_server(
+    db_session: Session,
+    mcp_server_id: UUID,
+) -> None:
+    mcp_server = get_mcp_server_by_id(db_session, mcp_server_id, throw_error_if_not_found=True)
+    db_session.delete(mcp_server)
+
+
 def list_mcp_servers(
     db_session: Session,
     organization_id: UUID | None = None,

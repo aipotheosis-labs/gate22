@@ -17,6 +17,16 @@ class MCPServerMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class MCPServerPartialUpdateRequest(BaseModel):
+    """Used for API schema validation"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    description: str | None = Field(default=None)
+    logo: str | None = Field(default=None)
+    categories: list[str] | None = Field(default=None)
+
+
 class MCPServerPartialUpdate(BaseModel):
     """
     Used for Partial Updating data to the database.

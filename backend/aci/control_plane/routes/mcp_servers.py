@@ -23,6 +23,8 @@ from aci.common.schemas.mcp_server import (
     MCPServerOAuth2DCRResponse,
     MCPServerOAuth2DiscoveryRequest,
     MCPServerOAuth2DiscoveryResponse,
+    MCPServerPartialUpdate,
+    MCPServerPartialUpdateRequest,
     MCPServerPublic,
     MCPServerUpsert,
 )
@@ -213,6 +215,85 @@ async def create_custom_mcp_server(
 
     context.db_session.commit()
     return mcp_server_public
+
+
+@router.patch("/{mcp_server_id}", response_model=MCPServerPublic)
+async def update_mcp_server(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_id: UUID,
+    body: MCPServerPartialUpdateRequest,
+) -> MCPServerPublic:
+    mcp_server = crud.mcp_servers.get_mcp_server_by_id(
+        context.db_session, mcp_server_id, throw_error_if_not_found=False
+    )
+    if not mcp_server:
+        raise HTTPException(status_code=404, detail="MCP server not found")
+
+    if mcp_server.organization_id is None:
+        raise HTTPException(status_code=403, detail="MCP server is public")
+
+    # Enforce only admin to perform this action
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=mcp_server.organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
+
+    regen_embedding = False
+    if body.description is not None and body.description != mcp_server.description:
+        regen_embedding = True
+    if body.categories is not None and body.categories != mcp_server.categories:
+        regen_embedding = True
+
+    if regen_embedding:
+        mcp_server_embedding = embeddings.generate_mcp_server_embedding(
+            get_openai_client(),
+            MCPServerEmbeddingFields(
+                name=mcp_server.name,
+                url=mcp_server.url,
+                description=body.description or mcp_server.description,
+                categories=body.categories or mcp_server.categories,
+            ),
+        )
+    else:
+        mcp_server_embedding = None
+
+    mcp_server = crud.mcp_servers.update_mcp_server(
+        context.db_session,
+        mcp_server,
+        MCPServerPartialUpdate.model_validate(body.model_dump(exclude_unset=True)),
+        mcp_server_embedding,
+    )
+
+    context.db_session.commit()
+    return schema_utils.construct_mcp_server_public(mcp_server)
+
+
+@router.delete("/{mcp_server_id}")
+async def delete_mcp_server(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    mcp_server_id: UUID,
+) -> None:
+    mcp_server = crud.mcp_servers.get_mcp_server_by_id(
+        context.db_session, mcp_server_id, throw_error_if_not_found=False
+    )
+    if not mcp_server:
+        raise HTTPException(status_code=404, detail="MCP server not found")
+
+    if mcp_server.organization_id is None:
+        raise HTTPException(status_code=403, detail="MCP server is public")
+
+    # Enforce only admin to perform this action
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=mcp_server.organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
+
+    crud.mcp_servers.delete_mcp_server(context.db_session, mcp_server_id)
+    context.db_session.commit()
 
 
 @router.post(
