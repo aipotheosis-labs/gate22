@@ -69,26 +69,12 @@ export default function MCPServerDetailPage() {
   const hasOperationalAccount =
     operationalConfig?.has_operational_connected_account || false;
 
-  // Check if enough time has passed since last sync (1 hour = 60 minutes)
+  // Check if enough time has passed since last sync
+  // Current cooldown is 1 minute
   const canSyncByTime =
     !server?.last_synced_at ||
     new Date().getTime() - new Date(server.last_synced_at).getTime() >=
-      60 * 60 * 1000;
-
-  // Calculate remaining time until next sync is allowed
-  const getTimeUntilNextSync = () => {
-    if (!server?.last_synced_at) return null;
-    const lastSync = new Date(server.last_synced_at).getTime();
-    const now = new Date().getTime();
-    const oneHour = 60 * 60 * 1000;
-    const timePassed = now - lastSync;
-    const timeRemaining = oneHour - timePassed;
-
-    if (timeRemaining <= 0) return null;
-
-    const minutes = Math.ceil(timeRemaining / (60 * 1000));
-    return minutes;
-  };
+      60 * 1000;
 
   // Update timer every minute when sync is on cooldown
   useEffect(() => {
@@ -330,8 +316,8 @@ export default function MCPServerDetailPage() {
                       </p>
                     ) : !canSyncByTime ? (
                       <p>
-                        Please wait {getTimeUntilNextSync()} more minute(s)
-                        before syncing again
+                        Please wait a while before syncing again. You can
+                        re-sync the tools once every minute.
                       </p>
                     ) : null}
                   </TooltipContent>
