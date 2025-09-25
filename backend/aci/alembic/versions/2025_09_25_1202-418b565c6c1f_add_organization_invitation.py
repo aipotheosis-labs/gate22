@@ -1,8 +1,8 @@
-"""add organization invitations
+"""add organization invitation
 
-Revision ID: d19c2a8ad95d
-Revises: e6a4f5f9ea47
-Create Date: 2025-09-22 15:19:01.276519+00:00
+Revision ID: 418b565c6c1f
+Revises: b1d18d85aa49
+Create Date: 2025-09-25 12:02:04.375184+00:00
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'd19c2a8ad95d'
-down_revision: Union[str, None] = 'e6a4f5f9ea47'
+revision: str = '418b565c6c1f'
+down_revision: Union[str, None] = 'b1d18d85aa49'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
