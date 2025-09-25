@@ -2,6 +2,7 @@ import { getApiBaseUrl } from "@/lib/api-client";
 import { toast } from "sonner";
 import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 import { storePendingInvitation } from "@/features/invitations/utils/pending-invitation";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 
 // Request/Response types
 export interface EmailLoginRequest {
@@ -196,7 +197,7 @@ export async function login(
         });
       }
 
-      redirectTo = `${redirectUrl.pathname}${redirectUrl.search}`;
+      redirectTo = sanitizeRedirectPath(rawRedirect);
     }
   } catch (error) {
     if (!(error instanceof SyntaxError)) {

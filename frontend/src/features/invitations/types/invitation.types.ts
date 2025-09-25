@@ -21,7 +21,6 @@ export interface OrganizationInvitationDetail {
 }
 
 export interface RespondInvitationPayload {
-  invitation_id: string;
   token: string;
 }
 

@@ -9,16 +9,16 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 from aci.common.enums import OrganizationInvitationStatus, OrganizationRole
 
 
-class SendOrganizationInvitationRequest(BaseModel):
+class SendOrganizationInvitationRequest(BaseModel, extra="forbid"):
     email: EmailStr = Field(description="Email address to invite")
     role: OrganizationRole = Field(description="Role to grant after accepting the invitation")
 
 
-class RespondOrganizationInvitationRequest(BaseModel):
+class RespondOrganizationInvitationRequest(BaseModel, extra="forbid"):
     token: str = Field(min_length=1, description="Raw invitation token supplied via email")
 
 
-class CancelOrganizationInvitationRequest(BaseModel):
+class CancelOrganizationInvitationRequest(BaseModel, extra="forbid"):
     invitation_id: UUID = Field(description="Identifier of the invitation to cancel")
 
 

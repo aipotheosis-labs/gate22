@@ -408,7 +408,6 @@ function RejectInvitationPageContent() {
       }
 
       await rejectInvitation(tokenValue, organizationId, {
-        invitation_id: invitationIdValue,
         token: pendingInvitation.token,
       });
 

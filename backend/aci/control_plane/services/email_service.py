@@ -186,7 +186,7 @@ class EmailService:
         recipient: str,
         user_name: str,
         verification_url: str,
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         subject = "Verify Your Email Address"
 
         expires_label = utils.format_duration_from_minutes(config.EMAIL_VERIFICATION_EXPIRE_MINUTES)
@@ -258,7 +258,7 @@ class EmailService:
         inviter_name: str,
         invitation_url: str,
         expires_label: str,
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         subject = f"You're invited to join {organization_name}"
 
         body_text = textwrap.dedent(

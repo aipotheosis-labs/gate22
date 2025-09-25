@@ -24,7 +24,7 @@ def create_invitation(
 ) -> OrganizationInvitation:
     invitation = OrganizationInvitation(
         organization_id=organization_id,
-        email=email,
+        email=email.lower(),
         inviter_user_id=inviter_user_id,
         role=role,
         token_hash=token_hash,
@@ -57,7 +57,7 @@ def get_pending_invitation_by_email(
     return (
         db_session.query(OrganizationInvitation)
         .filter(OrganizationInvitation.organization_id == organization_id)
-        .filter(OrganizationInvitation.email == email)
+        .filter(OrganizationInvitation.email == email.lower())
         .filter(OrganizationInvitation.status == OrganizationInvitationStatus.PENDING)
         .first()
     )
@@ -71,7 +71,7 @@ def get_invitation_by_email(
     return (
         db_session.query(OrganizationInvitation)
         .filter(OrganizationInvitation.organization_id == organization_id)
-        .filter(OrganizationInvitation.email == email)
+        .filter(OrganizationInvitation.email == email.lower())
         .first()
     )
 

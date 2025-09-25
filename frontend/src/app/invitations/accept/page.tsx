@@ -409,7 +409,6 @@ function AcceptInvitationPageContent() {
       }
 
       await acceptInvitation(tokenValue, organizationId, {
-        invitation_id: invitationIdValue,
         token: pendingInvitation.token,
       });
 
