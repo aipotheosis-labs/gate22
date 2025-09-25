@@ -1,10 +1,34 @@
 "use client";
 
+import { Suspense, useMemo } from "react";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 
 export default function VerifySuccessPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifySuccessPageContent />
+    </Suspense>
+  );
+}
+
+function VerifySuccessPageContent() {
+  const searchParams = useSearchParams();
+  const nextPath = useMemo(
+    () => sanitizeRedirectPath(searchParams.get("next")),
+    [searchParams],
+  );
+
+  const loginHref = nextPath
+    ? `/login?next=${encodeURIComponent(nextPath)}`
+    : "/login";
+
+  const homeHref = "/";
+
   return (
     <div className="min-h-screen relative">
       {/* Grid Background */}
@@ -55,7 +79,7 @@ export default function VerifySuccessPage() {
             {/* Actions */}
             <div className="space-y-3">
               <Button asChild className="w-full h-11">
-                <Link href="/login">Sign In to Your Account</Link>
+                <Link href={loginHref}>Sign In to Your Account</Link>
               </Button>
 
               <div className="relative">
@@ -70,7 +94,7 @@ export default function VerifySuccessPage() {
               </div>
 
               <Button asChild variant="outline" className="w-full h-11">
-                <Link href="/">Return to Homepage</Link>
+                <Link href={homeHref}>Return to Homepage</Link>
               </Button>
             </div>
           </div>

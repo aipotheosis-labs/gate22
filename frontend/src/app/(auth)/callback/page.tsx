@@ -9,6 +9,10 @@ import { AlertCircle, ArrowLeft } from "lucide-react";
 import { issueToken, getProfile } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 import { sanitizeRedirectPath } from "@/lib/safe-redirect";
+import {
+  storePendingInvitation,
+  getPendingInvitation,
+} from "@/features/invitations/utils/pending-invitation";
 
 // Error code mapping to user-friendly messages
 const ERROR_MESSAGES: Record<
@@ -32,6 +36,34 @@ function CallbackContent() {
     () => sanitizeRedirectPath(searchParams.get("next")),
     [searchParams],
   );
+
+  // Extract invitation details from next parameter if it contains invitation URL
+  const invitationInfo = useMemo(() => {
+    if (!nextPath || !nextPath.includes("/invitations/accept")) {
+      return null;
+    }
+
+    try {
+      const url = new URL(nextPath, "http://localhost"); // Use dummy origin for parsing
+      const token = url.searchParams.get("token");
+      const invitationId = url.searchParams.get("invitation_id");
+
+      if (token) {
+        return {
+          token,
+          invitationId,
+          organizationId: null,
+        };
+      }
+    } catch (error) {
+      console.error(
+        "Failed to parse invitation details from next path:",
+        error,
+      );
+    }
+
+    return null;
+  }, [nextPath]);
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
@@ -66,6 +98,15 @@ function CallbackContent() {
           setLoadingMessage("Completing Google sign in...");
         }
 
+        // Store invitation context if present before issuing token
+        if (invitationInfo) {
+          storePendingInvitation({
+            invitationId: invitationInfo.invitationId,
+            token: invitationInfo.token,
+            organizationId: invitationInfo.organizationId,
+          });
+        }
+
         // Wait a moment to ensure cookies are set
         await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -78,12 +119,40 @@ function CallbackContent() {
 
         const userProfile = await getProfile(token);
 
+        // Check for pending invitations first - either from URL or localStorage
+        const pendingInvitation = getPendingInvitation();
+        const hasInvitationContext = invitationInfo || pendingInvitation;
+
+        if (hasInvitationContext) {
+          // Redirect to invitation acceptance page if we have invitation context
+          const invitationToken =
+            invitationInfo?.token || pendingInvitation?.token;
+          const invitationId =
+            invitationInfo?.invitationId || pendingInvitation?.invitationId;
+
+          if (invitationToken) {
+            const params = new URLSearchParams({ token: invitationToken });
+            if (invitationId) {
+              params.set("invitation_id", invitationId);
+            }
+            router.push(`/invitations/accept?${params.toString()}`);
+            return;
+          }
+        }
+
+        // Use next path if provided (non-invitation URLs)
+        if (nextPath && !nextPath.includes("/invitations/accept")) {
+          router.push(nextPath);
+          return;
+        }
+
+        // Default fallback path
         const fallbackPath =
           userProfile.organizations && userProfile.organizations.length > 0
             ? "/mcp-servers"
             : "/onboarding/organization";
 
-        router.push(nextPath ?? fallbackPath);
+        router.push(fallbackPath);
       } catch (error: unknown) {
         console.error("OAuth callback error:", error);
 
@@ -101,7 +170,7 @@ function CallbackContent() {
     };
 
     handleOAuthCallback();
-  }, [nextPath, router, searchParams]);
+  }, [nextPath, router, searchParams, invitationInfo]);
 
   return (
     <div className="min-h-screen relative">

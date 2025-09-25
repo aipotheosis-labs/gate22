@@ -13,6 +13,7 @@ export interface EmailRegistrationRequest {
   name: string;
   email: string;
   password: string;
+  redirect_path?: string;
 }
 
 export interface TokenResponse {

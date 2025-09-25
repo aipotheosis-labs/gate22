@@ -51,6 +51,7 @@ function SignupPageContent() {
       name,
       email,
       password,
+      redirect_path: nextPath ?? undefined,
     });
 
     if (!success) {

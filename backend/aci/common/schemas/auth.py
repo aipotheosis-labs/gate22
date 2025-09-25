@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from aci.common.enums import OrganizationRole
+from aci.common.url_utils import sanitize_redirect_path
 
 
 class ActAsInfo(BaseModel):
@@ -32,6 +33,13 @@ class EmailRegistrationRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100, description="User name")
     email: EmailStr = Field(min_length=1, max_length=255, description="User email")
     password: str = Field(min_length=1, max_length=255, description="User password")
+    redirect_path: str | None = Field(
+        default=None,
+        max_length=2048,
+        description=(
+            "Optional relative path used to redirect the user after email verification."
+        ),
+    )
 
     # TODO: Define password strength requirements
     @field_validator("password")
@@ -48,6 +56,18 @@ class EmailRegistrationRequest(BaseModel):
         if not re.search(r"[@$!%*?&]", v):
             raise ValueError("Password must contain a special character (@$!%*?&)")
         return v
+
+    @field_validator("redirect_path")
+    @classmethod
+    def validate_redirect_path(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+
+        sanitized = sanitize_redirect_path(v)
+        if sanitized is None:
+            raise ValueError("redirect_path must be a relative path starting with '/'")
+
+        return sanitized
 
 
 class EmailLoginRequest(BaseModel):

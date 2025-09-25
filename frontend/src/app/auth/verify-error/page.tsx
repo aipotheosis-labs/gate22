@@ -4,7 +4,8 @@ import { XCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Suspense } from "react";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
+import { Suspense, useMemo } from "react";
 
 export default function VerifyErrorPage() {
   return (
@@ -18,6 +19,18 @@ function VerifyErrorPageContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const normalizedError = error?.toLowerCase() ?? "";
+  const nextPath = useMemo(
+    () => sanitizeRedirectPath(searchParams.get("next")),
+    [searchParams],
+  );
+
+  const loginHref = nextPath
+    ? `/login?next=${encodeURIComponent(nextPath)}`
+    : "/login";
+
+  const signupHref = nextPath
+    ? `/signup?next=${encodeURIComponent(nextPath)}`
+    : "/signup";
 
   const getErrorDetails = () => {
     switch (normalizedError) {
@@ -136,7 +149,7 @@ function VerifyErrorPageContent() {
               {errorDetails.showSignUp ? (
                 <>
                   <Button asChild className="w-full h-11">
-                    <Link href="/signup">Sign Up Again</Link>
+                    <Link href={signupHref}>Sign Up Again</Link>
                   </Button>
 
                   <div className="relative">
@@ -151,13 +164,13 @@ function VerifyErrorPageContent() {
                   </div>
 
                   <Button asChild variant="outline" className="w-full h-11">
-                    <Link href="/login">Go to Sign In</Link>
+                    <Link href={loginHref}>Go to Sign In</Link>
                   </Button>
                 </>
               ) : (
                 <>
                   <Button asChild className="w-full h-11">
-                    <Link href="/login">Sign In to Your Account</Link>
+                    <Link href={loginHref}>Sign In to Your Account</Link>
                   </Button>
 
                   <div className="relative">
@@ -172,7 +185,7 @@ function VerifyErrorPageContent() {
                   </div>
 
                   <Button asChild variant="outline" className="w-full h-11">
-                    <Link href="/signup">Create New Account</Link>
+                    <Link href={signupHref}>Create New Account</Link>
                   </Button>
                 </>
               )}

@@ -30,6 +30,7 @@ from aci.common.schemas.auth import (
     OAuth2State,
     TokenResponse,
 )
+from aci.common.url_utils import sanitize_redirect_path
 from aci.control_plane import config
 from aci.control_plane import dependencies as deps
 from aci.control_plane import token_utils as token_utils
@@ -192,6 +193,7 @@ async def register(
         name=request.name,
         email=request.email,
         password=request.password,
+        redirect_path=request.redirect_path,
     )
 
     db_session.commit()
@@ -344,9 +346,11 @@ async def verify_email(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     token: str = Query(..., description="The verification token from the email"),
 ) -> RedirectResponse:
+    redirect_path: str | None = None
     try:
         # Verify the token and get verification record
-        verification, user_id = _verify_user_email(db_session, token)
+        verification, user_id, payload = _verify_user_email(db_session, token)
+        redirect_path = sanitize_redirect_path(payload.get("redirect_path"))
 
         # Mark verification as used
         verification.used_at = datetime.datetime.now(datetime.UTC)
@@ -365,6 +369,8 @@ async def verify_email(
 
         # Redirect to frontend with success
         success_url = f"{config.FRONTEND_URL}/auth/verify-success"
+        if redirect_path:
+            success_url = f"{success_url}?{urlencode({'next': redirect_path})}"
         return RedirectResponse(success_url, status_code=status.HTTP_302_FOUND)
     except (
         InvalidEmailVerificationTokenError,
@@ -377,12 +383,16 @@ async def verify_email(
         # Redirect to frontend with specific error
         error_param = EMAIL_VERIFICATION_ERROR_PARAMS.get(type(e), "verification_failed")
         error_url = f"{config.FRONTEND_URL}/auth/verify-error?error={error_param}"
+        if redirect_path:
+            error_url = f"{error_url}&{urlencode({'next': redirect_path})}"
         return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
     except Exception as e:
         # Log unexpected errors
         logger.error(f"Unexpected error during email verification: {e!s}")
         # Redirect to frontend with generic error
         error_url = f"{config.FRONTEND_URL}/auth/verify-error?error=verification_failed"
+        if redirect_path:
+            error_url = f"{error_url}&{urlencode({'next': redirect_path})}"
         return RedirectResponse(error_url, status_code=status.HTTP_302_FOUND)
 
 
@@ -454,6 +464,7 @@ async def _register_user_with_email(
     name: str,
     email: str,
     password: str,
+    redirect_path: str | None = None,
 ) -> tuple[User, dict[str, Any] | None]:
     """
     Register a new user with email and send verification email.
@@ -509,6 +520,7 @@ async def _register_user_with_email(
         email=email,
         verification_type=verification_type.value,
         expires_in_minutes=config.EMAIL_VERIFICATION_EXPIRE_MINUTES,
+        extra_claims={"redirect_path": redirect_path} if redirect_path else None,
     )
 
     # Create verification URL
@@ -538,10 +550,10 @@ async def _register_user_with_email(
 def _verify_user_email(
     db_session: Session,
     token: str,
-) -> tuple[UserVerification, UUID]:
+) -> tuple[UserVerification, UUID, dict[str, Any]]:
     """
     Verify a user's email using the verification token.
-    Returns the verification record and user_id.
+    Returns the verification record, user_id, and decoded payload.
     Raises exceptions for various error conditions.
     """
     verification_type = UserVerificationType.EMAIL_VERIFICATION
@@ -587,4 +599,4 @@ def _verify_user_email(
     if verification.user_id != user_id:
         raise EmailVerificationTokenMismatchError("The verification token does not match the user")
 
-    return verification, user_id
+    return verification, user_id, payload
