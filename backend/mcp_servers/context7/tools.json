@@ -16,9 +16,7 @@
           "description": "Library name to search for and retrieve a Context7-compatible library ID."
         }
       },
-      "required": [
-        "libraryName"
-      ],
+      "required": ["libraryName"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -48,9 +46,7 @@
           "description": "Maximum number of tokens of documentation to retrieve (default: 10000). Higher values provide more context but consume more tokens."
         }
       },
-      "required": [
-        "context7CompatibleLibraryID"
-      ],
+      "required": ["context7CompatibleLibraryID"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }

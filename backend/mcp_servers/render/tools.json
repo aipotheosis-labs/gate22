@@ -31,32 +31,17 @@
         "plan": {
           "default": "free",
           "description": "Pricing plan for the Key Value instance",
-          "enum": [
-            "free",
-            "starter",
-            "standard",
-            "pro",
-            "pro_plus"
-          ],
+          "enum": ["free", "starter", "standard", "pro", "pro_plus"],
           "type": "string"
         },
         "region": {
           "default": "oregon",
           "description": "Region where the Key Value instance will be deployed",
-          "enum": [
-            "oregon",
-            "frankfurt",
-            "singapore",
-            "ohio",
-            "virginia"
-          ],
+          "enum": ["oregon", "frankfurt", "singapore", "ohio", "virginia"],
           "type": "string"
         }
       },
-      "required": [
-        "name",
-        "plan"
-      ],
+      "required": ["name", "plan"],
       "type": "object"
     }
   },
@@ -110,13 +95,7 @@
         },
         "region": {
           "description": "Region where the database will be deployed",
-          "enum": [
-            "oregon",
-            "frankfurt",
-            "singapore",
-            "ohio",
-            "virginia"
-          ],
+          "enum": ["oregon", "frankfurt", "singapore", "ohio", "virginia"],
           "type": "string"
         },
         "version": {
@@ -127,10 +106,7 @@
           "type": "number"
         }
       },
-      "required": [
-        "name",
-        "plan"
-      ],
+      "required": ["name", "plan"],
       "type": "object"
     }
   },
@@ -148,10 +124,7 @@
         "autoDeploy": {
           "default": "yes",
           "description": "Whether to automatically deploy the service when the specified branch is updated. Defaults to 'yes'.",
-          "enum": [
-            "yes",
-            "no"
-          ],
+          "enum": ["yes", "no"],
           "type": "string"
         },
         "branch": {
@@ -176,10 +149,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "key",
-              "value"
-            ],
+            "required": ["key", "value"],
             "type": "object"
           },
           "type": "array"
@@ -198,10 +168,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "name",
-        "buildCommand"
-      ],
+      "required": ["name", "buildCommand"],
       "type": "object"
     }
   },
@@ -219,10 +186,7 @@
         "autoDeploy": {
           "default": "yes",
           "description": "Whether to automatically deploy the service when the specified branch is updated. Defaults to 'yes'.",
-          "enum": [
-            "yes",
-            "no"
-          ],
+          "enum": ["yes", "no"],
           "type": "string"
         },
         "branch": {
@@ -247,10 +211,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "key",
-              "value"
-            ],
+            "required": ["key", "value"],
             "type": "object"
           },
           "type": "array"
@@ -262,26 +223,13 @@
         "plan": {
           "default": "starter",
           "description": "The pricing plan for your service. Different plans offer different levels of resources and features.",
-          "enum": [
-            "starter",
-            "standard",
-            "pro",
-            "pro_max",
-            "pro_plus",
-            "pro_ultra"
-          ],
+          "enum": ["starter", "standard", "pro", "pro_max", "pro_plus", "pro_ultra"],
           "type": "string"
         },
         "region": {
           "default": "oregon",
           "description": "The geographic region where your service will be deployed. Defaults to Oregon. Choose the region closest to your users for best performance.",
-          "enum": [
-            "oregon",
-            "frankfurt",
-            "singapore",
-            "ohio",
-            "virginia"
-          ],
+          "enum": ["oregon", "frankfurt", "singapore", "ohio", "virginia"],
           "type": "string"
         },
         "repo": {
@@ -290,15 +238,7 @@
         },
         "runtime": {
           "description": "The runtime environment for your service. This determines how your service is built and run.",
-          "enum": [
-            "node",
-            "python",
-            "go",
-            "rust",
-            "ruby",
-            "elixir",
-            "docker"
-          ],
+          "enum": ["node", "python", "go", "rust", "ruby", "elixir", "docker"],
           "type": "string"
         },
         "startCommand": {
@@ -306,12 +246,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "name",
-        "runtime",
-        "buildCommand",
-        "startCommand"
-      ],
+      "required": ["name", "runtime", "buildCommand", "startCommand"],
       "type": "object"
     }
   },
@@ -335,10 +270,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "serviceId",
-        "deployId"
-      ],
+      "required": ["serviceId", "deployId"],
       "type": "object"
     }
   },
@@ -358,9 +290,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "keyValueId"
-      ],
+      "required": ["keyValueId"],
       "type": "object"
     }
   },
@@ -377,20 +307,13 @@
       "properties": {
         "aggregateHttpRequestCountsBy": {
           "description": "Field to aggregate HTTP request metrics by. Only supported for http_request_count metric. Options: host (aggregate by request host), statusCode (aggregate by HTTP status code). When not specified, returns total request counts.",
-          "enum": [
-            "host",
-            "statusCode"
-          ],
+          "enum": ["host", "statusCode"],
           "type": "string"
         },
         "cpuUsageAggregationMethod": {
           "default": "AVG",
           "description": "Method for aggregating metric values over time intervals. Only supported for CPU usage metrics. Options: AVG, MAX, MIN. Defaults to AVG.",
-          "enum": [
-            "AVG",
-            "MAX",
-            "MIN"
-          ],
+          "enum": ["AVG", "MAX", "MIN"],
           "type": "string"
         },
         "endTime": {
@@ -445,10 +368,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "resourceId",
-        "metricTypes"
-      ],
+      "required": ["resourceId", "metricTypes"],
       "type": "object"
     }
   },
@@ -468,9 +388,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "postgresId"
-      ],
+      "required": ["postgresId"],
       "type": "object"
     }
   },
@@ -504,9 +422,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "serviceId"
-      ],
+      "required": ["serviceId"],
       "type": "object"
     }
   },
@@ -538,9 +454,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "serviceId"
-      ],
+      "required": ["serviceId"],
       "type": "object"
     }
   },
@@ -572,10 +486,7 @@
         "direction": {
           "default": "backward",
           "description": "The direction to query logs for. Backward will return most recent logs first. Forward will start with the oldest logs in the time range.",
-          "enum": [
-            "backward",
-            "forward"
-          ],
+          "enum": ["backward", "forward"],
           "type": "string"
         },
         "endTime": {
@@ -598,14 +509,7 @@
         },
         "label": {
           "description": "The label to list values for.",
-          "enum": [
-            "host",
-            "instance",
-            "level",
-            "method",
-            "statusCode",
-            "type"
-          ],
+          "enum": ["host", "instance", "level", "method", "statusCode", "type"],
           "type": "string"
         },
         "level": {
@@ -662,10 +566,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "label",
-        "resource"
-      ],
+      "required": ["label", "resource"],
       "type": "object"
     }
   },
@@ -683,10 +584,7 @@
         "direction": {
           "default": "backward",
           "description": "The direction to query logs for. Backward will return most recent logs first. Forward will start with the oldest logs in the time range.",
-          "enum": [
-            "backward",
-            "forward"
-          ],
+          "enum": ["backward", "forward"],
           "type": "string"
         },
         "endTime": {
@@ -767,9 +665,7 @@
           "type": "array"
         }
       },
-      "required": [
-        "resource"
-      ],
+      "required": ["resource"],
       "type": "object"
     }
   },
@@ -841,10 +737,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "postgresId",
-        "sql"
-      ],
+      "required": ["postgresId", "sql"],
       "type": "object"
     }
   },
@@ -864,9 +757,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "ownerID"
-      ],
+      "required": ["ownerID"],
       "type": "object"
     }
   },
@@ -895,10 +786,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "key",
-              "value"
-            ],
+            "required": ["key", "value"],
             "type": "object"
           },
           "type": "array"
@@ -913,10 +801,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "serviceId",
-        "envVars"
-      ],
+      "required": ["serviceId", "envVars"],
       "type": "object"
     }
   },
@@ -936,9 +821,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "serviceId"
-      ],
+      "required": ["serviceId"],
       "type": "object"
     }
   },
@@ -958,9 +841,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "serviceId"
-      ],
+      "required": ["serviceId"],
       "type": "object"
     }
   }

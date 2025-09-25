@@ -10,6 +10,17 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
 
+  - repo: local
+    hooks:
+      - id: prettier-json
+        name: prettier (json)
+        language: node
+        entry: prettier
+        args: ["--write"]
+        files: \.(json|jsonc)$
+        additional_dependencies:
+          - prettier@3.6.2
+
   # Frontend checks
   - repo: local
     hooks:

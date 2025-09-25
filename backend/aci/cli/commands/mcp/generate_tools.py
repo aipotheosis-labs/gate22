@@ -79,6 +79,9 @@ async def _get_auth(
             .limit(1)
         ).scalar()
         if mcp_server_configuration is None:
+            console.print(
+                f"[yellow]Warning: MCP server configuration for {mcp_server.name} not found, skipping tools generation[/yellow]"  # noqa: E501
+            )
             raise click.ClickException(f"MCP server configuration for {mcp_server.name} not found")
 
         # find one connected account for the mcp server configuration
@@ -88,6 +91,9 @@ async def _get_auth(
             .limit(1)
         ).scalar()
         if connected_account is None:
+            console.print(
+                f"[yellow]Warning: Connected account for {mcp_server.name} not found, skipping tools generation[/yellow]"  # noqa: E501
+            )
             raise click.ClickException(f"Connected account for {mcp_server.name} not found")
 
         # Get the auth config and credentials

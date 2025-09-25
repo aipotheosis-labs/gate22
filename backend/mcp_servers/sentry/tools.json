@@ -52,9 +52,7 @@
           "description": "The region URL for the organization you're querying, if known. For Sentry's Cloud Service (sentry.io), this is typically the region-specific URL like 'https://us.sentry.io'. For self-hosted Sentry installations, this parameter is usually not needed and should be omitted. You can find the correct regionUrl from the organization details using the `find_organizations()` tool."
         }
       },
-      "required": [
-        "organizationSlug"
-      ],
+      "required": ["organizationSlug"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -80,9 +78,7 @@
           "description": "The region URL for the organization you're querying, if known. For Sentry's Cloud Service (sentry.io), this is typically the region-specific URL like 'https://us.sentry.io'. For self-hosted Sentry installations, this parameter is usually not needed and should be omitted. You can find the correct regionUrl from the organization details using the `find_organizations()` tool."
         }
       },
-      "required": [
-        "organizationSlug"
-      ],
+      "required": ["organizationSlug"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -116,9 +112,7 @@
           "description": "Search for versions which contain the provided string."
         }
       },
-      "required": [
-        "organizationSlug"
-      ],
+      "required": ["organizationSlug"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -187,10 +181,7 @@
           "description": "The trace ID. e.g. `a4d1aae7216b47ff8117cf4e09ce9d0a`"
         }
       },
-      "required": [
-        "organizationSlug",
-        "traceId"
-      ],
+      "required": ["organizationSlug", "traceId"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -228,11 +219,7 @@
           "description": "The region URL for the organization you're querying, if known. For Sentry's Cloud Service (sentry.io), this is typically the region-specific URL like 'https://us.sentry.io'. For self-hosted Sentry installations, this parameter is usually not needed and should be omitted. You can find the correct regionUrl from the organization details using the `find_organizations()` tool."
         }
       },
-      "required": [
-        "organizationSlug",
-        "projectSlug",
-        "eventId"
-      ],
+      "required": ["organizationSlug", "projectSlug", "eventId"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -268,12 +255,7 @@
         },
         "status": {
           "type": "string",
-          "enum": [
-            "resolved",
-            "resolvedInNextRelease",
-            "unresolved",
-            "ignored"
-          ],
+          "enum": ["resolved", "resolvedInNextRelease", "unresolved", "ignored"],
           "description": "The new status for the issue. Valid values are 'resolved', 'resolvedInNextRelease', 'unresolved', and 'ignored'."
         },
         "assignedTo": {
@@ -327,10 +309,7 @@
           "description": "Include explanation of how the query was translated"
         }
       },
-      "required": [
-        "organizationSlug",
-        "naturalLanguageQuery"
-      ],
+      "required": ["organizationSlug", "naturalLanguageQuery"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -360,10 +339,7 @@
           "description": "The name of the team to create."
         }
       },
-      "required": [
-        "organizationSlug",
-        "name"
-      ],
+      "required": ["organizationSlug", "name"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -401,11 +377,7 @@
           "description": "The platform for the project. e.g., python, javascript, react, etc."
         }
       },
-      "required": [
-        "organizationSlug",
-        "teamSlug",
-        "name"
-      ],
+      "required": ["organizationSlug", "teamSlug", "name"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -451,10 +423,7 @@
           "description": "The team to assign this project to. Note: this will replace the current team assignment."
         }
       },
-      "required": [
-        "organizationSlug",
-        "projectSlug"
-      ],
+      "required": ["organizationSlug", "projectSlug"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -488,11 +457,7 @@
           "description": "The name of the DSN to create, for example 'Production'."
         }
       },
-      "required": [
-        "organizationSlug",
-        "projectSlug",
-        "name"
-      ],
+      "required": ["organizationSlug", "projectSlug", "name"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -522,10 +487,7 @@
           "description": "The project's slug. You can find a list of existing projects in an organization using the `find_projects()` tool."
         }
       },
-      "required": [
-        "organizationSlug",
-        "projectSlug"
-      ],
+      "required": ["organizationSlug", "projectSlug"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -726,9 +688,7 @@
           "description": "Optional guide filter to limit search results to specific documentation sections. Use either a platform (e.g., 'javascript', 'python') or platform/guide combination (e.g., 'javascript/nextjs', 'python/django')."
         }
       },
-      "required": [
-        "query"
-      ],
+      "required": ["query"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -750,9 +710,7 @@
           "description": "The documentation path (e.g., '/platforms/javascript/guides/nextjs.md'). Get this from search_docs results."
         }
       },
-      "required": [
-        "path"
-      ],
+      "required": ["path"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -799,10 +757,7 @@
           "description": "Include explanation of how the query was translated"
         }
       },
-      "required": [
-        "organizationSlug",
-        "naturalLanguageQuery"
-      ],
+      "required": ["organizationSlug", "naturalLanguageQuery"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }

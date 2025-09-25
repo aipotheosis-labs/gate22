@@ -16,9 +16,7 @@
           "description": "The issue ID"
         }
       },
-      "required": [
-        "issueId"
-      ],
+      "required": ["issueId"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -48,10 +46,7 @@
           "description": "The content of the comment as Markdown"
         }
       },
-      "required": [
-        "issueId",
-        "body"
-      ],
+      "required": ["issueId", "body"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -74,17 +69,11 @@
         },
         "type": {
           "type": "string",
-          "enum": [
-            "current",
-            "previous",
-            "next"
-          ],
+          "enum": ["current", "previous", "next"],
           "description": "Retrieve the current, previous, next, or all cycles. If no type is provided all cycles in the team will be returned"
         }
       },
-      "required": [
-        "teamId"
-      ],
+      "required": ["teamId"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -106,9 +95,7 @@
           "description": "The document ID or slug"
         }
       },
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -141,10 +128,7 @@
         },
         "orderBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt"
-          ],
+          "enum": ["createdAt", "updatedAt"],
           "default": "updatedAt",
           "description": "The order in which to return results"
         },
@@ -199,9 +183,7 @@
           "description": "The issue ID"
         }
       },
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -234,10 +216,7 @@
         },
         "orderBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt"
-          ],
+          "enum": ["createdAt", "updatedAt"],
           "default": "updatedAt",
           "description": "The order in which to return results"
         },
@@ -372,19 +351,13 @@
                 "minLength": 1
               }
             },
-            "required": [
-              "url",
-              "title"
-            ],
+            "required": ["url", "title"],
             "additionalProperties": false
           },
           "description": "Array of link objects to attach to the issue. Each object must contain a valid `url` and a non-empty `title`."
         }
       },
-      "required": [
-        "title",
-        "team"
-      ],
+      "required": ["title", "team"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -470,18 +443,13 @@
                 "minLength": 1
               }
             },
-            "required": [
-              "url",
-              "title"
-            ],
+            "required": ["url", "title"],
             "additionalProperties": false
           },
           "description": "Array of link objects to attach to the issue. Each object must contain a valid `url` and a non-empty `title`."
         }
       },
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -503,9 +471,7 @@
           "description": "The team name or ID"
         }
       },
-      "required": [
-        "team"
-      ],
+      "required": ["team"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -535,11 +501,7 @@
           "description": "The team name or ID"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "team"
-      ],
+      "required": ["id", "name", "team"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -572,10 +534,7 @@
         },
         "orderBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt"
-          ],
+          "enum": ["createdAt", "updatedAt"],
           "default": "updatedAt",
           "description": "The order in which to return results"
         }
@@ -612,10 +571,7 @@
         },
         "orderBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt"
-          ],
+          "enum": ["createdAt", "updatedAt"],
           "default": "updatedAt",
           "description": "The order in which to return results"
         },
@@ -670,9 +626,7 @@
           "description": "Whether this is label group (cannot be applied to issues directly)"
         }
       },
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -705,10 +659,7 @@
         },
         "orderBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt"
-          ],
+          "enum": ["createdAt", "updatedAt"],
           "default": "updatedAt",
           "description": "The order in which to return results"
         },
@@ -751,9 +702,7 @@
           "description": "The ID or name of the project to retrieve"
         }
       },
-      "required": [
-        "query"
-      ],
+      "required": ["query"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -806,10 +755,7 @@
           "description": "The UUID of the user to set as project lead"
         }
       },
-      "required": [
-        "name",
-        "teamId"
-      ],
+      "required": ["name", "teamId"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -862,9 +808,7 @@
           "description": "The UUID of the user to set as project lead"
         }
       },
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -913,10 +857,7 @@
         },
         "orderBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt"
-          ],
+          "enum": ["createdAt", "updatedAt"],
           "default": "updatedAt",
           "description": "The order in which to return results"
         },
@@ -959,9 +900,7 @@
           "description": "The UUID, key, or name of the team to retrieve"
         }
       },
-      "required": [
-        "query"
-      ],
+      "required": ["query"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -1004,9 +943,7 @@
           "description": "The UUID or name of the user to retrieve"
         }
       },
-      "required": [
-        "query"
-      ],
+      "required": ["query"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
@@ -1033,9 +970,7 @@
           "description": "The page number"
         }
       },
-      "required": [
-        "query"
-      ],
+      "required": ["query"],
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
