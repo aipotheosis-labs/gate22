@@ -248,7 +248,7 @@ export default function MCPServerDetailPage() {
                     <>
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
                       <span className="text-sm text-muted-foreground">
-                        Operational faccount is configured
+                        Operational account is configured
                       </span>
                     </>
                   ) : (

@@ -101,7 +101,7 @@ export default function AddCustomMCPServerPage() {
 
   // Check if there's an operational account for the created server
   const operationalConfig = operationalConfigs?.data?.find(
-    (config) => config.mcp_server.name === createdServer?.name,
+    (config) => config.mcp_server.id === createdServer?.id,
   );
   const hasOperationalAccount =
     operationalConfig?.has_operational_connected_account || false;

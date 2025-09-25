@@ -30,6 +30,18 @@ class MCPServerPartialUpdate(BaseModel):
     last_synced_at: datetime | None = Field(default=None)
 
 
+def _validate_mcp_server_name(v: str) -> str:
+    msg = (
+        "name must be uppercase, contain only letters, numbers and underscores, not "
+        "have consecutive underscores, and not start or end with an underscore"
+    )
+
+    if v != mcp_tool_utils.sanitize_canonical_name(v):
+        raise ValueError(msg)
+
+    return v
+
+
 class MCPServerUpsert(BaseModel):
     """Used for Upserting data to the database"""
 
@@ -46,15 +58,7 @@ class MCPServerUpsert(BaseModel):
 
     @field_validator("name")
     def validate_name(cls, v: str) -> str:
-        msg = (
-            "name must be uppercase, contain only letters, numbers and underscores, not "
-            "have consecutive underscores, and not start or end with an underscore"
-        )
-
-        if v != mcp_tool_utils.sanitize_canonical_name(v):
-            raise ValueError(msg)
-
-        return v
+        return _validate_mcp_server_name(v)
 
 
 class PublicMCPServerUpsertRequest(MCPServerUpsert):
@@ -87,15 +91,7 @@ class CustomMCPServerCreateRequest(BaseModel):
 
     @field_validator("name")
     def validate_name(cls, v: str) -> str:
-        msg = (
-            "name must be uppercase, contain only letters, numbers and underscores, not "
-            "have consecutive underscores, and not start or end with an underscore"
-        )
-
-        if v != mcp_tool_utils.sanitize_canonical_name(v):
-            raise ValueError(msg)
-
-        return v
+        return _validate_mcp_server_name(v)
 
     @model_validator(mode="after")
     def validate_operational_account_auth_type(self) -> "CustomMCPServerCreateRequest":
