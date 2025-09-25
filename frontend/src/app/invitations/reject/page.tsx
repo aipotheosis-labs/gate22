@@ -314,12 +314,10 @@ function RejectInvitationPageContent() {
             tokenValue,
             pendingInvitation.token,
           );
-          if (!detail) {
-            if (!cancelled) {
-              setLoadError("Failed to load invitation details");
-            }
-            return;
-          }
+        }
+
+        if (!detail) {
+          throw new Error("Failed to load invitation details");
         }
 
         if (cancelled) {
@@ -371,9 +369,9 @@ function RejectInvitationPageContent() {
     }
 
     // Sanitize redirect path to prevent open redirect attacks
-    const sanitizedPath = rejectPath.startsWith('/invitations/reject')
+    const sanitizedPath = rejectPath.startsWith("/invitations/reject")
       ? rejectPath
-      : '/invitations/reject';
+      : "/invitations/reject";
 
     redirectingRef.current = true;
     router.replace(`/login?next=${encodeURIComponent(sanitizedPath)}`);
@@ -497,16 +495,24 @@ function RejectInvitationPageContent() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3 sm:flex-row">
             <Button asChild className="w-full sm:w-auto">
-              <Link href={`/login?next=${encodeURIComponent(
-                rejectPath.startsWith('/invitations/reject') ? rejectPath : '/invitations/reject'
-              )}`}>
+              <Link
+                href={`/login?next=${encodeURIComponent(
+                  rejectPath.startsWith("/invitations/reject")
+                    ? rejectPath
+                    : "/invitations/reject",
+                )}`}
+              >
                 Sign in
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href={`/signup?next=${encodeURIComponent(
-                rejectPath.startsWith('/invitations/reject') ? rejectPath : '/invitations/reject'
-              )}`}>
+              <Link
+                href={`/signup?next=${encodeURIComponent(
+                  rejectPath.startsWith("/invitations/reject")
+                    ? rejectPath
+                    : "/invitations/reject",
+                )}`}
+              >
                 Create account
               </Link>
             </Button>

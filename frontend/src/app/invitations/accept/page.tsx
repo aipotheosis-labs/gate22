@@ -315,12 +315,10 @@ function AcceptInvitationPageContent() {
             tokenValue,
             pendingInvitation.token,
           );
-          if (!detail) {
-            if (!cancelled) {
-              setLoadError("Failed to load invitation details");
-            }
-            return;
-          }
+        }
+
+        if (!detail) {
+          throw new Error("Failed to load invitation details");
         }
 
         if (cancelled) {
@@ -372,9 +370,9 @@ function AcceptInvitationPageContent() {
     }
 
     // Sanitize redirect path to prevent open redirect attacks
-    const sanitizedPath = acceptPath.startsWith('/invitations/accept')
+    const sanitizedPath = acceptPath.startsWith("/invitations/accept")
       ? acceptPath
-      : '/invitations/accept';
+      : "/invitations/accept";
 
     redirectingRef.current = true;
     router.replace(`/login?next=${encodeURIComponent(sanitizedPath)}`);
@@ -501,16 +499,24 @@ function AcceptInvitationPageContent() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3 sm:flex-row">
             <Button asChild className="w-full sm:w-auto">
-              <Link href={`/signup?next=${encodeURIComponent(
-                acceptPath.startsWith('/invitations/accept') ? acceptPath : '/invitations/accept'
-              )}`}>
+              <Link
+                href={`/signup?next=${encodeURIComponent(
+                  acceptPath.startsWith("/invitations/accept")
+                    ? acceptPath
+                    : "/invitations/accept",
+                )}`}
+              >
                 Create account
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href={`/login?next=${encodeURIComponent(
-                acceptPath.startsWith('/invitations/accept') ? acceptPath : '/invitations/accept'
-              )}`}>
+              <Link
+                href={`/login?next=${encodeURIComponent(
+                  acceptPath.startsWith("/invitations/accept")
+                    ? acceptPath
+                    : "/invitations/accept",
+                )}`}
+              >
                 Sign in
               </Link>
             </Button>

@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import {
   listOrganizationUsers,
   removeUser,
-  inviteToOrganization,
 } from "@/features/settings/api/organization";
 import { QUERY_KEYS } from "@/features/settings/constants";
 import { toast } from "sonner";
 import { OrganizationUser } from "@/features/settings/types/organization.types";
+import { useMemberInvitationMutation } from "@/features/members/hooks/use-member-invitation-mutation";
 
 export function useOrganizationMembers() {
   const { accessToken, activeOrg, user } = useMetaInfo();
@@ -43,24 +43,8 @@ export function useOrganizationMembers() {
     },
   });
 
-  const memberInvitationMutation = useMutation({
-    mutationFn: ({ email, role }: { email: string; role: string }) =>
-      inviteToOrganization(accessToken, activeOrg.orgId, email, role),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.MEMBERS(activeOrg?.orgId || ""),
-      });
-      if (activeOrg?.orgId) {
-        queryClient.invalidateQueries({
-          queryKey: ["org-invitations", activeOrg.orgId],
-        });
-      }
-      toast.success(`Invitation sent to ${variables.email}`);
-    },
-    onError: (error) => {
-      console.error("Failed to invite user:", error);
-      toast.error("Failed to send invitation. Please try again.");
-    },
+  const memberInvitationMutation = useMemberInvitationMutation({
+    invalidateMembers: true,
   });
 
   return {
