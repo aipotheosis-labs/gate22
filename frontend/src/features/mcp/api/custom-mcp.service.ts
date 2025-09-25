@@ -32,7 +32,6 @@ export interface AuthConfig {
 export interface CreateCustomMCPServerRequest {
   name: string;
   url: string;
-  transport_type: string;
   description: string;
   logo?: string;
   categories: string[];

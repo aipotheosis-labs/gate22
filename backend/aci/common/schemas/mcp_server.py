@@ -65,15 +65,37 @@ class PublicMCPServerUpsertRequest(MCPServerUpsert):
     pass
 
 
-class CustomMCPServerCreateRequest(MCPServerUpsert):
+class CustomMCPServerCreateRequest(BaseModel):
     """Used for API schema validation"""
 
     model_config = ConfigDict(extra="forbid")
 
     operational_account_auth_type: AuthType
 
+    name: str
+    url: str
+
+    # Transport Type will be inferred from the url if not provided
+    transport_type: MCPServerTransportType | None = None
+
+    description: str
     # Logo will be attempted to be discovered in API logic
-    logo: str | None = None  # type: ignore[assignment]
+    logo: str | None = None
+    categories: list[str]
+    auth_configs: list[AuthConfig]
+    server_metadata: MCPServerMetadata
+
+    @field_validator("name")
+    def validate_name(cls, v: str) -> str:
+        msg = (
+            "name must be uppercase, contain only letters, numbers and underscores, not "
+            "have consecutive underscores, and not start or end with an underscore"
+        )
+
+        if v != mcp_tool_utils.sanitize_canonical_name(v):
+            raise ValueError(msg)
+
+        return v
 
     @model_validator(mode="after")
     def validate_operational_account_auth_type(self) -> "CustomMCPServerCreateRequest":

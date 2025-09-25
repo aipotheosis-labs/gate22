@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import embeddings, utils
 from aci.common.db import crud
-from aci.common.enums import ConnectedAccountOwnership, OrganizationRole
+from aci.common.enums import ConnectedAccountOwnership, MCPServerTransportType, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import (
@@ -173,8 +173,18 @@ async def create_custom_mcp_server(
 
     mcp_server_data.name = canonical_name
 
+    # Logo will be attempted to be discovered in API logic if not provided
     if not mcp_server_data.logo:
         mcp_server_data.logo = _discover_mcp_server_logo(mcp_server_data.url)
+
+    # Transport Type will be inferred from the url if not provided
+    if not mcp_server_data.transport_type:
+        if mcp_server_data.url.endswith("sse") and (
+            mcp_server_data.url.startswith("http") or mcp_server_data.url.startswith("https")
+        ):
+            mcp_server_data.transport_type = MCPServerTransportType.SSE
+        else:
+            mcp_server_data.transport_type = MCPServerTransportType.STREAMABLE_HTTP
 
     mcp_server = crud.mcp_servers.create_mcp_server(
         context.db_session,

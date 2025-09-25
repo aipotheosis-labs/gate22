@@ -49,7 +49,6 @@ export default function AddCustomMCPServerPage() {
     oauth2: false,
   });
   const [url, setUrl] = useState("");
-  const [transportType, setTransportType] = useState<string>("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [categories] = useState<string[]>([]);
@@ -238,12 +237,6 @@ export default function AddCustomMCPServerPage() {
       return;
     }
 
-    // Validate transport type
-    if (!transportType) {
-      toast.error("Please select a transport type");
-      return;
-    }
-
     if (!accessToken) {
       toast.error("Authentication required. Please log in.");
       return;
@@ -340,7 +333,6 @@ export default function AddCustomMCPServerPage() {
     const payload = {
       name: name.trim(),
       url: url.trim(),
-      transport_type: transportType,
       description: description.trim(),
       categories: categories,
       auth_configs: authConfigs,
@@ -577,28 +569,6 @@ export default function AddCustomMCPServerPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="transportType">
-                Transport Type <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={transportType}
-                onValueChange={setTransportType}
-                disabled={oAuth2Discovery.isPending}
-                required
-              >
-                <SelectTrigger className="max-w-md">
-                  <SelectValue placeholder="Select transport type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="streamable_http">
-                    Streamable HTTP
-                  </SelectItem>
-                  <SelectItem value="sse">SSE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
@@ -680,8 +650,7 @@ export default function AddCustomMCPServerPage() {
                   createCustomMCPServer.isPending ||
                   !name.trim() ||
                   !hasSelectedAuthMethod() ||
-                  !url.trim() ||
-                  !transportType
+                  !url.trim()
                 }
                 className="flex items-center gap-2"
               >
