@@ -69,8 +69,8 @@ services:
       - ./aci/mcp:/workdir/aci/mcp
       - ./aci/common:/workdir/aci/common
     ports:
-      - "8001:8001"
-    command: uvicorn aci.mcp.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8001 --no-access-log
+      - "8001:8000"
+    command: uvicorn aci.mcp.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8000 --no-access-log
     depends_on:
       db:
         condition: service_healthy
@@ -91,8 +91,8 @@ services:
       - ./aci/virtual_mcp:/workdir/aci/virtual_mcp
       - ./aci/common:/workdir/aci/common
     ports:
-      - "8002:8002"
-    command: uvicorn aci.virtual_mcp.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8002 --no-access-log
+      - "8002:8000"
+    command: uvicorn aci.virtual_mcp.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8000 --no-access-log
     depends_on:
       db:
         condition: service_healthy
