@@ -293,6 +293,10 @@ async def delete_mcp_server(
     )
 
     crud.mcp_servers.delete_mcp_server(context.db_session, mcp_server_id)
+
+    # TODO: Remove all Orphan records related to this MCP server
+    # (MCP server configurations, Connected Accounts, MCPServerBundle)
+
     context.db_session.commit()
 
 

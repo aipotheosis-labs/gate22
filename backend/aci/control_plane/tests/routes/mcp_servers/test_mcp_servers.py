@@ -399,20 +399,42 @@ def test_delete_mcp_server(
     [MCPServerBelongsTo.self, MCPServerBelongsTo.another_org, MCPServerBelongsTo.public],
 )
 @pytest.mark.parametrize(
-    "update_data",
+    "update_data,should_regen_embedding",
     [
-        MCPServerPartialUpdateRequest(
-            description="Updated description",
-            logo="https://updated-logo.com/logo.png",
-            categories=["updated", "test"],
+        (
+            MCPServerPartialUpdateRequest(
+                description="Updated description",
+                logo="https://updated-logo.com/logo.png",
+                categories=["updated", "test"],
+            ),
+            True,
         ),
-        MCPServerPartialUpdateRequest(
-            description="Updated description",
+        (
+            MCPServerPartialUpdateRequest(
+                categories=["updated", "test"],
+                logo="https://updated-logo.com/logo.png",
+            ),
+            True,
         ),
-        MCPServerPartialUpdateRequest(),
+        (
+            MCPServerPartialUpdateRequest(
+                description="Updated description",
+                logo="https://updated-logo.com/logo.png",
+            ),
+            True,
+        ),
+        (
+            MCPServerPartialUpdateRequest(
+                logo="https://updated-logo.com/logo.png",
+            ),
+            False,
+        ),
+        (MCPServerPartialUpdateRequest(), False),
     ],
 )
+@patch("aci.common.embeddings.generate_mcp_server_embedding")
 def test_update_mcp_server(
+    mock_generate_embedding: AsyncMock,
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
@@ -421,7 +443,11 @@ def test_update_mcp_server(
     access_token_fixture: str,
     mcp_server_belongs_to: MCPServerBelongsTo,
     update_data: MCPServerPartialUpdateRequest,
+    should_regen_embedding: bool,
 ) -> None:
+    # Set up mock
+    mock_generate_embedding.return_value = [0.1] * 1024
+
     access_token = request.getfixturevalue(access_token_fixture)
 
     dummy_random_organization = crud.organizations.create_organization(
@@ -493,3 +519,9 @@ def test_update_mcp_server(
         if update_data.categories is not None
         else original_mcp_server.categories
     )
+
+    # Verify the embedding was regenerated if needed
+    if should_regen_embedding:
+        assert mock_generate_embedding.call_count == 1
+    else:
+        assert mock_generate_embedding.call_count == 0
