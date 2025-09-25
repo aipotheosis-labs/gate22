@@ -5,17 +5,17 @@
 ### Upsert an MCP Server
 
 ```bash
-docker compose exec runner python -m aci.cli upsert-mcp-server --mcp-server-file ./mcp_servers/notion/server.json --secrets-file ./mcp_servers/notion/.secrets.json
+docker compose exec runner python -m aci.cli mcp upsert-server --server-file ./mcp_servers/notion/server.json
 
-docker compose exec runner python -m aci.cli upsert-mcp-server --mcp-server-file ./mcp_servers/notion/server.json --secrets-file ./mcp_servers/notion/.secrets.json --skip-dry-run
+docker compose exec runner python -m aci.cli mcp upsert-server --server-file ./mcp_servers/notion/server.json --skip-dry-run
 ```
 
 ### Upsert MCP Tools
 
 ```bash
-docker compose exec runner python -m aci.cli upsert-mcp-tools --mcp-tools-file ./mcp_servers/notion/tools.json
+docker compose exec runner python -m aci.cli mcp upsert-tools --tools-file ./mcp_servers/notion/tools.json
 
-docker compose exec runner python -m aci.cli upsert-mcp-tools --mcp-tools-file ./mcp_servers/notion/tools.json --skip-dry-run
+docker compose exec runner python -m aci.cli mcp upsert-tools --tools-file ./mcp_servers/notion/tools.json --skip-dry-run
 ```
 
 #### Create a mock organization, teams and users setting
