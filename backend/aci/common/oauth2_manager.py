@@ -54,6 +54,12 @@ class OAuth2Manager:
         # during shutdown.
         # NOTE: don't pass in scope here, otherwise it will be sent during refresh token request
         # which is not needed
+        # NOTE: that token_endpoint_auth_method is being handled smartly by authlib if None:
+        # if token_endpoint_auth_method is None:
+        #   if client_secret:
+        #     token_endpoint_auth_method = "client_secret_basic"
+        #   else:
+        #     token_endpoint_auth_method = "none"
         self.oauth2_client = AsyncOAuth2Client(
             client_id=client_id,
             client_secret=client_secret,
