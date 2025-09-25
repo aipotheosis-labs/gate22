@@ -144,6 +144,13 @@ export default function AddCustomMCPServerPage() {
         if (!manualEndpointAuthMethod || !manualClientId.trim()) {
           return false;
         }
+        // Check if client secret is required and provided
+        if (
+          manualEndpointAuthMethod.includes("client_secret_") &&
+          !manualClientSecret.trim()
+        ) {
+          return false;
+        }
       }
     }
 
@@ -400,6 +407,16 @@ export default function AddCustomMCPServerPage() {
         }
         if (!manualClientId.trim()) {
           toast.error("Please enter a client ID");
+          return;
+        }
+        // Validate client secret is provided when required by auth method
+        if (
+          manualEndpointAuthMethod.includes("client_secret_") &&
+          !manualClientSecret.trim()
+        ) {
+          toast.error(
+            "Please enter a client secret for the selected auth method",
+          );
           return;
         }
       }
@@ -983,20 +1000,25 @@ export default function AddCustomMCPServerPage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="manualClientSecret">
-                        Client Secret (optional)
-                      </Label>
-                      <Input
-                        id="manualClientSecret"
-                        type="password"
-                        placeholder="Enter client secret"
-                        value={manualClientSecret}
-                        onChange={(e) => setManualClientSecret(e.target.value)}
-                        disabled={createCustomMCPServer.isPending}
-                        className="max-w-md"
-                      />
-                    </div>
+                    {/* Client Secret - only show when auth method requires it */}
+                    {manualEndpointAuthMethod.includes("client_secret_") && (
+                      <div className="space-y-2">
+                        <Label htmlFor="manualClientSecret">
+                          Client Secret <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="manualClientSecret"
+                          type="password"
+                          placeholder="Enter client secret"
+                          value={manualClientSecret}
+                          onChange={(e) =>
+                            setManualClientSecret(e.target.value)
+                          }
+                          disabled={createCustomMCPServer.isPending}
+                          className="max-w-md"
+                        />
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label htmlFor="manualScope">Scope</Label>
