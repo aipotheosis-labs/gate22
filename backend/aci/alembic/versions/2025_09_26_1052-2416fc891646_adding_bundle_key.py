@@ -12,6 +12,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
+from aci.common.db.sql_models import BUNDLE_KEY_LENGTH
+
 
 # revision identifiers, used by Alembic.
 revision: str = '2416fc891646'
@@ -34,7 +36,7 @@ def upgrade() -> None:
 
     # Backfill bundle key for existing records
     for id in ids:
-        bundle_key = generate_alphanumeric_string(128, string.ascii_letters + string.digits)
+        bundle_key = generate_alphanumeric_string(BUNDLE_KEY_LENGTH, string.ascii_letters + string.digits)
         conn.execute(sa.text(f"UPDATE mcp_server_bundles SET bundle_key = :bundle_key WHERE id = :id"), {"bundle_key": bundle_key, "id": id})
 
     # Make bundle key nullable

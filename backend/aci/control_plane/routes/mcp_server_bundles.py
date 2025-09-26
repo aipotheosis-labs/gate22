@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import utils
 from aci.common.db import crud
+from aci.common.db.sql_models import BUNDLE_KEY_LENGTH
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server_bundle import (
@@ -84,7 +85,7 @@ def _generate_unique_mcp_server_bundle_key(db_session: Session, max_trials: int 
     """
     for _ in range(max_trials):
         bundle_key = utils.generate_alphanumeric_string(
-            128, character_pool=string.ascii_letters + string.digits
+            BUNDLE_KEY_LENGTH, character_pool=string.ascii_letters + string.digits
         )
         if not crud.mcp_server_bundles.get_mcp_server_bundle_by_bundle_key(db_session, bundle_key):
             return bundle_key

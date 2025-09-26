@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from aci.cli import config
 from aci.common import utils
 from aci.common.db import crud
+from aci.common.db.sql_models import BUNDLE_KEY_LENGTH
 from aci.common.enums import AuthType, ConnectedAccountOwnership
 from aci.common.schemas.mcp_server_bundle import MCPServerBundleCreate
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
@@ -105,7 +106,7 @@ def create_mock_mcp_configuration_helper(
             description=f"Bundle for {mcp_server_name} configuration",
             mcp_server_configuration_ids=[mcp_server_configuration.id],
         ),
-        bundle_key=utils.generate_alphanumeric_string(128),
+        bundle_key=utils.generate_alphanumeric_string(BUNDLE_KEY_LENGTH),
     )
 
     if not skip_dry_run:

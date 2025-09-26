@@ -36,6 +36,8 @@ EMBEDDING_DIMENSION = 1024
 MAX_STRING_LENGTH = 512
 MAX_ENUM_LENGTH = 50
 
+BUNDLE_KEY_LENGTH = 36
+
 
 class Base(MappedAsDataclass, DeclarativeBase):
     pass
