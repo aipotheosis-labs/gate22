@@ -1,3 +1,4 @@
+from aci.common.enums import Environment
 from aci.common.utils import check_and_get_env_variable, construct_db_url
 
 # FastAPI APP CONFIG
@@ -8,7 +9,7 @@ APP_REDOC_URL = "/redoc"
 APP_OPENAPI_URL = "/openapi.json"
 
 
-ENVIRONMENT = check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT")
+ENVIRONMENT = Environment(check_and_get_env_variable("CONTROL_PLANE_ENVIRONMENT"))
 CONTROL_PLANE_BASE_URL = check_and_get_env_variable("CONTROL_PLANE_BASE_URL")
 LOG_LEVEL = check_and_get_env_variable("CONTROL_PLANE_LOG_LEVEL", default="INFO")
 
@@ -55,3 +56,6 @@ SENDER_NAME = "ACI.dev Team"
 DEFAULT_MCP_SERVER_LOGO = (
     "https://raw.githubusercontent.com/aipotheosis-labs/aipolabs-icons/refs/heads/main/apps/aci.png"
 )
+
+# Ops
+SENTRY_DSN = check_and_get_env_variable("CONTROL_PLANE_SENTRY_DSN")

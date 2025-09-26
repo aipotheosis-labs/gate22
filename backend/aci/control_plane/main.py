@@ -6,8 +6,10 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from aci.common.enums import Environment
 from aci.common.logging_setup import setup_logging
 from aci.common.openai_client import init_openai_client
+from aci.common.sentry import setup_sentry
 from aci.control_plane import config
 from aci.control_plane.exceptions import ControlPlaneException
 from aci.control_plane.middleware.interceptor import (
@@ -26,7 +28,7 @@ from aci.control_plane.routes import (
     users,
 )
 
-if config.ENVIRONMENT == "local":
+if config.ENVIRONMENT == Environment.LOCAL:
     formatter = None
 else:
     formatter = JsonFormatter(
@@ -34,6 +36,9 @@ else:
         style="{",
         rename_fields={"asctime": "timestamp", "name": "file", "levelname": "level"},
     )
+
+if config.ENVIRONMENT != Environment.LOCAL:
+    setup_sentry(config.SENTRY_DSN, config.ENVIRONMENT)
 
 setup_logging(
     formatter=formatter,

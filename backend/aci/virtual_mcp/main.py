@@ -5,7 +5,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from aci.common.enums import Environment
 from aci.common.logging_setup import setup_logging
+from aci.common.sentry import setup_sentry
 from aci.virtual_mcp import config
 from aci.virtual_mcp.exceptions import VirtualMCPException
 from aci.virtual_mcp.middleware.interceptor import (
@@ -17,7 +19,7 @@ from aci.virtual_mcp.routes import (
     mcp,
 )
 
-if config.ENVIRONMENT == "local":
+if config.ENVIRONMENT == Environment.LOCAL:
     formatter = None
 else:
     formatter = JsonFormatter(
@@ -25,6 +27,10 @@ else:
         style="{",
         rename_fields={"asctime": "timestamp", "name": "file", "levelname": "level"},
     )
+
+if config.ENVIRONMENT != Environment.LOCAL:
+    setup_sentry(config.SENTRY_DSN, config.ENVIRONMENT)
+
 
 setup_logging(
     formatter=formatter,

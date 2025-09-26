@@ -80,3 +80,9 @@ class MCPToolSchemaFormat(StrEnum):
     OPENAI = "openai"  # for openai chat completions API
     ANTHROPIC = "anthropic"  # for anthropic chat completions API
     OPENAI_RESPONSES = "openai_responses"  # for openai responses API
+
+
+class Environment(StrEnum):
+    LOCAL = "local"
+    DEVELOPMENT = "development"
+    PRODUCTION = "production"
