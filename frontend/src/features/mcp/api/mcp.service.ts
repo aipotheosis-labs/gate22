@@ -64,6 +64,18 @@ export const mcpService = {
       return api.post<ToolsSyncResult>(`${API_ENDPOINTS.SERVERS}/${serverId}/refresh-tools`, {});
     },
 
+    update: async (
+      token: string,
+      serverId: string,
+      data: { description?: string; logo?: string },
+    ): Promise<MCPServerPublic> => {
+      const api = createAuthenticatedRequest(token);
+      return api.patch<MCPServerPublic>(
+        `${API_ENDPOINTS.SERVERS}/${serverId}`,
+        data,
+      );
+    },
+
     delete: async (token: string, serverId: string): Promise<void> => {
       const api = createAuthenticatedRequest(token);
       return api.delete(`${API_ENDPOINTS.SERVERS}/${serverId}`);

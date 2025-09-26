@@ -16,6 +16,7 @@ import {
   XCircle,
   Clock,
   Trash2,
+  Edit,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -23,6 +24,7 @@ import {
   useSyncMCPServerTools,
   useOperationalMCPServerConfigurations,
   useDeleteMCPServer,
+  useUpdateMCPServer,
 } from "@/features/mcp/hooks/use-mcp-servers";
 import { useState, useEffect } from "react";
 import { MCPServerConfigurationStepper } from "@/features/mcp/components/mcp-server-configuration-stepper";
@@ -30,6 +32,7 @@ import { ToolsTable } from "@/features/mcp/components/tools-table";
 import { OperationalAccountDialog } from "@/features/mcp/components/operational-account-dialog";
 import { SyncResultsDialog } from "@/features/mcp/components/sync-results-dialog";
 import { DeleteServerDialog } from "@/features/mcp/components/delete-server-dialog";
+import { UpdateServerDialog } from "@/features/mcp/components/update-server-dialog";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -47,6 +50,7 @@ export default function MCPServerDetailPage() {
   const [syncResults, setSyncResults] = useState<ToolsSyncResult | null>(null);
   const [isSyncResultsOpen, setIsSyncResultsOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [, setForceUpdate] = useState(0);
 
   // Get organization context and permissions
@@ -64,6 +68,9 @@ export default function MCPServerDetailPage() {
 
   // Delete mutation
   const deleteMutation = useDeleteMCPServer();
+
+  // Update mutation
+  const updateMutation = useUpdateMCPServer();
 
   // Check if there's an operational account for this server
   const operationalConfig = operationalConfigs?.data?.find(
@@ -111,6 +118,22 @@ export default function MCPServerDetailPage() {
         toast.error("Failed to sync tools. Please try again.");
       },
     });
+  };
+
+  const handleUpdate = (data: { description?: string; logo?: string }) => {
+    updateMutation.mutate(
+      { serverId, data },
+      {
+        onSuccess: () => {
+          toast.success(`MCP server "${server?.name}" updated successfully`);
+          setIsUpdateDialogOpen(false);
+        },
+        onError: (error: Error) => {
+          console.error("Update failed:", error);
+          toast.error("Failed to update MCP server. Please try again.");
+        },
+      },
+    );
   };
 
   const handleDelete = () => {
@@ -207,6 +230,28 @@ export default function MCPServerDetailPage() {
               Configure Server
             </Button>
           </PermissionGuard>
+          {/* Update button - only show for custom servers (user's organization) and admin permission */}
+          {server.organization_id === activeOrg?.orgId && (
+            <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_UPDATE}>
+              <Button
+                variant="outline"
+                onClick={() => setIsUpdateDialogOpen(true)}
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </>
+                )}
+              </Button>
+            </PermissionGuard>
+          )}
           {/* Delete button - only show for custom servers (user's organization) and admin permission */}
           {server.organization_id === activeOrg?.orgId && (
             <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_DELETE}>
@@ -394,6 +439,17 @@ export default function MCPServerDetailPage() {
         results={syncResults}
         serverName={server?.name || ""}
       />
+
+      {/* Update Server Dialog */}
+      {server && (
+        <UpdateServerDialog
+          open={isUpdateDialogOpen}
+          onOpenChange={setIsUpdateDialogOpen}
+          server={server}
+          onConfirm={handleUpdate}
+          isPending={updateMutation.isPending}
+        />
+      )}
 
       {/* Delete Server Dialog */}
       {server && (
