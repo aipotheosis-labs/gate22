@@ -1,12 +1,12 @@
 [
   {
-    "name": "NOTION__SEARCH",
-    "description": "Perform a search over:\n- \"internal\": Perform a semantic search over your entire Notion workspace and connected\nsources (Slack, Google Drive, Github, Jira, Microsoft Teams, Sharepoint, OneDrive, or\nLinear).\n- \"users\": Perform a search over the Notion users in the current workspace.\nYou can use search when you need to find information which is not already available via\nother tools, and you don't know where it's located.\nIf the user doesn't have access to Notion AI features, the search will automatically fall\nback to a workspace search that doesn't use AI or include connected sources. This will be\nindicated by the \"type\" field in the response being \"workspace_search\" instead of\n\"ai_search\".\nDo NOT use search to get information about a Database's integrations, views, or other\ncomponents.\nIf initial results do not contain all the information you need, you can try more specific\nqueries.\nAfter obtaining internal search results, if the user asks for the full contents of a page or\ndatabase, use the \"fetch\" tool. This tool only shows some details like a highlight and the\nURL and title of each search result.\nTo find pages under a Notion database, use this tool and supply the database's URL as the\ndata_source_url parameter. These look like \"collection://f336d0bc-b841-465b-8045-024475c079dd\".\nYou can get this URL by using the \"fetch\" tool to view the database and copying the URL from\nthe <data-source url=\"...\"> block. Keep in mind that Notion-flavored Markdown has this\nconcept of a hierarchy of <database> blocks that contain <data-source> blocks, but users\naren't familiar with the Notion \"Data Source\" terminology or product. Prefer to refer to\nboth of them as \"databases\" in your response to humans to avoid confusion.\nExamples of searches:\n1. Search for information across the workspace:\n{\n\"query\": \"quarterly revenue report\",\n\"query_type\": \"internal\"\n}\n2. Search within a specific page and its children:\n{\n\"query\": \"meeting notes action items\",\n\"query_type\": \"internal\",\n\"page_url\": \"https://www.notion.so/workspace/Team-Hub-1234567890abcdef\"\n}\n3. Search within a database's pages:\n{\n\"query\": \"design review feedback\",\n\"query_type\": \"internal\",\n\"data_source_url\": \"collection://f336d0bc-b841-465b-8045-024475c079dd\"\n}\n4. Search within a specific teamspace:\n{\n\"query\": \"project updates\",\n\"query_type\": \"internal\",\n\"teamspace_id\": \"f336d0bc-b841-465b-8045-024475c079dd\"\n}\n5. Search for users:\n{\n\"query\": \"john@example.com\",\n\"query_type\": \"user\"\n}\n6. Find users by partial name:\n{\n\"query\": \"sarah\",\n\"query_type\": \"user\"\n}\nCommon use cases:\n- \"What does the sales team require from the product team in the next quarter?\"\n- \"Find all meeting notes that mention the new pricing strategy\"\n- \"Which pages discuss the API migration project?\"\n- \"Find all team members with email addresses ending in @design.company.com\"\n- \"What are the latest updates on the mobile app redesign?\"",
+    "name": "NOTION__NOTION_SEARCH",
+    "description": "Perform a search over:\n- \"internal\": Semantic search over your entire Notion workspace and connected sources\n(Slack, Google Drive, Github, Jira, Microsoft Teams, Sharepoint, OneDrive, Linear).\nSupports filtering by creation date and creator.\n- \"user\": Search for Notion users in the current workspace by name or email.\nWhen the user lacks Notion AI features, internal search automatically falls back to workspace\nsearch (without connected sources), indicated by type: \"workspace_search\" instead of \"ai_search\".\nAfter obtaining search results, use the \"fetch\" tool if you need the full contents of each page\nor database result.\nIf you have the URL or ID of a Notion database you want to search within, you MUST first fetch\nthe database using the \"fetch\" tool to get the data source (collection://...) URL from the\n<data-source url=\"...\"> tag and then use that as the data_source_url parameter for search.\nIf \"fetch\" shows the database has multiple data sources, do whichever of the following makes sense:\n- Use whichever data source corresponds to the view the user provided in their Notion URL, when\nthere is a ?v=... query parameter present.\n- Use context from the user & data source names to identify which to use for the search\n- Search all data sources for the database using separate search tool calls\nDo NOT try to use the database URL/ID alongside the collection:// prefix for the data_source_url.\nDo NOT try to use a database URL as a page URL if you know from context that it's a database\nand not a regular page.\n<example description=\"Search with date range filter (only documents created in 2024)\">\n{\n\"query\": \"quarterly revenue report\",\n\"query_type\": \"internal\",\n\"filters\": {\n\"created_date_range\": {\n\"start_date\": \"2024-01-01\",\n\"end_date\": \"2025-01-01\"\n}\n}\n}\n</example>\n<example description=\"Search within teamspace, filtered by creator\">\n{\n\"query\": \"project updates\",\n\"query_type\": \"internal\",\n\"teamspace_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"filters\": {\n\"created_by_user_ids\": [\"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"]\n}\n}\n</example>\n<example description=\"Search within database pages with combined filters\">\n{\n\"query\": \"design review feedback\",\n\"query_type\": \"internal\",\n\"data_source_url\": \"collection://f336d0bc-b841-465b-8045-024475c079dd\",\n\"filters\": {\n\"created_date_range\": {\n\"start_date\": \"2024-10-01\"\n},\n\"created_by_user_ids\": [\"user-id-1\", \"user-id-2\"]\n}\n}\n</example>\n<example description=\"Search for users (no filters allowed)\">\n{\n\"query\": \"john@example.com\",\n\"query_type\": \"user\"\n}\n</example>\n<common-use-cases>\n- Find recent documents: Use created_date_range filter\n- Find content by specific authors: Use created_by_user_ids filter\n- Audit trail: Combine both filters to find who created what and when\n- Team member lookup: Use query_type: \"user\" with name/email patterns\n</common-use-cases>",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "search",
-      "canonical_tool_description_hash": "4cb2619b785c2cbcd991acbd8f98999c22221735069dbfcd9aa61019929a9bf5",
-      "canonical_tool_input_schema_hash": "78f0176b3ea5aa14ef61161dd1abb4a445bbd83b8a7f7b580c6738b39355d7ac"
+      "canonical_tool_name": "notion-search",
+      "canonical_tool_description_hash": "959ad4e342758589d9830920292c7142eff954258f9ceb0eb58aae7c2e8811dd",
+      "canonical_tool_input_schema_hash": "3cc6b416c7a47d60e636c1aec328130c04cc0775c0dadff6b9490fae49ab59b0"
     },
     "input_schema": {
       "type": "object",
@@ -32,6 +32,38 @@
         "teamspace_id": {
           "type": "string",
           "description": "Optionally, provide the ID of a teamspace to restrict search results to. This will perform a search\nover content within the specified teamspace only. Accepts the teamspace ID (UUIDv4) with or\nwithout dashes."
+        },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "created_date_range": {
+              "type": "object",
+              "properties": {
+                "start_date": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "The start date of the date range as an ISO 8601 date string, if any."
+                },
+                "end_date": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "The end date of the date range as an ISO 8601 date string, if any."
+                }
+              },
+              "additionalProperties": false,
+              "description": "Optional filter to only produce search results created within the specified date range."
+            },
+            "created_by_user_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 100,
+              "description": "Optional filter to only produce search results created by the Notion users that have the specified user IDs."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Optionally provide filters to apply to the search results. Only valid when query_type is 'internal'."
         }
       },
       "required": ["query"],
@@ -40,12 +72,12 @@
     }
   },
   {
-    "name": "NOTION__FETCH",
-    "description": "Retrieves details about a Notion entity by its URL or ID.\nYou can fetch the following types of entities:\n- Page, i.e. from a <page> block or a <mention-page> mention\n- Database, i.e. from a <database> block or a <mention-database> mention\nUse the \"fetch\" tool when you need to see the details of a Notion entity you already know\nexists and have its URL or ID.\nProvide the Notion entity's URL or ID in the `id` parameter. You must make multiple calls\nto the \"fetch\" tool if you want to fetch multiple entities.\nContent for pages that are returned use the enhanced Markdown format, which is a superset of\nthe standard Markdown syntax. See the full spec in the description of the \"create-pages\"\ntool.\nDatabases can have multiple data sources, which are collections of pages with the same schema.\nWhen fetching a database, the tool will return information about all its data sources.\nExamples of fetching entities:\n1. Fetch a page by URL:\n{\n\"id\": \"https://www.notion.so/workspace/Product-Requirements-1234567890abcdef\"\n}\n2. Fetch a page by ID (UUIDv4 with dashes):\n{\n\"id\": \"12345678-90ab-cdef-1234-567890abcdef\"\n}\n3. Fetch a page by ID (UUIDv4 without dashes):\n{\n\"id\": \"1234567890abcdef1234567890abcdef\"\n}\n4. Fetch a database:\n{\n\"id\": \"https://www.notion.so/workspace/Projects-Database-abcdef1234567890\"\n}\nCommon use cases:\n- \"What are the product requirements still need to be implemented from this ticket\nhttps://notion.so/page-url?\"\n- \"Show me the details of the project database at this URL\"\n- \"Get the content of page 12345678-90ab-cdef-1234-567890abcdef\"",
+    "name": "NOTION__NOTION_FETCH",
+    "description": "Retrieves details about a Notion entity by its URL or ID.\nYou can fetch the following types of entities:\n- Page, i.e. from a <page> block or a <mention-page> mention\n- Database, i.e. from a <database> block or a <mention-database> mention\nUse the \"fetch\" tool when you need to see the details of a Notion entity you already know\nexists and have its URL or ID.\nProvide the Notion entity's URL or ID in the `id` parameter. You must make multiple calls\nto the \"fetch\" tool if you want to fetch multiple entities.\nContent for pages that are returned use the enhanced Markdown format, which is a superset of\nthe standard Markdown syntax. See the full spec in the description of the \"create-pages\"\ntool.\nDatabases can have multiple data sources, which are collections of pages with the same schema.\nWhen fetching a database, the tool will return information about all its data sources.\nNOTE regarding multi-source databases: If your input URL looks like:\nhttps://notion.so/workspace/26c104cd477e80059141c7ed3bce2ce6?v=26c104cd477e818ca439000c4500cf98\nThe UUID before the '?v=' is the database ID, and the UUID after the '?v=' is the specific\nview ID. All views and data sources are included in the response, but views can be associated\nwith a specific data source, so you may be able to narrow down which data source the URL refers to\nbased on the fetch response. Continuing the example of fetching the above URL, if the response\nlooks like the following, then the URL is associated with the data source\ncollection://26c104cd-477e-805f-95d7-000b4340f82f. This can be helpful if the user provides the\ncomplete URL and wants to find pages in that data source; the search tool requires a specific\ndata source ID.\n<snippet description=\"Partial fetch response for a multi-source database\">\n<view url=\"{{view://26c104cd-477e-818c-a439-000c4500cf98}}\">\n{\"dataSourceUrl\":\"{{collection://26c104cd-477e-805f-95d7-000b4340f82f}}\",\"name\":\"\",\"properties\":[\"Name\",\"Number\"],\"type\":\"table\"}\n</view>\n</snippet>\n<example description=\"Fetch a page by URL\">\n{\"id\": \"https://www.notion.so/workspace/Product-Requirements-1234567890abcdef\"}\n</example>\n<example description=\"Fetch a page by ID (UUIDv4 with dashes)\">\n{\"id\": \"12345678-90ab-cdef-1234-567890abcdef\"}\n</example>\n<example description=\"Fetch a page by ID (UUIDv4 without dashes)\">\n{\"id\": \"1234567890abcdef1234567890abcdef\"}\n</example>\n<example description=\"Fetch a database\">\n{\"id\": \"https://www.notion.so/workspace/Projects-Database-abcdef1234567890\"}\n</example>\n<common-use-cases>\n- \"What are the product requirements still need to be implemented from this ticket\nhttps://notion.so/page-url?\"\n- \"Show me the details of the project database at this URL\"\n- \"Get the content of page 12345678-90ab-cdef-1234-567890abcdef\"\n</common-use-cases>",
     "tags": [],
     "tool_metadata": {
-      "canonical_tool_name": "fetch",
-      "canonical_tool_description_hash": "3bb456ce03a99a8ebc7a2b01ae7158f1617def2868b4ff0d40e4bf172078b3ee",
+      "canonical_tool_name": "notion-fetch",
+      "canonical_tool_description_hash": "e5f42d804164e4d092418ce10ae02763c45b6a415f3844348594da3cb1ac3374",
       "canonical_tool_input_schema_hash": "d14771ef99cf6c6473cd0acde7b8d5a7993a597836984c1f215c8d8f765c53c2"
     },
     "input_schema": {
@@ -63,12 +95,12 @@
   },
   {
     "name": "NOTION__NOTION_CREATE_PAGES",
-    "description": "Creates one or more Notion pages with specified properties and content.\nUse \"create-pages\" when you need to create one or more new pages that don't exist yet.\nAlways include a title property under `properties` in each entry of the `pages` array.\nOtherwise, the page title will appear blank even if the page content is populated. Don't\nduplicate the page title at the top of the page's `content`.\nWhen creating pages under a Notion database, the property names must match the database's\nschema. Use the \"fetch\" tool with a Notion database URL to get the database schema. Or, look\nfor existing pages under the database using the \"search\" tool then use the \"fetch\" tool to see\nthe names of the property keys. One exception is the \"title\" property, which all pages have,\nbut can be named differently in the schema of a database. For convenience, you can use the\ngeneric property name \"title\" in the \"properties\" object, and it will automatically be\nre-mapped to the actual name of the title property in the database schema when creating the\npage.\nAll pages created with a single call to this tool will have the same parent.\nThe parent can be a Notion page or database. If the parent is omitted, the pages will be\ncreated as standalone, workspace-level private pages and the person that created them\ncan organize them as they see fit later.\nIMPORTANT: When specifying a parent database, use the appropriate ID format:\n- Use \"data_source_id\" when you have a collection:// URL from the fetch tool (this is the most common case)\n- Use \"database_id\" when you have a page URL for a database view (less common)\n- Use \"page_id\" when the parent is a regular page\nExamples of creating pages:\n1. Create a standalone page with a title and content:\n{\n\"pages\": [\n{\n\"properties\": {\"title\":\"Page title\"},\n\"content\": \"# Section 1\nSection 1 content\n# Section 2\nSection 2 content\"\n}\n]\n}\n2. Create a page under a database's data source (collection), e.g. using an ID from a collection:// URL provided by the fetch tool:\n{\n\"parent\": {\"data_source_id\": \"f336d0bc-b841-465b-8045-024475c079dd\"},\n\"pages\": [\n{\n\"properties\": {\n\"Task Name\": \"Task 123\",\n\"Status\": \"In Progress\",\n},\n},\n],\n}\n3. Create a page with an existing page as a parent:\n{\n\"parent\": {\"page_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"},\n\"pages\": [\n{\n\"properties\": {\"title\": \"Page title\"},\n\"content\": \"# Section 1\nSection 1 content\n# Section 2\nSection 2 content\"\n}\n]\n}\nThe enhanced Markdown format used for page content is a superset of the standard Markdown\nsyntax. Here is the full spec, but please note that Notion does not yet use the Data Source\nterminology, and only supports Databases. Ignore anything related to \"data sources\" and assume\ndatabases can only define one schema for now.\n### Notion-flavored Markdown\nNotion-flavored Markdown is a variant of standard Markdown with additional features to support all Block and Rich text types.\nUse tabs for indentation.\nUse backslashes to escape characters. For example, * will render as * and not as a bold delimiter.\nBlock types:\nMarkdown blocks use a {color=\"Color\"} attribute list to set a block color.\nText:\nRich text {color=\"Color\"}\nChildren\nHeadings:\n# Rich text {color=\"Color\"}\n## Rich text {color=\"Color\"}\n### Rich text {color=\"Color\"}\n(Headings 4, 5, and 6 are not supported in Notion and will be converted to heading 3.)\nBulleted list:\n- Rich text {color=\"Color\"}\nChildren\nNumbered list:\n1. Rich text {color=\"Color\"}\nChildren\nRich text types:\nBold:\n**Rich text**\nItalic:\n*Rich text*\nStrikethrough:\n~~Rich text~~\nUnderline:\n<span underline=\"true\">Rich text</span>\nInline code:\n`Code`\nLink:\n[Link text](URL)\nCitation:\n[^URL]\nTo create a citation, you can either reference a compressed URL like [^{{1}}], or a full URL like [^https://example.com].\nColors:\n<span color?=\"Color\">Rich text</span>\nInline math:\n$Equation$ or $`Equation`$ if you want to use markdown delimiters within the equation.\nThere must be whitespace before the starting $ symbol and after the ending $ symbol. There must not be whitespace right after the starting $ symbol or before the ending $ symbol.\nInline line breaks within rich text:\n<br>\nMentions:\nUser:\n<mention-user url=\"{{URL}}\">User name</mention-user>\nThe URL must always be provided, and refer to an existing User.\nBut Providing the user name is optional. In the UI, the name will always be displayed.\nSo an alternative self-closing format is also supported: <mention-user url=\"{{URL}}\"/>\nPage:\n<mention-page url=\"{{URL}}\">Page title</mention-page>\nThe URL must always be provided, and refer to an existing Page.\nProviding the page title is optional. In the UI, the title will always be displayed.\nMentioned pages can be viewed using the \"view\" tool.\nDatabase:\n<mention-database url=\"{{URL}}\">Database name</mention-database>\nThe URL must always be provided, and refer to an existing Database.\nProviding the database name is optional. In the UI, the name will always be displayed.\nMentioned databases can be viewed using the \"view\" tool.\nDate:\n<mention-date start=\"YYYY-MM-DD\" end=\"YYYY-MM-DD\"/>\nDatetime:\n<mention-date start=\"YYYY-MM-DDThh:mm:ssZ\" end=\"YYYY-MM-DDThh:mm:ssZ\"/>\nCustom emoji:\n:emoji_name:\nCustom emoji are rendered as the emoji name surrounded by colons.\nColors:\nText colors (colored text with transparent background):\ngray, brown, orange, yellow, green, blue, purple, pink, red\nBackground colors (colored background with contrasting text):\ngray_bg, brown_bg, orange_bg, yellow_bg, green_bg, blue_bg, purple_bg, pink_bg, red_bg\nUsage:\n- Block colors: Add color=\"Color\" to the first line of any block\n- Rich text colors (text colors and background colors are both supported): Use <span color=\"Color\">Rich text</span>\n#### Advanced Block types for Page content\nThe following block types may only be used in page content.\n<advanced-blocks>\nQuote:\n> Rich text {color=\"Color\"}\nChildren\nTo-do:\n- [ ] Rich text {color=\"Color\"}\nChildren\n- [x] Rich text {color=\"Color\"}\nChildren\nToggle:\n\u25b6 Rich text {color=\"Color\"}\nChildren\nToggle heading 1:\n\u25b6# Rich text {color=\"Color\"}\nChildren\nToggle heading 2:\n\u25b6## Rich text {color=\"Color\"}\nChildren\nToggle heading 3:\n\u25b6### Rich text {color=\"Color\"}\nChildren\nFor toggles and toggle headings, the children must be indented in order for them to be toggleable. If you do not indent the children, they will not be contained within the toggle or toggle heading.\nDivider:\n---\nTable:\n<table fit-page-width?=\"true|false\" header-row?=\"true|false\" header-column?=\"true|false\">\n<colgroup>\n<col color?=\"Color\">\n<col color?=\"Color\">\n</colgroup>\n<tr color?=\"Color\">\n<td>Data cell</td>\n<td color?=\"Color\">Data cell</td>\n</tr>\n<tr>\n<td>Data cell</td>\n<td>Data cell</td>\n</tr>\n</table>\nNote: All table attributes are optional. If omitted, they default to false.\nTable structure:\n- <table>: Root element with optional attributes:\n- fit-page-width: Whether the table should fill the page width\n- header-row: Whether the first row is a header\n- header-column: Whether the first column is a header\n- <colgroup>: Optional element defining column-wide styles\n- <col>: Column definition with optional attributes:\n- color: The color of the column\n- width: The width of the column. Leave empty to auto-size.\n- <tr>: Table row with optional color attribute\n- <td>: Data cell with optional color attribute\nColor precedence (highest to lowest):\n1. Cell color (<td color=\"red\">)\n2. Row color (<tr color=\"blue_bg\">)\n3. Column color (<col color=\"gray\">)\nEquation:\n$$\nEquation\n$$\nCode:\n```language\nCode\n```\nXML blocks use the \"color\" attribute to set a block color.\nCallout:\n<callout icon?=\"emoji\" color?=\"Color\">\nChildren\n</callout>\nColumns:\n<columns>\n<column>\nChildren\n</column>\n<column>\nChildren\n</column>\n</columns>\nPage:\n<page url=\"{{URL}}\" color?=\"Color\">Title</page>\nSub-pages can be viewed using the \"view\" tool.\nTo create a new sub-page, omit the URL. You can then update the page content and properties with the \"update-page\" tool. Example: <page>New Page</page>\nDatabase:\n<database url=\"{{URL}}\" inline?=\"{true|false}\" color?=\"Color\">Title</database>\nTo create a new database, omit the URL. You can then update the database properties and content with the \"update-database\" tool. Example: <database>New Database</database>\nThe \"inline\" toggles how the database is displayed in the UI. If it is true, the database is fully visible and interactive on the page. If false, the database is displayed as a sub-page.\nThere is no \"Data Source\" block type. Data Sources are always inside a Database, and only Databases can be inserted into a Page.\nAudio:\n<audio source=\"{{URL}}\" color?=\"Color\">Caption</audio>\nFile:\nFile content can be viewed using the \"view\" tool.\n<file source=\"{{URL}}\" color?=\"Color\">Caption</file>\nImage:\nImage content can be viewed using the \"view\" tool.\n<image source=\"{{URL}}\" color?=\"Color\">Caption</image>\nPDF:\nPDF content can be viewed using the \"view\" tool.\n<pdf source=\"{{URL}}\" color?=\"Color\">Caption</pdf>\nVideo:\n<video source=\"{{URL}}\" color?=\"Color\">Caption</video>\nTable of contents:\n<table_of_contents color?=\"Color\"/>\nSynced block:\nThe original source for a synced block.\nWhen creating a new synced block, do not provide the URL. After inserting the synced block into a page, the URL will be provided.\n<synced_block url?=\"{{URL}}\">\nChildren\n</synced_block>\nNote: When creating new synced blocks, omit the url attribute - it will be auto-generated. When reading existing synced blocks, the url attribute will be present.\nSynced block reference:\nA reference to a synced block.\nThe synced block must already exist and url must be provided.\nYou can directly update the children of the synced block reference and it will update both the original synced block and the synced block reference.\n<synced_block_reference url=\"{{URL}}\">\nChildren\n</synced_block_reference>\nMeeting notes:\n<meeting-notes>\nRich text (meeting title)\n<summary>\nAI-generated summary of the notes + transcript\n</summary>\n<notes>\nUser notes\n</notes>\n<transcript>\nTranscript of the audio (cannot be edited)\n</transcript>\n</meeting-notes>\nNote: The <transcript> tag contains a raw transcript and cannot be edited.\nUnknown (a block type that is not supported in the API yet):\n<unknown url=\"{{URL}}\" alt=\"Alt\"/>\n</advanced-blocks>",
+    "description": "## Overview\nCreates one or more Notion pages, with the specified properties and content.\n## Parent\nAll pages created with a single call to this tool will have the same parent.\nThe parent can be a Notion page (\"page_id\") or data source (\"data_source_id\").\nIf the parent is omitted, the pages are created as standalone, workspace-level\nprivate pages, and the person that created them can organize them later as they\nsee fit.\nIf you have a database URL, ALWAYS pass it to the \"fetch\" tool first to get the schema\nand URLs of each data source under the database. You can't use the \"database_id\"\nparent type if the database has more than one data source, so you'll need to identify\nwhich \"data_source_id\" to use based on the situation and the results from the fetch tool\n(data source URLs look like collection://<data_source_id>).\nIf you know the pages should be created under a data source, do NOT use the database ID\nor URL under the \"page_id\" parameter; \"page_id\" is only for regular, non-database pages.\n## Properties\nNotion page properties are a JSON map of property names to SQLite values.\nWhen creating pages in a database:\n- Use the correct property names from the data source schema shown in the fetch tool results.\n- Always include a title property. Data sources always have exactly one title property, but\nit may not be named \"title\", so, again, rely on the fetched data source schema.\nFor pages outside of a database:\n- The only allowed property is \"title\",\twhich is the title of the page in inline markdown format.\nAlways include a \"title\" property.\n**IMPORTANT**: Some property types require expanded formats:\n- Date properties: Split into \"date:{property}:start\", \"date:{property}:end\" (optional), and\n\"date:{property}:is_datetime\" (0 or 1)\n- Place properties: Split into \"place:{property}:name\", \"place:{property}:address\",\n\"place:{property}:latitude\", \"place:{property}:longitude\", and\n\"place:{property}:google_place_id\" (optional)\n- Number properties: Use JavaScript numbers (not strings)\n- Checkbox properties: Use \"__YES__\" for checked, \"__NO__\" for unchecked\n**Special property naming**: Properties named \"id\" or \"url\" (case insensitive) must be\nprefixed with \"userDefined:\" (e.g., \"userDefined:URL\", \"userDefined:id\")\n## Examples\n<example description=\"Create a standalone page with a title and content\">\n{\n\"pages\": [\n{\n\"properties\": {\"title\": \"Page title\"},\n\"content\": \"# Section 1\nSection 1 content\n# Section 2\nSection 2 content\"\n}\n]\n}\n</example>\n<example description=\"Create a page under a database's data source\">\n{\n\"parent\": {\"data_source_id\": \"f336d0bc-b841-465b-8045-024475c079dd\"},\n\"pages\": [\n{\n\"properties\": {\n\"Task Name\": \"Task 123\",\n\"Status\": \"In Progress\",\n\"Priority\": 5,\n\"Is Complete\": \"__YES__\",\n\"date:Due Date:start\": \"2024-12-25\",\n\"date:Due Date:is_datetime\": 0\n}\n}\n]\n}\n</example>\n<example description=\"Create a page with an existing page as a parent\">\n{\n\"parent\": {\"page_id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"},\n\"pages\": [\n{\n\"properties\": {\"title\": \"Page title\"},\n\"content\": \"# Section 1\nSection 1 content\n# Section 2\nSection 2 content\"\n}\n]\n}\n</example>\n## Content\nNotion page content is a string in Notion-flavored Markdown format.\nDon't include the page title at the top of the page's content. Only include it under\n\"properties\".\nBelow is the full Notion-flavored Markdown specification, applicable to this create pages tool\nand other tools like update-page and fetch. This spec is also available as a separate MCP\nresource.\n### Notion-flavored Markdown\nNotion-flavored Markdown is a variant of standard Markdown with additional features to support all Block and Rich text types.\nUse tabs for indentation.\nUse backslashes to escape characters. For example, * will render as * and not as a bold delimiter.\nBlock types:\nMarkdown blocks use a {color=\"Color\"} attribute list to set a block color.\nText:\nRich text {color=\"Color\"}\nChildren\nHeadings:\n# Rich text {color=\"Color\"}\n## Rich text {color=\"Color\"}\n### Rich text {color=\"Color\"}\n(Headings 4, 5, and 6 are not supported in Notion and will be converted to heading 3.)\nBulleted list:\n- Rich text {color=\"Color\"}\nChildren\nNumbered list:\n1. Rich text {color=\"Color\"}\nChildren\nBulleted and numbered list items should contain inline rich text -- otherwise they will render as empty list items, which look awkward in the Notion UI. (The inline text should be rich text -- any other block type will not be rendered inline, but as a child to an empty list item.)\nRich text types:\nBold:\n**Rich text**\nItalic:\n*Rich text*\nStrikethrough:\n~~Rich text~~\nUnderline:\n<span underline=\"true\">Rich text</span>\nInline code:\n`Code`\nLink:\n[Link text](URL)\nCitation:\n[^URL]\nTo create a citation, you can either reference a compressed URL like this,[^{{1}}] or a full URL like this.[^example.com]\nColors:\n<span color?=\"Color\">Rich text</span>\nInline math:\n$Equation$ or $`Equation`$ if you want to use markdown delimiters within the equation.\nThere must be whitespace before the starting $ symbol and after the ending $ symbol. There must not be whitespace right after the starting $ symbol or before the ending $ symbol.\nInline line breaks within a block (this is mostly useful in multi-line quote or callout blocks, where an ordinary newline character should not be used since it will break up the block structure):\n<br>\nMentions:\nUser:\n<mention-user url=\"{{URL}}\">User name</mention-user>\nThe URL must always be provided, and refer to an existing User.\nBut Providing the user name is optional. In the UI, the name will always be displayed.\nSo an alternative self-closing format is also supported: <mention-user url=\"{{URL}}\"/>\nPage:\n<mention-page url=\"{{URL}}\">Page title</mention-page>\nThe URL must always be provided, and refer to an existing Page.\nProviding the page title is optional. In the UI, the title will always be displayed.\nMentioned pages can be viewed using the \"view\" tool.\nDatabase:\n<mention-database url=\"{{URL}}\">Database name</mention-database>\nThe URL must always be provided, and refer to an existing Database.\nProviding the database name is optional. In the UI, the name will always be displayed.\nMentioned databases can be viewed using the \"view\" tool.\nData source:\n<mention-data-source url=\"{{URL}}\">Data source name</mention-data-source>\nThe URL must always be provided, and refer to an existing data source.\nProviding the data source name is optional. In the UI, the name will always be displayed.\nMentioned data sources can be viewed using the \"view\" tool.\nDate:\n<mention-date start=\"YYYY-MM-DD\" end=\"YYYY-MM-DD\"/>\nDatetime:\n<mention-date start=\"YYYY-MM-DDThh:mm:ssZ\" end=\"YYYY-MM-DDThh:mm:ssZ\"/>\nCustom emoji:\n:emoji_name:\nCustom emoji are rendered as the emoji name surrounded by colons.\nColors:\nText colors (colored text with transparent background):\ngray, brown, orange, yellow, green, blue, purple, pink, red\nBackground colors (colored background with contrasting text):\ngray_bg, brown_bg, orange_bg, yellow_bg, green_bg, blue_bg, purple_bg, pink_bg, red_bg\nUsage:\n- Block colors: Add color=\"Color\" to the first line of any block\n- Rich text colors (text colors and background colors are both supported): Use <span color=\"Color\">Rich text</span>\n#### Advanced Block types for Page content\nThe following block types may only be used in page content.\n<advanced-blocks>\nQuote:\n> Rich text {color=\"Color\"}\nChildren\nUse of a single \">\" on a line without any other text should be avoided -- this will render as an empty blockquote, which is not visually appealing.\nTo include multiple lines of text in a single blockquote, use a single > and linebreaks (not multiple > lines, which will render as multiple separate blockquotes, unlike in standard markdown):\n> Line 1<br>Line 2<br>Line 3 {color=\"Color\"}\nTo-do:\n- [ ] Rich text {color=\"Color\"}\nChildren\n- [x] Rich text {color=\"Color\"}\nChildren\nToggle:\n\u25b6 Rich text {color=\"Color\"}\nChildren\nToggle heading 1:\n\u25b6# Rich text {color=\"Color\"}\nChildren\nToggle heading 2:\n\u25b6## Rich text {color=\"Color\"}\nChildren\nToggle heading 3:\n\u25b6### Rich text {color=\"Color\"}\nChildren\nFor toggles and toggle headings, the children must be indented in order for them to be toggleable. If you do not indent the children, they will not be contained within the toggle or toggle heading.\nDivider:\n---\nTable:\n<table fit-page-width?=\"true|false\" header-row?=\"true|false\" header-column?=\"true|false\">\n<colgroup>\n<col color?=\"Color\">\n<col color?=\"Color\">\n</colgroup>\n<tr color?=\"Color\">\n<td>Data cell</td>\n<td color?=\"Color\">Data cell</td>\n</tr>\n<tr>\n<td>Data cell</td>\n<td>Data cell</td>\n</tr>\n</table>\nNote: All table attributes are optional. If omitted, they default to false.\nTable structure:\n- <table>: Root element with optional attributes:\n- fit-page-width: Whether the table should fill the page width\n- header-row: Whether the first row is a header\n- header-column: Whether the first column is a header\n- <colgroup>: Optional element defining column-wide styles\n- <col>: Column definition with optional attributes:\n- color: The color of the column\n- width: The width of the column. Leave empty to auto-size.\n- <tr>: Table row with optional color attribute\n- <td>: Data cell with optional color attribute\nColor precedence (highest to lowest):\n1. Cell color (<td color=\"red\">)\n2. Row color (<tr color=\"blue_bg\">)\n3. Column color (<col color=\"gray\">)\nTo format text inside of table cells, use Notion-flavored Markdown, not HTML. For instance, bold text in a table should be wrapped in **, not <strong>.\nEquation:\n$$\nEquation\n$$\nCode:\n```language\nCode\n```\nXML blocks use the \"color\" attribute to set a block color.\nCallout:\n<callout icon?=\"emoji\" color?=\"Color\">Rich text</callout>\nTo create a new line within a callout, use <br>, not a newline character. Using a newline character in a callout will cause a rendering bug.\nFor any other formatting inside of callout blocks, use Notion-flavored Markdown, not HTML. For instance, bold text in a callout should be wrapped in **, not <strong>.\nColumns:\n<columns>\n<column>\nChildren\n</column>\n<column>\nChildren\n</column>\n</columns>\nPage:\n<page url=\"{{URL}}\" color?=\"Color\">Title</page>\nSub-pages can be viewed using the \"view\" tool.\nTo create a new sub-page, omit the URL. You can then update the page content and properties with the \"update-page\" tool. Example: <page>New Page</page>\nWARNING: Using <page> with an existing page URL will MOVE the page to a new parent page with this content. If moving is not intended use the <mention-page> block instead.\nDatabase:\n<database url=\"{{URL}}\" inline?=\"{true|false}\" icon?=\"Emoji\" color?=\"Color\">Title</database>\nTo create a new database, omit the URL. You can then update the database properties and content with the \"update-database\" tool. Example: <database>New Database</database>\nThe \"inline\" toggles how the database is displayed in the UI. If it is true, the database is fully visible and interactive on the page. If false, the database is displayed as a sub-page.\nThere is no \"Data Source\" block type. Data Sources are always inside a Database, and only Databases can be inserted into a Page.\nWARNING: Using <database> with an existing database URL will MOVE the database to a new parent page with this content. If moving is not intended use the <mention-database> block instead.\nAudio:\n<audio source=\"{{URL}}\" color?=\"Color\">Caption</audio>\nFile:\nFile content can be viewed using the \"view\" tool.\n<file source=\"{{URL}}\" color?=\"Color\">Caption</file>\nImage:\nImage content can be viewed using the \"view\" tool.\n<image source=\"{{URL}}\" color?=\"Color\">Caption</image>\nPDF:\nPDF content can be viewed using the \"view\" tool.\n<pdf source=\"{{URL}}\" color?=\"Color\">Caption</pdf>\nVideo:\n<video source=\"{{URL}}\" color?=\"Color\">Caption</video>\n(Note that source URLs can either be compressed URLs, such as source=\"{{1}}\", or full URLs, such as source=\"example.com\". Full URLs enclosed in curly brackets, like source=\"{{https://example.com}}\" or source=\"{{example.com}}\", do not work.)\nTable of contents:\n<table_of_contents color?=\"Color\"/>\nSynced block:\nThe original source for a synced block.\nWhen creating a new synced block, do not provide the URL. After inserting the synced block into a page, the URL will be provided.\n<synced_block url?=\"{{URL}}\">\nChildren\n</synced_block>\nNote: When creating new synced blocks, omit the url attribute - it will be auto-generated. When reading existing synced blocks, the url attribute will be present.\nSynced block reference:\nA reference to a synced block.\nThe synced block must already exist and url must be provided.\nYou can directly update the children of the synced block reference and it will update both the original synced block and the synced block reference.\n<synced_block_reference url=\"{{URL}}\">\nChildren\n</synced_block_reference>\nMeeting notes:\n<meeting-notes>\nRich text (meeting title)\n<summary>\nAI-generated summary of the notes + transcript\n</summary>\n<notes>\nUser notes\n</notes>\n<transcript>\nTranscript of the audio (cannot be edited)\n</transcript>\n</meeting-notes>\nNote: The <transcript> tag contains a raw transcript and cannot be edited by AI, but it can be edited by a user. If you are creating a new meeting notes block, do not include <transcript> tags -- attempting to do so will result in an error.\nUnknown (a block type that is not supported in the API yet):\n<unknown url=\"{{URL}}\" alt=\"Alt\"/>\n</advanced-blocks>",
     "tags": [],
     "tool_metadata": {
       "canonical_tool_name": "notion-create-pages",
-      "canonical_tool_description_hash": "3ddcc016945d6ed80cd9afa009867956273115e4995bc63424ff1afe49f3aa68",
-      "canonical_tool_input_schema_hash": "05a8cbd24e3c35b9629b799ccc5cd97c22bc28ea7ebb58459d3da0c0ff96b661"
+      "canonical_tool_description_hash": "5d1a95f64f2088e3282a19352ecaffbb640c520b99a56cf2ab3c0615c8f9024b",
+      "canonical_tool_input_schema_hash": "92ec1c0897cd1eb5e0876590a3c9a9a5a0f3ed254a769f4c9d7e63cd9063e5f5"
     },
     "input_schema": {
       "type": "object",
@@ -106,7 +138,8 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["page_id"]
+                  "enum": ["page_id"],
+                  "description": "Always `page_id`"
                 }
               },
               "required": ["page_id"],
@@ -121,7 +154,8 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["database_id"]
+                  "enum": ["database_id"],
+                  "description": "Always `database_id`"
                 }
               },
               "required": ["database_id"],
@@ -136,7 +170,8 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["data_source_id"]
+                  "enum": ["data_source_id"],
+                  "description": "Always `data_source_id`"
                 }
               },
               "required": ["data_source_id"],
@@ -153,12 +188,12 @@
   },
   {
     "name": "NOTION__NOTION_UPDATE_PAGE",
-    "description": "Update a Notion page's properties or content.\nNotion page properties are a JSON map of property names to SQLite values.\nFor pages in a database, use the SQLite schema definition shown in <database>.\nFor pages outside of a database, the only allowed property is \"title\", which is the title of the page in inline markdown format.\nNotion page content is a string in Notion-flavored Markdown format. See the \"create-pages\" tool description for the full enhanced Markdown spec.\nBefore updating a page's content with this tool, use the \"fetch\" tool first to get the existing content to find out the Markdown snippets to use in the \"replace_content_range\" or \"insert_content_after\" commands.\nIMPORTANT: Some property types require expanded formats:\n- Date properties: Split into \"date:{property}:start\", \"date:{property}:end\" (optional), and \"date:{property}:is_datetime\" (0 or 1)\n- Place properties: Split into \"place:{property}:name\", \"place:{property}:address\", \"place:{property}:latitude\", \"place:{property}:longitude\", and \"place:{property}:google_place_id\" (optional)\nNumber properties accept JavaScript numbers (not strings). Use null to remove a property's value. Boolean values like \"__YES__\" are supported for checkbox properties.\nExamples:\n(1) Update page properties:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"update_properties\",\n\"properties\": {\n\"title\": \"New Page Title\",\n\"status\": \"In Progress\",\n\"priority\": 5,\n\"checkbox\": \"__YES__\",\n\"date:deadline:start\": \"2024-12-25\",\n\"date:deadline:is_datetime\": 0,\n\"place:office:name\": \"HQ\",\n\"place:office:latitude\": 37.7749,\n\"place:office:longitude\": -122.4194\n}\n}\n(2) Replace the entire content of a page:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"replace_content\",\n\"new_str\": \"# New Section\nUpdated content goes here\"\n}\n(3) Replace specific content in a page:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"replace_content_range\",\n\"selection_with_ellipsis\": \"# Old Section...end of section\",\n\"new_str\": \"# New Section\nUpdated content goes here\"\n}\n(4) Insert content after specific text:\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"insert_content_after\",\n\"selection_with_ellipsis\": \"## Previous section...\",\n\"new_str\": \"\n## New Section\nContent to insert goes here\"\n}\nNote: For selection_with_ellipsis, provide only the first ~10 characters, an ellipsis, and the last ~10 characters. Ensure the selection is unique; use longer snippets if needed to avoid ambiguity.",
+    "description": "## Overview\nUpdate a Notion page's properties or content.\n## Properties\nNotion page properties are a JSON map of property names to SQLite values.\nFor pages in a database:\n- ALWAYS use the \"fetch\" tool first to get the data source schema and the\texact property names.\n- Provide a non-null value to update a property's value.\n- Omitted properties are left unchanged.\n**IMPORTANT**: Some property types require expanded formats:\n- Date properties: Split into \"date:{property}:start\", \"date:{property}:end\" (optional), and\n\"date:{property}:is_datetime\" (0 or 1)\n- Place properties: Split into \"place:{property}:name\", \"place:{property}:address\",\n\"place:{property}:latitude\", \"place:{property}:longitude\", and\n\"place:{property}:google_place_id\" (optional)\n- Number properties: Use JavaScript numbers (not strings)\n- Checkbox properties: Use \"__YES__\" for checked, \"__NO__\" for unchecked\n**Special property naming**: Properties named \"id\" or \"url\" (case insensitive) must be\nprefixed with \"userDefined:\" (e.g., \"userDefined:URL\", \"userDefined:id\")\nFor pages outside of a database:\n- The only allowed property is \"title\",\twhich is the title of the page in inline markdown format.\n## Content\nNotion page content is a string in Notion-flavored Markdown format. See the \"create-pages\" tool\ndescription for the full enhanced Markdown spec.\nBefore updating a page's content with this tool, use the \"fetch\" tool first to get the existing\ncontent to find out the Markdown snippets to use in the \"replace_content_range\" or\n\"insert_content_after\" commands.\n## Examples\n<example description=\"Update page properties\">\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"update_properties\",\n\"properties\": {\n\"title\": \"New Page Title\",\n\"status\": \"In Progress\",\n\"priority\": 5,\n\"checkbox\": \"__YES__\",\n\"date:deadline:start\": \"2024-12-25\",\n\"date:deadline:is_datetime\": 0,\n\"place:office:name\": \"HQ\",\n\"place:office:latitude\": 37.7749,\n\"place:office:longitude\": -122.4194\n}\n}\n</example>\n<example description=\"Replace the entire content of a page\">\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"replace_content\",\n\"new_str\": \"# New Section\nUpdated content goes here\"\n}\n</example>\n<example description=\"Replace specific content in a page\">\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"replace_content_range\",\n\"selection_with_ellipsis\": \"# Old Section...end of section\",\n\"new_str\": \"# New Section\nUpdated content goes here\"\n}\n</example>\n<example description=\"Insert content after specific text\">\n{\n\"page_id\": \"f336d0bc-b841-465b-8045-024475c079dd\",\n\"command\": \"insert_content_after\",\n\"selection_with_ellipsis\": \"## Previous section...\",\n\"new_str\": \"\n## New Section\nContent to insert goes here\"\n}\n</example>\n**Note**: For selection_with_ellipsis, provide only the first ~10 characters, an ellipsis, and\nthe last ~10 characters. Ensure the selection is unique; use longer snippets if needed to\navoid ambiguity.",
     "tags": [],
     "tool_metadata": {
       "canonical_tool_name": "notion-update-page",
-      "canonical_tool_description_hash": "429c4c8553ead83049c7ea67fc5d376c6c883af2c94e10db6a673866c6bb05d1",
-      "canonical_tool_input_schema_hash": "bb141c00f307bd07e7df2ea39040d30345e8afaabc42d19114cdcd52314e94b4"
+      "canonical_tool_description_hash": "90f333309425f356021602e2973adac53dded4d70f27a1d87e56e65fa8fb6fb8",
+      "canonical_tool_input_schema_hash": "7a9b5dce3588560684aeda6bf58a626d4cfadab20f94857d555abacf6cc1c18f"
     },
     "input_schema": {
       "type": "object",
@@ -182,7 +217,8 @@
                   "properties": {
                     "command": {
                       "type": "string",
-                      "enum": ["update_properties"]
+                      "enum": ["update_properties"],
+                      "description": "Always `update_properties`"
                     },
                     "properties": {
                       "type": "object",
@@ -200,7 +236,8 @@
                   "properties": {
                     "command": {
                       "type": "string",
-                      "enum": ["replace_content"]
+                      "enum": ["replace_content"],
+                      "description": "Always `replace_content`"
                     },
                     "new_str": {
                       "type": "string",
@@ -215,7 +252,8 @@
                   "properties": {
                     "command": {
                       "type": "string",
-                      "enum": ["replace_content_range"]
+                      "enum": ["replace_content_range"],
+                      "description": "Always `replace_content_range`"
                     },
                     "selection_with_ellipsis": {
                       "type": "string",
@@ -234,7 +272,8 @@
                   "properties": {
                     "command": {
                       "type": "string",
-                      "enum": ["insert_content_after"]
+                      "enum": ["insert_content_after"],
+                      "description": "Always `insert_content_after`"
                     },
                     "selection_with_ellipsis": {
                       "type": "string",
@@ -266,7 +305,7 @@
     "tool_metadata": {
       "canonical_tool_name": "notion-move-pages",
       "canonical_tool_description_hash": "15370373cf2ba38d1db810e4bdde9d223b004e74ba1509c93647f78ef8bc59a3",
-      "canonical_tool_input_schema_hash": "9bd9f06475edebe84e0f548a4617f4bdc4957316834d538e7ba5af801c5a2d7c"
+      "canonical_tool_input_schema_hash": "673d94f9e813a86d86379caa9245678d5b0a88924d866bbc85ff2b59e4c93d6a"
     },
     "input_schema": {
       "type": "object",
@@ -291,7 +330,8 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["page_id"]
+                  "enum": ["page_id"],
+                  "description": "Always `page_id`"
                 }
               },
               "required": ["page_id"],
@@ -306,14 +346,43 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["database_id"]
+                  "enum": ["database_id"],
+                  "description": "Always `database_id`"
                 }
               },
               "required": ["database_id"],
               "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "data_source_id": {
+                  "type": "string",
+                  "description": "The ID of the parent data source (collection), with or without dashes. For example, f336d0bc-b841-465b-8045-024475c079dd"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["data_source_id"],
+                  "description": "Always `data_source_id`"
+                }
+              },
+              "required": ["data_source_id"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["workspace"],
+                  "description": "The parent type."
+                }
+              },
+              "required": ["type"],
+              "additionalProperties": false
             }
           ],
-          "description": "The new parent under which the pages will be moved. This can be a page or a database."
+          "description": "The new parent under which the pages will be moved. This can be a page, the workspace, a database, or a specific data source under a database when there are multiple. Moving pages to the workspace level adds them as private pages and should rarely be used."
         }
       },
       "required": ["page_or_database_ids", "new_parent"],
@@ -350,7 +419,7 @@
     "tool_metadata": {
       "canonical_tool_name": "notion-create-database",
       "canonical_tool_description_hash": "2320deccad82e62961ce6edb3ce84e6be61ad58b7ba7d9dacb63255df21b75e6",
-      "canonical_tool_input_schema_hash": "ad0f097e74cc46e8fe9a10e7fa71a8c764576302c9fa7535b7fe23341a0d6d8f"
+      "canonical_tool_input_schema_hash": "2ac1b69f89f4da77e844f97fc26e134bd0779f1589dc86e542d855871d8629dc"
     },
     "input_schema": {
       "type": "object",
@@ -384,15 +453,14 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["number"]
+                        "enum": ["number"],
+                        "description": "Always `number`"
                       },
                       "number": {
                         "type": "object",
                         "properties": {
                           "format": {
-                            "type": "string",
-                            "minLength": 3,
-                            "maxLength": 18
+                            "type": "string"
                           }
                         },
                         "additionalProperties": false
@@ -406,7 +474,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["formula"]
+                        "enum": ["formula"],
+                        "description": "Always `formula`"
                       },
                       "formula": {
                         "type": "object",
@@ -426,7 +495,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["select"]
+                        "enum": ["select"],
+                        "description": "Always `select`"
                       },
                       "select": {
                         "type": "object",
@@ -476,7 +546,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["multi_select"]
+                        "enum": ["multi_select"],
+                        "description": "Always `multi_select`"
                       },
                       "multi_select": {
                         "type": "object",
@@ -526,7 +597,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["status"]
+                        "enum": ["status"],
+                        "description": "Always `status`"
                       },
                       "status": {
                         "type": "object",
@@ -542,7 +614,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["relation"]
+                        "enum": ["relation"],
+                        "description": "Always `relation`"
                       },
                       "relation": {
                         "allOf": [
@@ -562,7 +635,8 @@
                                 "properties": {
                                   "type": {
                                     "type": "string",
-                                    "enum": ["single_property"]
+                                    "enum": ["single_property"],
+                                    "description": "Always `single_property`"
                                   },
                                   "single_property": {
                                     "type": "object",
@@ -578,7 +652,8 @@
                                 "properties": {
                                   "type": {
                                     "type": "string",
-                                    "enum": ["dual_property"]
+                                    "enum": ["dual_property"],
+                                    "description": "Always `dual_property`"
                                   },
                                   "dual_property": {
                                     "type": "object",
@@ -609,7 +684,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["rollup"]
+                        "enum": ["rollup"],
+                        "description": "Always `rollup`"
                       },
                       "rollup": {
                         "allOf": [
@@ -619,7 +695,8 @@
                               "function": {
                                 "type": "string",
                                 "minLength": 3,
-                                "maxLength": 17
+                                "maxLength": 17,
+                                "description": "The function to use for the rollup, e.g. count, count_values, percent_not_empty, max."
                               }
                             },
                             "required": ["function"]
@@ -691,7 +768,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["unique_id"]
+                        "enum": ["unique_id"],
+                        "description": "Always `unique_id`"
                       },
                       "unique_id": {
                         "type": "object",
@@ -711,7 +789,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["title"]
+                        "enum": ["title"],
+                        "description": "Always `title`"
                       },
                       "title": {
                         "type": "object",
@@ -727,7 +806,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["rich_text"]
+                        "enum": ["rich_text"],
+                        "description": "Always `rich_text`"
                       },
                       "rich_text": {
                         "type": "object",
@@ -743,7 +823,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["url"]
+                        "enum": ["url"],
+                        "description": "Always `url`"
                       },
                       "url": {
                         "type": "object",
@@ -759,7 +840,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["people"]
+                        "enum": ["people"],
+                        "description": "Always `people`"
                       },
                       "people": {
                         "type": "object",
@@ -775,7 +857,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["files"]
+                        "enum": ["files"],
+                        "description": "Always `files`"
                       },
                       "files": {
                         "type": "object",
@@ -791,7 +874,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["email"]
+                        "enum": ["email"],
+                        "description": "Always `email`"
                       },
                       "email": {
                         "type": "object",
@@ -807,7 +891,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["phone_number"]
+                        "enum": ["phone_number"],
+                        "description": "Always `phone_number`"
                       },
                       "phone_number": {
                         "type": "object",
@@ -823,7 +908,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["date"]
+                        "enum": ["date"],
+                        "description": "Always `date`"
                       },
                       "date": {
                         "type": "object",
@@ -839,7 +925,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["checkbox"]
+                        "enum": ["checkbox"],
+                        "description": "Always `checkbox`"
                       },
                       "checkbox": {
                         "type": "object",
@@ -855,7 +942,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["created_by"]
+                        "enum": ["created_by"],
+                        "description": "Always `created_by`"
                       },
                       "created_by": {
                         "type": "object",
@@ -871,7 +959,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["created_time"]
+                        "enum": ["created_time"],
+                        "description": "Always `created_time`"
                       },
                       "created_time": {
                         "type": "object",
@@ -887,7 +976,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["last_edited_by"]
+                        "enum": ["last_edited_by"],
+                        "description": "Always `last_edited_by`"
                       },
                       "last_edited_by": {
                         "type": "object",
@@ -903,7 +993,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["last_edited_time"]
+                        "enum": ["last_edited_time"],
+                        "description": "Always `last_edited_time`"
                       },
                       "last_edited_time": {
                         "type": "object",
@@ -919,7 +1010,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["button"]
+                        "enum": ["button"],
+                        "description": "Always `button`"
                       },
                       "button": {
                         "type": "object",
@@ -935,7 +1027,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["location"]
+                        "enum": ["location"],
+                        "description": "Always `location`"
                       },
                       "location": {
                         "type": "object",
@@ -951,7 +1044,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["verification"]
+                        "enum": ["verification"],
+                        "description": "Always `verification`"
                       },
                       "verification": {
                         "type": "object",
@@ -967,7 +1061,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["last_visited_time"]
+                        "enum": ["last_visited_time"],
+                        "description": "Always `last_visited_time`"
                       },
                       "last_visited_time": {
                         "type": "object",
@@ -983,7 +1078,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["place"]
+                        "enum": ["place"],
+                        "description": "Always `place`"
                       },
                       "place": {
                         "type": "object",
@@ -1009,7 +1105,8 @@
             },
             "type": {
               "type": "string",
-              "enum": ["page_id"]
+              "enum": ["page_id"],
+              "description": "Always `page_id`"
             }
           },
           "required": ["page_id"],
@@ -1050,10 +1147,11 @@
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 18,
-                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
+                        "description": "The color of the text."
                       }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "All rich text objects contain an annotations object that sets the styling for the rich text."
                   }
                 }
               },
@@ -1064,7 +1162,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text"]
+                        "enum": ["text"],
+                        "description": "Always `text`"
                       },
                       "text": {
                         "type": "object",
@@ -1107,7 +1206,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["mention"]
+                        "enum": ["mention"],
+                        "description": "Always `mention`"
                       },
                       "mention": {
                         "anyOf": [
@@ -1116,163 +1216,24 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["user"]
+                                "enum": ["user"],
+                                "description": "Always `user`"
                               },
                               "user": {
-                                "anyOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string"
-                                      },
-                                      "object": {
-                                        "type": "string",
-                                        "enum": ["user"],
-                                        "description": "The user object type name."
-                                      }
-                                    },
-                                    "required": ["id"],
-                                    "additionalProperties": false
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "The ID of the user."
                                   },
-                                  {
-                                    "allOf": [
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "type": "string"
-                                          },
-                                          "name": {
-                                            "type": ["string", "null"],
-                                            "description": "The name of the user."
-                                          },
-                                          "object": {
-                                            "type": "string",
-                                            "enum": ["user"],
-                                            "description": "The user object type name."
-                                          },
-                                          "avatar_url": {
-                                            "type": ["string", "null"],
-                                            "description": "The avatar URL of the user."
-                                          }
-                                        },
-                                        "required": ["id"]
-                                      },
-                                      {
-                                        "anyOf": [
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["person"]
-                                              },
-                                              "person": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "email": {
-                                                    "type": "string",
-                                                    "description": "The email of the person."
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["person"],
-                                            "additionalProperties": false
-                                          },
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["bot"]
-                                              },
-                                              "bot": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "owner": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "user": {
-                                                            "anyOf": [
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "email": {
-                                                                    "type": "string",
-                                                                    "description": "The email of the person."
-                                                                  }
-                                                                },
-                                                                "required": ["email"],
-                                                                "additionalProperties": false
-                                                              },
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "id": {
-                                                                    "type": "string"
-                                                                  },
-                                                                  "object": {
-                                                                    "type": "string",
-                                                                    "enum": ["user"],
-                                                                    "description": "The user object type name."
-                                                                  }
-                                                                },
-                                                                "required": ["id"],
-                                                                "additionalProperties": false
-                                                              }
-                                                            ],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `user`. This means the bot is for a public integration."
-                                                          }
-                                                        },
-                                                        "required": ["user"],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "workspace": {
-                                                            "type": "string",
-                                                            "enum": ["true"],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `workspace`. This means the bot is for an internal integration."
-                                                          }
-                                                        },
-                                                        "required": ["workspace"],
-                                                        "additionalProperties": false
-                                                      }
-                                                    ]
-                                                  },
-                                                  "workspace_name": {
-                                                    "type": ["string", "null"],
-                                                    "description": "The name of the bot's workspace."
-                                                  },
-                                                  "workspace_limits": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "max_file_upload_size_in_bytes": {
-                                                        "type": "integer",
-                                                        "description": "The maximum allowable size of a file upload, in bytes"
-                                                      }
-                                                    },
-                                                    "required": ["max_file_upload_size_in_bytes"],
-                                                    "additionalProperties": false
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["bot"],
-                                            "additionalProperties": false
-                                          }
-                                        ]
-                                      }
-                                    ]
+                                  "object": {
+                                    "type": "string",
+                                    "enum": ["user"],
+                                    "description": "The user object type name."
                                   }
-                                ],
+                                },
+                                "required": ["id"],
+                                "additionalProperties": false,
                                 "description": "Details of the user mention."
                               }
                             },
@@ -1284,7 +1245,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["date"]
+                                "enum": ["date"],
+                                "description": "Always `date`"
                               },
                               "date": {
                                 "type": "object",
@@ -1307,21 +1269,13 @@
                                     "description": "The end date of the date object, if any."
                                   },
                                   "time_zone": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 32
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
+                                    "type": ["string", "null"],
                                     "description": "The time zone of the date object, if any. E.g. America/Los_Angeles, Europe/London, etc."
                                   }
                                 },
                                 "required": ["start"],
-                                "additionalProperties": false
+                                "additionalProperties": false,
+                                "description": "Details of the date mention."
                               }
                             },
                             "required": ["date"],
@@ -1332,13 +1286,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["page"]
+                                "enum": ["page"],
+                                "description": "Always `page`"
                               },
                               "page": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the page in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -1354,13 +1310,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["database"]
+                                "enum": ["database"],
+                                "description": "Always `database`"
                               },
                               "database": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the database in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -1376,7 +1334,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["template_mention"]
+                                "enum": ["template_mention"],
+                                "description": "Always `template_mention`"
                               },
                               "template_mention": {
                                 "anyOf": [
@@ -1385,7 +1344,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_date"]
+                                        "enum": ["template_mention_date"],
+                                        "description": "Always `template_mention_date`"
                                       },
                                       "template_mention_date": {
                                         "type": "string",
@@ -1401,7 +1361,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_user"]
+                                        "enum": ["template_mention_user"],
+                                        "description": "Always `template_mention_user`"
                                       },
                                       "template_mention_user": {
                                         "type": "string",
@@ -1412,7 +1373,8 @@
                                     "required": ["template_mention_user"],
                                     "additionalProperties": false
                                   }
-                                ]
+                                ],
+                                "description": "Details of the template mention."
                               }
                             },
                             "required": ["template_mention"],
@@ -1423,13 +1385,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["custom_emoji"]
+                                "enum": ["custom_emoji"],
+                                "description": "Always `custom_emoji`"
                               },
                               "custom_emoji": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the custom emoji."
                                   },
                                   "name": {
                                     "type": "string",
@@ -1460,7 +1424,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["equation"]
+                        "enum": ["equation"],
+                        "description": "Always `equation`"
                       },
                       "equation": {
                         "type": "object",
@@ -1519,10 +1484,11 @@
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 18,
-                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
+                        "description": "The color of the text."
                       }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "All rich text objects contain an annotations object that sets the styling for the rich text."
                   }
                 }
               },
@@ -1533,7 +1499,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text"]
+                        "enum": ["text"],
+                        "description": "Always `text`"
                       },
                       "text": {
                         "type": "object",
@@ -1576,7 +1543,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["mention"]
+                        "enum": ["mention"],
+                        "description": "Always `mention`"
                       },
                       "mention": {
                         "anyOf": [
@@ -1585,163 +1553,24 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["user"]
+                                "enum": ["user"],
+                                "description": "Always `user`"
                               },
                               "user": {
-                                "anyOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string"
-                                      },
-                                      "object": {
-                                        "type": "string",
-                                        "enum": ["user"],
-                                        "description": "The user object type name."
-                                      }
-                                    },
-                                    "required": ["id"],
-                                    "additionalProperties": false
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "The ID of the user."
                                   },
-                                  {
-                                    "allOf": [
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "type": "string"
-                                          },
-                                          "name": {
-                                            "type": ["string", "null"],
-                                            "description": "The name of the user."
-                                          },
-                                          "object": {
-                                            "type": "string",
-                                            "enum": ["user"],
-                                            "description": "The user object type name."
-                                          },
-                                          "avatar_url": {
-                                            "type": ["string", "null"],
-                                            "description": "The avatar URL of the user."
-                                          }
-                                        },
-                                        "required": ["id"]
-                                      },
-                                      {
-                                        "anyOf": [
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["person"]
-                                              },
-                                              "person": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "email": {
-                                                    "type": "string",
-                                                    "description": "The email of the person."
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["person"],
-                                            "additionalProperties": false
-                                          },
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["bot"]
-                                              },
-                                              "bot": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "owner": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "user": {
-                                                            "anyOf": [
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "email": {
-                                                                    "type": "string",
-                                                                    "description": "The email of the person."
-                                                                  }
-                                                                },
-                                                                "required": ["email"],
-                                                                "additionalProperties": false
-                                                              },
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "id": {
-                                                                    "type": "string"
-                                                                  },
-                                                                  "object": {
-                                                                    "type": "string",
-                                                                    "enum": ["user"],
-                                                                    "description": "The user object type name."
-                                                                  }
-                                                                },
-                                                                "required": ["id"],
-                                                                "additionalProperties": false
-                                                              }
-                                                            ],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `user`. This means the bot is for a public integration."
-                                                          }
-                                                        },
-                                                        "required": ["user"],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "workspace": {
-                                                            "type": "string",
-                                                            "enum": ["true"],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `workspace`. This means the bot is for an internal integration."
-                                                          }
-                                                        },
-                                                        "required": ["workspace"],
-                                                        "additionalProperties": false
-                                                      }
-                                                    ]
-                                                  },
-                                                  "workspace_name": {
-                                                    "type": ["string", "null"],
-                                                    "description": "The name of the bot's workspace."
-                                                  },
-                                                  "workspace_limits": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "max_file_upload_size_in_bytes": {
-                                                        "type": "integer",
-                                                        "description": "The maximum allowable size of a file upload, in bytes"
-                                                      }
-                                                    },
-                                                    "required": ["max_file_upload_size_in_bytes"],
-                                                    "additionalProperties": false
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["bot"],
-                                            "additionalProperties": false
-                                          }
-                                        ]
-                                      }
-                                    ]
+                                  "object": {
+                                    "type": "string",
+                                    "enum": ["user"],
+                                    "description": "The user object type name."
                                   }
-                                ],
+                                },
+                                "required": ["id"],
+                                "additionalProperties": false,
                                 "description": "Details of the user mention."
                               }
                             },
@@ -1753,7 +1582,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["date"]
+                                "enum": ["date"],
+                                "description": "Always `date`"
                               },
                               "date": {
                                 "type": "object",
@@ -1776,21 +1606,13 @@
                                     "description": "The end date of the date object, if any."
                                   },
                                   "time_zone": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 32
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
+                                    "type": ["string", "null"],
                                     "description": "The time zone of the date object, if any. E.g. America/Los_Angeles, Europe/London, etc."
                                   }
                                 },
                                 "required": ["start"],
-                                "additionalProperties": false
+                                "additionalProperties": false,
+                                "description": "Details of the date mention."
                               }
                             },
                             "required": ["date"],
@@ -1801,13 +1623,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["page"]
+                                "enum": ["page"],
+                                "description": "Always `page`"
                               },
                               "page": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the page in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -1823,13 +1647,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["database"]
+                                "enum": ["database"],
+                                "description": "Always `database`"
                               },
                               "database": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the database in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -1845,7 +1671,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["template_mention"]
+                                "enum": ["template_mention"],
+                                "description": "Always `template_mention`"
                               },
                               "template_mention": {
                                 "anyOf": [
@@ -1854,7 +1681,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_date"]
+                                        "enum": ["template_mention_date"],
+                                        "description": "Always `template_mention_date`"
                                       },
                                       "template_mention_date": {
                                         "type": "string",
@@ -1870,7 +1698,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_user"]
+                                        "enum": ["template_mention_user"],
+                                        "description": "Always `template_mention_user`"
                                       },
                                       "template_mention_user": {
                                         "type": "string",
@@ -1881,7 +1710,8 @@
                                     "required": ["template_mention_user"],
                                     "additionalProperties": false
                                   }
-                                ]
+                                ],
+                                "description": "Details of the template mention."
                               }
                             },
                             "required": ["template_mention"],
@@ -1892,13 +1722,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["custom_emoji"]
+                                "enum": ["custom_emoji"],
+                                "description": "Always `custom_emoji`"
                               },
                               "custom_emoji": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the custom emoji."
                                   },
                                   "name": {
                                     "type": "string",
@@ -1929,7 +1761,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["equation"]
+                        "enum": ["equation"],
+                        "description": "Always `equation`"
                       },
                       "equation": {
                         "type": "object",
@@ -1967,7 +1800,7 @@
     "tool_metadata": {
       "canonical_tool_name": "notion-update-database",
       "canonical_tool_description_hash": "0c7b092df72e1dae5d670afc56bbe3fe6e9f30e7bba46d31dd0365280ce418c5",
-      "canonical_tool_input_schema_hash": "c2ab4707b2a009d68de5ba2ad18bdc075dd3f8e67e69ce854c9542d0519b7dc4"
+      "canonical_tool_input_schema_hash": "844e3865426add64236b2d7ce992374ad5a60fecc507f98de7c7930fdb404263"
     },
     "input_schema": {
       "type": "object",
@@ -2010,10 +1843,11 @@
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 18,
-                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
+                        "description": "The color of the text."
                       }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "All rich text objects contain an annotations object that sets the styling for the rich text."
                   }
                 }
               },
@@ -2024,7 +1858,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text"]
+                        "enum": ["text"],
+                        "description": "Always `text`"
                       },
                       "text": {
                         "type": "object",
@@ -2067,7 +1902,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["mention"]
+                        "enum": ["mention"],
+                        "description": "Always `mention`"
                       },
                       "mention": {
                         "anyOf": [
@@ -2076,163 +1912,24 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["user"]
+                                "enum": ["user"],
+                                "description": "Always `user`"
                               },
                               "user": {
-                                "anyOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string"
-                                      },
-                                      "object": {
-                                        "type": "string",
-                                        "enum": ["user"],
-                                        "description": "The user object type name."
-                                      }
-                                    },
-                                    "required": ["id"],
-                                    "additionalProperties": false
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "The ID of the user."
                                   },
-                                  {
-                                    "allOf": [
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "type": "string"
-                                          },
-                                          "name": {
-                                            "type": ["string", "null"],
-                                            "description": "The name of the user."
-                                          },
-                                          "object": {
-                                            "type": "string",
-                                            "enum": ["user"],
-                                            "description": "The user object type name."
-                                          },
-                                          "avatar_url": {
-                                            "type": ["string", "null"],
-                                            "description": "The avatar URL of the user."
-                                          }
-                                        },
-                                        "required": ["id"]
-                                      },
-                                      {
-                                        "anyOf": [
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["person"]
-                                              },
-                                              "person": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "email": {
-                                                    "type": "string",
-                                                    "description": "The email of the person."
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["person"],
-                                            "additionalProperties": false
-                                          },
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["bot"]
-                                              },
-                                              "bot": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "owner": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "user": {
-                                                            "anyOf": [
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "email": {
-                                                                    "type": "string",
-                                                                    "description": "The email of the person."
-                                                                  }
-                                                                },
-                                                                "required": ["email"],
-                                                                "additionalProperties": false
-                                                              },
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "id": {
-                                                                    "type": "string"
-                                                                  },
-                                                                  "object": {
-                                                                    "type": "string",
-                                                                    "enum": ["user"],
-                                                                    "description": "The user object type name."
-                                                                  }
-                                                                },
-                                                                "required": ["id"],
-                                                                "additionalProperties": false
-                                                              }
-                                                            ],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `user`. This means the bot is for a public integration."
-                                                          }
-                                                        },
-                                                        "required": ["user"],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "workspace": {
-                                                            "type": "string",
-                                                            "enum": ["true"],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `workspace`. This means the bot is for an internal integration."
-                                                          }
-                                                        },
-                                                        "required": ["workspace"],
-                                                        "additionalProperties": false
-                                                      }
-                                                    ]
-                                                  },
-                                                  "workspace_name": {
-                                                    "type": ["string", "null"],
-                                                    "description": "The name of the bot's workspace."
-                                                  },
-                                                  "workspace_limits": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "max_file_upload_size_in_bytes": {
-                                                        "type": "integer",
-                                                        "description": "The maximum allowable size of a file upload, in bytes"
-                                                      }
-                                                    },
-                                                    "required": ["max_file_upload_size_in_bytes"],
-                                                    "additionalProperties": false
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["bot"],
-                                            "additionalProperties": false
-                                          }
-                                        ]
-                                      }
-                                    ]
+                                  "object": {
+                                    "type": "string",
+                                    "enum": ["user"],
+                                    "description": "The user object type name."
                                   }
-                                ],
+                                },
+                                "required": ["id"],
+                                "additionalProperties": false,
                                 "description": "Details of the user mention."
                               }
                             },
@@ -2244,7 +1941,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["date"]
+                                "enum": ["date"],
+                                "description": "Always `date`"
                               },
                               "date": {
                                 "type": "object",
@@ -2267,21 +1965,13 @@
                                     "description": "The end date of the date object, if any."
                                   },
                                   "time_zone": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 32
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
+                                    "type": ["string", "null"],
                                     "description": "The time zone of the date object, if any. E.g. America/Los_Angeles, Europe/London, etc."
                                   }
                                 },
                                 "required": ["start"],
-                                "additionalProperties": false
+                                "additionalProperties": false,
+                                "description": "Details of the date mention."
                               }
                             },
                             "required": ["date"],
@@ -2292,13 +1982,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["page"]
+                                "enum": ["page"],
+                                "description": "Always `page`"
                               },
                               "page": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the page in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -2314,13 +2006,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["database"]
+                                "enum": ["database"],
+                                "description": "Always `database`"
                               },
                               "database": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the database in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -2336,7 +2030,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["template_mention"]
+                                "enum": ["template_mention"],
+                                "description": "Always `template_mention`"
                               },
                               "template_mention": {
                                 "anyOf": [
@@ -2345,7 +2040,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_date"]
+                                        "enum": ["template_mention_date"],
+                                        "description": "Always `template_mention_date`"
                                       },
                                       "template_mention_date": {
                                         "type": "string",
@@ -2361,7 +2057,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_user"]
+                                        "enum": ["template_mention_user"],
+                                        "description": "Always `template_mention_user`"
                                       },
                                       "template_mention_user": {
                                         "type": "string",
@@ -2372,7 +2069,8 @@
                                     "required": ["template_mention_user"],
                                     "additionalProperties": false
                                   }
-                                ]
+                                ],
+                                "description": "Details of the template mention."
                               }
                             },
                             "required": ["template_mention"],
@@ -2383,13 +2081,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["custom_emoji"]
+                                "enum": ["custom_emoji"],
+                                "description": "Always `custom_emoji`"
                               },
                               "custom_emoji": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the custom emoji."
                                   },
                                   "name": {
                                     "type": "string",
@@ -2420,7 +2120,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["equation"]
+                        "enum": ["equation"],
+                        "description": "Always `equation`"
                       },
                       "equation": {
                         "type": "object",
@@ -2479,10 +2180,11 @@
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 18,
-                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
+                        "description": "The color of the text."
                       }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "All rich text objects contain an annotations object that sets the styling for the rich text."
                   }
                 }
               },
@@ -2493,7 +2195,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text"]
+                        "enum": ["text"],
+                        "description": "Always `text`"
                       },
                       "text": {
                         "type": "object",
@@ -2536,7 +2239,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["mention"]
+                        "enum": ["mention"],
+                        "description": "Always `mention`"
                       },
                       "mention": {
                         "anyOf": [
@@ -2545,163 +2249,24 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["user"]
+                                "enum": ["user"],
+                                "description": "Always `user`"
                               },
                               "user": {
-                                "anyOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string"
-                                      },
-                                      "object": {
-                                        "type": "string",
-                                        "enum": ["user"],
-                                        "description": "The user object type name."
-                                      }
-                                    },
-                                    "required": ["id"],
-                                    "additionalProperties": false
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "The ID of the user."
                                   },
-                                  {
-                                    "allOf": [
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "type": "string"
-                                          },
-                                          "name": {
-                                            "type": ["string", "null"],
-                                            "description": "The name of the user."
-                                          },
-                                          "object": {
-                                            "type": "string",
-                                            "enum": ["user"],
-                                            "description": "The user object type name."
-                                          },
-                                          "avatar_url": {
-                                            "type": ["string", "null"],
-                                            "description": "The avatar URL of the user."
-                                          }
-                                        },
-                                        "required": ["id"]
-                                      },
-                                      {
-                                        "anyOf": [
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["person"]
-                                              },
-                                              "person": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "email": {
-                                                    "type": "string",
-                                                    "description": "The email of the person."
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["person"],
-                                            "additionalProperties": false
-                                          },
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["bot"]
-                                              },
-                                              "bot": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "owner": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "user": {
-                                                            "anyOf": [
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "email": {
-                                                                    "type": "string",
-                                                                    "description": "The email of the person."
-                                                                  }
-                                                                },
-                                                                "required": ["email"],
-                                                                "additionalProperties": false
-                                                              },
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "id": {
-                                                                    "type": "string"
-                                                                  },
-                                                                  "object": {
-                                                                    "type": "string",
-                                                                    "enum": ["user"],
-                                                                    "description": "The user object type name."
-                                                                  }
-                                                                },
-                                                                "required": ["id"],
-                                                                "additionalProperties": false
-                                                              }
-                                                            ],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `user`. This means the bot is for a public integration."
-                                                          }
-                                                        },
-                                                        "required": ["user"],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "workspace": {
-                                                            "type": "string",
-                                                            "enum": ["true"],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `workspace`. This means the bot is for an internal integration."
-                                                          }
-                                                        },
-                                                        "required": ["workspace"],
-                                                        "additionalProperties": false
-                                                      }
-                                                    ]
-                                                  },
-                                                  "workspace_name": {
-                                                    "type": ["string", "null"],
-                                                    "description": "The name of the bot's workspace."
-                                                  },
-                                                  "workspace_limits": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "max_file_upload_size_in_bytes": {
-                                                        "type": "integer",
-                                                        "description": "The maximum allowable size of a file upload, in bytes"
-                                                      }
-                                                    },
-                                                    "required": ["max_file_upload_size_in_bytes"],
-                                                    "additionalProperties": false
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["bot"],
-                                            "additionalProperties": false
-                                          }
-                                        ]
-                                      }
-                                    ]
+                                  "object": {
+                                    "type": "string",
+                                    "enum": ["user"],
+                                    "description": "The user object type name."
                                   }
-                                ],
+                                },
+                                "required": ["id"],
+                                "additionalProperties": false,
                                 "description": "Details of the user mention."
                               }
                             },
@@ -2713,7 +2278,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["date"]
+                                "enum": ["date"],
+                                "description": "Always `date`"
                               },
                               "date": {
                                 "type": "object",
@@ -2736,21 +2302,13 @@
                                     "description": "The end date of the date object, if any."
                                   },
                                   "time_zone": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 32
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
+                                    "type": ["string", "null"],
                                     "description": "The time zone of the date object, if any. E.g. America/Los_Angeles, Europe/London, etc."
                                   }
                                 },
                                 "required": ["start"],
-                                "additionalProperties": false
+                                "additionalProperties": false,
+                                "description": "Details of the date mention."
                               }
                             },
                             "required": ["date"],
@@ -2761,13 +2319,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["page"]
+                                "enum": ["page"],
+                                "description": "Always `page`"
                               },
                               "page": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the page in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -2783,13 +2343,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["database"]
+                                "enum": ["database"],
+                                "description": "Always `database`"
                               },
                               "database": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the database in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -2805,7 +2367,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["template_mention"]
+                                "enum": ["template_mention"],
+                                "description": "Always `template_mention`"
                               },
                               "template_mention": {
                                 "anyOf": [
@@ -2814,7 +2377,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_date"]
+                                        "enum": ["template_mention_date"],
+                                        "description": "Always `template_mention_date`"
                                       },
                                       "template_mention_date": {
                                         "type": "string",
@@ -2830,7 +2394,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_user"]
+                                        "enum": ["template_mention_user"],
+                                        "description": "Always `template_mention_user`"
                                       },
                                       "template_mention_user": {
                                         "type": "string",
@@ -2841,7 +2406,8 @@
                                     "required": ["template_mention_user"],
                                     "additionalProperties": false
                                   }
-                                ]
+                                ],
+                                "description": "Details of the template mention."
                               }
                             },
                             "required": ["template_mention"],
@@ -2852,13 +2418,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["custom_emoji"]
+                                "enum": ["custom_emoji"],
+                                "description": "Always `custom_emoji`"
                               },
                               "custom_emoji": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the custom emoji."
                                   },
                                   "name": {
                                     "type": "string",
@@ -2889,7 +2457,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["equation"]
+                        "enum": ["equation"],
+                        "description": "Always `equation`"
                       },
                       "equation": {
                         "type": "object",
@@ -2949,15 +2518,14 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["number"]
+                            "enum": ["number"],
+                            "description": "Always `number`"
                           },
                           "number": {
                             "type": "object",
                             "properties": {
                               "format": {
-                                "type": "string",
-                                "minLength": 3,
-                                "maxLength": 18
+                                "type": "string"
                               }
                             },
                             "additionalProperties": false
@@ -2971,7 +2539,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["formula"]
+                            "enum": ["formula"],
+                            "description": "Always `formula`"
                           },
                           "formula": {
                             "type": "object",
@@ -2991,7 +2560,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["select"]
+                            "enum": ["select"],
+                            "description": "Always `select`"
                           },
                           "select": {
                             "type": "object",
@@ -3003,9 +2573,6 @@
                                     {
                                       "type": "object",
                                       "properties": {
-                                        "name": {
-                                          "type": "string"
-                                        },
                                         "color": {
                                           "type": "string",
                                           "enum": [
@@ -3025,8 +2592,7 @@
                                         "description": {
                                           "type": ["string", "null"]
                                         }
-                                      },
-                                      "required": ["name"]
+                                      }
                                     },
                                     {
                                       "anyOf": [
@@ -3074,7 +2640,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["multi_select"]
+                            "enum": ["multi_select"],
+                            "description": "Always `multi_select`"
                           },
                           "multi_select": {
                             "type": "object",
@@ -3086,9 +2653,6 @@
                                     {
                                       "type": "object",
                                       "properties": {
-                                        "name": {
-                                          "type": "string"
-                                        },
                                         "color": {
                                           "type": "string",
                                           "enum": [
@@ -3108,8 +2672,7 @@
                                         "description": {
                                           "type": ["string", "null"]
                                         }
-                                      },
-                                      "required": ["name"]
+                                      }
                                     },
                                     {
                                       "anyOf": [
@@ -3157,7 +2720,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["status"]
+                            "enum": ["status"],
+                            "description": "Always `status`"
                           },
                           "status": {
                             "type": "object",
@@ -3173,7 +2737,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["relation"]
+                            "enum": ["relation"],
+                            "description": "Always `relation`"
                           },
                           "relation": {
                             "allOf": [
@@ -3193,7 +2758,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["single_property"]
+                                        "enum": ["single_property"],
+                                        "description": "Always `single_property`"
                                       },
                                       "single_property": {
                                         "type": "object",
@@ -3209,7 +2775,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["dual_property"]
+                                        "enum": ["dual_property"],
+                                        "description": "Always `dual_property`"
                                       },
                                       "dual_property": {
                                         "type": "object",
@@ -3240,7 +2807,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["rollup"]
+                            "enum": ["rollup"],
+                            "description": "Always `rollup`"
                           },
                           "rollup": {
                             "allOf": [
@@ -3250,7 +2818,8 @@
                                   "function": {
                                     "type": "string",
                                     "minLength": 3,
-                                    "maxLength": 17
+                                    "maxLength": 17,
+                                    "description": "The function to use for the rollup, e.g. count, count_values, percent_not_empty, max."
                                   }
                                 },
                                 "required": ["function"]
@@ -3322,7 +2891,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["unique_id"]
+                            "enum": ["unique_id"],
+                            "description": "Always `unique_id`"
                           },
                           "unique_id": {
                             "type": "object",
@@ -3342,7 +2912,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["title"]
+                            "enum": ["title"],
+                            "description": "Always `title`"
                           },
                           "title": {
                             "type": "object",
@@ -3358,7 +2929,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["rich_text"]
+                            "enum": ["rich_text"],
+                            "description": "Always `rich_text`"
                           },
                           "rich_text": {
                             "type": "object",
@@ -3374,7 +2946,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["url"]
+                            "enum": ["url"],
+                            "description": "Always `url`"
                           },
                           "url": {
                             "type": "object",
@@ -3390,7 +2963,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["people"]
+                            "enum": ["people"],
+                            "description": "Always `people`"
                           },
                           "people": {
                             "type": "object",
@@ -3406,7 +2980,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["files"]
+                            "enum": ["files"],
+                            "description": "Always `files`"
                           },
                           "files": {
                             "type": "object",
@@ -3422,7 +2997,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["email"]
+                            "enum": ["email"],
+                            "description": "Always `email`"
                           },
                           "email": {
                             "type": "object",
@@ -3438,7 +3014,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["phone_number"]
+                            "enum": ["phone_number"],
+                            "description": "Always `phone_number`"
                           },
                           "phone_number": {
                             "type": "object",
@@ -3454,7 +3031,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["date"]
+                            "enum": ["date"],
+                            "description": "Always `date`"
                           },
                           "date": {
                             "type": "object",
@@ -3470,7 +3048,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["checkbox"]
+                            "enum": ["checkbox"],
+                            "description": "Always `checkbox`"
                           },
                           "checkbox": {
                             "type": "object",
@@ -3486,7 +3065,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["created_by"]
+                            "enum": ["created_by"],
+                            "description": "Always `created_by`"
                           },
                           "created_by": {
                             "type": "object",
@@ -3502,7 +3082,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["created_time"]
+                            "enum": ["created_time"],
+                            "description": "Always `created_time`"
                           },
                           "created_time": {
                             "type": "object",
@@ -3518,7 +3099,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["last_edited_by"]
+                            "enum": ["last_edited_by"],
+                            "description": "Always `last_edited_by`"
                           },
                           "last_edited_by": {
                             "type": "object",
@@ -3534,7 +3116,8 @@
                         "properties": {
                           "type": {
                             "type": "string",
-                            "enum": ["last_edited_time"]
+                            "enum": ["last_edited_time"],
+                            "description": "Always `last_edited_time`"
                           },
                           "last_edited_time": {
                             "type": "object",
@@ -3588,7 +3171,7 @@
     "tool_metadata": {
       "canonical_tool_name": "notion-create-comment",
       "canonical_tool_description_hash": "edb9177d9556d8518de283756987b68514cc71861cff565a348fbc4ec02d01a9",
-      "canonical_tool_input_schema_hash": "4a6f7aafa0ada1234cd64897051e3d197ba8d1f7c57c8ee242c9466b50aac28f"
+      "canonical_tool_input_schema_hash": "8a7a9ee2c151764b829e4bee10988e6141541fde452b4ca85fe1a8cdfc34427a"
     },
     "input_schema": {
       "type": "object",
@@ -3597,11 +3180,13 @@
           "type": "object",
           "properties": {
             "page_id": {
-              "type": "string"
+              "type": "string",
+              "description": "The ID of the parent page (with or without dashes), for example, 195de9221179449fab8075a27c979105"
             },
             "type": {
               "type": "string",
-              "enum": ["page_id"]
+              "enum": ["page_id"],
+              "description": "Always `page_id`"
             }
           },
           "required": ["page_id"],
@@ -3642,10 +3227,11 @@
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 18,
-                        "description": "One of: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`, `default_background`, `gray_background`, `brown_background`, `orange_background`, `yellow_background`, `green_background`, `blue_background`, `purple_background`, `pink_background`, `red_background`"
+                        "description": "The color of the text."
                       }
                     },
-                    "additionalProperties": false
+                    "additionalProperties": false,
+                    "description": "All rich text objects contain an annotations object that sets the styling for the rich text."
                   }
                 }
               },
@@ -3656,7 +3242,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text"]
+                        "enum": ["text"],
+                        "description": "Always `text`"
                       },
                       "text": {
                         "type": "object",
@@ -3699,7 +3286,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["mention"]
+                        "enum": ["mention"],
+                        "description": "Always `mention`"
                       },
                       "mention": {
                         "anyOf": [
@@ -3708,163 +3296,24 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["user"]
+                                "enum": ["user"],
+                                "description": "Always `user`"
                               },
                               "user": {
-                                "anyOf": [
-                                  {
-                                    "type": "object",
-                                    "properties": {
-                                      "id": {
-                                        "type": "string"
-                                      },
-                                      "object": {
-                                        "type": "string",
-                                        "enum": ["user"],
-                                        "description": "The user object type name."
-                                      }
-                                    },
-                                    "required": ["id"],
-                                    "additionalProperties": false
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "description": "The ID of the user."
                                   },
-                                  {
-                                    "allOf": [
-                                      {
-                                        "type": "object",
-                                        "properties": {
-                                          "id": {
-                                            "type": "string"
-                                          },
-                                          "name": {
-                                            "type": ["string", "null"],
-                                            "description": "The name of the user."
-                                          },
-                                          "object": {
-                                            "type": "string",
-                                            "enum": ["user"],
-                                            "description": "The user object type name."
-                                          },
-                                          "avatar_url": {
-                                            "type": ["string", "null"],
-                                            "description": "The avatar URL of the user."
-                                          }
-                                        },
-                                        "required": ["id"]
-                                      },
-                                      {
-                                        "anyOf": [
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["person"]
-                                              },
-                                              "person": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "email": {
-                                                    "type": "string",
-                                                    "description": "The email of the person."
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["person"],
-                                            "additionalProperties": false
-                                          },
-                                          {
-                                            "type": "object",
-                                            "properties": {
-                                              "type": {
-                                                "type": "string",
-                                                "enum": ["bot"]
-                                              },
-                                              "bot": {
-                                                "type": "object",
-                                                "properties": {
-                                                  "owner": {
-                                                    "anyOf": [
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "user": {
-                                                            "anyOf": [
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "email": {
-                                                                    "type": "string",
-                                                                    "description": "The email of the person."
-                                                                  }
-                                                                },
-                                                                "required": ["email"],
-                                                                "additionalProperties": false
-                                                              },
-                                                              {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                  "id": {
-                                                                    "type": "string"
-                                                                  },
-                                                                  "object": {
-                                                                    "type": "string",
-                                                                    "enum": ["user"],
-                                                                    "description": "The user object type name."
-                                                                  }
-                                                                },
-                                                                "required": ["id"],
-                                                                "additionalProperties": false
-                                                              }
-                                                            ],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `user`. This means the bot is for a public integration."
-                                                          }
-                                                        },
-                                                        "required": ["user"],
-                                                        "additionalProperties": false
-                                                      },
-                                                      {
-                                                        "type": "object",
-                                                        "properties": {
-                                                          "workspace": {
-                                                            "type": "string",
-                                                            "enum": ["true"],
-                                                            "description": "Details about the owner of the bot, when the `type` of the owner is `workspace`. This means the bot is for an internal integration."
-                                                          }
-                                                        },
-                                                        "required": ["workspace"],
-                                                        "additionalProperties": false
-                                                      }
-                                                    ]
-                                                  },
-                                                  "workspace_name": {
-                                                    "type": ["string", "null"],
-                                                    "description": "The name of the bot's workspace."
-                                                  },
-                                                  "workspace_limits": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "max_file_upload_size_in_bytes": {
-                                                        "type": "integer",
-                                                        "description": "The maximum allowable size of a file upload, in bytes"
-                                                      }
-                                                    },
-                                                    "required": ["max_file_upload_size_in_bytes"],
-                                                    "additionalProperties": false
-                                                  }
-                                                },
-                                                "additionalProperties": false
-                                              }
-                                            },
-                                            "required": ["bot"],
-                                            "additionalProperties": false
-                                          }
-                                        ]
-                                      }
-                                    ]
+                                  "object": {
+                                    "type": "string",
+                                    "enum": ["user"],
+                                    "description": "The user object type name."
                                   }
-                                ],
+                                },
+                                "required": ["id"],
+                                "additionalProperties": false,
                                 "description": "Details of the user mention."
                               }
                             },
@@ -3876,7 +3325,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["date"]
+                                "enum": ["date"],
+                                "description": "Always `date`"
                               },
                               "date": {
                                 "type": "object",
@@ -3899,21 +3349,13 @@
                                     "description": "The end date of the date object, if any."
                                   },
                                   "time_zone": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string",
-                                        "minLength": 2,
-                                        "maxLength": 32
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ],
+                                    "type": ["string", "null"],
                                     "description": "The time zone of the date object, if any. E.g. America/Los_Angeles, Europe/London, etc."
                                   }
                                 },
                                 "required": ["start"],
-                                "additionalProperties": false
+                                "additionalProperties": false,
+                                "description": "Details of the date mention."
                               }
                             },
                             "required": ["date"],
@@ -3924,13 +3366,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["page"]
+                                "enum": ["page"],
+                                "description": "Always `page`"
                               },
                               "page": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the page in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -3946,13 +3390,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["database"]
+                                "enum": ["database"],
+                                "description": "Always `database`"
                               },
                               "database": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the database in the mention."
                                   }
                                 },
                                 "required": ["id"],
@@ -3968,7 +3414,8 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["template_mention"]
+                                "enum": ["template_mention"],
+                                "description": "Always `template_mention`"
                               },
                               "template_mention": {
                                 "anyOf": [
@@ -3977,7 +3424,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_date"]
+                                        "enum": ["template_mention_date"],
+                                        "description": "Always `template_mention_date`"
                                       },
                                       "template_mention_date": {
                                         "type": "string",
@@ -3993,7 +3441,8 @@
                                     "properties": {
                                       "type": {
                                         "type": "string",
-                                        "enum": ["template_mention_user"]
+                                        "enum": ["template_mention_user"],
+                                        "description": "Always `template_mention_user`"
                                       },
                                       "template_mention_user": {
                                         "type": "string",
@@ -4004,7 +3453,8 @@
                                     "required": ["template_mention_user"],
                                     "additionalProperties": false
                                   }
-                                ]
+                                ],
+                                "description": "Details of the template mention."
                               }
                             },
                             "required": ["template_mention"],
@@ -4015,13 +3465,15 @@
                             "properties": {
                               "type": {
                                 "type": "string",
-                                "enum": ["custom_emoji"]
+                                "enum": ["custom_emoji"],
+                                "description": "Always `custom_emoji`"
                               },
                               "custom_emoji": {
                                 "type": "object",
                                 "properties": {
                                   "id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "The ID of the custom emoji."
                                   },
                                   "name": {
                                     "type": "string",
@@ -4052,7 +3504,8 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["equation"]
+                        "enum": ["equation"],
+                        "description": "Always `equation`"
                       },
                       "equation": {
                         "type": "object",
@@ -4101,6 +3554,29 @@
         }
       },
       "required": ["page_id"],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  },
+  {
+    "name": "NOTION__NOTION_GET_TEAMS",
+    "description": "Retrieves a list of teams (teamspaces) in the current workspace.\nThis tool provides visibility into the teams that exist and whether the authenticated user\nis a member of each team. Includes IDs, names, and the user's role in each team.\nTeams are returned split by membership status and limited to a maximum of\n10 results.\n<examples>\n1. List all teams (up to the limit of each type): {}\n2. Search for teams by name: {\"query\": \"engineering\"}\n3. Find a specific team: {\"query\": \"Product Design\"}\n</examples>",
+    "tags": [],
+    "tool_metadata": {
+      "canonical_tool_name": "notion-get-teams",
+      "canonical_tool_description_hash": "7248d86be3f920367c3ef3f08f39bbd400e08ecbc039aa4d1d8f92ff402d6998",
+      "canonical_tool_input_schema_hash": "989277cb8cbbd5be7c17d271d7def19d9c6874c3b7d5fbbffb34b9b3fe005c03"
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Optional search query to filter teams by name (case-insensitive)."
+        }
+      },
       "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
