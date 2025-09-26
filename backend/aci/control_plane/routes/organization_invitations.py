@@ -61,25 +61,6 @@ def _validate_invitation_token(invitation: OrganizationInvitation, token: str) -
         raise InvalidInvitationTokenError()
 
 
-def _require_invitation_access(
-    context: deps.RequestContextWithoutActAs,
-    invitation_id: UUID,
-    *,
-    expected_organization_id: UUID | None = None,
-) -> OrganizationInvitation:
-    invitation = crud.organization_invitations.get_invitation_by_id(
-        context.db_session, invitation_id
-    )
-    if invitation is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
-
-    _ensure_user_can_access_invitation(
-        context, invitation, expected_organization_id=expected_organization_id
-    )
-
-    return invitation
-
-
 def _ensure_user_can_access_invitation(
     context: deps.RequestContextWithoutActAs,
     invitation: OrganizationInvitation,
@@ -198,15 +179,16 @@ async def invite_member(
         )
 
     inviter = crud.users.get_user_by_id(context.db_session, context.user_id)
-    inviter_name = inviter.name if inviter else "A member"
-
+    if not inviter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inviter not found")
+    inviter_name = inviter.name
     expires_label = utils.format_duration_from_minutes(
         config.ORGANIZATION_INVITATION_EXPIRE_MINUTES
     )
 
-    invitation_url = f"{config.FRONTEND_URL.rstrip('/')}/invite/{quote(token)}"
-
     try:
+        invitation_url = f"{config.FRONTEND_URL.rstrip('/')}/invite/{quote(token)}"
+
         email_metadata = await email_service.send_organization_invitation_email(
             recipient=target_email,
             organization_name=organization.name,
@@ -214,10 +196,13 @@ async def invite_member(
             invitation_url=invitation_url,
             expires_label=expires_label,
         )
-    except Exception:
+    except Exception as exc:
         context.db_session.rollback()
         logger.exception("Failed to send organization invitation email")
-        raise
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Failed to send invitation email. Please try again later.",
+        ) from exc
 
     invitation = crud.organization_invitations.update_invitation(
         context.db_session,
@@ -384,50 +369,7 @@ async def list_invitations(
         context.db_session, organization_id, status=status_filter
     )
 
-    # Members can only see their own invitations
-    if context.act_as.role == OrganizationRole.MEMBER:
-        user = crud.users.get_user_by_id(context.db_session, context.user_id)
-        if user:
-            invitations = [
-                invitation
-                for invitation in invitations
-                if invitation.email.lower() == user.email.lower()
-            ]
-        else:
-            invitations = []
-
     return [_serialize_invitation(invitation, include_metadata=False) for invitation in invitations]
-
-
-@router.get(
-    "/{organization_id}/get-invitation",
-    response_model=OrganizationInvitationDetail,
-    status_code=status.HTTP_200_OK,
-)
-async def get_invitation(
-    context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
-    organization_id: UUID,
-    invitation_id: Annotated[UUID, Query(..., description="Invitation identifier")],
-) -> OrganizationInvitationDetail:
-    invitation = _require_invitation_access(
-        context, invitation_id, expected_organization_id=organization_id
-    )
-
-    return _serialize_invitation(invitation)
-
-
-@router.get(
-    "/invitations/by-id",
-    response_model=OrganizationInvitationDetail,
-    status_code=status.HTTP_200_OK,
-)
-async def get_invitation_by_id(
-    context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
-    invitation_id: Annotated[UUID, Query(..., description="Invitation identifier")],
-) -> OrganizationInvitationDetail:
-    invitation = _require_invitation_access(context, invitation_id)
-
-    return _serialize_invitation(invitation)
 
 
 @router.get(

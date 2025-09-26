@@ -101,9 +101,7 @@ function CallbackContent() {
         // Store invitation context if present before issuing token
         if (invitationInfo) {
           storePendingInvitation({
-            invitationId: invitationInfo.invitationId,
             token: invitationInfo.token,
-            organizationId: invitationInfo.organizationId,
           });
         }
 

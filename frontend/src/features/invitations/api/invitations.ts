@@ -7,30 +7,6 @@ import {
 } from "@/features/invitations/types/invitation.types";
 import { toast } from "sonner";
 
-export async function getInvitationDetail(
-  accessToken: string,
-  invitationId: string,
-): Promise<OrganizationInvitationDetail> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/invitations/by-id?invitation_id=${encodeURIComponent(
-      invitationId,
-    )}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch invitation details");
-  }
-
-  return response.json();
-}
-
 export async function getInvitationByToken(
   accessToken: string,
   token: string,
@@ -55,31 +31,6 @@ export async function getInvitationByToken(
     );
     toast.error(message);
     return null;
-  }
-
-  return response.json();
-}
-
-export async function getInvitation(
-  accessToken: string,
-  organizationId: string,
-  invitationId: string,
-): Promise<OrganizationInvitationDetail> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${organizationId}/get-invitation?invitation_id=${encodeURIComponent(
-      invitationId,
-    )}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    await throwApiError(response, "Failed to fetch invitation details");
   }
 
   return response.json();

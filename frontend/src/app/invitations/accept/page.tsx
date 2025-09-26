@@ -26,9 +26,7 @@ import { toast } from "sonner";
 import { tokenManager } from "@/lib/token-manager";
 import {
   acceptInvitation,
-  getInvitation,
   getInvitationByToken,
-  getInvitationDetail,
 } from "@/features/invitations/api/invitations";
 import {
   OrganizationInvitationDetail,
@@ -138,20 +136,12 @@ function AcceptInvitationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const invitationIdParam = searchParams.get("invitation_id");
-  const invitationId =
-    invitationIdParam && invitationIdParam.trim().length
-      ? invitationIdParam
-      : null;
   const token = searchParams.get("token") ?? "";
 
   const acceptPath = useMemo(() => {
     const params = new URLSearchParams({ token });
-    if (invitationId) {
-      params.set("invitation_id", invitationId);
-    }
     return `/invitations/accept?${params.toString()}`;
-  }, [invitationId, token]);
+  }, [token]);
 
   const hasToken = useMemo(() => Boolean(token.trim().length), [token]);
 
@@ -168,30 +158,17 @@ function AcceptInvitationPageContent() {
   const [actionError, setActionError] = useState<string | null>(null);
   const redirectingRef = useRef(false);
 
-  const resolvedInvitationId =
-    invitation?.invitation_id ??
-    pendingInvitation?.invitationId ??
-    invitationId;
-
   const rejectPath = useMemo(() => {
     const params = new URLSearchParams({ token });
-    if (resolvedInvitationId) {
-      params.set("invitation_id", resolvedInvitationId);
-    }
     return `/invitations/reject?${params.toString()}`;
-  }, [resolvedInvitationId, token]);
+  }, [token]);
 
   const persistPendingInvitation = useCallback(
     (next: PendingInvitationState) => {
       let changed = false;
 
       setPendingInvitation((prev) => {
-        if (
-          prev &&
-          prev.invitationId === next.invitationId &&
-          prev.token === next.token &&
-          (prev.organizationId ?? null) === (next.organizationId ?? null)
-        ) {
+        if (prev && prev.token === next.token) {
           return prev;
         }
 
@@ -224,9 +201,7 @@ function AcceptInvitationPageContent() {
     }
 
     const nextPending: PendingInvitationState = {
-      invitationId: invitationId ?? pendingInvitation?.invitationId ?? null,
       token,
-      organizationId: pendingInvitation?.organizationId ?? null,
     };
 
     persistPendingInvitation(nextPending);
@@ -234,13 +209,7 @@ function AcceptInvitationPageContent() {
     if (!pendingInvitation) {
       setStep("collect");
     }
-  }, [
-    hasToken,
-    invitationId,
-    pendingInvitation,
-    persistPendingInvitation,
-    token,
-  ]);
+  }, [hasToken, pendingInvitation, persistPendingInvitation, token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -296,26 +265,10 @@ function AcceptInvitationPageContent() {
 
         let detail: OrganizationInvitationDetail | null = null;
 
-        if (
-          pendingInvitation.organizationId &&
-          pendingInvitation.invitationId
-        ) {
-          detail = await getInvitation(
-            tokenValue,
-            pendingInvitation.organizationId,
-            pendingInvitation.invitationId,
-          );
-        } else if (pendingInvitation.invitationId) {
-          detail = await getInvitationDetail(
-            tokenValue,
-            pendingInvitation.invitationId,
-          );
-        } else {
-          detail = await getInvitationByToken(
-            tokenValue,
-            pendingInvitation.token,
-          );
-        }
+        detail = await getInvitationByToken(
+          tokenValue,
+          pendingInvitation.token,
+        );
 
         if (!detail) {
           throw new Error("Failed to load invitation details");
@@ -333,9 +286,7 @@ function AcceptInvitationPageContent() {
         }
 
         persistPendingInvitation({
-          invitationId: detail.invitation_id,
           token: pendingInvitation.token,
-          organizationId: detail.organization_id,
         });
       } catch (error) {
         console.error("Failed to load invitation", error);
@@ -394,20 +345,11 @@ function AcceptInvitationPageContent() {
         throw new Error("You need to sign in before accepting the invitation.");
       }
 
-      const organizationId =
-        invitation?.organization_id ?? pendingInvitation.organizationId ?? null;
+      const organizationId = invitation?.organization_id ?? null;
 
       if (!organizationId) {
         throw new Error(
           "Invitation is missing organization information. Please refresh the page.",
-        );
-      }
-
-      const invitationIdValue = resolvedInvitationId;
-
-      if (!invitationIdValue) {
-        throw new Error(
-          "Invitation details are incomplete. Please reload the invitation link.",
         );
       }
 
@@ -603,8 +545,7 @@ function AcceptInvitationPageContent() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Organization ID</span>
                   <span className="font-medium">
-                    {invitation?.organization_id ??
-                      pendingInvitation?.organizationId}
+                    {invitation?.organization_id}
                   </span>
                 </div>
               )}

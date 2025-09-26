@@ -162,26 +162,26 @@ When making changes to database models:
    docker compose exec runner alembic check
    ```
 
-2. Generate a migration:
+1. Generate a migration:
 
    ```bash
    docker compose exec runner alembic revision --autogenerate -m "description of changes"
    ```
 
-3. Manually review and edit the generated file in `database/alembic/versions/` if needed to add custom changes, e.g.,:
+1. Manually review and edit the generated file in `database/alembic/versions/` if needed to add custom changes, e.g.,:
 
    - pgvector library imports
    - Index creation/deletion
    - Vector extension setup
    - Other database-specific operations
 
-4. Apply the migration (to the local db):
+1. Apply the migration (to the local db):
 
    ```bash
    docker compose exec runner alembic upgrade head
    ```
 
-5. To revert the latest migration:
+1. To revert the latest migration:
 
    ```bash
    docker compose exec runner alembic downgrade -1
