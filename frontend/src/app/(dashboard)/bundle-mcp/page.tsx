@@ -251,7 +251,7 @@ export default function BundleMCPPage() {
         enableGlobalFilter: false,
       }),
     ] as ColumnDef<MCPServerBundle>[];
-  }, [handleDeleteBundle, handleCopyUrl, copiedBundleUrl, router]);
+  }, [activeRole, handleDeleteBundle, handleCopyUrl, copiedBundleUrl, router]);
 
   if (isBundlesLoading) {
     return (
