@@ -252,8 +252,12 @@ async def update_mcp_server(
             MCPServerEmbeddingFields(
                 name=mcp_server.name,
                 url=mcp_server.url,
-                description=body.description or mcp_server.description,
-                categories=body.categories or mcp_server.categories,
+                description=body.description
+                if body.description is not None
+                else mcp_server.description,
+                categories=body.categories
+                if body.categories is not None
+                else mcp_server.categories,
             ),
         )
     else:

@@ -40,8 +40,8 @@ export function UpdateServerDialog({
   // Initialize form with current server data when dialog opens
   useEffect(() => {
     if (open && server) {
-      setDescription(server.description || "");
-      setLogo(server.logo || "");
+      setDescription(server.description ?? "");
+      setLogo(server.logo ?? "");
     }
   }, [open, server]);
 
@@ -61,7 +61,15 @@ export function UpdateServerDialog({
     const updateData: { description?: string; logo?: string } = {};
 
     if (description !== server.description) {
-      updateData.description = description;
+      const originalDescription = server.description ?? "";
+      const originalLogo = server.logo ?? "";
+
+      if (description !== originalDescription) {
+        updateData.description = description;
+      }
+      if (logo !== originalLogo) {
+        updateData.logo = logo;
+      }
     }
 
     if (logo !== server.logo) {
@@ -77,7 +85,8 @@ export function UpdateServerDialog({
     }
   };
 
-  const hasChanges = description !== server.description || logo !== server.logo;
+  const hasChanges =
+    description !== (server.description ?? "") || logo !== (server.logo ?? "");
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
