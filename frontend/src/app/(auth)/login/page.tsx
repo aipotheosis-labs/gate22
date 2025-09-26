@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { LoginForm } from "@/features/auth/components/login-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { login, issueToken, getGoogleAuthUrl } from "@/features/auth/api/auth";
 import { tokenManager } from "@/lib/token-manager";
 import { sanitizeRedirectPath } from "@/lib/safe-redirect";
@@ -79,20 +78,6 @@ function LoginPageContent() {
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
         aria-hidden="true"
       />
-
-      {/* Back button */}
-      <div className="absolute top-6 left-6 z-10">
-        <Link href="/">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:bg-background/80 backdrop-blur-sm"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-        </Link>
-      </div>
 
       {/* Main Content */}
       <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
