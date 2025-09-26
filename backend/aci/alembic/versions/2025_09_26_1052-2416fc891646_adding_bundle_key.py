@@ -17,7 +17,7 @@ from aci.common.db.sql_models import BUNDLE_KEY_LENGTH
 
 # revision identifiers, used by Alembic.
 revision: str = '2416fc891646'
-down_revision: Union[str, None] = 'b1d18d85aa49'
+down_revision: Union[str, None] = '418b565c6c1f'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
