@@ -1,9 +1,7 @@
-import string
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
 from aci.common import utils
 from aci.common.db import crud
@@ -61,7 +59,7 @@ async def create_mcp_server_bundle(
             )
 
     # Generate bundle key
-    bundle_key = _generate_unique_mcp_server_bundle_key(context.db_session)
+    bundle_key = utils.generate_alphanumeric_string(BUNDLE_KEY_LENGTH)
 
     mcp_server_bundle = crud.mcp_server_bundles.create_mcp_server_bundle(
         context.db_session,
@@ -76,22 +74,6 @@ async def create_mcp_server_bundle(
     # Here the bundle key would not include in the response, because the user who created the
     # bundle is an admin and would not be able to see the bundle key
     return schema_utils.construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
-
-
-def _generate_unique_mcp_server_bundle_key(db_session: Session, max_trials: int = 10) -> str:
-    """
-    Generate a unique MCP server bundle key. If collision happens, try max. max_trials times.
-    Return None if failed.
-    """
-    for _ in range(max_trials):
-        bundle_key = utils.generate_alphanumeric_string(
-            BUNDLE_KEY_LENGTH, character_pool=string.ascii_letters + string.digits
-        )
-        if not crud.mcp_server_bundles.get_mcp_server_bundle_by_bundle_key(db_session, bundle_key):
-            return bundle_key
-
-    logger.error(f"Failed to generate a unique MCP server bundle key after {max_trials} tries")
-    raise Exception(f"Failed to generate a unique MCP server bundle key after {max_trials} tries")
 
 
 @router.get(
