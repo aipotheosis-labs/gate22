@@ -1,7 +1,7 @@
 import datetime
 import os
-import random
 import re
+import secrets
 import string
 from functools import cache
 from uuid import UUID
@@ -156,4 +156,4 @@ def generate_alphanumeric_string(
     Convenient to call with customized `character_pool`, examples:
         "ABCDE" / string.digits + string.ascii_uppercase / string.ascii_letters
     """
-    return "".join(random.choices(character_pool, k=length))
+    return "".join(secrets.choice(character_pool) for _ in range(length))
