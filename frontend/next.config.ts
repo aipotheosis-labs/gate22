@@ -33,10 +33,15 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+  reactComponentAnnotation: {
+    enabled: true,
+  },
 
   org: "aipotheosis-labs",
 
   project: "mcp-gateway-portal",
+
+  authToken: process.env.SENTRY_AUTH_TOKEN,
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
@@ -51,7 +56,7 @@ export default withSentryConfig(nextConfig, {
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
-  tunnelRoute: "/monitoring",
+  tunnelRoute: true,
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,

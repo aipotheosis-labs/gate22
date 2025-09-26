@@ -15,7 +15,12 @@ if (
     environment: process.env.NEXT_PUBLIC_ENVIRONMENT,
 
     // Add optional integrations for additional features
-    integrations: [Sentry.replayIntegration()],
+    integrations: [
+      Sentry.replayIntegration(),
+      Sentry.browserTracingIntegration(),
+    ],
+
+    sendDefaultPii: true,
 
     // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
     tracesSampleRate:
