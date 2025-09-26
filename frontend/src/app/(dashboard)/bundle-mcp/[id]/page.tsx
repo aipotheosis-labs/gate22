@@ -22,6 +22,8 @@ import {
 import Image from "next/image";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { PermissionGuard } from "@/components/rbac/permission-guard";
 
 export default function BundleDetailPage() {
   const params = useParams();
@@ -183,77 +185,79 @@ export default function BundleDetailPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Security Warning */}
-          <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-amber-800">
-                Security Notice
-              </p>
-              <p className="text-sm text-amber-700">
-                The MCP URL below contains a secret bundle ID that should be
-                treated as a service token.
-                <strong> Do not share this URL with others</strong> as it
-                provides access to your MCP server bundle.
-              </p>
-            </div>
-          </div>
-
-          {/* MCP URL - Primary Focus */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-muted-foreground">
-                MCP URL
-              </label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsUrlVisible(!isUrlVisible)}
-                  className="flex-shrink-0"
-                >
-                  {isUrlVisible ? (
-                    <>
-                      <EyeOff className="h-4 w-4 mr-2" />
-                      Hide
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Show
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMcpUrlCopy}
-                  className="flex-shrink-0"
-                >
-                  {copiedField === "mcp-url" ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2 text-green-600" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </>
-                  )}
-                </Button>
+          <PermissionGuard permission={PERMISSIONS.BUNDLE_MCP_URL_VIEW}>
+            {/* Security Warning */}
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-amber-800">
+                  Security Notice
+                </p>
+                <p className="text-sm text-amber-700">
+                  The MCP URL below contains a secret bundle ID that should be
+                  treated as a service token.
+                  <strong> Do not share this URL with others</strong> as it
+                  provides access to your MCP server bundle.
+                </p>
               </div>
             </div>
-            <code className="block w-full text-sm font-mono px-3 py-2 rounded border bg-muted/20 whitespace-pre-wrap break-words">
-              {isUrlVisible ? mcpUrl : maskedMcpUrl}
-            </code>
-            {!isUrlVisible && (
-              <p className="text-xs text-muted-foreground">
-                Click &quot;Show&quot; to reveal the MCP URL with the secret
-                bundle ID
-              </p>
-            )}
-          </div>
+
+            {/* MCP URL - Primary Focus */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-muted-foreground">
+                  MCP URL
+                </label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsUrlVisible(!isUrlVisible)}
+                    className="flex-shrink-0"
+                  >
+                    {isUrlVisible ? (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-2" />
+                        Hide
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Show
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleMcpUrlCopy}
+                    className="flex-shrink-0"
+                  >
+                    {copiedField === "mcp-url" ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2 text-green-600" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <code className="block w-full text-sm font-mono px-3 py-2 rounded border bg-muted/20 whitespace-pre-wrap break-words">
+                {isUrlVisible ? mcpUrl : maskedMcpUrl}
+              </code>
+              {!isUrlVisible && (
+                <p className="text-xs text-muted-foreground">
+                  Click &quot;Show&quot; to reveal the MCP URL with the secret
+                  bundle ID
+                </p>
+              )}
+            </div>
+          </PermissionGuard>
 
           {/* Additional Details */}
           <div className="space-y-3 text-sm">
