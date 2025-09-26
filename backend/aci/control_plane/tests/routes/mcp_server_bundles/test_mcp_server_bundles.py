@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerBundle, User
-from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
+from aci.common.schemas.mcp_server_bundle import (
+    MCPServerBundlePublic,
+    MCPServerBundlePublicWithBundleKey,
+)
 from aci.common.schemas.pagination import PaginationResponse
 from aci.control_plane import config
 
@@ -43,30 +46,47 @@ def test_list_mcp_server_bundles(
         assert response.status_code == 403
         return
 
-    paginated_response = PaginationResponse[MCPServerBundlePublic].model_validate(
-        response.json(),
-    )
-
     if offset is None or offset == 0:
         if access_token_fixture == "dummy_access_token_admin":
             # Should see all the MCP server bundles in the organization
             assert response.status_code == 200
+
+            paginated_response = PaginationResponse[MCPServerBundlePublic].model_validate(
+                response.json(),
+            )
+
             assert len(paginated_response.data) == len(dummy_mcp_server_bundles)
+            assert all(
+                not hasattr(response_item, "bundle_key")
+                for response_item in paginated_response.data
+            )
         elif access_token_fixture in [
             "dummy_access_token_member",
             "dummy_access_token_admin_act_as_member",
         ]:
             # Should only see the MCP server bundles that the user has
             assert response.status_code == 200
-            assert len(paginated_response.data) == 2
+
+            paginated_response_with_key = PaginationResponse[
+                MCPServerBundlePublicWithBundleKey
+            ].model_validate(
+                response.json(),
+            )
+
+            assert len(paginated_response_with_key.data) == 2
             assert all(
-                response_item.user_id == dummy_user.id for response_item in paginated_response.data
+                response_item.user_id == dummy_user.id
+                for response_item in paginated_response_with_key.data
+            )
+            assert all(
+                hasattr(response_item, "bundle_key")
+                for response_item in paginated_response_with_key.data
             )
         else:
             raise Exception("Untested access token fixture")
     else:
         # shows nothing because offset should be larger than the total test MCP server bundles
-        assert len(paginated_response.data) == 0
+        assert len(response.json()["data"]) == 0
 
 
 @pytest.mark.parametrize(
@@ -121,6 +141,7 @@ def test_get_mcp_server_bundle(
         assert response.status_code == 200
         mcp_server_bundle = MCPServerBundlePublic.model_validate(response.json())
         assert mcp_server_bundle.id == target_mcp_server_bundle.id
+        assert not hasattr(mcp_server_bundle, "bundle_key")
 
     elif access_token_fixture in [
         "dummy_access_token_member",
@@ -129,8 +150,9 @@ def test_get_mcp_server_bundle(
         if is_own_mcp_server_bundle:
             # Member can see their own MCP server bundles only
             assert response.status_code == 200
-            mcp_server_bundle = MCPServerBundlePublic.model_validate(response.json())
+            mcp_server_bundle = MCPServerBundlePublicWithBundleKey.model_validate(response.json())
             assert mcp_server_bundle.id == target_mcp_server_bundle.id
+            assert mcp_server_bundle.bundle_key is not None
         else:
             # Should not see any MCP server bundle
             assert response.status_code == 403

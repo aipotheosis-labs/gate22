@@ -1,14 +1,18 @@
+import string
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from aci.common import utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_server_bundle import (
     MCPServerBundleCreate,
     MCPServerBundlePublic,
+    MCPServerBundlePublicWithBundleKey,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, schema_utils
@@ -55,11 +59,15 @@ async def create_mcp_server_bundle(
                 f"mcp server configuration {mcp_server_configuration_id}",
             )
 
+    # Generate bundle key
+    bundle_key = _generate_unique_mcp_server_bundle_key(context.db_session)
+
     mcp_server_bundle = crud.mcp_server_bundles.create_mcp_server_bundle(
         context.db_session,
         context.user_id,
         context.act_as.organization_id,
         body,
+        bundle_key,
     )
 
     context.db_session.commit()
@@ -67,7 +75,28 @@ async def create_mcp_server_bundle(
     return schema_utils.construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
 
 
-@router.get("", response_model=PaginationResponse[MCPServerBundlePublic])
+def _generate_unique_mcp_server_bundle_key(db_session: Session, max_trials: int = 10) -> str:
+    """
+    Generate a unique MCP server bundle key. If collision happens, try max. max_trials times.
+    Return None if failed.
+    """
+    for _ in range(max_trials):
+        bundle_key = utils.generate_alphanumeric_string(
+            128, character_pool=string.ascii_letters + string.digits
+        )
+        if not crud.mcp_server_bundles.get_mcp_server_bundle_by_bundle_key(db_session, bundle_key):
+            return bundle_key
+
+    logger.error(f"Failed to generate a unique MCP server bundle key after {max_trials} tries")
+    raise Exception(f"Failed to generate a unique MCP server bundle key after {max_trials} tries")
+
+
+@router.get(
+    "",
+    response_model=PaginationResponse[MCPServerBundlePublic | MCPServerBundlePublicWithBundleKey],
+    description="Only admin can see all MCP server bundles, member can only see their own MCP "
+    "server bundles, bundle key is only visible to the member themselves",
+)
 async def list_mcp_server_bundles(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
@@ -90,20 +119,29 @@ async def list_mcp_server_bundles(
             )
         )
 
+    # Only member can see the bundle key of their own MCP server bundles
+    should_include_bundle_key = context.act_as.role == OrganizationRole.MEMBER
+
     return PaginationResponse[MCPServerBundlePublic](
         data=[
-            schema_utils.construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
+            schema_utils.construct_mcp_server_bundle_public(
+                context.db_session, mcp_server_bundle, should_include_bundle_key
+            )
             for mcp_server_bundle in mcp_server_bundles
         ],
         offset=pagination_params.offset,
     )
 
 
-@router.get("/{mcp_server_bundle_id}", response_model=MCPServerBundlePublic)
+@router.get(
+    "/{mcp_server_bundle_id}",
+    response_model=MCPServerBundlePublic | MCPServerBundlePublicWithBundleKey,
+    description="Bundle key is only visible to member themselves",
+)
 async def get_mcp_server_bundle(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     mcp_server_bundle_id: UUID,
-) -> MCPServerBundlePublic:
+) -> MCPServerBundlePublic | MCPServerBundlePublicWithBundleKey:
     mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
         context.db_session, mcp_server_bundle_id
     )
@@ -126,7 +164,12 @@ async def get_mcp_server_bundle(
             )
             raise NotPermittedError(message="Cannot access MCP server bundle")
 
-    return schema_utils.construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
+    # Only member can see the bundle key of their own MCP server bundles
+    should_include_bundle_key = context.act_as.role == OrganizationRole.MEMBER
+
+    return schema_utils.construct_mcp_server_bundle_public(
+        context.db_session, mcp_server_bundle, should_include_bundle_key
+    )
 
 
 @router.delete("/{mcp_server_bundle_id}", status_code=status.HTTP_200_OK)

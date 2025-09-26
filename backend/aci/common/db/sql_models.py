@@ -591,6 +591,9 @@ class MCPServerBundle(Base):
     organization_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
+    # Opaque bundle key, not to use hash because we would display the bundle key in the UI
+    bundle_key: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
+
     # a list of mcp server configuration ids the bundle contains
     # TODO: should only allow mcp server configurations of the same mcp server once
     # TODO: should probably only allow mcp server configurations that the user has connected to

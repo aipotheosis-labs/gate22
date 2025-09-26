@@ -105,6 +105,7 @@ def create_mock_mcp_configuration_helper(
             description=f"Bundle for {mcp_server_name} configuration",
             mcp_server_configuration_ids=[mcp_server_configuration.id],
         ),
+        bundle_key=f"{user_id} bundle key",
     )
 
     if not skip_dry_run:

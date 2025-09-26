@@ -36,7 +36,7 @@ export default function BundleDetailPage() {
   const mcpUrl = useMemo(() => {
     if (bundle) {
       const baseUrl = getMcpBaseUrl();
-      return `${baseUrl}/mcp?bundle_id=${bundle.id}`;
+      return `${baseUrl}/mcp?bundle_key=${bundle.bundle_key}`;
     }
     return "";
   }, [bundle]);
@@ -45,7 +45,7 @@ export default function BundleDetailPage() {
   const maskedMcpUrl = useMemo(() => {
     if (bundle) {
       const baseUrl = getMcpBaseUrl();
-      return `${baseUrl}/mcp?bundle_id=••••••••••••••••••••••••••••••••••••••••`;
+      return `${baseUrl}/mcp?bundle_key=••••••••••••••••••••••••••••••••••••••••`;
     }
     return "";
   }, [bundle]);
@@ -244,7 +244,7 @@ export default function BundleDetailPage() {
                 </Button>
               </div>
             </div>
-            <code className="block w-full text-sm font-mono px-3 py-2 rounded border bg-muted/20">
+            <code className="block w-full text-sm font-mono px-3 py-2 rounded border bg-muted/20 whitespace-pre-wrap break-words">
               {isUrlVisible ? mcpUrl : maskedMcpUrl}
             </code>
             {!isUrlVisible && (

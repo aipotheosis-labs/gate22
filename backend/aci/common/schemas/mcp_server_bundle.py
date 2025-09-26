@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.user import UserPublic
@@ -14,6 +14,8 @@ class MCPServerBundleCreate(BaseModel):
 
 
 class MCPServerBundlePublic(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     id: UUID
     name: str
     description: str | None = None
@@ -24,3 +26,7 @@ class MCPServerBundlePublic(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+
+class MCPServerBundlePublicWithBundleKey(MCPServerBundlePublic):
+    bundle_key: str

@@ -11,7 +11,10 @@ from aci.common.enums import ConnectedAccountOwnership
 from aci.common.schemas.connected_account import ConnectedAccountPublic
 from aci.common.schemas.mcp_auth import AuthConfig
 from aci.common.schemas.mcp_server import MCPServerPublic
-from aci.common.schemas.mcp_server_bundle import MCPServerBundlePublic
+from aci.common.schemas.mcp_server_bundle import (
+    MCPServerBundlePublic,
+    MCPServerBundlePublicWithBundleKey,
+)
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationPublic
 from aci.common.schemas.mcp_tool import MCPToolPublicWithoutSchema
 from aci.common.schemas.organization import TeamInfo
@@ -97,8 +100,8 @@ def construct_mcp_server_configuration_public(
 
 
 def construct_mcp_server_bundle_public(
-    db_session: Session, mcp_server_bundle: MCPServerBundle
-) -> MCPServerBundlePublic:
+    db_session: Session, mcp_server_bundle: MCPServerBundle, include_bundle_key: bool = False
+) -> MCPServerBundlePublic | MCPServerBundlePublicWithBundleKey:
     """
     Dynamically retrieve and populate the mcp_server_configurations
     for the MCP server bundle.
@@ -107,7 +110,7 @@ def construct_mcp_server_bundle_public(
         db_session, mcp_server_bundle.mcp_server_configuration_ids
     )
 
-    return MCPServerBundlePublic(
+    bundle_public = MCPServerBundlePublic(
         id=mcp_server_bundle.id,
         name=mcp_server_bundle.name,
         description=mcp_server_bundle.description,
@@ -121,6 +124,15 @@ def construct_mcp_server_bundle_public(
         created_at=mcp_server_bundle.created_at,
         updated_at=mcp_server_bundle.updated_at,
     )
+
+    if include_bundle_key:
+        bundle_public = MCPServerBundlePublicWithBundleKey(
+            **bundle_public.model_dump(),
+            bundle_key=mcp_server_bundle.bundle_key,
+        )
+        return bundle_public
+    else:
+        return bundle_public
 
 
 def construct_connected_account_public(

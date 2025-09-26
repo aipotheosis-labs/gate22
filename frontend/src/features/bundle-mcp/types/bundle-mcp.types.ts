@@ -12,6 +12,7 @@ export interface MCPServerBundle {
     name: string;
     email: string;
   };
+  bundle_key?: string;
   created_at: string;
   updated_at: string;
 }

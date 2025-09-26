@@ -37,12 +37,13 @@ import { useMetaInfo } from "@/components/context/metainfo";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
 import { Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { checkPermission } from "@/lib/rbac/rbac-service";
 
 const columnHelper = createColumnHelper<MCPServerBundle>();
 
 export default function BundleMCPPage() {
   const router = useRouter();
-  const [copiedBundleId, setCopiedBundleId] = useState<string | null>(null);
+  const [copiedBundleUrl, setCopiedBundleUrl] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { activeOrg, activeRole } = useMetaInfo();
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
@@ -77,13 +78,13 @@ export default function BundleMCPPage() {
     [deleteBundleMutation],
   );
 
-  const handleCopyUrl = useCallback((bundleId: string) => {
+  const handleCopyUrl = useCallback((bundleKey: string) => {
     const baseUrl = getMcpBaseUrl();
-    const url = `${baseUrl}/mcp?bundle_id=${bundleId}`;
+    const url = `${baseUrl}/mcp?bundle_key=${bundleKey}`;
     navigator.clipboard.writeText(url);
-    setCopiedBundleId(bundleId);
+    setCopiedBundleUrl(bundleKey);
     toast.success("URL copied to clipboard");
-    setTimeout(() => setCopiedBundleId(null), 2000);
+    setTimeout(() => setCopiedBundleUrl(null), 2000);
   }, []);
 
   const columns: ColumnDef<MCPServerBundle>[] = useMemo(() => {
@@ -113,44 +114,51 @@ export default function BundleMCPPage() {
         enableGlobalFilter: true,
       }),
 
-      columnHelper.accessor("id", {
-        id: "mcp_url",
-        header: () => (
-          <div className="flex items-center gap-1">
-            <span>MCP URL</span>
-          </div>
-        ),
-        cell: (info) => {
-          const id = info.getValue();
-          const baseUrl = getMcpBaseUrl();
-          const maskedUrl = `${baseUrl}/mcp?bundle_id=••••••••••••••••••••••••••••••••••••••••`;
+      // MCP URL, only available to member themselves
+      ...(checkPermission(activeRole, PERMISSIONS.BUNDLE_MCP_URL_VIEW)
+        ? [
+            columnHelper.accessor("bundle_key", {
+              id: "mcp_url",
+              header: () => (
+                <div className="flex items-center gap-1">
+                  <span>MCP URL</span>
+                </div>
+              ),
+              cell: (info) => {
+                const bundleKey = info.getValue();
+                const baseUrl = getMcpBaseUrl();
+                const maskedUrl = `${baseUrl}/mcp?bundle_key=••••••••••••••••••••••••••••••••••••••••`;
 
-          return (
-            <div className="flex items-center gap-1">
-              <div
-                className="font-mono text-xs truncate max-w-[200px]"
-                title="Hidden for security - use copy button to copy full URL"
-              >
-                {maskedUrl}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleCopyUrl(id)}
-                className="h-6 w-6 p-0 shrink-0"
-                title="Copy full MCP URL"
-              >
-                {copiedBundleId === id ? (
-                  <Check className="h-3 w-3 text-green-600" />
+                return bundleKey ? (
+                  <div className="flex items-center gap-1">
+                    <div
+                      className="font-mono text-xs truncate max-w-[200px]"
+                      title="Hidden for security - use copy button to copy full URL"
+                    >
+                      {maskedUrl}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyUrl(bundleKey)}
+                      className="h-6 w-6 p-0 shrink-0"
+                      title="Copy full MCP URL"
+                    >
+                      {copiedBundleUrl === bundleKey ? (
+                        <Check className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
                 ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
-            </div>
-          );
-        },
-        enableGlobalFilter: true,
-      }),
+                  <div className="text-sm">-</div>
+                );
+              },
+              enableGlobalFilter: true,
+            }),
+          ]
+        : []),
 
       columnHelper.accessor("mcp_server_configurations", {
         id: "configurations",
@@ -243,7 +251,7 @@ export default function BundleMCPPage() {
         enableGlobalFilter: false,
       }),
     ] as ColumnDef<MCPServerBundle>[];
-  }, [handleDeleteBundle, handleCopyUrl, copiedBundleId, router]);
+  }, [handleDeleteBundle, handleCopyUrl, copiedBundleUrl, router]);
 
   if (isBundlesLoading) {
     return (

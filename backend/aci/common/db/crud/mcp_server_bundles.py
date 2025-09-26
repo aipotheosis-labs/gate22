@@ -12,6 +12,7 @@ def create_mcp_server_bundle(
     user_id: UUID,
     organization_id: UUID,
     mcp_server_bundle_create: MCPServerBundleCreate,
+    bundle_key: str,
 ) -> MCPServerBundle:
     mcp_server_bundle = MCPServerBundle(
         name=mcp_server_bundle_create.name,
@@ -21,6 +22,7 @@ def create_mcp_server_bundle(
         mcp_server_configuration_ids=list(
             dict.fromkeys(mcp_server_bundle_create.mcp_server_configuration_ids)
         ),
+        bundle_key=bundle_key,
     )
     db_session.add(mcp_server_bundle)
     db_session.flush()
@@ -34,6 +36,14 @@ def get_mcp_server_bundle_by_id(
     mcp_server_bundle_id: UUID,
 ) -> MCPServerBundle | None:
     statement = select(MCPServerBundle).where(MCPServerBundle.id == mcp_server_bundle_id)
+    return db_session.execute(statement).scalar_one_or_none()
+
+
+def get_mcp_server_bundle_by_bundle_key(
+    db_session: Session,
+    bundle_key: str,
+) -> MCPServerBundle | None:
+    statement = select(MCPServerBundle).where(MCPServerBundle.bundle_key == bundle_key)
     return db_session.execute(statement).scalar_one_or_none()
 
 

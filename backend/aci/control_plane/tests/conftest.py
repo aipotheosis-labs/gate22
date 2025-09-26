@@ -581,6 +581,7 @@ def dummy_mcp_server_bundles(
                 name="Dummy MCPServerBundle 1 Github + Notion",
                 description="Dummy MCPServerBundle 1 Github + Notion Description",
             ),
+            bundle_key="Dummy MCPServerBundle 1 Bundle Key",
         )
     )
     mcp_server_bundles.append(
@@ -593,6 +594,7 @@ def dummy_mcp_server_bundles(
                 name="Dummy MCPServerBundle Github",
                 description="Dummy MCPServerBundle 2 Github Description",
             ),
+            bundle_key="Dummy MCPServerBundle 2 Bundle Key",
         )
     )
     mcp_server_bundles.append(
@@ -605,6 +607,7 @@ def dummy_mcp_server_bundles(
                 name="Dummy MCPServerBundle 3 Github",
                 description="Dummy MCPServerBundle 3 Github Description",
             ),
+            bundle_key="Dummy MCPServerBundle 3 Bundle Key",
         )
     )
     db_session.commit()

@@ -1,5 +1,4 @@
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Request, Response, status
 from pydantic import ValidationError
@@ -37,7 +36,7 @@ async def mcp_post(
     db_session: Annotated[Session, Depends(deps.yield_db_session)],
     request: Request,
     response: Response,
-    bundle_id: UUID,
+    bundle_key: str,
     mcp_protocol_version: Annotated[str | None, Header()] = None,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse | None:
     # parse payload
@@ -72,17 +71,17 @@ async def mcp_post(
             ),
         )
 
-    mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+    mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_bundle_key(
         db_session,
-        bundle_id,
+        bundle_key,
     )
     if mcp_server_bundle is None:
-        logger.error(f"Bundle not found, bundle_id={bundle_id}")
+        logger.error(f"Bundle not found, bundle_key={bundle_key}")
         return JSONRPCErrorResponse(
             id=payload.id if not isinstance(payload, JSONRPCNotificationInitialized) else None,
             error=JSONRPCErrorResponse.ErrorData(
                 code=JSONRPCErrorCode.INVALID_REQUEST,
-                message=f"Bundle not found, bundle_id={bundle_id}",
+                message=f"Bundle not found, bundle_key={bundle_key}",
             ),
         )
 

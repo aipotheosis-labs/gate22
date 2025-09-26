@@ -22,6 +22,7 @@ export const PERMISSIONS = {
   BUNDLE_CREATE: "bundle:create",
   BUNDLE_DELETE_OWN: "bundle:delete_own",
   BUNDLE_DELETE_ALL: "bundle:delete_all",
+  BUNDLE_MCP_URL_VIEW: "bundle:mcp_url_view",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -50,6 +51,7 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.BUNDLE_PAGE_VIEW,
     PERMISSIONS.BUNDLE_DELETE_ALL,
     // Note: Admins cannot create bundles
+    // Note: Admins cannot view MCP URLs of the members
   ],
   member: [
     // MCP Server - Members can only view accessible servers
@@ -65,6 +67,7 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.BUNDLE_PAGE_VIEW,
     PERMISSIONS.BUNDLE_CREATE,
     PERMISSIONS.BUNDLE_DELETE_OWN,
+    PERMISSIONS.BUNDLE_MCP_URL_VIEW,
   ],
 } as const;
 
