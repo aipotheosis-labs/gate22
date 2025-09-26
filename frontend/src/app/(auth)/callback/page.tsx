@@ -47,12 +47,13 @@ function CallbackContent() {
       const url = new URL(nextPath, "http://localhost"); // Use dummy origin for parsing
       const token = url.searchParams.get("token");
       const invitationId = url.searchParams.get("invitation_id");
+      const organizationId = url.searchParams.get("organization_id");
 
       if (token) {
         return {
           token,
           invitationId,
-          organizationId: null,
+          organizationId,
         };
       }
     } catch (error) {
@@ -102,6 +103,8 @@ function CallbackContent() {
         if (invitationInfo) {
           storePendingInvitation({
             token: invitationInfo.token,
+            invitationId: invitationInfo.invitationId ?? null,
+            organizationId: invitationInfo.organizationId ?? null,
           });
         }
 
@@ -127,11 +130,16 @@ function CallbackContent() {
             invitationInfo?.token || pendingInvitation?.token;
           const invitationId =
             invitationInfo?.invitationId || pendingInvitation?.invitationId;
+          const organizationId =
+            invitationInfo?.organizationId || pendingInvitation?.organizationId;
 
           if (invitationToken) {
             const params = new URLSearchParams({ token: invitationToken });
             if (invitationId) {
               params.set("invitation_id", invitationId);
+            }
+            if (organizationId) {
+              params.set("organization_id", organizationId);
             }
             router.push(`/invitations/accept?${params.toString()}`);
             return;

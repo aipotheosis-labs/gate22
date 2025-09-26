@@ -24,9 +24,13 @@ from aci.control_plane.routes import (
     mcp_server_configurations,
     mcp_servers,
     mcp_tools,
-    organization_invitations,
-    organizations,
     users,
+)
+from aci.control_plane.routes.organization import (
+    invitations as organization_invitations,
+)
+from aci.control_plane.routes.organization import (
+    organizations,
 )
 
 if config.ENVIRONMENT == Environment.LOCAL:

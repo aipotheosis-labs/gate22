@@ -9,11 +9,12 @@ import { toast } from "sonner";
 
 export async function getInvitationByToken(
   accessToken: string,
+  organizationId: string,
   token: string,
 ): Promise<OrganizationInvitationDetail | null> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/invitations/by-token?token=${encodeURIComponent(
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${organizationId}/invitations/get/${encodeURIComponent(
       token,
     )}`,
     {
@@ -43,14 +44,14 @@ export async function acceptInvitation(
 ): Promise<OrganizationInvitationDetail> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${organizationId}/accept-invitation`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${organizationId}/invitations/accept/${encodeURIComponent(
+      payload.token,
+    )}`,
     {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
     },
   );
 
@@ -68,14 +69,14 @@ export async function rejectInvitation(
 ): Promise<OrganizationInvitationDetail> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${organizationId}/reject-invitation`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${organizationId}/invitations/reject/${encodeURIComponent(
+      payload.token,
+    )}`,
     {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
     },
   );
 

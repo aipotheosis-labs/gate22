@@ -17,10 +17,18 @@ export function useOrganizationMembers() {
 
   const membersQuery = useQuery({
     queryKey: QUERY_KEYS.MEMBERS(activeOrg?.orgId || ""),
-    queryFn: () => listOrganizationUsers(accessToken, activeOrg.orgId),
+    queryFn: async () => {
+      if (!accessToken || !activeOrg?.orgId) {
+        throw new Error("Organization context unavailable");
+      }
+
+      return listOrganizationUsers(accessToken, activeOrg.orgId);
+    },
     enabled: !!accessToken && !!activeOrg?.orgId,
-    staleTime: 30000, // Consider data stale after 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
 
   const removeMemberMutation = useMutation({

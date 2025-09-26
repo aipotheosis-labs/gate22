@@ -35,6 +35,7 @@ export function useOrganizationMemberInvitations(
       if (!accessToken || !activeOrg?.orgId) {
         throw new Error("Organization context unavailable");
       }
+
       return listOrganizationInvitations(
         accessToken,
         activeOrg.orgId,
@@ -42,6 +43,10 @@ export function useOrganizationMemberInvitations(
       );
     },
     enabled,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
 
   const invalidateInvitations = useMemo(() => {

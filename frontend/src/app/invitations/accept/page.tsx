@@ -136,14 +136,21 @@ function AcceptInvitationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const token = searchParams.get("token") ?? "";
+  const tokenParam = searchParams.get("token") ?? "";
+  const organizationIdParam = searchParams.get("organization_id") ?? "";
+
+  const token = tokenParam.trim();
+  const organizationIdQuery = organizationIdParam.trim();
 
   const acceptPath = useMemo(() => {
     const params = new URLSearchParams({ token });
+    if (organizationIdQuery) {
+      params.set("organization_id", organizationIdQuery);
+    }
     return `/invitations/accept?${params.toString()}`;
-  }, [token]);
+  }, [organizationIdQuery, token]);
 
-  const hasToken = useMemo(() => Boolean(token.trim().length), [token]);
+  const hasToken = useMemo(() => Boolean(token.length), [token]);
 
   const [pendingInvitation, setPendingInvitation] =
     useState<PendingInvitationState | null>(null);
@@ -160,15 +167,22 @@ function AcceptInvitationPageContent() {
 
   const rejectPath = useMemo(() => {
     const params = new URLSearchParams({ token });
+    if (organizationIdQuery) {
+      params.set("organization_id", organizationIdQuery);
+    }
     return `/invitations/reject?${params.toString()}`;
-  }, [token]);
+  }, [organizationIdQuery, token]);
 
   const persistPendingInvitation = useCallback(
     (next: PendingInvitationState) => {
       let changed = false;
 
       setPendingInvitation((prev) => {
-        if (prev && prev.token === next.token) {
+        const sameToken = prev?.token === next.token;
+        const sameInvitationId = prev?.invitationId === next.invitationId;
+        const sameOrganizationId = prev?.organizationId === next.organizationId;
+
+        if (sameToken && sameInvitationId && sameOrganizationId) {
           return prev;
         }
 
@@ -202,6 +216,9 @@ function AcceptInvitationPageContent() {
 
     const nextPending: PendingInvitationState = {
       token,
+      invitationId: pendingInvitation?.invitationId ?? null,
+      organizationId:
+        organizationIdQuery || pendingInvitation?.organizationId || null,
     };
 
     persistPendingInvitation(nextPending);
@@ -209,7 +226,13 @@ function AcceptInvitationPageContent() {
     if (!pendingInvitation) {
       setStep("collect");
     }
-  }, [hasToken, pendingInvitation, persistPendingInvitation, token]);
+  }, [
+    hasToken,
+    organizationIdQuery,
+    pendingInvitation,
+    persistPendingInvitation,
+    token,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -263,10 +286,20 @@ function AcceptInvitationPageContent() {
           throw new Error("Authentication required to load invitation");
         }
 
+        const targetOrganizationId =
+          organizationIdQuery || pendingInvitation.organizationId || "";
+
+        if (!targetOrganizationId) {
+          throw new Error(
+            "Invitation is missing organization information. Please use the link provided in your email.",
+          );
+        }
+
         let detail: OrganizationInvitationDetail | null = null;
 
         detail = await getInvitationByToken(
           tokenValue,
+          targetOrganizationId,
           pendingInvitation.token,
         );
 
@@ -287,6 +320,8 @@ function AcceptInvitationPageContent() {
 
         persistPendingInvitation({
           token: pendingInvitation.token,
+          organizationId: detail.organization_id,
+          invitationId: detail.invitation_id,
         });
       } catch (error) {
         console.error("Failed to load invitation", error);
@@ -309,7 +344,13 @@ function AcceptInvitationPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken, authState, pendingInvitation, persistPendingInvitation]);
+  }, [
+    accessToken,
+    authState,
+    organizationIdQuery,
+    pendingInvitation,
+    persistPendingInvitation,
+  ]);
 
   useEffect(() => {
     if (
@@ -345,7 +386,8 @@ function AcceptInvitationPageContent() {
         throw new Error("You need to sign in before accepting the invitation.");
       }
 
-      const organizationId = invitation?.organization_id ?? null;
+      const organizationId =
+        pendingInvitation.organizationId || organizationIdQuery || null;
 
       if (!organizationId) {
         throw new Error(

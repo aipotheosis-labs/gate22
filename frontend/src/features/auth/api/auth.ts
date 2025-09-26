@@ -187,13 +187,14 @@ export async function login(
           : "http://localhost";
       const redirectUrl = new URL(rawRedirect, origin);
       const invitationId = redirectUrl.searchParams.get("invitation_id");
+      const organizationId = redirectUrl.searchParams.get("organization_id");
       const token = redirectUrl.searchParams.get("token");
 
       if (invitationId && token) {
         storePendingInvitation({
           invitationId,
           token,
-          organizationId: null,
+          organizationId: organizationId ?? null,
         });
       }
 

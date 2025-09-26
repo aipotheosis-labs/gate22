@@ -28,9 +28,19 @@ export default async function InviteRedirectPage({
   const normalizedInvitationId =
     invitationId && invitationId.trim().length ? invitationId : null;
 
+  const organizationIdParam = resolvedSearchParams?.organization_id;
+  const organizationId = Array.isArray(organizationIdParam)
+    ? organizationIdParam.at(0)
+    : organizationIdParam;
+  const normalizedOrganizationId =
+    organizationId && organizationId.trim().length ? organizationId : null;
+
   const redirectParams = new URLSearchParams({ token: rawToken });
   if (normalizedInvitationId) {
     redirectParams.set("invitation_id", normalizedInvitationId);
+  }
+  if (normalizedOrganizationId) {
+    redirectParams.set("organization_id", normalizedOrganizationId);
   }
 
   redirect(`/invitations/accept?${redirectParams.toString()}`);

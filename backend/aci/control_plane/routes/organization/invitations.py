@@ -13,10 +13,8 @@ from aci.common.db.sql_models import OrganizationInvitation, User
 from aci.common.enums import OrganizationInvitationStatus, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.organization_invitation import (
-    CancelOrganizationInvitationRequest,
     OrganizationInvitationDetail,
     OrganizationInvitationUpdate,
-    RespondOrganizationInvitationRequest,
     SendOrganizationInvitationRequest,
 )
 from aci.control_plane import access_control, config, token_utils
@@ -106,11 +104,11 @@ def _require_invitation_access_by_token(
 
 
 @router.post(
-    "/{organization_id}/invite-member",
+    "/{organization_id}/invitations",
     response_model=OrganizationInvitationDetail,
     status_code=status.HTTP_201_CREATED,
 )
-async def invite_member(
+async def create_invitation(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     email_service: Annotated[EmailService, Depends(deps.get_email_service)],
     organization_id: UUID,
@@ -187,7 +185,10 @@ async def invite_member(
     )
 
     try:
-        invitation_url = f"{config.FRONTEND_URL.rstrip('/')}/invite/{quote(token)}"
+        invitation_query = f"?organization_id={quote(str(organization_id))}"
+        invitation_url = (
+            f"{config.FRONTEND_URL.rstrip('/')}/invite/{quote(token)}{invitation_query}"
+        )
 
         email_metadata = await email_service.send_organization_invitation_email(
             recipient=target_email,
@@ -215,20 +216,20 @@ async def invite_member(
 
 
 @router.post(
-    "/{organization_id}/accept-invitation",
+    "/{organization_id}/invitations/accept/{token}",
     response_model=OrganizationInvitationDetail,
     status_code=status.HTTP_200_OK,
 )
 async def accept_invitation(
     context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
     organization_id: UUID,
-    request: RespondOrganizationInvitationRequest,
+    token: str,
 ) -> OrganizationInvitationDetail:
     invitation, user = _require_invitation_access_by_token(
-        context, request.token, expected_organization_id=organization_id
+        context, token, expected_organization_id=organization_id
     )
 
-    _validate_invitation_token(invitation, request.token)
+    _validate_invitation_token(invitation, token)
 
     now = datetime.datetime.now(datetime.UTC)
 
@@ -275,20 +276,20 @@ async def accept_invitation(
 
 
 @router.post(
-    "/{organization_id}/reject-invitation",
+    "/{organization_id}/invitations/reject/{token}",
     response_model=OrganizationInvitationDetail,
     status_code=status.HTTP_200_OK,
 )
 async def reject_invitation(
     context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
     organization_id: UUID,
-    request: RespondOrganizationInvitationRequest,
+    token: str,
 ) -> OrganizationInvitationDetail:
     invitation, user = _require_invitation_access_by_token(
-        context, request.token, expected_organization_id=organization_id
+        context, token, expected_organization_id=organization_id
     )
 
-    _validate_invitation_token(invitation, request.token)
+    _validate_invitation_token(invitation, token)
 
     if user.email.lower() != invitation.email.lower():
         raise HTTPException(
@@ -309,15 +310,15 @@ async def reject_invitation(
     return _serialize_invitation(invitation)
 
 
-@router.post(
-    "/{organization_id}/cancel-invitation",
+@router.delete(
+    "/{organization_id}/invitations/{invitation_id}",
     response_model=OrganizationInvitationDetail,
     status_code=status.HTTP_200_OK,
 )
 async def cancel_invitation(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
-    request: CancelOrganizationInvitationRequest,
+    invitation_id: UUID,
 ) -> OrganizationInvitationDetail:
     access_control.check_act_as_organization_role(
         context.act_as,
@@ -326,7 +327,7 @@ async def cancel_invitation(
     )
 
     invitation = crud.organization_invitations.get_invitation_by_id(
-        context.db_session, request.invitation_id
+        context.db_session, invitation_id
     )
     if invitation is None or invitation.organization_id != organization_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
@@ -349,7 +350,7 @@ async def cancel_invitation(
 
 
 @router.get(
-    "/{organization_id}/list-invitations",
+    "/{organization_id}/invitations",
     response_model=list[OrganizationInvitationDetail],
     status_code=status.HTTP_200_OK,
 )
@@ -373,17 +374,17 @@ async def list_invitations(
 
 
 @router.get(
-    "/invitations/by-token",
+    "/{organization_id}/invitations/get/{token}",
     response_model=OrganizationInvitationDetail,
     status_code=status.HTTP_200_OK,
 )
 async def get_invitation_by_token(
     context: Annotated[deps.RequestContextWithoutActAs, Depends(deps.get_request_context_no_orgs)],
-    token: Annotated[
-        str,
-        Query(..., min_length=1, description="Raw invitation token supplied via email"),
-    ],
+    organization_id: UUID,
+    token: str,
 ) -> OrganizationInvitationDetail:
-    invitation, _ = _require_invitation_access_by_token(context, token)
+    invitation, _ = _require_invitation_access_by_token(
+        context, token, expected_organization_id=organization_id
+    )
 
     return _serialize_invitation(invitation)

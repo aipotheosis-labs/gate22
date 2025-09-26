@@ -54,7 +54,7 @@ export async function inviteToOrganization(
 ): Promise<OrganizationInvitationDetail> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invite-member`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invitations`,
     {
       method: "POST",
       headers: {
@@ -80,7 +80,7 @@ export async function listOrganizationInvitations(
   const baseUrl = getApiBaseUrl();
   const query = status ? `?status_filter=${encodeURIComponent(status)}` : "";
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/list-invitations${query}`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invitations${query}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -102,14 +102,12 @@ export async function cancelOrganizationInvitation(
 ): Promise<OrganizationInvitationDetail> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/cancel-invitation`,
+    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/invitations/${invitationId}`,
     {
-      method: "POST",
+      method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ invitation_id: invitationId }),
     },
   );
 

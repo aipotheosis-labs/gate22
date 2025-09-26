@@ -26,4 +26,6 @@ export interface RespondInvitationPayload {
 
 export interface PendingInvitationState {
   token: string;
+  invitationId?: string | null;
+  organizationId?: string | null;
 }
