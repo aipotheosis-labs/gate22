@@ -102,7 +102,7 @@ def _generate_unique_mcp_server_bundle_key(db_session: Session, max_trials: int 
 async def list_mcp_server_bundles(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination_params: Annotated[PaginationParams, Depends()],
-) -> PaginationResponse[MCPServerBundlePublic]:
+) -> PaginationResponse[MCPServerBundlePublic | MCPServerBundlePublicWithBundleKey]:
     if context.act_as.role == OrganizationRole.ADMIN:
         mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id(
             context.db_session,
@@ -124,7 +124,7 @@ async def list_mcp_server_bundles(
     # Only member can see the bundle key of their own MCP server bundles
     should_include_bundle_key = context.act_as.role == OrganizationRole.MEMBER
 
-    return PaginationResponse[MCPServerBundlePublic](
+    return PaginationResponse[MCPServerBundlePublic | MCPServerBundlePublicWithBundleKey](
         data=[
             schema_utils.construct_mcp_server_bundle_public(
                 context.db_session, mcp_server_bundle, should_include_bundle_key
