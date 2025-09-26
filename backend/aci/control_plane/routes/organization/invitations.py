@@ -168,6 +168,7 @@ async def create_invitation(
             invitation,
             OrganizationInvitationUpdate(
                 role=request.role,
+                inviter_user_id=context.user_id,
                 status=OrganizationInvitationStatus.PENDING,
                 token_hash=token_hash,
                 expires_at=expires_at,

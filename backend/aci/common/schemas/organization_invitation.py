@@ -42,10 +42,11 @@ class OrganizationInvitationUpdate(BaseModel):
         default=None, description="Metadata returned by the email provider"
     )
     used_at: datetime.datetime | None = Field(default=None, description="Timestamp when consumed")
+    inviter_user_id: UUID | None = Field(default=None, description="Updated inviter user ID")
 
     @model_validator(mode="after")
     def _check_non_nullable_fields(self) -> "OrganizationInvitationUpdate":
-        non_nullable_fields = ["role", "status", "token_hash", "expires_at"]
+        non_nullable_fields = ["role", "status", "token_hash", "expires_at", "inviter_user_id"]
         for field in self.model_fields_set:
             if field in non_nullable_fields and getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be None")
