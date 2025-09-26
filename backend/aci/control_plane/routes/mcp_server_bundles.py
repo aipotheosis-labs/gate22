@@ -72,6 +72,8 @@ async def create_mcp_server_bundle(
 
     context.db_session.commit()
 
+    # Here the bundle key would not include in the response, because the user who created the
+    # bundle is an admin and would not be able to see the bundle key
     return schema_utils.construct_mcp_server_bundle_public(context.db_session, mcp_server_bundle)
 
 

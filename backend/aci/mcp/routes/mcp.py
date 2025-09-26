@@ -81,7 +81,7 @@ async def mcp_post(
             id=payload.id if not isinstance(payload, JSONRPCNotificationInitialized) else None,
             error=JSONRPCErrorResponse.ErrorData(
                 code=JSONRPCErrorCode.INVALID_REQUEST,
-                message=f"Bundle not found, bundle_key={bundle_key}",
+                message=f"Bundle not found, bundle_key={bundle_key[:10]}...",
             ),
         )
 
