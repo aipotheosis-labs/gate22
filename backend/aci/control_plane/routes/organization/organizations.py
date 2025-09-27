@@ -17,6 +17,7 @@ from aci.common.schemas.organization import (
 )
 from aci.control_plane import access_control
 from aci.control_plane import dependencies as deps
+from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -412,6 +413,12 @@ async def remove_team_member(
         team_id=team_id,
         user_id=user_id,
     )
+
+    removal_result = OrphanRecordsRemover(context.db_session).on_user_removed_from_team(
+        user_id=user_id,
+        organization_id=organization_id,
+    )
+    logger.info(f"Orphan records removal: {removal_result}")
 
     context.db_session.commit()
 
