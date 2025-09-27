@@ -155,15 +155,6 @@ def delete_mcp_server_configuration(
     ).delete()
 
 
-def delete_mcp_server_configurations_by_mcp_server_id(
-    db_session: Session,
-    mcp_server_id: UUID,
-) -> None:
-    db_session.query(MCPServerConfiguration).filter(
-        MCPServerConfiguration.mcp_server_id == mcp_server_id
-    ).delete()
-
-
 def update_mcp_server_configuration(
     db_session: Session,
     mcp_server_configuration_id: UUID,
