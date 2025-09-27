@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import (
+    ConnectedAccount,
+    MCPServerBundle,
     MCPServerConfiguration,
     Organization,
     Team,
@@ -131,27 +133,50 @@ def _assert_mcp_configurations_in_bundles_removal(
             ]
 
 
+OrphanConnectedAccountTestCase = enum.Enum(
+    "OrphanConnectedAccountTestCase",
+    [
+        "remove_team_none",
+        "remove_team_team_1",
+        "remove_team_team_2",
+        "remove_team_all",
+        "remove_user_from_team_1",
+        "remove_user_2_from_team_1",
+        "remove_user_2_from_team_2",
+    ],
+)
+
+
 @pytest.fixture(scope="function")
-def dummy_base_configuration_with_multi_teams(
+def dummy_test_setting_1(
     db_session: Session,
     dummy_organization: Organization,
     dummy_user: User,
     dummy_user_2: User,
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration: MCPServerConfiguration,
-) -> MCPServerConfiguration:
+    dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
+) -> tuple[MCPServerConfiguration, list[Team], list[ConnectedAccount], list[MCPServerBundle]]:
     """
     Connection Visualization:
     ┌─────────────────────────────────────────────┐
     │ dummy_mcp_server_configuration (individual) │
     └─────────────────────────────────────────────┘
         │
-    (allowed_teams)       ┌─────────────┐
-        │              ┌─>│ dummy_user  │
-        ├──> team_1 ───┤  └─────────────┘
-        │              │
-        │              └─>┌──────────────┐
-        └──> team_2 ─────>│ dummy_user_2 │
-                          └──────────────┘
+    (allowed_teams)
+        │                      ┌─────────────┐   ┌────────────────────────┐
+        │   ┌────────┐   ┌────>│ dummy_user  │──>│ connected_account_user │
+        ├──>│ team_1 │───┤     └─────────────┘   └────────────────────────┘
+        │   └────────┘   │
+        │   ┌────────┐   └────>┌──────────────┐   ┌──────────────────────────┐
+        └──>│ team_2 │────────>│ dummy_user_2 │──>│ connected_account_user_2 │
+            └────────┘         └──────────────┘   └──────────────────────────┘
+
+    Bundles:
+    - Bundle #1:
+        dummy_user [dummy_mcp_server_configuration, dummy_mcp_server_configuration_github]
+    - Bundle #2:
+        dummy_user_2 [dummy_mcp_server_configuration, dummy_mcp_server_configuration_gmail_shared]
     """
 
     team_1 = _create_team_with_members(
@@ -164,63 +189,18 @@ def dummy_base_configuration_with_multi_teams(
         ConnectedAccountOwnership.INDIVIDUAL
     )
 
-    db_session.commit()
-    return dummy_mcp_server_configuration
-
-
-OrphanConnectedAccountTestCase = enum.Enum(
-    "OrphanConnectedAccountTestCase",
-    [
-        "remove_none",
-        "remove_team_1",
-        "remove_team_2",
-        "remove_all",
-    ],
-)
-
-
-@pytest.mark.parametrize(
-    "connected_account_case, removed_connected_accounts_names",
-    [
-        (OrphanConnectedAccountTestCase.remove_none, []),
-        (OrphanConnectedAccountTestCase.remove_team_1, ["connected_account_user"]),
-        (OrphanConnectedAccountTestCase.remove_team_2, []),
-        (
-            OrphanConnectedAccountTestCase.remove_all,
-            ["connected_account_user", "connected_account_user_2"],
-        ),
-    ],
-)
-def test_on_mcp_server_configuration_allowed_teams_updated(
-    db_session: Session,
-    dummy_organization: Organization,
-    dummy_user: User,
-    dummy_user_2: User,
-    connected_account_case: OrphanConnectedAccountTestCase,
-    removed_connected_accounts_names: list[str],
-    dummy_base_configuration_with_multi_teams: MCPServerConfiguration,
-) -> None:
-    # Confirm the users are accessible to the MCP Server Configuration originally
-    _assert_users_configuration_accessibilities(
-        db_session=db_session,
-        accessibilities=[
-            (dummy_user.id, dummy_base_configuration_with_multi_teams.id, True),
-            (dummy_user_2.id, dummy_base_configuration_with_multi_teams.id, True),
-        ],
-    )
-
     # Create connected accounts for both users
     connected_account_user = crud.connected_accounts.create_connected_account(
         db_session=db_session,
         user_id=dummy_user.id,
-        mcp_server_configuration_id=dummy_base_configuration_with_multi_teams.id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
         auth_credentials={},
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
     )
     connected_account_user_2 = crud.connected_accounts.create_connected_account(
         db_session=db_session,
         user_id=dummy_user_2.id,
-        mcp_server_configuration_id=dummy_base_configuration_with_multi_teams.id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
         auth_credentials={},
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
     )
@@ -234,9 +214,8 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
             name="Test Bundle 1",
             description="Test Bundle 1 Description",
             mcp_server_configuration_ids=[
-                dummy_base_configuration_with_multi_teams.id,
-                uuid4(),
-                uuid4(),
+                dummy_mcp_server_configuration.id,
+                dummy_mcp_server_configuration_github.id,
             ],
         ),
         bundle_key="test_bundle_1_key",
@@ -249,8 +228,8 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
             name="Test Bundle 2",
             description="Test Bundle 2 Description",
             mcp_server_configuration_ids=[
-                dummy_base_configuration_with_multi_teams.id,
-                uuid4(),
+                dummy_mcp_server_configuration.id,
+                dummy_mcp_server_configuration_gmail_shared.id,
             ],
         ),
         bundle_key="test_bundle_2_key",
@@ -258,40 +237,78 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
 
     db_session.commit()
 
-    # Now remove teams based on the test parameter
-    team_1 = dummy_base_configuration_with_multi_teams.allowed_teams[0]
-    team_2 = dummy_base_configuration_with_multi_teams.allowed_teams[1]
+    return (
+        dummy_mcp_server_configuration,
+        [team_1, team_2],
+        [connected_account_user, connected_account_user_2],
+        [bundle_user, bundle_user_2],
+    )
 
+
+@pytest.mark.parametrize(
+    "connected_account_case",
+    [
+        OrphanConnectedAccountTestCase.remove_team_none,
+        OrphanConnectedAccountTestCase.remove_team_team_1,
+        OrphanConnectedAccountTestCase.remove_team_team_2,
+        OrphanConnectedAccountTestCase.remove_team_all,
+    ],
+)
+def test_on_mcp_server_configuration_allowed_teams_updated(
+    db_session: Session,
+    dummy_user: User,
+    dummy_user_2: User,
+    connected_account_case: OrphanConnectedAccountTestCase,
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
+    dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
+    dummy_test_setting_1: tuple[
+        MCPServerConfiguration, list[Team], list[ConnectedAccount], list[MCPServerBundle]
+    ],
+) -> None:
+    # obtain test entities from fixture
+    dummy_mcp_server_configuration, teams, connected_accounts, bundles = dummy_test_setting_1
+
+    # Confirm the users are accessible to the MCP Server Configuration originally
+    _assert_users_configuration_accessibilities(
+        db_session=db_session,
+        accessibilities=[
+            (dummy_user.id, dummy_mcp_server_configuration.id, True),
+            (dummy_user_2.id, dummy_mcp_server_configuration.id, True),
+        ],
+    )
+
+    # Now remove teams based on the test parameter
+    team_1, team_2 = teams[0], teams[1]
     match connected_account_case:
-        case OrphanConnectedAccountTestCase.remove_none:
+        case OrphanConnectedAccountTestCase.remove_team_none:
             pass  # no change
-        case OrphanConnectedAccountTestCase.remove_team_1:
-            dummy_base_configuration_with_multi_teams.allowed_teams = [team_2]
-        case OrphanConnectedAccountTestCase.remove_team_2:
-            dummy_base_configuration_with_multi_teams.allowed_teams = [team_1]
-        case OrphanConnectedAccountTestCase.remove_all:
-            dummy_base_configuration_with_multi_teams.allowed_teams = []
+        case OrphanConnectedAccountTestCase.remove_team_team_1:
+            dummy_mcp_server_configuration.allowed_teams = [uuid4(), team_2.id]  # add a random team
+        case OrphanConnectedAccountTestCase.remove_team_team_2:
+            dummy_mcp_server_configuration.allowed_teams = [team_1.id, uuid4()]
+        case OrphanConnectedAccountTestCase.remove_team_all:
+            dummy_mcp_server_configuration.allowed_teams = []
 
     # Execute the orphan records removal
     removal_result = OrphanRecordsRemover(
         db_session
     ).on_mcp_server_configuration_allowed_teams_updated(
-        mcp_server_configuration=dummy_base_configuration_with_multi_teams
+        mcp_server_configuration=dummy_mcp_server_configuration
     )
 
     db_session.commit()
 
     # Verify the results
     match connected_account_case:
-        case OrphanConnectedAccountTestCase.remove_none:
-            # No connected account should be removed because there is no change
+        case OrphanConnectedAccountTestCase.remove_team_none:
+            # Both users still have access to the MCP Server Configuration
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
                 expected_removed_connected_accounts=[],
                 expected_retained_connected_accounts=[
-                    connected_account_user.id,
-                    connected_account_user_2.id,
+                    connected_accounts[0].id,
+                    connected_accounts[1].id,
                 ],
             )
             _assert_mcp_configurations_in_bundles_removal(
@@ -299,68 +316,92 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
                 removal_result=removal_result,
                 expected_removed_mcp_configurations_in_bundles=[],
                 expected_retained_mcp_configurations_in_bundles=[
-                    (bundle_user.id, [dummy_base_configuration_with_multi_teams.id]),
-                    (bundle_user_2.id, [dummy_base_configuration_with_multi_teams.id]),
+                    (
+                        bundles[0].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_github.id,
+                        ],
+                    ),
+                    (
+                        bundles[1].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_gmail_shared.id,
+                        ],
+                    ),
                 ],
             )
 
-        case OrphanConnectedAccountTestCase.remove_team_1:
-            # dummy_user's connected account should be removed
+        case OrphanConnectedAccountTestCase.remove_team_team_1:
+            # dummy_user's loses access to the MCP Server Configuration
             # dummy_user_2's still accessible via team_2
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
-                expected_removed_connected_accounts=[connected_account_user.id],
-                expected_retained_connected_accounts=[connected_account_user_2.id],
+                expected_removed_connected_accounts=[connected_accounts[0].id],
+                expected_retained_connected_accounts=[connected_accounts[1].id],
             )
 
-            # configuration in dummy_user's bundle should be removed
-            # configuration in dummy_user_2's bundle should still be accessible
             _assert_mcp_configurations_in_bundles_removal(
                 db_session=db_session,
                 removal_result=removal_result,
                 expected_removed_mcp_configurations_in_bundles=[
-                    (bundle_user.id, [dummy_base_configuration_with_multi_teams.id]),
-                    (bundle_user_2.id, []),
+                    (bundles[0].id, [dummy_mcp_server_configuration.id]),
                 ],
                 expected_retained_mcp_configurations_in_bundles=[
-                    (bundle_user.id, []),
-                    (bundle_user_2.id, [dummy_base_configuration_with_multi_teams.id]),
+                    (bundles[0].id, [dummy_mcp_server_configuration_github.id]),
+                    (
+                        bundles[1].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_gmail_shared.id,
+                        ],
+                    ),
                 ],
             )
 
-        case OrphanConnectedAccountTestCase.remove_team_2:
-            # No connected account should be removed, both users are still accessible via team_1
+        case OrphanConnectedAccountTestCase.remove_team_team_2:
+            # Both users still have access to the MCP Server Configuration
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
                 expected_removed_connected_accounts=[],
                 expected_retained_connected_accounts=[
-                    connected_account_user.id,
-                    connected_account_user_2.id,
+                    connected_accounts[0].id,
+                    connected_accounts[1].id,
                 ],
             )
             _assert_mcp_configurations_in_bundles_removal(
                 db_session=db_session,
                 removal_result=removal_result,
-                expected_removed_mcp_configurations_in_bundles=[
-                    (bundle_user.id, []),
-                    (bundle_user_2.id, []),
-                ],
+                expected_removed_mcp_configurations_in_bundles=[],
                 expected_retained_mcp_configurations_in_bundles=[
-                    (bundle_user.id, [dummy_base_configuration_with_multi_teams.id]),
-                    (bundle_user_2.id, [dummy_base_configuration_with_multi_teams.id]),
+                    (
+                        bundles[0].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_github.id,
+                        ],
+                    ),
+                    (
+                        bundles[1].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_gmail_shared.id,
+                        ],
+                    ),
                 ],
             )
 
-        case OrphanConnectedAccountTestCase.remove_all:
-            # Both users' connected accounts should be removed
+        case OrphanConnectedAccountTestCase.remove_team_all:
+            # Both users lose access to the MCP Server Configuration
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
                 expected_removed_connected_accounts=[
-                    connected_account_user.id,
-                    connected_account_user_2.id,
+                    connected_accounts[0].id,
+                    connected_accounts[1].id,
                 ],
                 expected_retained_connected_accounts=[],
             )
@@ -368,12 +409,12 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
                 db_session=db_session,
                 removal_result=removal_result,
                 expected_removed_mcp_configurations_in_bundles=[
-                    (bundle_user.id, [dummy_base_configuration_with_multi_teams.id]),
-                    (bundle_user_2.id, [dummy_base_configuration_with_multi_teams.id]),
+                    (bundles[0].id, [dummy_mcp_server_configuration.id]),
+                    (bundles[1].id, [dummy_mcp_server_configuration.id]),
                 ],
                 expected_retained_mcp_configurations_in_bundles=[
-                    (bundle_user.id, []),
-                    (bundle_user_2.id, []),
+                    (bundles[0].id, [dummy_mcp_server_configuration_github.id]),
+                    (bundles[1].id, [dummy_mcp_server_configuration_gmail_shared.id]),
                 ],
             )
 
@@ -381,71 +422,27 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
 def test_on_mcp_server_configuration_deleted(
     db_session: Session,
     dummy_organization: Organization,
-    dummy_user: User,
-    dummy_user_2: User,
-    dummy_base_configuration_with_multi_teams: MCPServerConfiguration,
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
+    dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
+    dummy_test_setting_1: tuple[
+        MCPServerConfiguration, list[Team], list[ConnectedAccount], list[MCPServerBundle]
+    ],
 ) -> None:
-    # Create connected accounts for both users
-    connected_account_user = crud.connected_accounts.create_connected_account(
-        db_session=db_session,
-        user_id=dummy_user.id,
-        mcp_server_configuration_id=dummy_base_configuration_with_multi_teams.id,
-        auth_credentials={},
-        ownership=ConnectedAccountOwnership.INDIVIDUAL,
-    )
-    connected_account_user_2 = crud.connected_accounts.create_connected_account(
-        db_session=db_session,
-        user_id=dummy_user_2.id,
-        mcp_server_configuration_id=dummy_base_configuration_with_multi_teams.id,
-        auth_credentials={},
-        ownership=ConnectedAccountOwnership.INDIVIDUAL,
-    )
+    # obtain test entities from fixture
+    dummy_mcp_server_configuration, _, connected_accounts, bundles = dummy_test_setting_1
 
-    original_ids = [connected_account_user.id, connected_account_user_2.id]
-
-    # Create Bundles for both users, both contains the same MCP Server Configuration
-    bundle_user = crud.mcp_server_bundles.create_mcp_server_bundle(
-        db_session=db_session,
-        user_id=dummy_user.id,
-        organization_id=dummy_organization.id,
-        mcp_server_bundle_create=MCPServerBundleCreate(
-            name="Test Bundle 1",
-            description="Test Bundle 1 Description",
-            mcp_server_configuration_ids=[
-                dummy_base_configuration_with_multi_teams.id,
-                uuid4(),
-                uuid4(),
-            ],
-        ),
-        bundle_key="test_bundle_1_key",
-    )
-    bundle_user_2 = crud.mcp_server_bundles.create_mcp_server_bundle(
-        db_session=db_session,
-        user_id=dummy_user_2.id,
-        organization_id=dummy_organization.id,
-        mcp_server_bundle_create=MCPServerBundleCreate(
-            name="Test Bundle 2",
-            description="Test Bundle 2 Description",
-            mcp_server_configuration_ids=[
-                dummy_base_configuration_with_multi_teams.id,
-                uuid4(),
-            ],
-        ),
-        bundle_key="test_bundle_2_key",
-    )
-
-    db_session.commit()
+    original_ids = [connected_accounts[0].id, connected_accounts[1].id]
 
     # Now delete the MCP Server Configuration
     crud.mcp_server_configurations.delete_mcp_server_configuration(
         db_session=db_session,
-        mcp_server_configuration_id=dummy_base_configuration_with_multi_teams.id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
     )
 
     # Execute the orphan records removal
     removal_result = OrphanRecordsRemover(db_session).on_mcp_server_configuration_deleted(
         organization_id=dummy_organization.id,
-        mcp_server_configuration_id=dummy_base_configuration_with_multi_teams.id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration.id,
     )
 
     db_session.commit()
@@ -467,11 +464,164 @@ def test_on_mcp_server_configuration_deleted(
         db_session=db_session,
         removal_result=removal_result,
         expected_removed_mcp_configurations_in_bundles=[
-            (bundle_user.id, [dummy_base_configuration_with_multi_teams.id]),
-            (bundle_user_2.id, [dummy_base_configuration_with_multi_teams.id]),
+            (bundles[0].id, [dummy_mcp_server_configuration.id]),
+            (bundles[1].id, [dummy_mcp_server_configuration.id]),
         ],
         expected_retained_mcp_configurations_in_bundles=[
-            (bundle_user.id, []),
-            (bundle_user_2.id, []),
+            (bundles[0].id, [dummy_mcp_server_configuration_github.id]),
+            (bundles[1].id, [dummy_mcp_server_configuration_gmail_shared.id]),
         ],
     )
+
+
+@pytest.mark.parametrize(
+    "connected_account_case",
+    [
+        OrphanConnectedAccountTestCase.remove_user_from_team_1,
+        OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
+        OrphanConnectedAccountTestCase.remove_user_2_from_team_2,
+    ],
+)
+def test_on_user_removed_from_team(
+    db_session: Session,
+    dummy_organization: Organization,
+    dummy_user: User,
+    dummy_user_2: User,
+    dummy_test_setting_1: tuple[
+        MCPServerConfiguration, list[Team], list[ConnectedAccount], list[MCPServerBundle]
+    ],
+    dummy_mcp_server_configuration_github: MCPServerConfiguration,
+    dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
+    connected_account_case: OrphanConnectedAccountTestCase,
+) -> None:
+    # obtain test entities from fixture
+    dummy_mcp_server_configuration, teams, connected_accounts, bundles = dummy_test_setting_1
+
+    team_1, team_2 = teams[0], teams[1]
+
+    match connected_account_case:
+        case OrphanConnectedAccountTestCase.remove_user_from_team_1:
+            # Now remove the user from the team
+            crud.teams.remove_team_member(
+                db_session=db_session,
+                organization_id=dummy_organization.id,
+                team_id=team_1.id,
+                user_id=dummy_user.id,
+            )
+        case OrphanConnectedAccountTestCase.remove_user_2_from_team_1:
+            crud.teams.remove_team_member(
+                db_session=db_session,
+                organization_id=dummy_organization.id,
+                team_id=team_1.id,
+                user_id=dummy_user_2.id,
+            )
+        case OrphanConnectedAccountTestCase.remove_user_2_from_team_2:
+            crud.teams.remove_team_member(
+                db_session=db_session,
+                organization_id=dummy_organization.id,
+                team_id=team_2.id,
+                user_id=dummy_user_2.id,
+            )
+
+    db_session.commit()
+
+    # Execute the orphan records removal
+    removal_result = OrphanRecordsRemover(db_session).on_user_removed_from_team(
+        user_id=dummy_user.id,
+        organization_id=dummy_organization.id,
+    )
+
+    # Verify the results
+    match connected_account_case:
+        case OrphanConnectedAccountTestCase.remove_user_from_team_1:
+            # user loses access to the MCP Server Configuration
+            _assert_connected_accounts_removal(
+                db_session=db_session,
+                removal_result=removal_result,
+                expected_removed_connected_accounts=[connected_accounts[0].id],
+                expected_retained_connected_accounts=[connected_accounts[1].id],
+            )
+            _assert_mcp_configurations_in_bundles_removal(
+                db_session=db_session,
+                removal_result=removal_result,
+                expected_removed_mcp_configurations_in_bundles=[
+                    (bundles[0].id, [dummy_mcp_server_configuration.id]),
+                ],
+                expected_retained_mcp_configurations_in_bundles=[
+                    (
+                        bundles[0].id,
+                        [dummy_mcp_server_configuration_github.id],
+                    ),
+                    (
+                        bundles[1].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_gmail_shared.id,
+                        ],
+                    ),
+                ],
+            )
+        case OrphanConnectedAccountTestCase.remove_user_2_from_team_1:
+            # user2 still has access to the MCP Server Configuration
+            _assert_connected_accounts_removal(
+                db_session=db_session,
+                removal_result=removal_result,
+                expected_removed_connected_accounts=[],
+                expected_retained_connected_accounts=[
+                    connected_accounts[0].id,
+                    connected_accounts[1].id,
+                ],
+            )
+            _assert_mcp_configurations_in_bundles_removal(
+                db_session=db_session,
+                removal_result=removal_result,
+                expected_removed_mcp_configurations_in_bundles=[],
+                expected_retained_mcp_configurations_in_bundles=[
+                    (
+                        bundles[0].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_github.id,
+                        ],
+                    ),
+                    (
+                        bundles[1].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_gmail_shared.id,
+                        ],
+                    ),
+                ],
+            )
+        case OrphanConnectedAccountTestCase.remove_user_2_from_team_2:
+            # dummy_user_2's connected account should be removed
+            _assert_connected_accounts_removal(
+                db_session=db_session,
+                removal_result=removal_result,
+                expected_removed_connected_accounts=[],
+                expected_retained_connected_accounts=[
+                    connected_accounts[0].id,
+                    connected_accounts[1].id,
+                ],
+            )
+            _assert_mcp_configurations_in_bundles_removal(
+                db_session=db_session,
+                removal_result=removal_result,
+                expected_removed_mcp_configurations_in_bundles=[],
+                expected_retained_mcp_configurations_in_bundles=[
+                    (
+                        bundles[0].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_github.id,
+                        ],
+                    ),
+                    (
+                        bundles[1].id,
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_gmail_shared.id,
+                        ],
+                    ),
+                ],
+            )

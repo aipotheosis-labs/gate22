@@ -233,12 +233,12 @@ async def update_mcp_server_configuration(
     if body.allowed_teams is not None:
         # If the allowed teams are updated, check and clean up any stale connected accounts and
         # bundles
-        removal = OrphanRecordsRemover(
+        removal_result = OrphanRecordsRemover(
             db_session=context.db_session
         ).on_mcp_server_configuration_allowed_teams_updated(
             mcp_server_configuration=mcp_server_configuration,
         )
-        logger.info(f"Orphan records removal: {removal}")
+        logger.info(f"Orphan records removal: {removal_result}")
 
     context.db_session.commit()
 
@@ -278,13 +278,13 @@ async def delete_mcp_server_configuration(
             context.db_session, mcp_server_configuration_id
         )
 
-        removal = OrphanRecordsRemover(
+        removal_result = OrphanRecordsRemover(
             db_session=context.db_session
         ).on_mcp_server_configuration_deleted(
             organization_id=mcp_server_configuration.organization_id,
             mcp_server_configuration_id=mcp_server_configuration_id,
         )
-        logger.info(f"Orphan records removal: {removal}")
+        logger.info(f"Orphan records removal: {removal_result}")
 
         context.db_session.commit()
     else:
