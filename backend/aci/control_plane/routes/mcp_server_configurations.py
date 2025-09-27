@@ -231,8 +231,7 @@ async def update_mcp_server_configuration(
     )
 
     if body.allowed_teams is not None:
-        # If the allowed teams are updated, check and clean up any stale connected accounts and
-        # bundles
+        # If the allowed teams are updated, check and clean up any orphan records
         removal_result = OrphanRecordsRemover(
             db_session=context.db_session
         ).on_mcp_server_configuration_allowed_teams_updated(

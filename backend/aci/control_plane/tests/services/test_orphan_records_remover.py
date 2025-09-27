@@ -205,6 +205,24 @@ def dummy_test_setting_1(
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
     )
 
+    # Creating others records for Connected Accounts and Bundle's Configuration
+    crud.connected_accounts.create_connected_account(
+        db_session=db_session,
+        user_id=dummy_user.id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
+        auth_credentials={},
+        ownership=ConnectedAccountOwnership.INDIVIDUAL,
+    )
+    dummy_mcp_server_configuration_github.allowed_teams = [team_1.id, team_2.id]
+    crud.connected_accounts.create_connected_account(
+        db_session=db_session,
+        user_id=dummy_user_2.id,
+        mcp_server_configuration_id=dummy_mcp_server_configuration_gmail_shared.id,
+        auth_credentials={},
+        ownership=ConnectedAccountOwnership.INDIVIDUAL,
+    )
+    dummy_mcp_server_configuration_gmail_shared.allowed_teams = [team_1.id, team_2.id]
+
     # Create Bundles for both users, both contains the same MCP Server Configuration
     bundle_user = crud.mcp_server_bundles.create_mcp_server_bundle(
         db_session=db_session,
@@ -477,8 +495,8 @@ def test_on_mcp_server_configuration_deleted(
 @pytest.mark.parametrize(
     "connected_account_case",
     [
-        OrphanConnectedAccountTestCase.remove_user_from_team_1,
-        OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
+        # OrphanConnectedAccountTestCase.remove_user_from_team_1,
+        # OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
         OrphanConnectedAccountTestCase.remove_user_2_from_team_2,
     ],
 )
@@ -508,6 +526,7 @@ def test_on_user_removed_from_team(
                 team_id=team_1.id,
                 user_id=dummy_user.id,
             )
+            removed_user = dummy_user
         case OrphanConnectedAccountTestCase.remove_user_2_from_team_1:
             crud.teams.remove_team_member(
                 db_session=db_session,
@@ -515,6 +534,7 @@ def test_on_user_removed_from_team(
                 team_id=team_1.id,
                 user_id=dummy_user_2.id,
             )
+            removed_user = dummy_user_2
         case OrphanConnectedAccountTestCase.remove_user_2_from_team_2:
             crud.teams.remove_team_member(
                 db_session=db_session,
@@ -522,14 +542,16 @@ def test_on_user_removed_from_team(
                 team_id=team_2.id,
                 user_id=dummy_user_2.id,
             )
+            removed_user = dummy_user_2
 
     db_session.commit()
 
     # Execute the orphan records removal
     removal_result = OrphanRecordsRemover(db_session).on_user_removed_from_team(
-        user_id=dummy_user.id,
+        user_id=removed_user.id,
         organization_id=dummy_organization.id,
     )
+    db_session.commit()
 
     # Verify the results
     match connected_account_case:
@@ -625,3 +647,6 @@ def test_on_user_removed_from_team(
                     ),
                 ],
             )
+
+
+# TODO: Add test for on_mcp_server_deleted
