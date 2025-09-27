@@ -502,11 +502,18 @@ def dummy_connected_accounts(
     dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
 ) -> list[ConnectedAccount]:
     """
-    Test settings:
-    - dummy_user connected to dummy_mcp_server_configuration_github
-    - dummy_user connected to dummy_mcp_server_configuration_notion
-    - dummy_another_org_member connected to dummy_mcp_server_configuration_github
-    - dummy_another_org_member connected to dummy_mcp_server_configuration_shared as shared account
+    Test connection graph:
+
+    dummy_user ──via personal account──> dummy_mcp_server_configuration_github
+               ──via personal account──> dummy_mcp_server_configuration_notion
+
+    dummy_another_org_member ──via personal account──> dummy_mcp_server_configuration_github
+                             ──via shared account───> dummy_mcp_server_configuration_gmail_shared
+
+    Legend:
+    - Users connect to MCP server configurations through connected accounts
+    - Personal accounts: individual user connections
+    - Shared accounts: organization-wide shared connections
     """
 
     connected_accounts = []
@@ -560,12 +567,17 @@ def dummy_mcp_server_bundles(
     dummy_mcp_server_configuration_notion: MCPServerConfiguration,
 ) -> list[MCPServerBundle]:
     """
-    Test settings:
-    - dummy_user has 2 bundles:
-        - github + notion
-        - github only
-    - dummy_another_org_member has 1 bundle:
-        - github only
+    Test bundle graph:
+
+    dummy_user ──owns──> Bundle #1 [github + notion]
+               ──owns──> Bundle #2 [github only]
+
+    dummy_another_org_member ──owns──> Bundle #3 [github only]
+
+    Legend:
+    - Users own MCP server bundles
+    - Each bundle contains one or more MCP server configurations
+    - Bundles group related MCP servers for easier management
     """
     mcp_server_bundles = []
     mcp_server_bundles.append(
