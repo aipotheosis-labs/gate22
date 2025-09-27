@@ -121,6 +121,7 @@ class OrphanRecordsRemover:
                 throw_error_if_not_permitted=False,
             )
             if not accessible:
+                logger.info(f"-----------> Removing connected account {connected_account.id}")
                 orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
                 crud.connected_accounts.delete_connected_account(
                     db_session=self.db_session,
@@ -172,21 +173,16 @@ class OrphanRecordsRemover:
         - Iterate through all MCP Bundles in the organization:
             - Remove the MCP Server Configuration in the MCP Bundles if the MCP Bundle contains it
         """
-
-        orphan_connected_accounts = []
         # Remove all ConnectedAccount under this MCP server configuration
-        connected_accounts = (
+        # The ConnectedAccount is deleted automatically by the CASCADE DELETE when the MCP Server
+        # Configuration is deleted, so we do not need to delete it here
+        assert (
             crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
                 db_session=self.db_session,
                 mcp_server_configuration_id=mcp_server_configuration_id,
             )
+            == []
         )
-        for connected_account in connected_accounts:
-            orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
-            crud.connected_accounts.delete_connected_account(
-                db_session=self.db_session,
-                connected_account_id=connected_account.id,
-            )
 
         # Remove the MCP server configuration from all MCPServerBundle in the organization
         orphan_mcp_configurations_in_bundles = []
@@ -208,7 +204,6 @@ class OrphanRecordsRemover:
             )
 
         return OrphanRecordsRemoval(
-            connected_accounts=orphan_connected_accounts,
             mcp_configurations_in_bundles=orphan_mcp_configurations_in_bundles,
         )
 
@@ -404,6 +399,13 @@ class OrphanRecordsRemover:
         # Delete all MCP Tools records under the MCP Server is done automatically by the CASCADE
         # DELETE when deleting MCP Server, defined in `sql_models.py`, so we do not need to do
         # anything here
+        assert (
+            crud.mcp_tools.get_mcp_tools_by_mcp_server_id(
+                db_session=self.db_session,
+                mcp_server_id=mcp_server_id,
+            )
+            == []
+        )
 
         return OrphanRecordsRemoval(
             mcp_configurations=orphan_mcp_configurations,

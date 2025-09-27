@@ -105,6 +105,13 @@ def get_mcp_tool_by_id(
     return db_session.query(MCPTool).filter(MCPTool.id == mcp_tool_id).first()
 
 
+def get_mcp_tools_by_mcp_server_id(
+    db_session: Session,
+    mcp_server_id: UUID,
+) -> list[MCPTool]:
+    return db_session.query(MCPTool).filter(MCPTool.mcp_server_id == mcp_server_id).all()
+
+
 def get_mcp_tools_by_ids(
     db_session: Session,
     mcp_tool_ids: list[UUID],
