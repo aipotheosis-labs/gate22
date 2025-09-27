@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServerBundle, MCPServerConfiguration, User
+from aci.common.db.sql_models import ConnectedAccount, MCPServerBundle, MCPServerConfiguration, User
 from aci.common.enums import ConnectedAccountOwnership
 from aci.common.logging_setup import get_logger
 from aci.control_plane import access_control
@@ -246,24 +247,11 @@ class OrphanRecordsRemover:
             )
         )
         for mcp_server_bundle in mcp_server_bundles:
-            for mcp_server_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
-                accessible = access_control.check_mcp_server_config_accessibility(
-                    db_session=self.db_session,
-                    user_id=mcp_server_bundle.user_id,
-                    mcp_server_configuration_id=mcp_server_configuration_id,
-                    throw_error_if_not_permitted=False,
+            orphan_mcp_configurations_in_bundles.extend(
+                self._clean_orphan_configurations_in_bundles(
+                    mcp_server_bundle=mcp_server_bundle,
                 )
-                if not accessible:
-                    orphan_mcp_configurations_in_bundles.append(
-                        OrphanMCPServerConfigurationInBundle(
-                            bundle_id=mcp_server_bundle.id,
-                            configuration_id=mcp_server_configuration_id,
-                        )
-                    )
-                    self._remove_configuration_id_from_bundle(
-                        mcp_server_bundle=mcp_server_bundle,
-                        mcp_server_configuration_id=mcp_server_configuration_id,
-                    )
+            )
         return orphan_mcp_configurations_in_bundles
 
     def _remove_orphan_connected_accounts_on_user_removed_from_team(
@@ -340,7 +328,66 @@ class OrphanRecordsRemover:
           a MCP Server Configuration using this MCP Server
         - Delete all MCP Tools records under the MCP Server
         """
-        raise NotImplementedError("Not implemented")
+
+        orphan_mcp_configurations_in_bundles = []
+
+        # Delete all MCP Server Configurations under the MCP Server
+        # This is done automatically by the CASCADE DELETE when deleting MCP Server, defined in
+        # `sql_models.py`, so we do not need to do anything here. Instead we assert if they are
+        # really already removed
+        assert (
+            crud.mcp_server_configurations.get_mcp_server_configurations(
+                db_session=self.db_session,
+                organization_id=organization_id,
+                mcp_server_id=mcp_server_id,
+            )
+            == []
+        )
+
+        # Delete all Connected Accounts that connects with any of the MCP Server Configurations
+        # This is done automatically by the CASCADE DELETE when deleting MCP Server Configurations,
+        # defined in `sql_models.py`, so we do not need to do anything here. Instead we assert if
+        # they are really already removed
+        statement = (
+            select(ConnectedAccount)
+            .join(
+                MCPServerConfiguration,
+                ConnectedAccount.mcp_server_configuration_id == MCPServerConfiguration.id,
+            )
+            .where(
+                MCPServerConfiguration.mcp_server_id == mcp_server_id,
+            )
+        )
+        connected_accounts = self.db_session.execute(statement).scalars().all()
+        assert connected_accounts == []
+
+        # Remove the MCP Server Configuration from any MCP Bundles in the organization containing it
+        # Since we don't have the MCP Server Configuration, we need to iterate through all MCP
+        # Server Bundles and check if it contains any non-existence MCP Server Configuration.
+        mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id(
+            db_session=self.db_session, organization_id=organization_id
+        )
+        for mcp_server_bundle in mcp_server_bundles:
+            orphan_mcp_configurations_in_bundles.extend(
+                self._clean_orphan_configurations_in_bundles(
+                    mcp_server_bundle=mcp_server_bundle,
+                )
+            )
+
+        # Delete all MCP Tools records under the MCP Server is done automatically by the CASCADE
+        # DELETE when deleting MCP Server, defined in `sql_models.py`, so we do not need to do
+        # anything here
+        assert (
+            crud.mcp_tools.get_mcp_tools_by_mcp_server_id(
+                db_session=self.db_session,
+                mcp_server_id=mcp_server_id,
+            )
+            == []
+        )
+
+        return OrphanRecordsRemoval(
+            mcp_configurations_in_bundles=orphan_mcp_configurations_in_bundles,
+        )
 
     def _remove_configuration_id_from_bundle(
         self, mcp_server_bundle: MCPServerBundle, mcp_server_configuration_id: UUID
@@ -356,3 +403,44 @@ class OrphanRecordsRemover:
             mcp_server_bundle_id=mcp_server_bundle.id,
             update_mcp_server_bundle_configuration_ids=updated_config_ids,
         )
+
+    def _clean_orphan_configurations_in_bundles(
+        self, mcp_server_bundle: MCPServerBundle
+    ) -> list[OrphanMCPServerConfigurationInBundle]:
+        """
+        Helper function to clean up orphan MCP Server Configurations in Bundles
+
+        Check every configuration ids, remove it from the bundle if:
+        - if it not exists
+        - if the owner of the bundle has no access to it
+        """
+        orphan_mcp_configurations_in_bundles = []
+        for mcp_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
+            should_remove = False
+            if not crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
+                self.db_session,
+                mcp_configuration_id,
+                throw_error_if_not_found=False,
+            ):
+                should_remove = True
+
+            if not access_control.check_mcp_server_config_accessibility(
+                db_session=self.db_session,
+                user_id=mcp_server_bundle.user_id,
+                mcp_server_configuration_id=mcp_configuration_id,
+                throw_error_if_not_permitted=False,
+            ):
+                should_remove = True
+
+            if should_remove:
+                orphan_mcp_configurations_in_bundles.append(
+                    OrphanMCPServerConfigurationInBundle(
+                        bundle_id=mcp_server_bundle.id,
+                        configuration_id=mcp_configuration_id,
+                    )
+                )
+                self._remove_configuration_id_from_bundle(
+                    mcp_server_bundle=mcp_server_bundle,
+                    mcp_server_configuration_id=mcp_configuration_id,
+                )
+        return orphan_mcp_configurations_in_bundles
