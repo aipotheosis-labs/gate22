@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -9,6 +10,35 @@ from aci.common.logging_setup import get_logger
 from aci.control_plane import access_control
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class OrphanConnectedAccount:
+    id: UUID
+
+
+@dataclass
+class OrphanMCPBundle:
+    id: UUID
+
+
+@dataclass
+class OrphanMCPServerConfiguration:
+    id: UUID
+
+
+@dataclass
+class OrphanMCPServerConfigurationInBundle:
+    bundle_id: UUID
+    configuration_id: UUID
+
+
+@dataclass
+class OrphanRecordsRemoval:
+    orphan_connected_accounts: list[OrphanConnectedAccount] | None = None
+    orphan_mcp_bundles: list[OrphanMCPBundle] | None = None
+    orphan_mcp_configurations: list[OrphanMCPServerConfiguration] | None = None
+    orphan_mcp_configurations_in_bundles: list[OrphanMCPServerConfigurationInBundle] | None = None
 
 
 class OrphanRecordsRemover:
@@ -35,26 +65,33 @@ class OrphanRecordsRemover:
 
     def on_mcp_server_configuration_allowed_teams_updated(
         self, mcp_server_configuration: MCPServerConfiguration
-    ) -> None:
+    ) -> OrphanRecordsRemoval:
         """
         Orphan records removal function for when a MCP Server Configuration's allowed_teams is
         updated.
         """
+        removal = OrphanRecordsRemoval()
+
         # Delete the Connected Accounts that became inaccessible to the MCP Server Configuration
         # if the user of the Connected Account no longer accessible to the MCP Server Configuration.
-        self._remove_orphan_connected_accounts_on_configuration_allowed_teams_updated(
-            mcp_server_configuration=mcp_server_configuration,
+        removal.orphan_connected_accounts = (
+            self._remove_orphan_connected_accounts_on_configuration_allowed_teams_updated(
+                mcp_server_configuration=mcp_server_configuration,
+            )
         )
 
         # Remove the MCP Server Configuration from the MCP Bundles if the user of the MCP Bundle
         # no longer accessible to the MCP Server Configuration
-        self._remove_orphan_configurations_from_bundles_on_configuration_allowed_teams_updated(
-            mcp_server_configuration=mcp_server_configuration,
+        removal.orphan_mcp_configurations_in_bundles = (
+            self._remove_orphan_configurations_from_bundles_on_configuration_allowed_teams_updated(
+                mcp_server_configuration=mcp_server_configuration,
+            )
         )
+        return removal
 
     def _remove_orphan_connected_accounts_on_configuration_allowed_teams_updated(
         self, mcp_server_configuration: MCPServerConfiguration
-    ) -> None:
+    ) -> list[OrphanConnectedAccount]:
         """
         Delete the Connected Accounts that became inaccessible to the MCP Server Configuration
         if the user of the Connected Account no longer accessible to the MCP Server Configuration.
@@ -67,8 +104,9 @@ class OrphanRecordsRemover:
             mcp_server_configuration.connected_account_ownership
             != ConnectedAccountOwnership.INDIVIDUAL
         ):
-            return
+            return []
 
+        orphan_connected_accounts = []
         connected_accounts = (
             crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
                 db_session=self.db_session,
@@ -83,22 +121,22 @@ class OrphanRecordsRemover:
                 throw_error_if_not_permitted=False,
             )
             if not accessible:
-                logger.info(
-                    f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
-                )
+                orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
                 crud.connected_accounts.delete_connected_account(
                     db_session=self.db_session,
                     connected_account_id=connected_account.id,
                 )
+        return orphan_connected_accounts
 
     def _remove_orphan_configurations_from_bundles_on_configuration_allowed_teams_updated(
         self, mcp_server_configuration: MCPServerConfiguration
-    ) -> None:
+    ) -> list[OrphanMCPServerConfigurationInBundle]:
         """
         Iterate through all MCP Bundles in the organization:
             - Remove the MCP Server Configuration from the MCP Bundle if the user of the MCP Bundle
             no longer accessible to the MCP Server Configuration
         """
+        orphan_mcp_configurations_in_bundles = []
         mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
             db_session=self.db_session,
             organization_id=mcp_server_configuration.organization_id,
@@ -112,14 +150,21 @@ class OrphanRecordsRemover:
                 throw_error_if_not_permitted=False,
             )
             if not accessible:
+                orphan_mcp_configurations_in_bundles.append(
+                    OrphanMCPServerConfigurationInBundle(
+                        bundle_id=mcp_server_bundle.id,
+                        configuration_id=mcp_server_configuration.id,
+                    )
+                )
                 self._remove_configuration_id_from_bundle(
                     mcp_server_bundle=mcp_server_bundle,
-                    mcp_server_configuration_id=mcp_server_bundle.mcp_server_configuration_ids[0],
+                    mcp_server_configuration_id=mcp_server_configuration.id,
                 )
+        return orphan_mcp_configurations_in_bundles
 
     def on_mcp_server_configuration_deleted(
         self, organization_id: UUID, mcp_server_configuration_id: UUID
-    ) -> None:
+    ) -> OrphanRecordsRemoval:
         """
         Orphan records removal function for when a MCP Server Configuration is deleted
 
@@ -127,47 +172,79 @@ class OrphanRecordsRemover:
         - Iterate through all MCP Bundles in the organization:
             - Remove the MCP Server Configuration in the MCP Bundles if the MCP Bundle contains it
         """
+
+        orphan_connected_accounts = []
         # Remove all ConnectedAccount under this MCP server configuration
-        crud.connected_accounts.delete_connected_accounts_by_mcp_server_configuration_id(
-            db_session=self.db_session,
-            mcp_server_configuration_id=mcp_server_configuration_id,
+        connected_accounts = (
+            crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+                db_session=self.db_session,
+                mcp_server_configuration_id=mcp_server_configuration_id,
+            )
         )
+        for connected_account in connected_accounts:
+            orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
+            crud.connected_accounts.delete_connected_account(
+                db_session=self.db_session,
+                connected_account_id=connected_account.id,
+            )
 
         # Remove the MCP server configuration from all MCPServerBundle in the organization
+        orphan_mcp_configurations_in_bundles = []
         mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
             db_session=self.db_session,
             organization_id=organization_id,
             mcp_server_configuration_id=mcp_server_configuration_id,
         )
         for mcp_server_bundle in mcp_server_bundles:
+            orphan_mcp_configurations_in_bundles.append(
+                OrphanMCPServerConfigurationInBundle(
+                    bundle_id=mcp_server_bundle.id,
+                    configuration_id=mcp_server_configuration_id,
+                )
+            )
             self._remove_configuration_id_from_bundle(
                 mcp_server_bundle=mcp_server_bundle,
                 mcp_server_configuration_id=mcp_server_configuration_id,
             )
 
-    def on_user_removed_from_team(self, user_id: UUID, organization_id: UUID) -> None:
+        return OrphanRecordsRemoval(
+            orphan_connected_accounts=orphan_connected_accounts,
+            orphan_mcp_configurations_in_bundles=orphan_mcp_configurations_in_bundles,
+        )
+
+    def on_user_removed_from_team(
+        self, user_id: UUID, organization_id: UUID
+    ) -> OrphanRecordsRemoval:
         """
         Orphan records removal function for when a user is removed from a team
         """
+        removal = OrphanRecordsRemoval()
+
         # Remove the MCP Server Configuration from the MCP Bundles if the user is no longer
         # accessible to the MCP Server Configuration
-        self._remove_orphan_configurations_from_bundles_on_user_removed_from_team(
-            user_id, organization_id
+        removal.orphan_mcp_configurations_in_bundles = (
+            self._remove_orphan_configurations_from_bundles_on_user_removed_from_team(
+                user_id, organization_id
+            )
         )
 
         # Delete the Connected Account if the MCP Server Configuration of the Connected Account
         # is no longer accessible by the user
-        self._remove_orphan_connected_accounts_on_user_removed_from_team(user_id)
+        removal.orphan_connected_accounts = (
+            self._remove_orphan_connected_accounts_on_user_removed_from_team(user_id)
+        )
+        return removal
 
     def _remove_orphan_configurations_from_bundles_on_user_removed_from_team(
         self, user_id: UUID, organization_id: UUID
-    ) -> None:
+    ) -> list[OrphanMCPServerConfigurationInBundle]:
         """
         Iterate through all MCP Bundles of the user:
             - Iterate through all MCP Server Configurations in the MCP Bundles:
                 - Delete the MCP Server Configuration from the MCP Bundles if the user is no longer
                   accessible to the MCP Server Configuration
         """
+        orphan_mcp_configurations_in_bundles = []
         mcp_server_bundles = (
             crud.mcp_server_bundles.get_mcp_server_bundles_by_user_id_and_organization_id(
                 db_session=self.db_session,
@@ -176,24 +253,35 @@ class OrphanRecordsRemover:
             )
         )
         for mcp_server_bundle in mcp_server_bundles:
-            accessible = access_control.check_mcp_server_config_accessibility(
-                db_session=self.db_session,
-                user_id=mcp_server_bundle.user_id,
-                mcp_server_configuration_id=mcp_server_bundle.mcp_server_configuration_ids[0],
-                throw_error_if_not_permitted=False,
-            )
-            if not accessible:
-                self._remove_configuration_id_from_bundle(
-                    mcp_server_bundle=mcp_server_bundle,
-                    mcp_server_configuration_id=mcp_server_bundle.mcp_server_configuration_ids[0],
+            for mcp_server_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
+                accessible = access_control.check_mcp_server_config_accessibility(
+                    db_session=self.db_session,
+                    user_id=mcp_server_bundle.user_id,
+                    mcp_server_configuration_id=mcp_server_configuration_id,
+                    throw_error_if_not_permitted=False,
                 )
+                if not accessible:
+                    orphan_mcp_configurations_in_bundles.append(
+                        OrphanMCPServerConfigurationInBundle(
+                            bundle_id=mcp_server_bundle.id,
+                            configuration_id=mcp_server_configuration_id,
+                        )
+                    )
+                    self._remove_configuration_id_from_bundle(
+                        mcp_server_bundle=mcp_server_bundle,
+                        mcp_server_configuration_id=mcp_server_configuration_id,
+                    )
+        return orphan_mcp_configurations_in_bundles
 
-    def _remove_orphan_connected_accounts_on_user_removed_from_team(self, user_id: UUID) -> None:
+    def _remove_orphan_connected_accounts_on_user_removed_from_team(
+        self, user_id: UUID
+    ) -> list[OrphanConnectedAccount]:
         """
         Iterate through all Connected Accounts of the user:
             - Delete the Connected Account if the MCP Server Configuration of the Connected Account
               is no longer accessible by the user
         """
+        orphan_connected_accounts = []
         connected_accounts = crud.connected_accounts.get_connected_accounts_by_user_id(
             db_session=self.db_session,
             user_id=user_id,
@@ -206,23 +294,35 @@ class OrphanRecordsRemover:
                 throw_error_if_not_permitted=False,
             )
             if not accessible:
-                logger.info(
-                    f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {connected_account.mcp_server_configuration_id}"  # noqa: E501
-                )
+                orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
                 crud.connected_accounts.delete_connected_account(
                     db_session=self.db_session,
                     connected_account_id=connected_account.id,
                 )
+        return orphan_connected_accounts
 
-    def on_team_deleted(self, organization_id: UUID, team_members: list[User]) -> None:
+    def on_team_deleted(
+        self, organization_id: UUID, team_members: list[User]
+    ) -> OrphanRecordsRemoval:
         """
         Orphan records removal function for when a team is deleted
 
         This function bascially applies the same orphan removal logic as if users are removed from
         the team one by one
         """
+        orphan_mcp_configurations_in_bundles = []
+
         for user in team_members:
+            orphan_mcp_configurations_in_bundles.extend(
+                self._remove_orphan_configurations_from_bundles_on_user_removed_from_team(
+                    user.id, organization_id
+                )
+            )
             self.on_user_removed_from_team(user.id, organization_id)
+
+        return OrphanRecordsRemoval(
+            orphan_mcp_configurations_in_bundles=orphan_mcp_configurations_in_bundles,
+        )
 
     def on_user_removed_from_organization(self, user_id: UUID, organization_id: UUID) -> None:
         """
@@ -233,7 +333,9 @@ class OrphanRecordsRemover:
         """
         raise NotImplementedError("Not implemented")
 
-    def on_mcp_server_deleted(self, organization_id: UUID, mcp_server_id: UUID) -> None:
+    def on_mcp_server_deleted(
+        self, organization_id: UUID, mcp_server_id: UUID
+    ) -> OrphanRecordsRemoval:
         """
         Orphan records removal function for when a MCP Server is deleted
 
@@ -244,6 +346,11 @@ class OrphanRecordsRemover:
           a MCP Server Configuration using this MCP Server
         - Delete all MCP Tools records under the MCP Server
         """
+        orphan_mcp_configurations = []
+        orphan_connected_accounts = []
+        orphan_mcp_configurations_in_bundles = []
+
+        # Get all MCP Server Configurations under the MCP Server
         mcp_server_configurations = crud.mcp_server_configurations.get_mcp_server_configurations(
             db_session=self.db_session,
             organization_id=organization_id,
@@ -251,18 +358,31 @@ class OrphanRecordsRemover:
         )
 
         # Delete all MCP Server Configurations under the MCP Server
-        crud.mcp_server_configurations.delete_mcp_server_configurations_by_mcp_server_id(
-            db_session=self.db_session,
-            mcp_server_id=mcp_server_id,
-        )
-
-        # Delete all Connected Accounts that connects with any of the MCP Server Configurations
         for mcp_server_configuration in mcp_server_configurations:
-            crud.connected_accounts.delete_connected_accounts_by_mcp_server_configuration_id(
+            orphan_mcp_configurations.append(
+                OrphanMCPServerConfiguration(id=mcp_server_configuration.id)
+            )
+            crud.mcp_server_configurations.delete_mcp_server_configuration(
                 db_session=self.db_session,
                 mcp_server_configuration_id=mcp_server_configuration.id,
             )
 
+        # Delete all Connected Accounts that connects with any of the MCP Server Configurations
+        for mcp_server_configuration in mcp_server_configurations:
+            connected_accounts = (
+                crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+                    db_session=self.db_session,
+                    mcp_server_configuration_id=mcp_server_configuration.id,
+                )
+            )
+            for connected_account in connected_accounts:
+                orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
+                crud.connected_accounts.delete_connected_account(
+                    db_session=self.db_session,
+                    connected_account_id=connected_account.id,
+                )
+
+        # Remove the MCP Server Configuration from any MCP Bundles in the organization containing it
         for mcp_server_configuration in mcp_server_configurations:
             mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
                 db_session=self.db_session,
@@ -270,6 +390,12 @@ class OrphanRecordsRemover:
                 mcp_server_configuration_id=mcp_server_configuration.id,
             )
             for mcp_server_bundle in mcp_server_bundles:
+                orphan_mcp_configurations_in_bundles.append(
+                    OrphanMCPServerConfigurationInBundle(
+                        bundle_id=mcp_server_bundle.id,
+                        configuration_id=mcp_server_configuration.id,
+                    )
+                )
                 self._remove_configuration_id_from_bundle(
                     mcp_server_bundle=mcp_server_bundle,
                     mcp_server_configuration_id=mcp_server_configuration.id,
@@ -278,6 +404,12 @@ class OrphanRecordsRemover:
         # Delete all MCP Tools records under the MCP Server is done automatically by the CASCADE
         # DELETE when deleting MCP Server, defined in `sql_models.py`, so we do not need to do
         # anything here
+
+        return OrphanRecordsRemoval(
+            orphan_mcp_configurations=orphan_mcp_configurations,
+            orphan_connected_accounts=orphan_connected_accounts,
+            orphan_mcp_configurations_in_bundles=orphan_mcp_configurations_in_bundles,
+        )
 
     def _remove_configuration_id_from_bundle(
         self, mcp_server_bundle: MCPServerBundle, mcp_server_configuration_id: UUID
