@@ -616,7 +616,7 @@ def test_on_user_removed_from_team(
                 ],
             )
         case OrphanConnectedAccountTestCase.remove_user_2_from_team_2:
-            # dummy_user_2's connected account should be removed
+            # dummy_user_2's connected account should be retained (still on team_1)
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
