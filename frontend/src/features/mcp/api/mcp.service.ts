@@ -70,10 +70,7 @@ export const mcpService = {
       data: { description?: string; logo?: string },
     ): Promise<MCPServerPublic> => {
       const api = createAuthenticatedRequest(token);
-      return api.patch<MCPServerPublic>(
-        `${API_ENDPOINTS.SERVERS}/${serverId}`,
-        data,
-      );
+      return api.patch<MCPServerPublic>(`${API_ENDPOINTS.SERVERS}/${serverId}`, data);
     },
 
     delete: async (token: string, serverId: string): Promise<void> => {

@@ -226,7 +226,7 @@ export default function MCPServerDetailPage() {
         <div className="flex items-center gap-2">
           <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
             <Button onClick={() => setIsConfigModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Configure Server
             </Button>
           </PermissionGuard>
@@ -240,12 +240,12 @@ export default function MCPServerDetailPage() {
               >
                 {updateMutation.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Updating...
                   </>
                 ) : (
                   <>
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </>
                 )}
@@ -262,12 +262,12 @@ export default function MCPServerDetailPage() {
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Deleting...
                   </>
                 ) : (
                   <>
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </>
                 )}

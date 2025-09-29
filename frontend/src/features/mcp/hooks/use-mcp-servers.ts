@@ -209,10 +209,7 @@ export function useUpdateMCPServer() {
     },
     onSuccess: (updatedServer, { serverId }) => {
       // Update the specific server in the cache
-      queryClient.setQueryData(
-        mcpQueryKeys.servers.detail(serverId),
-        updatedServer,
-      );
+      queryClient.setQueryData(mcpQueryKeys.servers.detail(serverId), updatedServer);
       // Also invalidate the servers list to refresh it
       queryClient.invalidateQueries({
         queryKey: mcpQueryKeys.servers.all,

@@ -20,10 +20,7 @@ interface UpdateServerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   server: MCPServerPublic;
-  onConfirm: (data: {
-    description?: string;
-    logo?: string;
-  }) => void | Promise<void>;
+  onConfirm: (data: { description?: string; logo?: string }) => void | Promise<void>;
   isPending?: boolean;
 }
 
@@ -85,8 +82,7 @@ export function UpdateServerDialog({
     }
   };
 
-  const hasChanges =
-    description !== (server.description ?? "") || logo !== (server.logo ?? "");
+  const hasChanges = description !== (server.description ?? "") || logo !== (server.logo ?? "");
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -94,9 +90,7 @@ export function UpdateServerDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Update &ldquo;{server.name}&rdquo;</DialogTitle>
-            <DialogDescription>
-              Update the server description and logo URL.
-            </DialogDescription>
+            <DialogDescription>Update the server description and logo URL.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -134,14 +128,10 @@ export function UpdateServerDialog({
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={!hasChanges || isPending}
-              aria-busy={isPending}
-            >
+            <Button type="submit" disabled={!hasChanges || isPending} aria-busy={isPending}>
               {isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Updating...
                 </>
               ) : (
