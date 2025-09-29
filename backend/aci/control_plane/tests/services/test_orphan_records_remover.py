@@ -311,6 +311,8 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
         case OrphanConnectedAccountTestCase.remove_team_all:
             dummy_mcp_server_configuration.allowed_teams = []
 
+    db_session.commit()
+
     # Execute the orphan records removal
     removal_result = OrphanRecordsRemover(
         db_session
