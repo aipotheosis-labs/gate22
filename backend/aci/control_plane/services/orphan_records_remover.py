@@ -59,6 +59,8 @@ class OrphanRecordsRemover:
     - User removed from a team
     - Team deleted
     - User removed from an organization
+
+    (See docs: https://www.notion.so/Orphan-Records-Removal-List-27d8378d6a4780c1a1e5cc3b9b1cc812?source=copy_link)
     """
 
     def __init__(self, db_session: Session):
@@ -99,23 +101,11 @@ class OrphanRecordsRemover:
             mcp_server_configuration_id=mcp_server_configuration.id,
         )
         for mcp_server_bundle in mcp_server_bundles:
-            accessible = access_control.check_mcp_server_config_accessibility(
-                db_session=self.db_session,
-                user_id=mcp_server_bundle.user_id,
-                mcp_server_configuration_id=mcp_server_configuration.id,
-                throw_error_if_not_permitted=False,
-            )
-            if not accessible:
-                removal.mcp_configurations_in_bundles.append(
-                    OrphanMCPServerConfigurationInBundle(
-                        bundle_id=mcp_server_bundle.id,
-                        configuration_id=mcp_server_configuration.id,
-                    )
-                )
-                self._remove_configuration_id_from_bundle(
+            removal.mcp_configurations_in_bundles.extend(
+                self._clean_orphan_configurations_in_bundles(
                     mcp_server_bundle=mcp_server_bundle,
-                    mcp_server_configuration_id=mcp_server_configuration.id,
                 )
+            )
         return removal
 
     def on_mcp_server_configuration_deleted(
@@ -171,6 +161,9 @@ class OrphanRecordsRemover:
         Iterate through all Connected Accounts of the user:
             - Delete the Connected Account if the MCP Server Configuration of the Connected Account
               is no longer accessible by the user
+
+        Remove the MCP Server Configuration from the MCP Bundles if the user is no longer
+        accessible to the MCP Server Configuration
         """
         removal = OrphanRecordsRemoval()
 
@@ -330,7 +323,7 @@ class OrphanRecordsRemover:
         """
         Helper function to clean up orphan Connected Accounts
 
-        Check for the given connected accounts, remove them if:
+        Check for the given connected accounts, delete them if:
         - if the owner of the connected account has no access to the MCP Server Configuration the
         connected account is associated with
         """
@@ -349,6 +342,7 @@ class OrphanRecordsRemover:
                 throw_error_if_not_permitted=False,
             )
             if not accessible:
+                logger.info(f"Deleting Connected Account {connected_account.id}")
                 orphan_connected_accounts.append(OrphanConnectedAccount(id=connected_account.id))
                 crud.connected_accounts.delete_connected_account(
                     db_session=self.db_session,
@@ -362,9 +356,9 @@ class OrphanRecordsRemover:
         """
         Helper function to clean up orphan MCP Server Configurations in Bundles
 
-        Check every configuration ids, remove it from the bundle if:
-        - if it not exists
-        - if the owner of the bundle has no access to it
+        Check every MCP Server Configuration IDs of the bundle, remove it from the bundle if:
+        - if the MCP Server Configuration does not exists
+        - if the owner of the bundle has no access to the MCP Server Configuration
         """
         orphan_mcp_configurations_in_bundles = []
         for mcp_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
@@ -375,8 +369,7 @@ class OrphanRecordsRemover:
                 throw_error_if_not_found=False,
             ):
                 should_remove = True
-
-            if not access_control.check_mcp_server_config_accessibility(
+            elif not access_control.check_mcp_server_config_accessibility(
                 db_session=self.db_session,
                 user_id=mcp_server_bundle.user_id,
                 mcp_server_configuration_id=mcp_configuration_id,
@@ -385,6 +378,9 @@ class OrphanRecordsRemover:
                 should_remove = True
 
             if should_remove:
+                logger.info(
+                    f"Removing MCP Server Configuration {mcp_configuration_id} from bundle {mcp_server_bundle.id}"  # noqa: E501
+                )
                 orphan_mcp_configurations_in_bundles.append(
                     OrphanMCPServerConfigurationInBundle(
                         bundle_id=mcp_server_bundle.id,

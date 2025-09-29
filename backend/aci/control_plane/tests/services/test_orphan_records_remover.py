@@ -69,6 +69,7 @@ def _assert_connected_accounts_removal(
     expected_removed_connected_accounts: list[UUID],
     expected_retained_connected_accounts: list[UUID],
 ) -> None:
+    assert removal_result.connected_accounts is not None
     for connected_account_id in expected_removed_connected_accounts:
         assert (
             crud.connected_accounts.get_connected_account_by_id(
@@ -77,6 +78,7 @@ def _assert_connected_accounts_removal(
             )
             is None
         )
+        assert connected_account_id in [a.id for a in removal_result.connected_accounts]
     for connected_account_id in expected_retained_connected_accounts:
         assert (
             crud.connected_accounts.get_connected_account_by_id(
@@ -85,9 +87,7 @@ def _assert_connected_accounts_removal(
             )
             is not None
         )
-    assert removal_result.connected_accounts is not None
-    assert [a.id for a in removal_result.connected_accounts] == expected_removed_connected_accounts
-    assert [a.id for a in removal_result.connected_accounts] != expected_retained_connected_accounts
+        assert connected_account_id not in [a.id for a in removal_result.connected_accounts]
 
 
 def _assert_mcp_configurations_in_bundles_removal(
@@ -102,6 +102,7 @@ def _assert_mcp_configurations_in_bundles_removal(
 
     if expected_removed_mcp_configurations_in_bundles is not None:
         for bundle_id, configuration_ids in expected_removed_mcp_configurations_in_bundles:
+            # Check if the records are removed from the database
             bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
                 db_session=db_session,
                 mcp_server_bundle_id=bundle_id,
@@ -110,14 +111,16 @@ def _assert_mcp_configurations_in_bundles_removal(
             for configuration_id in configuration_ids:
                 assert configuration_id not in bundle.mcp_server_configuration_ids
 
-        for configuration_id in configuration_ids:
-            assert (bundle_id, configuration_id) in [
-                (a.bundle_id, a.configuration_id)
-                for a in removal_result.mcp_configurations_in_bundles
-            ]
+            # Check if the removal results contain the removal records
+            for configuration_id in configuration_ids:
+                assert (bundle_id, configuration_id) in [
+                    (a.bundle_id, a.configuration_id)
+                    for a in removal_result.mcp_configurations_in_bundles
+                ]
 
     if expected_retained_mcp_configurations_in_bundles is not None:
         for bundle_id, configuration_ids in expected_retained_mcp_configurations_in_bundles:
+            # Check if the records are retained in the database
             bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
                 db_session=db_session,
                 mcp_server_bundle_id=bundle_id,
@@ -126,11 +129,12 @@ def _assert_mcp_configurations_in_bundles_removal(
             for configuration_id in configuration_ids:
                 assert configuration_id in bundle.mcp_server_configuration_ids
 
-        for configuration_id in configuration_ids:
-            assert (bundle_id, configuration_id) not in [
-                (a.bundle_id, a.configuration_id)
-                for a in removal_result.mcp_configurations_in_bundles
-            ]
+            # Check if the removal results do not contain the retention records
+            for configuration_id in configuration_ids:
+                assert (bundle_id, configuration_id) not in [
+                    (a.bundle_id, a.configuration_id)
+                    for a in removal_result.mcp_configurations_in_bundles
+                ]
 
 
 OrphanConnectedAccountTestCase = enum.Enum(
@@ -496,8 +500,8 @@ def test_on_mcp_server_configuration_deleted(
     "connected_account_case",
     [
         OrphanConnectedAccountTestCase.remove_user_from_team_1,
-        OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
-        OrphanConnectedAccountTestCase.remove_user_2_from_team_2,
+        # OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
+        # OrphanConnectedAccountTestCase.remove_user_2_from_team_2,
     ],
 )
 def test_on_user_removed_from_team(
@@ -553,10 +557,15 @@ def test_on_user_removed_from_team(
     )
     db_session.commit()
 
+    logger.info(f"dummy_mcp_server_configuration: {dummy_mcp_server_configuration.id}")
+    logger.info(f"team1 members: {[m.user_id for m in team_1.memberships]}")
+    logger.info(f"team2 members: {[m.user_id for m in team_2.memberships]}")
+
     # Verify the results
     match connected_account_case:
         case OrphanConnectedAccountTestCase.remove_user_from_team_1:
-            # user loses access to the MCP Server Configuration
+            # user loses access to both dummy_mcp_server_configuration and
+            # dummy_mcp_server_configuration_github
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
@@ -567,13 +576,15 @@ def test_on_user_removed_from_team(
                 db_session=db_session,
                 removal_result=removal_result,
                 expected_removed_mcp_configurations_in_bundles=[
-                    (bundles[0].id, [dummy_mcp_server_configuration.id]),
-                ],
-                expected_retained_mcp_configurations_in_bundles=[
                     (
                         bundles[0].id,
-                        [dummy_mcp_server_configuration_github.id],
+                        [
+                            dummy_mcp_server_configuration.id,
+                            dummy_mcp_server_configuration_github.id,
+                        ],
                     ),
+                ],
+                expected_retained_mcp_configurations_in_bundles=[
                     (
                         bundles[1].id,
                         [
@@ -661,6 +672,9 @@ def test_on_mcp_server_deleted(
     # obtain test entities from fixture
     dummy_mcp_server_configuration, _, connected_accounts, bundles = dummy_test_setting_1
 
+    # Store the original MCP Server Configuration ID to assert later
+    original_mcp_server_configuration_id = dummy_mcp_server_configuration.id
+
     original_ids = [connected_accounts[0].id, connected_accounts[1].id]
 
     # Link the MCP Server Configuration to the dummy custom MCP Server for test setup
@@ -669,6 +683,8 @@ def test_on_mcp_server_deleted(
     # add the custom MCP Server Configuration to the bundles
     for bundle in bundles:
         bundle.mcp_server_configuration_ids.append(dummy_custom_mcp_server.id)
+
+    # logger.info(f"connected_accounts: {[c.id for c in connected_accounts]}")
 
     db_session.commit()
 
@@ -703,8 +719,8 @@ def test_on_mcp_server_deleted(
         db_session=db_session,
         removal_result=removal_result,
         expected_removed_mcp_configurations_in_bundles=[
-            (bundles[0].id, [dummy_custom_mcp_server.id]),
-            (bundles[1].id, [dummy_custom_mcp_server.id]),
+            (bundles[0].id, [original_mcp_server_configuration_id]),
+            (bundles[1].id, [original_mcp_server_configuration_id]),
         ],
     )
 

@@ -47,6 +47,7 @@ from aci.control_plane.services.oauth2_client import (
     MetadataFetcher,
     OAuthClientMetadata,
 )
+from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -306,8 +307,11 @@ async def delete_mcp_server(
 
     crud.mcp_servers.delete_mcp_server(context.db_session, mcp_server_id)
 
-    # TODO: Remove all Orphan records related to this MCP server
-    # (MCP server configurations, Connected Accounts, MCPServerBundle)
+    removal_result = OrphanRecordsRemover(context.db_session).on_mcp_server_deleted(
+        organization_id=mcp_server.organization_id,
+        mcp_server_id=mcp_server_id,
+    )
+    logger.info(f"Orphan records removal: {removal_result}")
 
     context.db_session.commit()
 
