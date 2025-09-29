@@ -682,12 +682,6 @@ def test_on_mcp_server_deleted(
     # Link the MCP Server Configuration to the dummy custom MCP Server for test setup
     dummy_mcp_server_configuration.mcp_server_id = dummy_custom_mcp_server.id
 
-    # add the custom MCP Server Configuration to the bundles
-    for bundle in bundles:
-        bundle.mcp_server_configuration_ids.append(dummy_custom_mcp_server.id)
-
-    # logger.info(f"connected_accounts: {[c.id for c in connected_accounts]}")
-
     db_session.commit()
 
     # Now delete the MCP Server
