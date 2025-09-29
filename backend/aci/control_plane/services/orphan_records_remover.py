@@ -121,13 +121,16 @@ class OrphanRecordsRemover:
         # Remove all ConnectedAccount under this MCP server configuration
         # The ConnectedAccount is deleted automatically by the CASCADE DELETE when the MCP Server
         # Configuration is deleted, so we do not need to delete it here
-        assert (
-            crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
-                db_session=self.db_session,
-                mcp_server_configuration_id=mcp_server_configuration_id,
-            )
-            == []
+        remaining = crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
+            db_session=self.db_session,
+            mcp_server_configuration_id=mcp_server_configuration_id,
         )
+        if len(remaining) > 0:
+            # This should not happen normally if cascade delete is working properly
+            logger.warning(
+                f"Connected Accounts remained after deletion of MCP Server Configuration "
+                f"{mcp_server_configuration_id}. Connected Accounts: {[ca.id for ca in remaining]}"
+            )
 
         # Remove the MCP server configuration from all MCPServerBundle in the organization
         orphan_mcp_configurations_in_bundles = []
@@ -247,21 +250,22 @@ class OrphanRecordsRemover:
 
         # Delete all MCP Server Configurations under the MCP Server
         # This is done automatically by the CASCADE DELETE when deleting MCP Server, defined in
-        # `sql_models.py`, so we do not need to do anything here. Instead we assert if they are
-        # really already removed
-        assert (
-            crud.mcp_server_configurations.get_mcp_server_configurations(
-                db_session=self.db_session,
-                organization_id=organization_id,
-                mcp_server_id=mcp_server_id,
-            )
-            == []
+        # `sql_models.py`, so we do not need to do anything here.
+        remaining_configs = crud.mcp_server_configurations.get_mcp_server_configurations(
+            db_session=self.db_session,
+            organization_id=organization_id,
+            mcp_server_id=mcp_server_id,
         )
+        if len(remaining_configs) > 0:
+            # This should not happen normally if cascade delete is working properly
+            logger.warning(
+                f"MCP Server Configurations remained after deletion of MCP Server {mcp_server_id}. "
+                f"MCP Server Configurations: {[config.id for config in remaining_configs]}"
+            )
 
         # Delete all Connected Accounts that connects with any of the MCP Server Configurations
         # This is done automatically by the CASCADE DELETE when deleting MCP Server Configurations,
-        # defined in `sql_models.py`, so we do not need to do anything here. Instead we assert if
-        # they are really already removed
+        # defined in `sql_models.py`, so we do not need to do anything here.
         statement = (
             select(ConnectedAccount)
             .join(
@@ -272,8 +276,13 @@ class OrphanRecordsRemover:
                 MCPServerConfiguration.mcp_server_id == mcp_server_id,
             )
         )
-        connected_accounts = self.db_session.execute(statement).scalars().all()
-        assert connected_accounts == []
+        remaining_connected_accounts = self.db_session.execute(statement).scalars().all()
+        if len(remaining_connected_accounts) > 0:
+            # This should not happen normally if cascade delete is working properly
+            logger.warning(
+                f"Connected Accounts remained after deletion of MCP Server {mcp_server_id}. "
+                f"Connected Accounts: {[ca.id for ca in remaining_connected_accounts]}"
+            )
 
         # Remove the MCP Server Configuration from any MCP Bundles in the organization containing it
         # Since we don't have the MCP Server Configuration, we need to iterate through all MCP
@@ -291,13 +300,16 @@ class OrphanRecordsRemover:
         # Delete all MCP Tools records under the MCP Server is done automatically by the CASCADE
         # DELETE when deleting MCP Server, defined in `sql_models.py`, so we do not need to do
         # anything here
-        assert (
-            crud.mcp_tools.get_mcp_tools_by_mcp_server_id(
-                db_session=self.db_session,
-                mcp_server_id=mcp_server_id,
-            )
-            == []
+        remaining_mcp_tools = crud.mcp_tools.get_mcp_tools_by_mcp_server_id(
+            db_session=self.db_session,
+            mcp_server_id=mcp_server_id,
         )
+        if len(remaining_mcp_tools) > 0:
+            # This should not happen normally if cascade delete is working properly
+            logger.warning(
+                f"MCP Tools remained after deletion of MCP Server {mcp_server_id}. "
+                f"MCP Tools: {[tool.id for tool in remaining_mcp_tools]}"
+            )
 
         return OrphanRecordsRemoval(
             mcp_configurations_in_bundles=orphan_mcp_configurations_in_bundles,

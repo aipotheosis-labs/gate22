@@ -388,6 +388,8 @@ def test_delete_mcp_server(
 
     assert response.status_code == 200
 
+    original_org_id = dummy_mcp_server.organization_id
+
     # Verify the MCP server was actually deleted from the database
     deleted_mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         db_session, dummy_mcp_server.id, throw_error_if_not_found=False
@@ -396,7 +398,7 @@ def test_delete_mcp_server(
 
     # Verify the orphan records remover was called
     mock_orphan_records_remover_instance.on_mcp_server_deleted.assert_called_once_with(
-        organization_id=dummy_mcp_server.organization_id,
+        organization_id=original_org_id,
         mcp_server_id=dummy_mcp_server.id,
     )
 
