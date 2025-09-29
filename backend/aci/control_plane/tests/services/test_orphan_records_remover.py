@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from aci.common.db import crud
 from aci.common.db.sql_models import (
     ConnectedAccount,
+    MCPServer,
     MCPServerBundle,
     MCPServerConfiguration,
     Organization,
@@ -92,40 +93,39 @@ def _assert_connected_accounts_removal(
 def _assert_mcp_configurations_in_bundles_removal(
     db_session: Session,
     removal_result: OrphanRecordsRemoval,
-    expected_removed_mcp_configurations_in_bundles: list[
-        tuple[UUID, list[UUID]]
-    ],  # list of (bundle_id, configuration_ids)[]
-    expected_retained_mcp_configurations_in_bundles: list[
-        tuple[UUID, list[UUID]]
-    ],  # list of (bundle_id, configuration_ids)[]
+    expected_removed_mcp_configurations_in_bundles: list[tuple[UUID, list[UUID]]]
+    | None = None,  # list of (bundle_id, configuration_ids)[]
+    expected_retained_mcp_configurations_in_bundles: list[tuple[UUID, list[UUID]]]
+    | None = None,  # list of (bundle_id, configuration_ids)[]
 ) -> None:
-    for bundle_id, configuration_ids in expected_removed_mcp_configurations_in_bundles:
-        bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
-            db_session=db_session,
-            mcp_server_bundle_id=bundle_id,
-        )
-        assert bundle is not None
-        for configuration_id in configuration_ids:
-            assert configuration_id not in bundle.mcp_server_configuration_ids
-
-    for bundle_id, configuration_ids in expected_retained_mcp_configurations_in_bundles:
-        bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
-            db_session=db_session,
-            mcp_server_bundle_id=bundle_id,
-        )
-        assert bundle is not None
-        for configuration_id in configuration_ids:
-            assert configuration_id in bundle.mcp_server_configuration_ids
-
     assert removal_result.mcp_configurations_in_bundles is not None
 
-    for bundle_id, configuration_ids in expected_removed_mcp_configurations_in_bundles:
+    if expected_removed_mcp_configurations_in_bundles is not None:
+        for bundle_id, configuration_ids in expected_removed_mcp_configurations_in_bundles:
+            bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+                db_session=db_session,
+                mcp_server_bundle_id=bundle_id,
+            )
+            assert bundle is not None
+            for configuration_id in configuration_ids:
+                assert configuration_id not in bundle.mcp_server_configuration_ids
+
         for configuration_id in configuration_ids:
             assert (bundle_id, configuration_id) in [
                 (a.bundle_id, a.configuration_id)
                 for a in removal_result.mcp_configurations_in_bundles
             ]
-    for bundle_id, configuration_ids in expected_retained_mcp_configurations_in_bundles:
+
+    if expected_retained_mcp_configurations_in_bundles is not None:
+        for bundle_id, configuration_ids in expected_retained_mcp_configurations_in_bundles:
+            bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_id(
+                db_session=db_session,
+                mcp_server_bundle_id=bundle_id,
+            )
+            assert bundle is not None
+            for configuration_id in configuration_ids:
+                assert configuration_id in bundle.mcp_server_configuration_ids
+
         for configuration_id in configuration_ids:
             assert (bundle_id, configuration_id) not in [
                 (a.bundle_id, a.configuration_id)
@@ -495,8 +495,8 @@ def test_on_mcp_server_configuration_deleted(
 @pytest.mark.parametrize(
     "connected_account_case",
     [
-        # OrphanConnectedAccountTestCase.remove_user_from_team_1,
-        # OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
+        OrphanConnectedAccountTestCase.remove_user_from_team_1,
+        OrphanConnectedAccountTestCase.remove_user_2_from_team_1,
         OrphanConnectedAccountTestCase.remove_user_2_from_team_2,
     ],
 )
@@ -650,3 +650,58 @@ def test_on_user_removed_from_team(
 
 
 # TODO: Add test for on_mcp_server_deleted
+def test_on_mcp_server_deleted(
+    db_session: Session,
+    dummy_organization: Organization,
+    dummy_custom_mcp_server: MCPServer,
+    dummy_test_setting_1: tuple[
+        MCPServerConfiguration, list[Team], list[ConnectedAccount], list[MCPServerBundle]
+    ],
+) -> None:
+    # obtain test entities from fixture
+    dummy_mcp_server_configuration, _, connected_accounts, bundles = dummy_test_setting_1
+
+    original_ids = [connected_accounts[0].id, connected_accounts[1].id]
+
+    # Link the MCP Server Configuration to the dummy custom MCP Server for test setup
+    dummy_mcp_server_configuration.mcp_server_id = dummy_custom_mcp_server.id
+
+    # add the custom MCP Server Configuration to the bundles
+    for bundle in bundles:
+        bundle.mcp_server_configuration_ids.append(dummy_custom_mcp_server.id)
+
+    db_session.commit()
+
+    # Execute the orphan records removal
+    removal_result = OrphanRecordsRemover(db_session).on_mcp_server_deleted(
+        organization_id=dummy_organization.id,
+        mcp_server_id=dummy_custom_mcp_server.id,
+    )
+
+    db_session.commit()
+
+    # Verify the results
+
+    # All connected accounts should be deleted. This is done automatically by the CASCADE DELETE
+    # during the MCP Server Configuration deletion, instead of deleted by the
+    # OrphanRecordsRemover. So it is not returned in the removal result.
+    for connected_account_id in original_ids:
+        assert (
+            crud.connected_accounts.get_connected_account_by_id(
+                db_session=db_session,
+                connected_account_id=connected_account_id,
+            )
+            is None
+        )
+
+    # All MCP Server Configurations in the bundles should be removed
+    _assert_mcp_configurations_in_bundles_removal(
+        db_session=db_session,
+        removal_result=removal_result,
+        expected_removed_mcp_configurations_in_bundles=[
+            (bundles[0].id, [dummy_custom_mcp_server.id]),
+            (bundles[1].id, [dummy_custom_mcp_server.id]),
+        ],
+    )
+
+    db_session.commit()
