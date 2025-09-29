@@ -439,4 +439,7 @@ def test_remove_team_member(
     team_members = crud.teams.get_team_members(db_session, dummy_team.id)
     assert target_user.id not in [member.user_id for member in team_members]
 
-    mock_orphan_records_remover_instance.on_user_removed_from_team.assert_called_once()
+    mock_orphan_records_remover_instance.on_user_removed_from_team.assert_called_once_with(
+        user_id=target_user.id,
+        organization_id=dummy_organization.id,
+    )

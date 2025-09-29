@@ -158,6 +158,8 @@ class OrphanRecordsRemover:
         """
         Orphan records removal function for when a user is removed from a team
 
+        **Team ID is not needed because we will check all records the user are associated with**
+
         Iterate through all Connected Accounts of the user:
             - Delete the Connected Account if the MCP Server Configuration of the Connected Account
               is no longer accessible by the user

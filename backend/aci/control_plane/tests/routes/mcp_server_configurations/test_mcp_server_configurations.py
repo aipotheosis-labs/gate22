@@ -422,7 +422,9 @@ def test_update_mcp_server_configuration_with_team_update(
     assert response.status_code == 200
 
     if update_allowed_teams:
-        mock_orphan_records_remover_instance.on_mcp_server_configuration_allowed_teams_updated.assert_called_once()
+        mock_orphan_records_remover_instance.on_mcp_server_configuration_allowed_teams_updated.assert_called_once_with(
+            mcp_server_configuration=dummy_mcp_server_configuration,
+        )
     else:
         mock_orphan_records_remover_instance.on_mcp_server_configuration_allowed_teams_updated.assert_not_called()
 
@@ -473,7 +475,10 @@ def test_delete_mcp_server_configuration(
             )
             is None
         )
-        mock_orphan_records_remover_instance.on_mcp_server_configuration_deleted.assert_called_once()
+        mock_orphan_records_remover_instance.on_mcp_server_configuration_deleted.assert_called_once_with(
+            organization_id=dummy_mcp_server_configuration.organization_id,
+            mcp_server_configuration_id=dummy_mcp_server_configuration.id,
+        )
 
     else:
         # Should not be able to delete the MCP server configuration

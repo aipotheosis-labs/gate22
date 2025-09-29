@@ -395,7 +395,10 @@ def test_delete_mcp_server(
     assert deleted_mcp_server is None
 
     # Verify the orphan records remover was called
-    mock_orphan_records_remover_instance.on_mcp_server_deleted.assert_called_once()
+    mock_orphan_records_remover_instance.on_mcp_server_deleted.assert_called_once_with(
+        organization_id=dummy_mcp_server.organization_id,
+        mcp_server_id=dummy_mcp_server.id,
+    )
 
 
 @pytest.mark.parametrize(
