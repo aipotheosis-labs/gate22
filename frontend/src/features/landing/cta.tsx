@@ -61,18 +61,14 @@ export function CTA() {
       <div className="relative mx-auto max-w-7xl px-6 py-24 sm:px-8 sm:py-32 lg:px-12 lg:py-40">
         <div className="relative">
           <div className="mx-auto max-w-2xl lg:max-w-3xl">
-            <div className="border-primary/50 bg-background/80 rounded-xl border p-8 sm:p-12 backdrop-blur-sm">
+            <div className="rounded-xl border border-primary/50 bg-background/80 p-8 backdrop-blur-sm sm:p-12">
               <div className="mx-auto max-w-xl lg:max-w-none">
-                <h2
-                  id="cta-heading"
-                  className="text-center text-2xl font-bold sm:text-3xl"
-                >
+                <h2 id="cta-heading" className="text-center text-2xl font-bold sm:text-3xl">
                   Stop Managing Configs. Start Building.
                 </h2>
-                <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-center text-base leading-relaxed">
-                  Ready to bring centralized control, security, and
-                  observability to your team&apos;s AI workflow? Get started
-                  today.
+                <p className="mx-auto mt-4 max-w-xl text-center text-base leading-relaxed text-muted-foreground">
+                  Ready to bring centralized control, security, and observability to your
+                  team&apos;s AI workflow? Get started today.
                 </p>
                 <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
                   <CTAButton
@@ -84,7 +80,7 @@ export function CTA() {
 
                   <CTAButton variant="outline">View on GitHub</CTAButton>
                 </div>
-                <p className="text-muted-foreground mt-6 text-center text-sm">
+                <p className="mt-6 text-center text-sm text-muted-foreground">
                   Open source • Self-hostable • Enterprise ready
                 </p>
               </div>

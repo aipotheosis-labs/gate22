@@ -17,9 +17,7 @@ interface UseOrganizationInvitationsOptions {
   status?: OrganizationInvitationStatus;
 }
 
-export function useOrganizationMemberInvitations(
-  options: UseOrganizationInvitationsOptions = {},
-) {
+export function useOrganizationMemberInvitations(options: UseOrganizationInvitationsOptions = {}) {
   const { accessToken, activeOrg } = useMetaInfo();
   const queryClient = useQueryClient();
   const statusKey = options.status ?? "all";
@@ -27,20 +25,13 @@ export function useOrganizationMemberInvitations(
   const enabled = Boolean(accessToken && activeOrg?.orgId);
 
   const invitationsQuery = useQuery<OrganizationInvitationDetail[]>({
-    queryKey: QUERY_KEYS.ORGANIZATION_INVITATIONS(
-      activeOrg?.orgId || "",
-      statusKey,
-    ),
+    queryKey: QUERY_KEYS.ORGANIZATION_INVITATIONS(activeOrg?.orgId || "", statusKey),
     queryFn: async () => {
       if (!accessToken || !activeOrg?.orgId) {
         throw new Error("Organization context unavailable");
       }
 
-      return listOrganizationInvitations(
-        accessToken,
-        activeOrg.orgId,
-        options.status,
-      );
+      return listOrganizationInvitations(accessToken, activeOrg.orgId, options.status);
     },
     enabled,
     staleTime: 0,
@@ -65,11 +56,7 @@ export function useOrganizationMemberInvitations(
       if (!accessToken || !activeOrg?.orgId) {
         throw new Error("Organization context unavailable");
       }
-      return cancelOrganizationInvitation(
-        accessToken,
-        activeOrg.orgId,
-        invitationId,
-      );
+      return cancelOrganizationInvitation(accessToken, activeOrg.orgId, invitationId);
     },
     onSuccess: (invitation) => {
       invalidateInvitations();

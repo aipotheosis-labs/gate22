@@ -5,26 +5,14 @@ import { Team } from "@/features/teams/types/team.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  ArrowUpDown,
-  Users,
-  Calendar,
-  MoreHorizontal,
-  Settings,
-  Eye,
-} from "lucide-react";
+import { ArrowUpDown, Users, Calendar, MoreHorizontal, Settings, Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 
 export const createTeamsColumns = (
@@ -36,8 +24,7 @@ export const createTeamsColumns = (
     header: ({ table }) => (
       <Checkbox
         checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
@@ -75,7 +62,7 @@ export const createTeamsColumns = (
         <div className="flex flex-col">
           <div className="font-medium">{team.name}</div>
           {team.description && (
-            <div className="text-xs text-muted-foreground line-clamp-1 max-w-[300px]">
+            <div className="line-clamp-1 max-w-[300px] text-xs text-muted-foreground">
               {team.description}
             </div>
           )}
@@ -103,9 +90,7 @@ export const createTeamsColumns = (
       return (
         <div className="flex items-center gap-2">
           <span className="font-medium">{memberCount || 0}</span>
-          <span className="text-muted-foreground">
-            {memberCount === 1 ? "member" : "members"}
-          </span>
+          <span className="text-muted-foreground">{memberCount === 1 ? "member" : "members"}</span>
         </div>
       );
     },
@@ -120,7 +105,7 @@ export const createTeamsColumns = (
           variant={status === "active" ? "default" : "secondary"}
           className={
             status === "active"
-              ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
+              ? "border-green-200 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400"
               : ""
           }
         >
@@ -150,9 +135,7 @@ export const createTeamsColumns = (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="text-sm text-muted-foreground">
-                {format(date, "MMM d, yyyy")}
-              </div>
+              <div className="text-sm text-muted-foreground">{format(date, "MMM d, yyyy")}</div>
             </TooltipTrigger>
             <TooltipContent>
               <p>{format(date, "PPP 'at' p")}</p>
@@ -176,7 +159,7 @@ export const createTeamsColumns = (
             onClick={() => onViewMembers(team.team_id)}
             className="h-8"
           >
-            <Eye className="h-3.5 w-3.5 mr-1.5" />
+            <Eye className="mr-1.5 h-3.5 w-3.5" />
             View Members
           </Button>
 
@@ -189,7 +172,7 @@ export const createTeamsColumns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onManageTeam(team.team_id)}>
-                <Settings className="h-4 w-4 mr-2" />
+                <Settings className="mr-2 h-4 w-4" />
                 Manage Team
               </DropdownMenuItem>
             </DropdownMenuContent>

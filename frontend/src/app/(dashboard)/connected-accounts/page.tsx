@@ -46,10 +46,8 @@ export default function ConnectedAccountsPage() {
 
 function ConnectedAccountsFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <span className="text-sm text-muted-foreground">
-        Loading connected accounts...
-      </span>
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <span className="text-sm text-muted-foreground">Loading connected accounts...</span>
     </div>
   );
 }
@@ -61,10 +59,9 @@ function ConnectedAccountsPageContent() {
     limit: 100,
   });
 
-  const { data: operationalConfigurationsResponse } =
-    useOperationalMCPServerConfigurations({
-      limit: 100,
-    });
+  const { data: operationalConfigurationsResponse } = useOperationalMCPServerConfigurations({
+    limit: 100,
+  });
 
   const { mutateAsync: deleteAccount } = useDeleteConnectedAccount();
 
@@ -119,8 +116,7 @@ function ConnectedAccountsPageContent() {
         toast.success("Account deleted successfully");
       } catch (error) {
         console.error("Failed to delete account:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to delete account";
+        const errorMessage = error instanceof Error ? error.message : "Failed to delete account";
         toast.error(errorMessage);
       }
     },
@@ -146,9 +142,7 @@ function ConnectedAccountsPageContent() {
           const ownership = info.getValue() as ConnectedAccountOwnership;
           if (!ownership) return null;
 
-          return (
-            <Badge variant="outline">{getOwnershipLabel(ownership)}</Badge>
-          );
+          return <Badge variant="outline">{getOwnershipLabel(ownership)}</Badge>;
         },
         enableGlobalFilter: true,
       }),
@@ -168,7 +162,7 @@ function ConnectedAccountsPageContent() {
                     src={config.logo}
                     alt={`${config.name} logo`}
                     fill
-                    className="object-contain rounded-sm"
+                    className="rounded-sm object-contain"
                   />
                 </div>
               )}
@@ -178,9 +172,7 @@ function ConnectedAccountsPageContent() {
                     href={`/mcp-servers/${config.serverId}`}
                     className="text-primary hover:underline"
                   >
-                    <span className="font-medium">
-                      {config.name || "Unknown"}
-                    </span>
+                    <span className="font-medium">{config.name || "Unknown"}</span>
                   </Link>
                   <span className="text-muted-foreground">(</span>
                   <Link
@@ -197,9 +189,7 @@ function ConnectedAccountsPageContent() {
                     href={`/mcp-servers/${config.serverId}`}
                     className="text-primary hover:underline"
                   >
-                    <span className="font-medium">
-                      {config.name || "Unknown"}
-                    </span>
+                    <span className="font-medium">{config.name || "Unknown"}</span>
                   </Link>
                 </div>
               )}
@@ -214,7 +204,7 @@ function ConnectedAccountsPageContent() {
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-foreground/80 transition-colors"
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
           >
             <span>CREATED</span>
             <ArrowUpDown className="h-4 w-4" />
@@ -232,7 +222,7 @@ function ConnectedAccountsPageContent() {
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-foreground/80 transition-colors"
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
           >
             <span>UPDATED</span>
             <ArrowUpDown className="h-4 w-4" />
@@ -263,9 +253,8 @@ function ConnectedAccountsPageContent() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Account?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the connected account for{" "}
-                      {config?.name || "this MCP server"}.
+                      This action cannot be undone. This will permanently delete the connected
+                      account for {config?.name || "this MCP server"}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -290,9 +279,9 @@ function ConnectedAccountsPageContent() {
   if (isLoading) {
     return (
       <div>
-        <div className="px-4 py-3 border-b">
+        <div className="border-b px-4 py-3">
           <h1 className="text-2xl font-bold">Connected Accounts</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage and configure your connected accounts
           </p>
         </div>
@@ -308,17 +297,17 @@ function ConnectedAccountsPageContent() {
 
   return (
     <div>
-      <div className="px-4 py-3 border-b flex items-center justify-between">
+      <div className="flex items-center justify-between border-b px-4 py-3">
         <div>
           <h1 className="text-2xl font-bold">Connected Accounts</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage and configure your connected accounts
           </p>
         </div>
         <AddAccountDialog />
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         {accounts && accounts.length > 0 ? (
           <EnhancedDataTable
             columns={columns}
@@ -335,16 +324,13 @@ function ConnectedAccountsPageContent() {
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <div className="space-y-3 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <Plus className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold">
-                  No connected accounts yet
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Connect your first account to start managing integrations with
-                  MCP servers
+                <h3 className="text-lg font-semibold">No connected accounts yet</h3>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Connect your first account to start managing integrations with MCP servers
                 </p>
                 <AddAccountDialog />
               </div>

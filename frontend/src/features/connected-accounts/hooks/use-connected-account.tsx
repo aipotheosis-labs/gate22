@@ -17,17 +17,14 @@ import { toast } from "sonner";
 
 export const connectedAccountKeys = {
   all: () => ["connectedaccounts"] as const,
-  filtered: (configIds?: string[]) =>
-    ["connectedaccounts", { configIds }] as const,
+  filtered: (configIds?: string[]) => ["connectedaccounts", { configIds }] as const,
 };
 
 export const useConnectedAccounts = (configIds?: string[]) => {
   const { accessToken } = useMetaInfo();
 
   return useQuery<ConnectedAccount[], Error>({
-    queryKey: configIds
-      ? connectedAccountKeys.filtered(configIds)
-      : connectedAccountKeys.all(),
+    queryKey: configIds ? connectedAccountKeys.filtered(configIds) : connectedAccountKeys.all(),
     queryFn: () => getAllConnectedAccounts(accessToken!, configIds),
     enabled: !!accessToken,
   });
@@ -40,9 +37,7 @@ export const useAppConnectedAccounts = (appName?: string | null) => {
     data: useMemo(
       () =>
         appName && base.data
-          ? base.data.filter(
-              (a) => a.mcp_server_configuration?.mcp_server?.name === appName,
-            )
+          ? base.data.filter((a) => a.mcp_server_configuration?.mcp_server?.name === appName)
           : [],
       [base.data, appName],
     ),
@@ -112,8 +107,7 @@ export const useDeleteConnectedAccount = () => {
   const { accessToken } = useMetaInfo();
 
   return useMutation<void, Error, DeleteConnectedAccountParams>({
-    mutationFn: (params) =>
-      deleteConnectedAccount(params.connectedAccountId, accessToken!),
+    mutationFn: (params) => deleteConnectedAccount(params.connectedAccountId, accessToken!),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: connectedAccountKeys.all(),
@@ -130,8 +124,7 @@ export const useUpdateConnectedAccount = () => {
   const queryClient = useQueryClient();
 
   return useMutation<ConnectedAccount, Error, UpdateConnectedAccountParams>({
-    mutationFn: (params) =>
-      updateConnectedAccount(params.connectedAccountId, params.enabled),
+    mutationFn: (params) => updateConnectedAccount(params.connectedAccountId, params.enabled),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: connectedAccountKeys.all(),

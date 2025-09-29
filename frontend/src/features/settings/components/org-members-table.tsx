@@ -1,10 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { useOrgMembersTableColumns } from "@/features/members/hooks/use-org-members-table-columns";
-import {
-  OrganizationUser,
-  OrganizationRole,
-} from "@/features/settings/types/organization.types";
+import { OrganizationUser, OrganizationRole } from "@/features/settings/types/organization.types";
 import {
   listOrganizationUsers,
   inviteToOrganization,
@@ -39,9 +36,7 @@ export function OrgMembersTable() {
   const router = useRouter();
   const [members, setMembers] = useState<OrganizationUser[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<OrganizationRole>(
-    OrganizationRole.Admin,
-  );
+  const [inviteRole, setInviteRole] = useState<OrganizationRole>(OrganizationRole.Admin);
   const [inviting, setInviting] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -71,12 +66,7 @@ export function OrgMembersTable() {
     if (!inviteEmail) return;
     setInviting(true);
     try {
-      await inviteToOrganization(
-        accessToken,
-        activeOrg.orgId,
-        inviteEmail,
-        inviteRole,
-      );
+      await inviteToOrganization(accessToken, activeOrg.orgId, inviteEmail, inviteRole);
       toast.success("Invitation sent");
       setInviteEmail("");
       setOpen(false);
@@ -110,11 +100,11 @@ export function OrgMembersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2 -mt-6">
+      <div className="-mt-6 mb-2 flex items-center gap-2">
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild className="ml-auto relative top-14">
+          <DialogTrigger asChild className="relative top-14 ml-auto">
             <Button onClick={() => setOpen(true)}>
-              <Plus className="w-4 h-4" />
+              <Plus className="h-4 w-4" />
               Invite user
             </Button>
           </DialogTrigger>
@@ -122,8 +112,7 @@ export function OrgMembersTable() {
             <DialogHeader>
               <DialogTitle>Invite User</DialogTitle>
               <DialogDescription>
-                Enter the email and select a role to invite a new member to your
-                organization.
+                Enter the email and select a role to invite a new member to your organization.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4 py-2">
@@ -143,9 +132,7 @@ export function OrgMembersTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={OrganizationRole.Admin}>Admin</SelectItem>
-                  <SelectItem value={OrganizationRole.Member}>
-                    Member
-                  </SelectItem>
+                  <SelectItem value={OrganizationRole.Member}>Member</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -153,10 +140,7 @@ export function OrgMembersTable() {
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>
-              <Button
-                onClick={handleInvite}
-                disabled={inviting || !inviteEmail || !inviteRole}
-              >
+              <Button onClick={handleInvite} disabled={inviting || !inviteEmail || !inviteRole}>
                 {inviting ? "Inviting..." : "Invite"}
               </Button>
             </DialogFooter>

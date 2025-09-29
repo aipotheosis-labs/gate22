@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -24,10 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { tokenManager } from "@/lib/token-manager";
-import {
-  acceptInvitation,
-  getInvitationByToken,
-} from "@/features/invitations/api/invitations";
+import { acceptInvitation, getInvitationByToken } from "@/features/invitations/api/invitations";
 import {
   OrganizationInvitationDetail,
   OrganizationInvitationStatus,
@@ -116,15 +106,13 @@ export default function AcceptInvitationPage() {
 
 function AcceptInvitationLoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <Card className="max-w-lg w-full">
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>Loading invitation</CardTitle>
-          <CardDescription>
-            Please wait while we prepare the invitation details.
-          </CardDescription>
+          <CardDescription>Please wait while we prepare the invitation details.</CardDescription>
         </CardHeader>
-        <CardContent className="py-8 flex items-center justify-center">
+        <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </CardContent>
       </Card>
@@ -152,12 +140,10 @@ function AcceptInvitationPageContent() {
 
   const hasToken = useMemo(() => Boolean(token.length), [token]);
 
-  const [pendingInvitation, setPendingInvitation] =
-    useState<PendingInvitationState | null>(null);
+  const [pendingInvitation, setPendingInvitation] = useState<PendingInvitationState | null>(null);
   const [authState, setAuthState] = useState<AuthState>("checking");
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [invitation, setInvitation] =
-    useState<OrganizationInvitationDetail | null>(null);
+  const [invitation, setInvitation] = useState<OrganizationInvitationDetail | null>(null);
   const [step, setStep] = useState<InvitationStep>("collect");
   const [isFetching, setIsFetching] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -217,8 +203,7 @@ function AcceptInvitationPageContent() {
     const nextPending: PendingInvitationState = {
       token,
       invitationId: pendingInvitation?.invitationId ?? null,
-      organizationId:
-        organizationIdQuery || pendingInvitation?.organizationId || null,
+      organizationId: organizationIdQuery || pendingInvitation?.organizationId || null,
     };
 
     persistPendingInvitation(nextPending);
@@ -226,13 +211,7 @@ function AcceptInvitationPageContent() {
     if (!pendingInvitation) {
       setStep("collect");
     }
-  }, [
-    hasToken,
-    organizationIdQuery,
-    pendingInvitation,
-    persistPendingInvitation,
-    token,
-  ]);
+  }, [hasToken, organizationIdQuery, pendingInvitation, persistPendingInvitation, token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -286,8 +265,7 @@ function AcceptInvitationPageContent() {
           throw new Error("Authentication required to load invitation");
         }
 
-        const targetOrganizationId =
-          organizationIdQuery || pendingInvitation.organizationId || "";
+        const targetOrganizationId = organizationIdQuery || pendingInvitation.organizationId || "";
 
         if (!targetOrganizationId) {
           throw new Error(
@@ -327,9 +305,7 @@ function AcceptInvitationPageContent() {
         console.error("Failed to load invitation", error);
         if (!cancelled) {
           setLoadError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load invitation details",
+            error instanceof Error ? error.message : "Failed to load invitation details",
           );
         }
       } finally {
@@ -344,20 +320,10 @@ function AcceptInvitationPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [
-    accessToken,
-    authState,
-    organizationIdQuery,
-    pendingInvitation,
-    persistPendingInvitation,
-  ]);
+  }, [accessToken, authState, organizationIdQuery, pendingInvitation, persistPendingInvitation]);
 
   useEffect(() => {
-    if (
-      authState !== "unauthenticated" ||
-      !pendingInvitation ||
-      redirectingRef.current
-    ) {
+    if (authState !== "unauthenticated" || !pendingInvitation || redirectingRef.current) {
       return;
     }
 
@@ -386,13 +352,10 @@ function AcceptInvitationPageContent() {
         throw new Error("You need to sign in before accepting the invitation.");
       }
 
-      const organizationId =
-        pendingInvitation.organizationId || organizationIdQuery || null;
+      const organizationId = pendingInvitation.organizationId || organizationIdQuery || null;
 
       if (!organizationId) {
-        throw new Error(
-          "Invitation is missing organization information. Please refresh the page.",
-        );
+        throw new Error("Invitation is missing organization information. Please refresh the page.");
       }
 
       await acceptInvitation(tokenValue, organizationId, {
@@ -421,14 +384,14 @@ function AcceptInvitationPageContent() {
 
   if (!hasToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Invitation link is missing information</CardTitle>
             <CardDescription>
-              The link you followed does not include all of the required
-              parameters. Please open the original email invitation and try
-              again, or request a new invitation from the organization admin.
+              The link you followed does not include all of the required parameters. Please open the
+              original email invitation and try again, or request a new invitation from the
+              organization admin.
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -443,15 +406,13 @@ function AcceptInvitationPageContent() {
 
   if (authState === "checking") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Checking your session</CardTitle>
-            <CardDescription>
-              Please wait while we verify your account status.
-            </CardDescription>
+            <CardDescription>Please wait while we verify your account status.</CardDescription>
           </CardHeader>
-          <CardContent className="py-8 flex items-center justify-center">
+          <CardContent className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </CardContent>
         </Card>
@@ -461,23 +422,22 @@ function AcceptInvitationPageContent() {
 
   if (authState === "unauthenticated" || step === "collect") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Join your team on MCP Gateway</CardTitle>
             <CardDescription>
-              Create an account or sign in with the email that received this
-              invitation. We&apos;ll keep the invitation ready once you return.
+              Create an account or sign in with the email that received this invitation. We&apos;ll
+              keep the invitation ready once you return.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <AlertTitle>Why am I seeing this?</AlertTitle>
               <AlertDescription>
-                The invitation can only be accepted after you sign in with the
-                invited email address. We&apos;ve securely stored this
-                invitation so you can continue right after you finish signing
-                up.
+                The invitation can only be accepted after you sign in with the invited email
+                address. We&apos;ve securely stored this invitation so you can continue right after
+                you finish signing up.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -485,9 +445,7 @@ function AcceptInvitationPageContent() {
             <Button asChild className="w-full sm:w-auto">
               <Link
                 href={`/signup?next=${encodeURIComponent(
-                  acceptPath.startsWith("/invitations/accept")
-                    ? acceptPath
-                    : "/invitations/accept",
+                  acceptPath.startsWith("/invitations/accept") ? acceptPath : "/invitations/accept",
                 )}`}
               >
                 Create account
@@ -496,9 +454,7 @@ function AcceptInvitationPageContent() {
             <Button asChild variant="outline" className="w-full sm:w-auto">
               <Link
                 href={`/login?next=${encodeURIComponent(
-                  acceptPath.startsWith("/invitations/accept")
-                    ? acceptPath
-                    : "/invitations/accept",
+                  acceptPath.startsWith("/invitations/accept") ? acceptPath : "/invitations/accept",
                 )}`}
               >
                 Sign in
@@ -512,8 +468,8 @@ function AcceptInvitationPageContent() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Unable to load invitation</CardTitle>
             <CardDescription>{loadError}</CardDescription>
@@ -537,19 +493,18 @@ function AcceptInvitationPageContent() {
 
   if (step === "completed") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" />
               Invitation accepted
             </CardTitle>
             <CardDescription>
-              You now have access to the organization. We&apos;re redirecting
-              you to your dashboard.
+              You now have access to the organization. We&apos;re redirecting you to your dashboard.
             </CardDescription>
           </CardHeader>
-          <CardContent className="py-8 flex justify-center">
+          <CardContent className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </CardContent>
         </Card>
@@ -561,13 +516,11 @@ function AcceptInvitationPageContent() {
   const statusBanner = resolveStatusBanner(invitation?.status);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      <Card className="max-w-xl w-full">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-xl">
         <CardHeader>
           <CardTitle>Review your invitation</CardTitle>
-          <CardDescription>
-            Confirm the details below to join your organization.
-          </CardDescription>
+          <CardDescription>Confirm the details below to join your organization.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isFetching ? (
@@ -586,9 +539,7 @@ function AcceptInvitationPageContent() {
               {isPending && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Organization ID</span>
-                  <span className="font-medium">
-                    {invitation?.organization_id}
-                  </span>
+                  <span className="font-medium">{invitation?.organization_id}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -599,16 +550,12 @@ function AcceptInvitationPageContent() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Role</span>
-                <span className="font-medium uppercase">
-                  {invitation?.role ?? "-"}
-                </span>
+                <span className="font-medium uppercase">{invitation?.role ?? "-"}</span>
               </div>
               {invitation?.expires_at && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Expires at</span>
-                  <span className="font-medium">
-                    {formatIsoDate(invitation.expires_at)}
-                  </span>
+                  <span className="font-medium">{formatIsoDate(invitation.expires_at)}</span>
                 </div>
               )}
             </div>

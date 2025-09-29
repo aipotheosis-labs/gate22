@@ -21,11 +21,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -36,15 +32,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Plus,
-  ExternalLink,
-  Check,
-  ChevronsUpDown,
-  Key,
-  ShieldCheck,
-  Loader2,
-} from "lucide-react";
+import { Plus, ExternalLink, Check, ChevronsUpDown, Key, ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -54,17 +42,12 @@ import {
 } from "@/features/mcp/hooks/use-mcp-servers";
 import { useCreateConnectedAccount } from "@/features/connected-accounts/hooks/use-connected-account";
 import { MCPServerConfigurationPublicBasic } from "@/features/mcp/types/mcp.types";
-import {
-  AuthType,
-  ConnectedAccountOwnership,
-} from "@/features/mcp/types/mcp.types";
+import { AuthType, ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
 import { OAuth2ConnectedAccountResponse } from "@/features/connected-accounts/api/connectedaccount";
 import { useRole } from "@/hooks/use-permissions";
 
 const formSchema = z.object({
-  mcpServerConfigurationId: z
-    .string()
-    .min(1, "MCP Server configuration is required"),
+  mcpServerConfigurationId: z.string().min(1, "MCP Server configuration is required"),
   apiKey: z.string().optional(),
 });
 
@@ -77,21 +60,20 @@ interface AddAccountDialogProps {
 export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
   const [open, setOpen] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
-  const [selectedConfig, setSelectedConfig] =
-    useState<MCPServerConfigurationPublicBasic | null>(null);
+  const [selectedConfig, setSelectedConfig] = useState<MCPServerConfigurationPublicBasic | null>(
+    null,
+  );
   const [authType, setAuthType] = useState<AuthType | null>(null);
 
-  const {
-    data: mcpConfigurationsResponse,
-    isLoading: isLoadingConfigurations,
-  } = useMCPServerConfigurations({ limit: 100 });
+  const { data: mcpConfigurationsResponse, isLoading: isLoadingConfigurations } =
+    useMCPServerConfigurations({ limit: 100 });
 
   // Fetch full configuration details when a config is selected
-  const { data: fullConfigDetails, isLoading: isLoadingDetails } =
-    useMCPServerConfiguration(selectedConfig?.id || "");
+  const { data: fullConfigDetails, isLoading: isLoadingDetails } = useMCPServerConfiguration(
+    selectedConfig?.id || "",
+  );
 
-  const { mutateAsync: createAccount, isPending: isCreating } =
-    useCreateConnectedAccount();
+  const { mutateAsync: createAccount, isPending: isCreating } = useCreateConnectedAccount();
 
   const { activeRole } = useRole();
   const isActingAsAdmin = activeRole === "admin";
@@ -104,17 +86,11 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
     return allConfigurations.filter((config) => {
       // Admin role: Can only create Shared ConnectedAccounts
       if (isActingAsAdmin) {
-        return (
-          config.connected_account_ownership ===
-          ConnectedAccountOwnership.SHARED
-        );
+        return config.connected_account_ownership === ConnectedAccountOwnership.SHARED;
       }
       // Member role: Can only create Individual ConnectedAccounts
       if (isActingAsMember) {
-        return (
-          config.connected_account_ownership ===
-          ConnectedAccountOwnership.INDIVIDUAL
-        );
+        return config.connected_account_ownership === ConnectedAccountOwnership.INDIVIDUAL;
       }
       // Default: show all if role is not determined
       return true;
@@ -195,11 +171,7 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
       }
     } catch (error) {
       console.error("Error creating connected account:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create connected account",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to create connected account");
     }
   };
 
@@ -248,10 +220,7 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
           <DialogTitle>Add Connected Account</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             {/* Configuration Selection */}
             <FormField
               control={form.control}
@@ -280,13 +249,11 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                                     src={selectedConfig.mcp_server.logo}
                                     alt=""
                                     fill
-                                    className="object-contain rounded-sm"
+                                    className="rounded-sm object-contain"
                                   />
                                 </div>
                               )}
-                              <span>
-                                {selectedConfig.name || "Unknown Configuration"}
-                              </span>
+                              <span>{selectedConfig.name || "Unknown Configuration"}</span>
                             </div>
                           ) : (
                             "Select configuration..."
@@ -297,10 +264,7 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0" align="start">
                       <Command>
-                        <CommandInput
-                          placeholder="Search configurations..."
-                          className="h-9"
-                        />
+                        <CommandInput placeholder="Search configurations..." className="h-9" />
                         <CommandList>
                           <CommandEmpty>
                             {isActingAsAdmin
@@ -321,27 +285,23 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                                 }}
                                 className="cursor-pointer"
                               >
-                                <div className="flex items-center gap-2 flex-1">
+                                <div className="flex flex-1 items-center gap-2">
                                   {config.mcp_server?.logo && (
                                     <div className="relative h-4 w-4 shrink-0">
                                       <Image
                                         src={config.mcp_server.logo}
                                         alt=""
                                         fill
-                                        className="object-contain rounded-sm"
+                                        className="rounded-sm object-contain"
                                       />
                                     </div>
                                   )}
-                                  <span>
-                                    {config.name || "Unknown Configuration"}
-                                  </span>
+                                  <span>{config.name || "Unknown Configuration"}</span>
                                 </div>
                                 <Check
                                   className={cn(
                                     "ml-auto h-4 w-4",
-                                    field.value === config.id
-                                      ? "opacity-100"
-                                      : "opacity-0",
+                                    field.value === config.id ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                               </CommandItem>
@@ -352,8 +312,7 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                     </PopoverContent>
                   </Popover>
                   <FormDescription>
-                    Select the MCP server configuration to link your account
-                    with.
+                    Select the MCP server configuration to link your account with.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -381,15 +340,10 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                       <FormItem>
                         <FormLabel>API Key</FormLabel>
                         <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="Enter your API key"
-                            {...field}
-                          />
+                          <Input type="password" placeholder="Enter your API key" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Enter the API key for this service. It will be
-                          securely stored.
+                          Enter the API key for this service. It will be securely stored.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -398,16 +352,13 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                 )}
 
                 {authType === AuthType.OAUTH && (
-                  <div className="rounded-lg border p-4 bg-muted/50">
+                  <div className="rounded-lg border bg-muted/50 p-4">
                     <div className="flex items-start space-x-2">
-                      <ExternalLink className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <ExternalLink className="mt-0.5 h-5 w-5 text-muted-foreground" />
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">
-                          OAuth Authentication
-                        </p>
+                        <p className="text-sm font-medium">OAuth Authentication</p>
                         <p className="text-sm text-muted-foreground">
-                          You&apos;ll be redirected to authenticate with the
-                          service provider.
+                          You&apos;ll be redirected to authenticate with the service provider.
                         </p>
                       </div>
                     </div>
@@ -415,16 +366,14 @@ export function AddAccountDialog({ onSuccess }: AddAccountDialogProps) {
                 )}
 
                 {authType === AuthType.NO_AUTH && (
-                  <div className="rounded-lg border p-4 bg-muted/50">
+                  <div className="rounded-lg border bg-muted/50 p-4">
                     <div className="flex items-start space-x-2">
-                      <ShieldCheck className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <ShieldCheck className="mt-0.5 h-5 w-5 text-muted-foreground" />
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">
-                          No Authentication Required
-                        </p>
+                        <p className="text-sm font-medium">No Authentication Required</p>
                         <p className="text-sm text-muted-foreground">
-                          This service doesn&apos;t require authentication.
-                          Click confirm to connect.
+                          This service doesn&apos;t require authentication. Click confirm to
+                          connect.
                         </p>
                       </div>
                     </div>

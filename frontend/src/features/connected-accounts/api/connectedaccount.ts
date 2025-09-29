@@ -53,17 +53,14 @@ export async function createConnectedAccount(
   accessToken: string,
 ): Promise<OAuth2ConnectedAccountResponse | ConnectedAccount> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(request),
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/connected-accounts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+    body: JSON.stringify(request),
+  });
 
   if (!response.ok) {
     let errorMsg = `Failed to create connected account: ${response.status} ${response.statusText}`;
@@ -82,9 +79,7 @@ export async function createConnectedAccount(
   return result;
 }
 
-export async function getAppConnectedAccounts(
-  appName: string,
-): Promise<ConnectedAccount[]> {
+export async function getAppConnectedAccounts(appName: string): Promise<ConnectedAccount[]> {
   const params = new URLSearchParams();
   params.append("app_name", appName);
 

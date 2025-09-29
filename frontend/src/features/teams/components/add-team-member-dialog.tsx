@@ -17,11 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -108,8 +104,7 @@ export function AddTeamMemberDialog({
   });
 
   const addMemberMutation = useMutation({
-    mutationFn: (userId: string) =>
-      addTeamMember(accessToken, activeOrg.orgId, teamId, userId),
+    mutationFn: (userId: string) => addTeamMember(accessToken, activeOrg.orgId, teamId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["team-members", activeOrg.orgId, teamId],
@@ -155,9 +150,7 @@ export function AddTeamMemberDialog({
   // Only show members not in team for selection
   const availableMembers = membersWithStatus.filter((m) => !m.isInTeam);
 
-  const selectedMember = availableMembers.find(
-    (m) => m.user_id === selectedUserId,
-  );
+  const selectedMember = availableMembers.find((m) => m.user_id === selectedUserId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -165,8 +158,7 @@ export function AddTeamMemberDialog({
         <DialogHeader>
           <DialogTitle>Add Team Member</DialogTitle>
           <DialogDescription>
-            Search and select a member from your organization to add to this
-            team
+            Search and select a member from your organization to add to this team
           </DialogDescription>
         </DialogHeader>
 
@@ -186,12 +178,12 @@ export function AddTeamMemberDialog({
                   {selectedMember ? (
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-xs font-medium">
+                        <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100">
                           {getInitials(selectedMember.name)}
                         </AvatarFallback>
                       </Avatar>
                       <span>{selectedMember.name}</span>
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-sm text-muted-foreground">
                         ({selectedMember.email})
                       </span>
                     </div>
@@ -209,15 +201,12 @@ export function AddTeamMemberDialog({
               </PopoverTrigger>
               <PopoverContent className="w-[400px] p-0" align="start">
                 <Command>
-                  <CommandInput
-                    placeholder="Search by name or email..."
-                    className="h-9"
-                  />
+                  <CommandInput placeholder="Search by name or email..." className="h-9" />
                   <CommandList>
                     {membersWithStatus.length === 0 ? (
                       <CommandEmpty>
                         <div className="flex flex-col items-center py-4">
-                          <Users className="h-8 w-8 mb-2 text-muted-foreground/50" />
+                          <Users className="mb-2 h-8 w-8 text-muted-foreground/50" />
                           <p className="text-sm text-muted-foreground">
                             No members in organization
                           </p>
@@ -236,36 +225,28 @@ export function AddTeamMemberDialog({
                                 // Only allow selection if member is not already in team
                                 if (!member.isInTeam) {
                                   setSelectedUserId(
-                                    currentValue === selectedUserId
-                                      ? ""
-                                      : currentValue,
+                                    currentValue === selectedUserId ? "" : currentValue,
                                   );
                                   setComboboxOpen(false);
                                 }
                               }}
                               className={cn(
                                 "cursor-pointer",
-                                member.isInTeam &&
-                                  "opacity-50 cursor-not-allowed",
+                                member.isInTeam && "cursor-not-allowed opacity-50",
                               )}
                               disabled={member.isInTeam}
                             >
-                              <div className="flex items-center gap-3 flex-1">
+                              <div className="flex flex-1 items-center gap-3">
                                 <Avatar className="h-7 w-7">
-                                  <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-xs font-medium">
+                                  <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100">
                                     {getInitials(member.name)}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium">
-                                      {member.name}
-                                    </span>
+                                    <span className="text-sm font-medium">{member.name}</span>
                                     {member.isInTeam && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="text-xs px-1.5 py-0"
-                                      >
+                                      <Badge variant="secondary" className="px-1.5 py-0 text-xs">
                                         Already in team
                                       </Badge>
                                     )}
@@ -279,9 +260,7 @@ export function AddTeamMemberDialog({
                                 <Check
                                   className={cn(
                                     "ml-auto h-4 w-4",
-                                    selectedUserId === member.user_id
-                                      ? "opacity-100"
-                                      : "opacity-0",
+                                    selectedUserId === member.user_id ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                               )}
@@ -297,15 +276,11 @@ export function AddTeamMemberDialog({
           </div>
 
           {selectedMember && (
-            <div className="flex items-center gap-3 p-3 bg-secondary rounded-md">
+            <div className="flex items-center gap-3 rounded-md bg-secondary p-3">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
               <div className="flex-1">
-                <p className="text-sm font-medium">
-                  Ready to add: {selectedMember.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {selectedMember.email}
-                </p>
+                <p className="text-sm font-medium">Ready to add: {selectedMember.name}</p>
+                <p className="text-xs text-muted-foreground">{selectedMember.email}</p>
               </div>
             </div>
           )}

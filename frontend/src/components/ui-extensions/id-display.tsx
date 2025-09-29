@@ -3,12 +3,7 @@
 import React from "react";
 import { BiCopy } from "react-icons/bi";
 import { toast } from "sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface IdDisplayProps {
   id: string;
@@ -35,13 +30,13 @@ export function IdDisplay({ id, dim = true }: IdDisplayProps) {
 
   return (
     <TooltipProvider>
-      <div className="flex items-center w-full gap-1">
+      <div className="flex w-full items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <span
               className={`text-sm ${
                 dim ? "text-muted-foreground" : "text-foreground"
-              } truncate min-w-0 cursor-default`}
+              } min-w-0 cursor-default truncate`}
             >
               {id}
             </span>

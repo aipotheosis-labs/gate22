@@ -12,11 +12,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface MultiSelectProps {
   value: string[];
@@ -29,11 +25,7 @@ const MultiSelectContext = React.createContext<{
   onValueChange: (value: string[]) => void;
 } | null>(null);
 
-export function MultiSelect({
-  value,
-  onValueChange,
-  children,
-}: MultiSelectProps) {
+export function MultiSelect({ value, onValueChange, children }: MultiSelectProps) {
   return (
     <MultiSelectContext.Provider value={{ value, onValueChange }}>
       <Popover>{children}</Popover>
@@ -53,7 +45,7 @@ export function MultiSelectTrigger({
       <button
         type="button"
         className={cn(
-          "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}
       >
@@ -65,8 +57,7 @@ export function MultiSelectTrigger({
 
 export function MultiSelectValue({ placeholder }: { placeholder?: string }) {
   const context = React.useContext(MultiSelectContext);
-  if (!context)
-    throw new Error("MultiSelectValue must be used within MultiSelect");
+  if (!context) throw new Error("MultiSelectValue must be used within MultiSelect");
 
   const { value } = context;
 
@@ -78,7 +69,7 @@ export function MultiSelectValue({ placeholder }: { placeholder?: string }) {
             {item}
             <button
               type="button"
-              className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="ml-1 rounded-full ring-offset-background outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               onClick={(e) => {
                 e.stopPropagation();
                 context.onValueChange(value.filter((v) => v !== item));
@@ -107,11 +98,7 @@ export function MultiSelectContent({
   return (
     <PopoverContent className={cn("w-full p-0", className)} align="start">
       <Command>
-        <CommandInput
-          placeholder="Search..."
-          value={search}
-          onValueChange={setSearch}
-        />
+        <CommandInput placeholder="Search..." value={search} onValueChange={setSearch} />
         <CommandEmpty>No items found.</CommandEmpty>
         <CommandList>
           <CommandGroup>
@@ -136,16 +123,9 @@ export function MultiSelectContent({
   );
 }
 
-export function MultiSelectItem({
-  value,
-  children,
-}: {
-  value: string;
-  children: React.ReactNode;
-}) {
+export function MultiSelectItem({ value, children }: { value: string; children: React.ReactNode }) {
   const context = React.useContext(MultiSelectContext);
-  if (!context)
-    throw new Error("MultiSelectItem must be used within MultiSelect");
+  if (!context) throw new Error("MultiSelectItem must be used within MultiSelect");
 
   const isSelected = context.value.includes(value);
 
@@ -159,9 +139,7 @@ export function MultiSelectItem({
         }
       }}
     >
-      <Check
-        className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
-      />
+      <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
       {children}
     </CommandItem>
   );

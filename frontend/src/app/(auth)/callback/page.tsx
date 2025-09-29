@@ -15,10 +15,7 @@ import {
 } from "@/features/invitations/utils/pending-invitation";
 
 // Error code mapping to user-friendly messages
-const ERROR_MESSAGES: Record<
-  string,
-  { message: string; redirectPath: string }
-> = {
+const ERROR_MESSAGES: Record<string, { message: string; redirectPath: string }> = {
   oauth_error: {
     message: "Authentication failed. Please try again.",
     redirectPath: "/login",
@@ -32,10 +29,7 @@ function CallbackContent() {
   const [redirectPath, setRedirectPath] = useState<string>("/login");
   const [loadingMessage, setLoadingMessage] = useState("Completing sign in...");
 
-  const nextPath = useMemo(
-    () => sanitizeRedirectPath(searchParams.get("next")),
-    [searchParams],
-  );
+  const nextPath = useMemo(() => sanitizeRedirectPath(searchParams.get("next")), [searchParams]);
 
   // Extract invitation details from next parameter if it contains invitation URL
   const invitationInfo = useMemo(() => {
@@ -57,10 +51,7 @@ function CallbackContent() {
         };
       }
     } catch (error) {
-      console.error(
-        "Failed to parse invitation details from next path:",
-        error,
-      );
+      console.error("Failed to parse invitation details from next path:", error);
     }
 
     return null;
@@ -126,10 +117,8 @@ function CallbackContent() {
 
         if (hasInvitationContext) {
           // Redirect to invitation acceptance page if we have invitation context
-          const invitationToken =
-            invitationInfo?.token || pendingInvitation?.token;
-          const invitationId =
-            invitationInfo?.invitationId || pendingInvitation?.invitationId;
+          const invitationToken = invitationInfo?.token || pendingInvitation?.token;
+          const invitationId = invitationInfo?.invitationId || pendingInvitation?.invitationId;
           const organizationId =
             invitationInfo?.organizationId || pendingInvitation?.organizationId;
 
@@ -179,7 +168,7 @@ function CallbackContent() {
   }, [nextPath, router, searchParams, invitationInfo]);
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       {/* Grid Background */}
       <div
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -189,11 +178,7 @@ function CallbackContent() {
       {/* Back button */}
       <div className="absolute top-6 left-6 z-10">
         <Link href="/">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:bg-background/80 backdrop-blur-sm"
-          >
+          <Button variant="ghost" size="sm" className="backdrop-blur-sm hover:bg-background/80">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
@@ -203,47 +188,38 @@ function CallbackContent() {
       {/* Main Content */}
       <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="border border-primary/50 bg-background/95 backdrop-blur-sm rounded-lg p-8">
+          <div className="rounded-lg border border-primary/50 bg-background/95 p-8 backdrop-blur-sm">
             {error ? (
               <>
                 <div className="text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 mb-4">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                     <AlertCircle className="h-6 w-6 text-destructive" />
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight mb-2">
-                    Authentication Error
-                  </h1>
-                  <p className="text-sm text-muted-foreground mb-6">{error}</p>
+                  <h1 className="mb-2 text-2xl font-bold tracking-tight">Authentication Error</h1>
+                  <p className="mb-6 text-sm text-muted-foreground">{error}</p>
                 </div>
 
                 <div className="space-y-3">
-                  <Button
-                    onClick={() => router.push(redirectPath)}
-                    className="w-full h-11"
-                  >
-                    {redirectPath === "/signup"
-                      ? "Go to Sign Up"
-                      : "Go to Login"}
+                  <Button onClick={() => router.push(redirectPath)} className="h-11 w-full">
+                    {redirectPath === "/signup" ? "Go to Sign Up" : "Go to Login"}
                   </Button>
 
                   <Button
                     variant="outline"
                     onClick={() => router.push("/")}
-                    className="w-full h-11"
+                    className="h-11 w-full"
                   >
                     Back to Home
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground text-center mt-6">
+                <p className="mt-6 text-center text-xs text-muted-foreground">
                   Redirecting automatically in 3 seconds...
                 </p>
               </>
             ) : (
               <div className="text-center">
-                <h1 className="text-2xl font-bold tracking-tight mb-6">
-                  {loadingMessage}
-                </h1>
+                <h1 className="mb-6 text-2xl font-bold tracking-tight">{loadingMessage}</h1>
                 <div className="space-y-4">
                   <Skeleton className="h-12 w-full rounded-lg" />
                   <Skeleton className="h-12 w-full rounded-lg" />
@@ -266,18 +242,16 @@ export default function CallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen relative">
+        <div className="relative min-h-screen">
           <div
             className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
             aria-hidden="true"
           />
           <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
             <div className="w-full max-w-md">
-              <div className="border border-primary/50 bg-background/95 backdrop-blur-sm rounded-lg p-8">
+              <div className="rounded-lg border border-primary/50 bg-background/95 p-8 backdrop-blur-sm">
                 <div className="text-center">
-                  <h1 className="text-2xl font-bold tracking-tight mb-6">
-                    Completing sign in...
-                  </h1>
+                  <h1 className="mb-6 text-2xl font-bold tracking-tight">Completing sign in...</h1>
                   <div className="space-y-4">
                     <Skeleton className="h-12 w-full rounded-lg" />
                     <Skeleton className="h-12 w-full rounded-lg" />

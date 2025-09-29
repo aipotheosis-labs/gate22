@@ -13,9 +13,7 @@ export const TokenRefreshOverlay = () => {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Updating permissions...
-          </p>
+          <p className="text-sm text-muted-foreground">Updating permissions...</p>
         </div>
       </div>
     </div>

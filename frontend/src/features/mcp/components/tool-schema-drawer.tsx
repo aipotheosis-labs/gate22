@@ -19,11 +19,7 @@ interface ToolSchemaDrawerProps {
   onClose: () => void;
 }
 
-export function ToolSchemaDrawer({
-  tool,
-  isOpen,
-  onClose,
-}: ToolSchemaDrawerProps) {
+export function ToolSchemaDrawer({ tool, isOpen, onClose }: ToolSchemaDrawerProps) {
   // Fetch full tool details including schema when drawer opens
   const { data: fullTool, isLoading, error } = useMCPTool(tool?.name || "");
 
@@ -36,11 +32,9 @@ export function ToolSchemaDrawer({
     // Show loading state while fetching
     if (isLoading) {
       return (
-        <div className="py-8 rounded-lg border border-dashed bg-muted/5 flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin mb-2 text-muted-foreground/30" />
-          <p className="text-xs font-medium text-center text-muted-foreground">
-            Loading schema...
-          </p>
+        <div className="flex flex-col items-center rounded-lg border border-dashed bg-muted/5 py-8">
+          <Loader2 className="mb-2 h-8 w-8 animate-spin text-muted-foreground/30" />
+          <p className="text-center text-xs font-medium text-muted-foreground">Loading schema...</p>
         </div>
       );
     }
@@ -48,12 +42,10 @@ export function ToolSchemaDrawer({
     // Show error state if fetch failed
     if (error) {
       return (
-        <div className="py-8 rounded-lg border border-dashed bg-destructive/5 flex flex-col items-center">
-          <AlertCircle className="h-8 w-8 mb-2 text-destructive/50" />
-          <p className="text-xs font-medium text-center text-destructive">
-            Failed to load schema
-          </p>
-          <p className="text-xs text-center text-muted-foreground mt-1">
+        <div className="flex flex-col items-center rounded-lg border border-dashed bg-destructive/5 py-8">
+          <AlertCircle className="mb-2 h-8 w-8 text-destructive/50" />
+          <p className="text-center text-xs font-medium text-destructive">Failed to load schema</p>
+          <p className="mt-1 text-center text-xs text-muted-foreground">
             {error instanceof Error ? error.message : "Unknown error"}
           </p>
         </div>
@@ -63,9 +55,9 @@ export function ToolSchemaDrawer({
     // Only input schema is available from the API
     if (type === "output") {
       return (
-        <div className="py-8 rounded-lg border border-dashed bg-muted/5">
-          <FileJson className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-          <p className="text-xs font-medium text-center text-muted-foreground">
+        <div className="rounded-lg border border-dashed bg-muted/5 py-8">
+          <FileJson className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
+          <p className="text-center text-xs font-medium text-muted-foreground">
             Output schema not available
           </p>
         </div>
@@ -74,11 +66,9 @@ export function ToolSchemaDrawer({
 
     if (!schema) {
       return (
-        <div className="py-8 rounded-lg border border-dashed bg-muted/5">
-          <FileJson className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-          <p className="text-xs font-medium text-center text-muted-foreground">
-            No {type} schema
-          </p>
+        <div className="rounded-lg border border-dashed bg-muted/5 py-8">
+          <FileJson className="mx-auto mb-2 h-8 w-8 text-muted-foreground/30" />
+          <p className="text-center text-xs font-medium text-muted-foreground">No {type} schema</p>
         </div>
       );
     }
@@ -96,13 +86,13 @@ export function ToolSchemaDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
+      <SheetContent className="w-full overflow-y-auto p-0 sm:max-w-2xl">
         <SheetHeader className="p-6 pb-0">
-          <SheetTitle className="text-xl font-semibold tracking-tight leading-none">
+          <SheetTitle className="text-xl leading-none font-semibold tracking-tight">
             {tool.name}
           </SheetTitle>
           {tool.description && (
-            <SheetDescription className="text-sm leading-relaxed text-muted-foreground mt-2 whitespace-pre-wrap">
+            <SheetDescription className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
               {tool.description}
             </SheetDescription>
           )}
@@ -110,24 +100,24 @@ export function ToolSchemaDrawer({
         <div className="p-6 pt-4">
           {/* Schema Content with Compact Tabs */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">
+            <h3 className="text-xs font-semibold tracking-wider text-foreground/80 uppercase">
               Schema Definition
             </h3>
 
             <Tabs defaultValue="input" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-9 px-1 bg-muted/20 border">
+              <TabsList className="grid h-9 w-full grid-cols-2 border bg-muted/20 px-1">
                 <TabsTrigger
                   value="input"
-                  className="text-xs font-medium data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-muted-foreground/20 data-[state=active]:shadow-sm h-7"
+                  className="h-7 text-xs font-medium data-[state=active]:border data-[state=active]:border-muted-foreground/20 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <Code2 className="h-3 w-3 mr-1.5" />
+                  <Code2 className="mr-1.5 h-3 w-3" />
                   Input
                 </TabsTrigger>
                 <TabsTrigger
                   value="output"
-                  className="text-xs font-medium data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-muted-foreground/20 data-[state=active]:shadow-sm h-7"
+                  className="h-7 text-xs font-medium data-[state=active]:border data-[state=active]:border-muted-foreground/20 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <FileJson className="h-3 w-3 mr-1.5" />
+                  <FileJson className="mr-1.5 h-3 w-3" />
                   Output
                 </TabsTrigger>
               </TabsList>

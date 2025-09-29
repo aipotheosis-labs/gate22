@@ -45,19 +45,13 @@ export function getPermissionsForRole(role: string): readonly Permission[] {
 /**
  * Check if a role has any of the specified permissions
  */
-export function hasAnyPermission(
-  role: string,
-  permissions: Permission[],
-): boolean {
+export function hasAnyPermission(role: string, permissions: Permission[]): boolean {
   return checkMultiplePermissions(role, permissions, "any");
 }
 
 /**
  * Check if a role has all of the specified permissions
  */
-export function hasAllPermissions(
-  role: string,
-  permissions: Permission[],
-): boolean {
+export function hasAllPermissions(role: string, permissions: Permission[]): boolean {
   return checkMultiplePermissions(role, permissions, "all");
 }

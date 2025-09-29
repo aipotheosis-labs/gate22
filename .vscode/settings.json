@@ -3,10 +3,11 @@
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "charliermarsh.ruff"
     },
-    "[json]": {
+    "[json][javascript][typescript][typescriptreact]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
+    "prettier.ignorePath": "frontend/.prettierignore",
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.organizeImports.ruff": "always"

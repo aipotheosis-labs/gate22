@@ -21,10 +21,8 @@ export default function SignupPage() {
 
 function SignupPageFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <span className="text-sm text-muted-foreground">
-        Preparing sign-up experience...
-      </span>
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <span className="text-sm text-muted-foreground">Preparing sign-up experience...</span>
     </div>
   );
 }
@@ -35,16 +33,9 @@ function SignupPageContent() {
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   // No inline verification message shown on this page
 
-  const nextPath = useMemo(
-    () => sanitizeRedirectPath(searchParams.get("next")),
-    [searchParams],
-  );
+  const nextPath = useMemo(() => sanitizeRedirectPath(searchParams.get("next")), [searchParams]);
 
-  const handleSignup = async (
-    email: string,
-    password: string,
-    name: string,
-  ) => {
+  const handleSignup = async (email: string, password: string, name: string) => {
     // Call the real registration API (sets refresh token in cookie)
     const success = await register({
       name,
@@ -84,7 +75,7 @@ function SignupPageContent() {
   };
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       {/* Grid Background */}
       <div
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -94,11 +85,9 @@ function SignupPageContent() {
       {/* Main Content */}
       <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="border border-primary/50 bg-background/95 backdrop-blur-sm rounded-lg p-8">
+          <div className="rounded-lg border border-primary/50 bg-background/95 p-8 backdrop-blur-sm">
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold tracking-tight">
-                Create Account
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight">Create Account</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Start your journey with MCP Gateway
               </p>
@@ -113,9 +102,7 @@ function SignupPageContent() {
                 <div className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or sign up with
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">Or sign up with</span>
               </div>
             </div>
 
@@ -124,7 +111,7 @@ function SignupPageContent() {
                 variant="outline"
                 type="button"
                 disabled={isLoadingGoogle}
-                className="w-full h-11 transition-all duration-200 hover:bg-accent/50"
+                className="h-11 w-full transition-all duration-200 hover:bg-accent/50"
                 onClick={handleGoogleSignup}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -150,15 +137,9 @@ function SignupPageContent() {
             </div>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">
-                Already have an account?{" "}
-              </span>
+              <span className="text-muted-foreground">Already have an account? </span>
               <Link
-                href={
-                  nextPath
-                    ? `/login?next=${encodeURIComponent(nextPath)}`
-                    : "/login"
-                }
+                href={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"}
                 className="text-primary hover:underline"
               >
                 Sign in

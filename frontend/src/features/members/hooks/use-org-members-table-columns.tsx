@@ -87,9 +87,7 @@ export function useOrgMembersTableColumns({
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {menuItem}
-                  </DropdownMenuContent>
+                  <DropdownMenuContent align="end">{menuItem}</DropdownMenuContent>
                 </DropdownMenu>
 
                 <AlertDialog
@@ -107,9 +105,7 @@ export function useOrgMembersTableColumns({
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        {dialogState.isCurrentUser
-                          ? "Leave Organization"
-                          : "Remove Member"}
+                        {dialogState.isCurrentUser ? "Leave Organization" : "Remove Member"}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
                         {dialogState.isCurrentUser

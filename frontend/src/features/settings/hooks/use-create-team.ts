@@ -30,9 +30,7 @@ export function useCreateTeam() {
     },
     onError: (error) => {
       console.error("Error creating team:", error);
-      toast.error(
-        error instanceof Error ? error.message : UI_TEXT.TEAM.CREATE_ERROR,
-      );
+      toast.error(error instanceof Error ? error.message : UI_TEXT.TEAM.CREATE_ERROR);
     },
   });
 

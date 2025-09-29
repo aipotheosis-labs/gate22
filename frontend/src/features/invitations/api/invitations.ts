@@ -26,10 +26,7 @@ export async function getInvitationByToken(
   );
 
   if (!response.ok) {
-    const message = await parseApiError(
-      response,
-      "Failed to fetch invitation details",
-    );
+    const message = await parseApiError(response, "Failed to fetch invitation details");
     toast.error(message);
     return null;
   }

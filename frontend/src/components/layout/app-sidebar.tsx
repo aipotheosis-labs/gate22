@@ -22,11 +22,7 @@ import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line } from "react-icons/ri";
 import { Link2, Settings2, Package } from "lucide-react";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
 import { usePermission } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
@@ -81,9 +77,7 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
-  const canViewMCPConfiguration = usePermission(
-    PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
-  );
+  const canViewMCPConfiguration = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
   const isAdmin = usePermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
 
   // Filter sidebar items based on permissions
@@ -105,22 +99,22 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="flex flex-col">
-      <SidebarHeader className="p-0 flex flex-col gap-0">
+      <SidebarHeader className="flex flex-col gap-0 p-0">
         <div
           className={cn(
-            "flex items-center px-6 h-[60px]",
+            "flex h-[60px] items-center px-6",
             isCollapsed ? "justify-center" : "justify-between gap-2",
           )}
         >
           {!isCollapsed && (
-            <div className="h-7 w-auto relative flex items-center justify-center">
+            <div className="relative flex h-7 w-auto items-center justify-center">
               <Image
                 src={`/aci-dev-full-logo-${resolvedTheme ?? "light"}-bg.svg`}
                 alt="ACI Dev Logo"
                 width={150}
                 height={28}
                 priority
-                className="object-contain h-full"
+                className="h-full object-contain"
               />
             </div>
           )}
@@ -146,27 +140,19 @@ export function AppSidebar() {
                           <Link
                             href={item.url}
                             className={cn(
-                              "flex items-center gap-3 px-4 h-9 transition-colors",
+                              "flex h-9 items-center gap-3 px-4 transition-colors",
                               isCollapsed && "justify-center",
-                              isActive &&
-                                "bg-primary/10 text-primary font-medium",
+                              isActive && "bg-primary/10 font-medium text-primary",
                             )}
                           >
                             <item.icon
-                              className={cn(
-                                "h-5 w-5 shrink-0",
-                                isActive && "text-primary",
-                              )}
+                              className={cn("h-5 w-5 shrink-0", isActive && "text-primary")}
                             />
                             {!isCollapsed && <span>{item.title}</span>}
                           </Link>
                         </SidebarMenuButton>
                       </TooltipTrigger>
-                      {isCollapsed && (
-                        <TooltipContent side="right">
-                          {item.title}
-                        </TooltipContent>
-                      )}
+                      {isCollapsed && <TooltipContent side="right">{item.title}</TooltipContent>}
                     </Tooltip>
                   </SidebarMenuItem>
                 );

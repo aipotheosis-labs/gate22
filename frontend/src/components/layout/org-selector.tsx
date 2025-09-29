@@ -14,11 +14,7 @@ import {
   CommandList,
   // CommandSeparator,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 // import {
 //   Dialog,
 //   DialogContent,
@@ -34,8 +30,7 @@ import { useMetaInfo } from "@/components/context/metainfo";
 // import { useRouter } from "next/navigation";
 
 export const OrgSelector = () => {
-  const { orgs, activeOrg, switchOrganization, isTokenRefreshing } =
-    useMetaInfo();
+  const { orgs, activeOrg, switchOrganization, isTokenRefreshing } = useMetaInfo();
   const [open, setOpen] = useState(false);
   // const [createDialogOpen, setCreateDialogOpen] = useState(false); // Not supported yet
   // const router = useRouter();
@@ -48,26 +43,23 @@ export const OrgSelector = () => {
             variant="ghost"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between h-9 px-2 text-sm font-medium hover:bg-muted border border-border rounded-md"
+            className="h-9 w-full justify-between rounded-md border border-border px-2 text-sm font-medium hover:bg-muted"
             disabled={isTokenRefreshing}
           >
             <div className="flex items-center gap-2 truncate">
-              <Building className="h-3 w-3 text-muted-foreground shrink-0" />
+              <Building className="h-3 w-3 shrink-0 text-muted-foreground" />
               {activeOrg ? (
                 <span className="truncate">{activeOrg.orgName}</span>
               ) : (
                 <Skeleton className="h-3 w-20" />
               )}
             </div>
-            <ChevronsUpDown className="h-3 w-3 opacity-50 shrink-0" />
+            <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
           <Command>
-            <CommandInput
-              placeholder="Search organization..."
-              className="h-9"
-            />
+            <CommandInput placeholder="Search organization..." className="h-9" />
             <CommandList>
               <CommandEmpty>No organization found.</CommandEmpty>
               <CommandGroup>
@@ -86,23 +78,19 @@ export const OrgSelector = () => {
                           await switchOrganization(org);
                         } catch (error) {
                           console.error("Failed to switch organization", error);
-                          toast.error(
-                            "Unable to switch organization. Please try again.",
-                          );
+                          toast.error("Unable to switch organization. Please try again.");
                         }
                       })();
                     }}
-                    className="flex justify-between items-center relative"
+                    className="relative flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-2 w-full">
+                    <div className="flex w-full items-center gap-2">
                       <Building className="h-4 w-4 text-muted-foreground" />
                       <div className="grow truncate">{org.orgName}</div>
                       <Check
                         className={cn(
                           "h-4 w-4",
-                          activeOrg?.orgId === org.orgId
-                            ? "opacity-100"
-                            : "opacity-0",
+                          activeOrg?.orgId === org.orgId ? "opacity-100" : "opacity-0",
                         )}
                       />
                     </div>

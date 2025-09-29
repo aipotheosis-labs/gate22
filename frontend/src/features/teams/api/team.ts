@@ -3,19 +3,13 @@ import { getApiBaseUrl } from "@/lib/api-client";
 import { throwApiError } from "@/lib/api-error-handler";
 import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
-export async function listTeams(
-  accessToken: string,
-  orgId: string,
-): Promise<Team[]> {
+export async function listTeams(accessToken: string, orgId: string): Promise<Team[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/teams`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/teams`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+  });
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch teams");
@@ -24,11 +18,7 @@ export async function listTeams(
   return response.json();
 }
 
-export async function getTeam(
-  accessToken: string,
-  orgId: string,
-  teamId: string,
-): Promise<Team> {
+export async function getTeam(accessToken: string, orgId: string, teamId: string): Promise<Team> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(
     `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/teams/${teamId}`,
@@ -52,17 +42,14 @@ export async function createTeam(
   data: CreateTeamRequest,
 ): Promise<Team> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/teams`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/teams`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     await throwApiError(response, "Failed to create team");

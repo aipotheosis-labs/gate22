@@ -39,21 +39,16 @@ export function MembersSettings() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Members</h2>
-          <p className="text-muted-foreground">
-            Manage organization members and invitations
-          </p>
+          <p className="text-muted-foreground">Manage organization members and invitations</p>
         </div>
-        <Button
-          onClick={() => setInviteDialogOpen(true)}
-          className="w-full md:w-auto"
-        >
+        <Button onClick={() => setInviteDialogOpen(true)} className="w-full md:w-auto">
           <UserPlus className="mr-2 h-4 w-4" />
           Invite Member
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full h-full grid-cols-1 gap-2 sm:max-w-xl sm:grid-cols-2 sm:w-full md:w-fit">
+        <TabsList className="grid h-full w-full grid-cols-1 gap-2 sm:w-full sm:max-w-xl sm:grid-cols-2 md:w-fit">
           <TabsTrigger
             value="team-members"
             className="h-10 min-w-[180px] justify-center whitespace-nowrap"
@@ -93,9 +88,7 @@ export function MembersSettings() {
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={handleInviteSuccess}
-        onInvite={({ email, role }) =>
-          createMemberInvitationAsync({ email, role })
-        }
+        onInvite={({ email, role }) => createMemberInvitationAsync({ email, role })}
         isInviting={isInviting}
       />
     </div>

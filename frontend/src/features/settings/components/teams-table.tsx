@@ -65,7 +65,7 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-muted-foreground">Loading teams...</div>
       </div>
     );
@@ -73,15 +73,15 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
 
   if (teams.length === 0) {
     return (
-      <div className="border rounded-lg">
+      <div className="rounded-lg border">
         <div className="flex flex-col items-center justify-center py-12">
-          <Users className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="font-medium mb-1">No teams yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <Users className="mb-4 h-12 w-12 text-muted-foreground" />
+          <h3 className="mb-1 font-medium">No teams yet</h3>
+          <p className="mb-4 text-sm text-muted-foreground">
             Create your first team to get started
           </p>
           <Button onClick={() => router.push("/settings/teams/new")}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Create Team
           </Button>
         </div>
@@ -93,8 +93,8 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
     <>
       <div className="space-y-4">
         <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder="Filter..."
               value={searchQuery}
@@ -104,16 +104,16 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
           </div>
         </div>
 
-        <div className="border rounded-lg">
+        <div className="rounded-lg border">
           <div className="divide-y">
             {filteredTeams.map((team) => (
               <div
                 key={team.team_id}
-                className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors"
+                className="flex items-center justify-between p-4 transition-colors hover:bg-muted/20"
               >
-                <div className="flex items-center gap-4 flex-1">
+                <div className="flex flex-1 items-center gap-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium">
+                    <AvatarFallback className="bg-gray-100 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100">
                       {getInitials(team.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -125,11 +125,7 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleViewTeam(team.team_id)}
-                >
+                <Button variant="outline" size="sm" onClick={() => handleViewTeam(team.team_id)}>
                   Manage
                 </Button>
               </div>

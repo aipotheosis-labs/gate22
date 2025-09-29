@@ -37,7 +37,7 @@ export default function DashboardLayout({
           <TokenRefreshOverlay />
           <SidebarProvider className="h-full">
             <AppSidebar />
-            <SidebarInset className="flex flex-col h-full overflow-hidden">
+            <SidebarInset className="flex h-full flex-col overflow-hidden">
               <Header />
               <main className="flex-1 overflow-y-auto">{children}</main>
             </SidebarInset>
@@ -59,8 +59,7 @@ export default function DashboardLayout({
             },
             className: "group",
             classNames: {
-              toast:
-                "group-[.toaster]:shadow-lg group-[.toaster]:bg-background",
+              toast: "group-[.toaster]:shadow-lg group-[.toaster]:bg-background",
             },
           }}
         />

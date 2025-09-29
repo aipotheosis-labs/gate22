@@ -1,10 +1,7 @@
 /**
  * Centralized API error handler to reduce repetitive error parsing
  */
-export async function parseApiError(
-  response: Response,
-  defaultMessage: string,
-): Promise<string> {
+export async function parseApiError(response: Response, defaultMessage: string): Promise<string> {
   if (response.ok) {
     return defaultMessage;
   }
@@ -37,10 +34,7 @@ export async function parseApiError(
 /**
  * Throws an error with parsed API error message
  */
-export async function throwApiError(
-  response: Response,
-  defaultMessage: string,
-): Promise<never> {
+export async function throwApiError(response: Response, defaultMessage: string): Promise<never> {
   let errorMessage: string = defaultMessage;
 
   // Read response body once as text
@@ -67,42 +61,24 @@ export async function throwApiError(
         // Check common error field names in order of preference
         if (typeof anyData.error === "string" && anyData.error.trim()) {
           errorMessage = anyData.error;
-        } else if (
-          typeof anyData.detail === "string" &&
-          anyData.detail.trim()
-        ) {
+        } else if (typeof anyData.detail === "string" && anyData.detail.trim()) {
           errorMessage = anyData.detail;
-        } else if (
-          typeof anyData.message === "string" &&
-          anyData.message.trim()
-        ) {
+        } else if (typeof anyData.message === "string" && anyData.message.trim()) {
           errorMessage = anyData.message;
         } else if (typeof anyData.msg === "string" && anyData.msg.trim()) {
           errorMessage = anyData.msg;
-        } else if (
-          typeof anyData.reason === "string" &&
-          anyData.reason.trim()
-        ) {
+        } else if (typeof anyData.reason === "string" && anyData.reason.trim()) {
           errorMessage = anyData.reason;
-        } else if (
-          typeof anyData.description === "string" &&
-          anyData.description.trim()
-        ) {
+        } else if (typeof anyData.description === "string" && anyData.description.trim()) {
           errorMessage = anyData.description;
         }
 
         // Handle nested error objects
         if (typeof anyData.error === "object" && anyData.error !== null) {
           const nestedError = anyData.error as Record<string, unknown>;
-          if (
-            typeof nestedError.message === "string" &&
-            nestedError.message.trim()
-          ) {
+          if (typeof nestedError.message === "string" && nestedError.message.trim()) {
             errorMessage = nestedError.message;
-          } else if (
-            typeof nestedError.detail === "string" &&
-            nestedError.detail.trim()
-          ) {
+          } else if (typeof nestedError.detail === "string" && nestedError.detail.trim()) {
             errorMessage = nestedError.detail;
           }
         }

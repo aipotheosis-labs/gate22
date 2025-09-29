@@ -9,8 +9,7 @@ export const SETTINGS_ROUTES = {
 export const QUERY_KEYS = {
   TEAMS: (orgId: string) => ["teams", orgId] as const,
   TEAM: (orgId: string, teamId: string) => ["team", orgId, teamId] as const,
-  TEAM_MEMBERS: (orgId: string, teamId: string) =>
-    ["team-members", orgId, teamId] as const,
+  TEAM_MEMBERS: (orgId: string, teamId: string) => ["team-members", orgId, teamId] as const,
   ORGANIZATION: (orgId: string) => ["organization", orgId] as const,
   MEMBERS: (orgId: string) => ["members", orgId] as const,
   ORGANIZATION_INVITATIONS: (orgId: string, status: string = "all") =>

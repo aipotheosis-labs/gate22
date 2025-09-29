@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ShieldX } from "lucide-react";
@@ -24,10 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { tokenManager } from "@/lib/token-manager";
-import {
-  getInvitationByToken,
-  rejectInvitation,
-} from "@/features/invitations/api/invitations";
+import { getInvitationByToken, rejectInvitation } from "@/features/invitations/api/invitations";
 import {
   OrganizationInvitationDetail,
   OrganizationInvitationStatus,
@@ -116,15 +106,13 @@ export default function RejectInvitationPage() {
 
 function RejectInvitationLoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <Card className="max-w-lg w-full">
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>Loading invitation</CardTitle>
-          <CardDescription>
-            Please wait while we prepare the invitation details.
-          </CardDescription>
+          <CardDescription>Please wait while we prepare the invitation details.</CardDescription>
         </CardHeader>
-        <CardContent className="py-8 flex items-center justify-center">
+        <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </CardContent>
       </Card>
@@ -152,12 +140,10 @@ function RejectInvitationPageContent() {
 
   const hasToken = useMemo(() => Boolean(token.length), [token]);
 
-  const [pendingInvitation, setPendingInvitation] =
-    useState<PendingInvitationState | null>(null);
+  const [pendingInvitation, setPendingInvitation] = useState<PendingInvitationState | null>(null);
   const [authState, setAuthState] = useState<AuthState>("checking");
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [invitation, setInvitation] =
-    useState<OrganizationInvitationDetail | null>(null);
+  const [invitation, setInvitation] = useState<OrganizationInvitationDetail | null>(null);
   const [step, setStep] = useState<InvitationStep>("collect");
   const [isFetching, setIsFetching] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
@@ -217,8 +203,7 @@ function RejectInvitationPageContent() {
     const nextPending: PendingInvitationState = {
       token,
       invitationId: pendingInvitation?.invitationId ?? null,
-      organizationId:
-        organizationIdQuery || pendingInvitation?.organizationId || null,
+      organizationId: organizationIdQuery || pendingInvitation?.organizationId || null,
     };
 
     persistPendingInvitation(nextPending);
@@ -226,13 +211,7 @@ function RejectInvitationPageContent() {
     if (!pendingInvitation) {
       setStep("collect");
     }
-  }, [
-    hasToken,
-    organizationIdQuery,
-    pendingInvitation,
-    persistPendingInvitation,
-    token,
-  ]);
+  }, [hasToken, organizationIdQuery, pendingInvitation, persistPendingInvitation, token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -286,8 +265,7 @@ function RejectInvitationPageContent() {
           throw new Error("Authentication required to load invitation");
         }
 
-        const targetOrganizationId =
-          organizationIdQuery || pendingInvitation.organizationId || "";
+        const targetOrganizationId = organizationIdQuery || pendingInvitation.organizationId || "";
 
         if (!targetOrganizationId) {
           throw new Error(
@@ -327,9 +305,7 @@ function RejectInvitationPageContent() {
         console.error("Failed to load invitation", error);
         if (!cancelled) {
           setLoadError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load invitation details",
+            error instanceof Error ? error.message : "Failed to load invitation details",
           );
         }
       } finally {
@@ -344,20 +320,10 @@ function RejectInvitationPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [
-    accessToken,
-    authState,
-    organizationIdQuery,
-    pendingInvitation,
-    persistPendingInvitation,
-  ]);
+  }, [accessToken, authState, organizationIdQuery, pendingInvitation, persistPendingInvitation]);
 
   useEffect(() => {
-    if (
-      authState !== "unauthenticated" ||
-      !pendingInvitation ||
-      redirectingRef.current
-    ) {
+    if (authState !== "unauthenticated" || !pendingInvitation || redirectingRef.current) {
       return;
     }
 
@@ -386,13 +352,10 @@ function RejectInvitationPageContent() {
         throw new Error("You need to sign in before rejecting the invitation.");
       }
 
-      const organizationId =
-        pendingInvitation.organizationId || organizationIdQuery || null;
+      const organizationId = pendingInvitation.organizationId || organizationIdQuery || null;
 
       if (!organizationId) {
-        throw new Error(
-          "Invitation is missing organization information. Please refresh the page.",
-        );
+        throw new Error("Invitation is missing organization information. Please refresh the page.");
       }
 
       await rejectInvitation(tokenValue, organizationId, {
@@ -420,14 +383,14 @@ function RejectInvitationPageContent() {
 
   if (!hasToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Invitation link is missing information</CardTitle>
             <CardDescription>
-              The link you followed does not include all of the required
-              parameters. Please open the original email invitation and try
-              again, or request a new invitation from the organization admin.
+              The link you followed does not include all of the required parameters. Please open the
+              original email invitation and try again, or request a new invitation from the
+              organization admin.
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -442,15 +405,13 @@ function RejectInvitationPageContent() {
 
   if (authState === "checking") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Checking your session</CardTitle>
-            <CardDescription>
-              Please wait while we verify your account status.
-            </CardDescription>
+            <CardDescription>Please wait while we verify your account status.</CardDescription>
           </CardHeader>
-          <CardContent className="py-8 flex items-center justify-center">
+          <CardContent className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </CardContent>
         </Card>
@@ -460,21 +421,21 @@ function RejectInvitationPageContent() {
 
   if (authState === "unauthenticated" || step === "collect") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Sign in to respond</CardTitle>
             <CardDescription>
-              Sign in with the email that received this invitation. We&apos;ll
-              keep the invitation ready once you return.
+              Sign in with the email that received this invitation. We&apos;ll keep the invitation
+              ready once you return.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <AlertTitle>Hold tight</AlertTitle>
               <AlertDescription>
-                Invitations can only be declined after verifying your identity.
-                Once you sign in, you can confirm the decline instantly.
+                Invitations can only be declined after verifying your identity. Once you sign in,
+                you can confirm the decline instantly.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -482,9 +443,7 @@ function RejectInvitationPageContent() {
             <Button asChild className="w-full sm:w-auto">
               <Link
                 href={`/login?next=${encodeURIComponent(
-                  rejectPath.startsWith("/invitations/reject")
-                    ? rejectPath
-                    : "/invitations/reject",
+                  rejectPath.startsWith("/invitations/reject") ? rejectPath : "/invitations/reject",
                 )}`}
               >
                 Sign in
@@ -493,9 +452,7 @@ function RejectInvitationPageContent() {
             <Button asChild variant="outline" className="w-full sm:w-auto">
               <Link
                 href={`/signup?next=${encodeURIComponent(
-                  rejectPath.startsWith("/invitations/reject")
-                    ? rejectPath
-                    : "/invitations/reject",
+                  rejectPath.startsWith("/invitations/reject") ? rejectPath : "/invitations/reject",
                 )}`}
               >
                 Create account
@@ -509,8 +466,8 @@ function RejectInvitationPageContent() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle>Unable to load invitation</CardTitle>
             <CardDescription>{loadError}</CardDescription>
@@ -534,19 +491,18 @@ function RejectInvitationPageContent() {
 
   if (step === "done") {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldX className="h-5 w-5 text-primary" />
               Invitation declined
             </CardTitle>
             <CardDescription>
-              We&apos;ve let the organization know. Feel free to explore the
-              rest of the app.
+              We&apos;ve let the organization know. Feel free to explore the rest of the app.
             </CardDescription>
           </CardHeader>
-          <CardContent className="py-8 flex justify-center">
+          <CardContent className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </CardContent>
         </Card>
@@ -558,13 +514,12 @@ function RejectInvitationPageContent() {
   const statusBanner = resolveStatusBanner(invitation?.status);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      <Card className="max-w-xl w-full">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-xl">
         <CardHeader>
           <CardTitle>Decline invitation</CardTitle>
           <CardDescription>
-            Make sure you&apos;re declining the correct invitation before
-            proceeding.
+            Make sure you&apos;re declining the correct invitation before proceeding.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -584,9 +539,7 @@ function RejectInvitationPageContent() {
               {isPending && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Organization ID</span>
-                  <span className="font-medium">
-                    {invitation?.organization_id}
-                  </span>
+                  <span className="font-medium">{invitation?.organization_id}</span>
                 </div>
               )}
               <div className="flex items-center justify-between">
@@ -597,16 +550,12 @@ function RejectInvitationPageContent() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Role</span>
-                <span className="font-medium uppercase">
-                  {invitation?.role ?? "-"}
-                </span>
+                <span className="font-medium uppercase">{invitation?.role ?? "-"}</span>
               </div>
               {invitation?.expires_at && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Expires at</span>
-                  <span className="font-medium">
-                    {formatIsoDate(invitation.expires_at)}
-                  </span>
+                  <span className="font-medium">{formatIsoDate(invitation.expires_at)}</span>
                 </div>
               )}
             </div>

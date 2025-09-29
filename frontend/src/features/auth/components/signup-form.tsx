@@ -29,10 +29,7 @@ const formSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[a-z]/, "Password must contain at least one lowercase letter")
       .regex(/[0-9]/, "Password must contain at least one number")
-      .regex(
-        /[@$!%*?&]/,
-        "Password must contain a special character (@$!%*?&)",
-      ),
+      .regex(/[@$!%*?&]/, "Password must contain a special character (@$!%*?&)"),
     confirmPassword: z.string(),
     agreeToTerms: z.boolean().refine((val) => val === true, {
       message: "You must agree to the terms and conditions",
@@ -91,7 +88,7 @@ export function SignupForm({ onSignup }: SignupFormProps) {
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         placeholder="John Doe"
                         className="pl-10"
@@ -112,7 +109,7 @@ export function SignupForm({ onSignup }: SignupFormProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="email"
                         placeholder="you@example.com"
@@ -134,7 +131,7 @@ export function SignupForm({ onSignup }: SignupFormProps) {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="password"
                         placeholder="••••••••"
@@ -156,7 +153,7 @@ export function SignupForm({ onSignup }: SignupFormProps) {
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="password"
                         placeholder="••••••••"
@@ -176,7 +173,7 @@ export function SignupForm({ onSignup }: SignupFormProps) {
             control={form.control}
             name="agreeToTerms"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+              <FormItem className="flex flex-row items-start space-y-0 space-x-2">
                 <FormControl>
                   <Checkbox
                     checked={field.value}
@@ -185,12 +182,9 @@ export function SignupForm({ onSignup }: SignupFormProps) {
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="text-sm font-normal cursor-pointer">
+                  <FormLabel className="cursor-pointer text-sm font-normal">
                     I agree to the{" "}
-                    <Link
-                      href="https://www.aci.dev/terms"
-                      className="text-primary hover:underline"
-                    >
+                    <Link href="https://www.aci.dev/terms" className="text-primary hover:underline">
                       Terms of Service
                     </Link>{" "}
                     and{" "}
@@ -216,7 +210,7 @@ export function SignupForm({ onSignup }: SignupFormProps) {
 
           <Button
             type="submit"
-            className="w-full h-11 transition-all duration-200"
+            className="h-11 w-full transition-all duration-200"
             disabled={isLoading}
           >
             {isLoading ? (

@@ -1,9 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { mcpService } from "../api/mcp.service";
-import {
-  MCPServerConfigurationCreate,
-  PaginationParams,
-} from "../types/mcp.types";
+import { MCPServerConfigurationCreate, PaginationParams } from "../types/mcp.types";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 
@@ -12,8 +9,7 @@ export const mcpQueryKeys = {
   all: ["mcp"] as const,
   servers: {
     all: ["mcp", "servers"] as const,
-    list: (params?: PaginationParams) =>
-      ["mcp", "servers", "list", params] as const,
+    list: (params?: PaginationParams) => ["mcp", "servers", "list", params] as const,
     detail: (id: string) => ["mcp", "servers", "detail", id] as const,
     byName: (name: string) => ["mcp", "servers", "byName", name] as const,
   },
@@ -65,9 +61,7 @@ export function useMCPServerConfigurations(params?: PaginationParams) {
   const { accessToken, checkPermission, activeOrg, activeRole } = useMetaInfo();
 
   // Create auth context key for cache separation without exposing token
-  const authContextKey = activeOrg
-    ? `${activeOrg.orgId}:${activeRole}`
-    : undefined;
+  const authContextKey = activeOrg ? `${activeOrg.orgId}:${activeRole}` : undefined;
 
   const query = useQuery({
     queryKey: mcpQueryKeys.configurations.list(params, authContextKey),
@@ -91,17 +85,11 @@ export function useMCPServerConfiguration(configurationId: string) {
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
 
   // Create auth context key for cache separation without exposing token
-  const authContextKey = activeOrg
-    ? `${activeOrg.orgId}:${activeRole}`
-    : undefined;
+  const authContextKey = activeOrg ? `${activeOrg.orgId}:${activeRole}` : undefined;
 
   return useQuery({
-    queryKey: mcpQueryKeys.configurations.detail(
-      configurationId,
-      authContextKey,
-    ),
-    queryFn: () =>
-      mcpService.configurations.getById(accessToken!, configurationId),
+    queryKey: mcpQueryKeys.configurations.detail(configurationId, authContextKey),
+    queryFn: () => mcpService.configurations.getById(accessToken!, configurationId),
     enabled: !!accessToken && !!configurationId,
   });
 }
@@ -139,9 +127,7 @@ export function useDeleteMCPServerConfiguration() {
   return useMutation({
     mutationFn: (configurationId: string) => {
       if (!canDelete) {
-        throw new Error(
-          "You do not have permission to delete MCP server configurations",
-        );
+        throw new Error("You do not have permission to delete MCP server configurations");
       }
       return mcpService.configurations.delete(accessToken!, configurationId);
     },
@@ -177,20 +163,15 @@ export function useSyncMCPServerTools() {
 }
 
 // Hook to list operational MCP server configurations
-export function useOperationalMCPServerConfigurations(
-  params?: PaginationParams,
-) {
+export function useOperationalMCPServerConfigurations(params?: PaginationParams) {
   const { accessToken, activeOrg, activeRole } = useMetaInfo();
 
   // Create auth context key for cache separation without exposing token
-  const authContextKey = activeOrg
-    ? `${activeOrg.orgId}:${activeRole}`
-    : undefined;
+  const authContextKey = activeOrg ? `${activeOrg.orgId}:${activeRole}` : undefined;
 
   return useQuery({
     queryKey: ["mcp", "configurations", "operational", params, authContextKey],
-    queryFn: () =>
-      mcpService.configurations.listOperational(accessToken!, params),
+    queryFn: () => mcpService.configurations.listOperational(accessToken!, params),
     enabled: !!accessToken,
   });
 }

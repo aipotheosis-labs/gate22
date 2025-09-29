@@ -109,11 +109,7 @@ export function MemberInvitationDialog({
             <Label htmlFor="role" className="text-right">
               Role
             </Label>
-            <Select
-              value={invitationRole}
-              onValueChange={setInvitationRole}
-              disabled={isInviting}
-            >
+            <Select value={invitationRole} onValueChange={setInvitationRole} disabled={isInviting}>
               <SelectTrigger id="role" className="col-span-3">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
@@ -126,17 +122,10 @@ export function MemberInvitationDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={isInviting}
-          >
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isInviting}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSendInvitation}
-            disabled={isInviting || !invitationEmail.trim()}
-          >
+          <Button onClick={handleSendInvitation} disabled={isInviting || !invitationEmail.trim()}>
             {isInviting ? "Sending..." : "Send Invitation"}
           </Button>
         </DialogFooter>

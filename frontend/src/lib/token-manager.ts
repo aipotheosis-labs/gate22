@@ -45,10 +45,7 @@ class TokenManager {
         desiredRole = activeRole?.role ?? OrganizationRole.Admin;
       } else if (userActualRole) {
         desiredRole = userActualRole;
-      } else if (
-        this.currentActAs?.organization_id === organizationId &&
-        this.currentActAs.role
-      ) {
+      } else if (this.currentActAs?.organization_id === organizationId && this.currentActAs.role) {
         desiredRole = this.currentActAs.role as OrganizationRole;
       }
 
@@ -64,8 +61,7 @@ class TokenManager {
     }
 
     const actAsChanged =
-      JSON.stringify(nextActAs ?? null) !==
-      JSON.stringify(this.currentActAs ?? null);
+      JSON.stringify(nextActAs ?? null) !== JSON.stringify(this.currentActAs ?? null);
 
     if (actAsChanged) {
       this.accessToken = null;
@@ -109,9 +105,7 @@ class TokenManager {
     this.currentActAs = undefined;
   }
 
-  private async refreshAccessToken(
-    act_as?: IssueTokenRequest["act_as"],
-  ): Promise<string | null> {
+  private async refreshAccessToken(act_as?: IssueTokenRequest["act_as"]): Promise<string | null> {
     this.refreshPromise = this.doRefreshToken(act_as);
 
     try {
@@ -122,25 +116,20 @@ class TokenManager {
     }
   }
 
-  private async doRefreshToken(
-    act_as?: IssueTokenRequest["act_as"],
-  ): Promise<string | null> {
+  private async doRefreshToken(act_as?: IssueTokenRequest["act_as"]): Promise<string | null> {
     const baseUrl = getApiBaseUrl();
 
     try {
       console.log("Refreshing access token");
 
-      const response = await fetch(
-        `${baseUrl}${CONTROL_PLANE_PATH}/auth/token`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Include cookies for refresh token
-          body: JSON.stringify({ act_as }),
+      const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include", // Include cookies for refresh token
+        body: JSON.stringify({ act_as }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();

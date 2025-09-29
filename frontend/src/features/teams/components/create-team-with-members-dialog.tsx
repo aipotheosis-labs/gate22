@@ -75,15 +75,10 @@ export function CreateTeamWithMembersDialog({
     try {
       const createTeamData = {
         ...formData,
-        member_user_ids:
-          selectedMembers.length > 0 ? selectedMembers : undefined,
+        member_user_ids: selectedMembers.length > 0 ? selectedMembers : undefined,
       };
 
-      const newTeam = await createTeam(
-        accessToken,
-        activeOrg.orgId,
-        createTeamData,
-      );
+      const newTeam = await createTeam(accessToken, activeOrg.orgId, createTeamData);
 
       const successMessage =
         selectedMembers.length > 0
@@ -101,8 +96,7 @@ export function CreateTeamWithMembersDialog({
       onOpenChange(false);
       onSuccess?.(newTeam);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to create team";
+      const errorMessage = error instanceof Error ? error.message : "Failed to create team";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -127,8 +121,7 @@ export function CreateTeamWithMembersDialog({
           <DialogHeader>
             <DialogTitle>Create New Team</DialogTitle>
             <DialogDescription>
-              Create a new team to organize members and manage access to
-              resources.
+              Create a new team to organize members and manage access to resources.
             </DialogDescription>
           </DialogHeader>
 
@@ -141,9 +134,7 @@ export function CreateTeamWithMembersDialog({
                 id="name"
                 placeholder="Engineering, Marketing, Design..."
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 disabled={isLoading}
                 required
               />
@@ -155,9 +146,7 @@ export function CreateTeamWithMembersDialog({
                 id="description"
                 placeholder="Describe the purpose of this team..."
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 disabled={isLoading}
                 rows={3}
               />
@@ -167,10 +156,8 @@ export function CreateTeamWithMembersDialog({
               <Label>Team Members (Optional)</Label>
               {membersLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span className="text-sm text-muted-foreground">
-                    Loading members...
-                  </span>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading members...</span>
                 </div>
               ) : (
                 <>
@@ -202,12 +189,7 @@ export function CreateTeamWithMembersDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

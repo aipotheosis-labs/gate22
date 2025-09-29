@@ -20,12 +20,10 @@ export function TeamsSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Teams</h2>
-          <p className="text-muted-foreground">
-            Manage organization teams and team memberships
-          </p>
+          <p className="text-muted-foreground">Manage organization teams and team memberships</p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Create Team
         </Button>
       </div>

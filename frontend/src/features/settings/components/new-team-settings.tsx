@@ -8,13 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateTeam } from "../hooks/use-create-team";
 import { SETTINGS_ROUTES } from "../constants";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function NewTeamSettings() {
   const router = useRouter();
@@ -33,18 +27,14 @@ export function NewTeamSettings() {
     <>
       <div className="mb-8">
         <h2 className="text-3xl font-bold tracking-tight">Create New Team</h2>
-        <p className="text-muted-foreground mt-2">
-          Set up a new team for your organization
-        </p>
+        <p className="mt-2 text-muted-foreground">Set up a new team for your organization</p>
       </div>
 
       <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Team Details</CardTitle>
-            <CardDescription>
-              Configure your team&apos;s name and basic information
-            </CardDescription>
+            <CardDescription>Configure your team&apos;s name and basic information</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -86,10 +76,7 @@ export function NewTeamSettings() {
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleCreateTeam}
-            disabled={!teamName.trim() || isCreating}
-          >
+          <Button onClick={handleCreateTeam} disabled={!teamName.trim() || isCreating}>
             {isCreating ? "Creating..." : "Create Team"}
           </Button>
         </div>

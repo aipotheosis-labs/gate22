@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import { createContext, ReactNode, useContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,10 +9,7 @@ import { tokenManager } from "@/lib/token-manager";
 import { roleManager } from "@/lib/role-manager";
 import { organizationManager } from "@/lib/organization-manager";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
-import {
-  checkPermission,
-  getPermissionsForRole,
-} from "@/lib/rbac/rbac-service";
+import { checkPermission, getPermissionsForRole } from "@/lib/rbac/rbac-service";
 import { Permission } from "@/lib/rbac/permissions";
 import { mcpQueryKeys } from "@/features/mcp/hooks/use-mcp-servers";
 import { connectedAccountKeys } from "@/features/connected-accounts/hooks/use-connected-account";
@@ -58,9 +48,7 @@ interface MetaInfoContextType {
   getPermissions: () => readonly Permission[];
 }
 
-const MetaInfoContext = createContext<MetaInfoContextType | undefined>(
-  undefined,
-);
+const MetaInfoContext = createContext<MetaInfoContextType | undefined>(undefined);
 
 const MCP_BUNDLE_QUERY_KEY = ["mcp-server-bundles"] as const;
 
@@ -77,9 +65,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   const [accessToken, setAccessToken] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeRole, setActiveRole] = useState<OrganizationRole>(
-    OrganizationRole.Admin,
-  );
+  const [activeRole, setActiveRole] = useState<OrganizationRole>(OrganizationRole.Admin);
   const [isTokenRefreshing, setIsTokenRefreshing] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -146,9 +132,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
         // IMPORTANT: Load stored preferences FIRST before requesting token
         // This ensures we have the correct act_as context from the start
         const storedOrg = organizationManager.getActiveOrganization();
-        const storedRole = storedOrg
-          ? roleManager.getActiveRole(storedOrg.orgId)
-          : null;
+        const storedRole = storedOrg ? roleManager.getActiveRole(storedOrg.orgId) : null;
 
         // Reset any stale act_as context from previous sessions before
         // requesting a fresh token.
@@ -172,10 +156,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             pictureUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=random`,
           };
           // If the user has no organizations, send them to onboarding
-          if (
-            !userProfile.organizations ||
-            userProfile.organizations.length === 0
-          ) {
+          if (!userProfile.organizations || userProfile.organizations.length === 0) {
             setAccessToken(token);
             setUser(user);
             setOrgs([]);
@@ -186,19 +167,16 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             return;
           }
 
-          const organizations = (userProfile.organizations ?? []).map(
-            (org) => ({
-              orgId: org.organization_id,
-              orgName: org.organization_name,
-              userRole: org.role,
-              userPermissions: [],
-            }),
-          );
+          const organizations = (userProfile.organizations ?? []).map((org) => ({
+            orgId: org.organization_id,
+            orgName: org.organization_name,
+            userRole: org.role,
+            userPermissions: [],
+          }));
 
           let selectedOrg: OrgMemberInfoClass | null = null;
           const storedOrgMatch = storedOrg
-            ? (organizations.find((org) => org.orgId === storedOrg.orgId) ??
-              null)
+            ? (organizations.find((org) => org.orgId === storedOrg.orgId) ?? null)
             : null;
 
           if (!storedOrgMatch && storedOrg) {
@@ -228,9 +206,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             }
 
             const storedRoleForSelectedOrg =
-              storedRole && storedRole.organizationId === selectedOrg.orgId
-                ? storedRole
-                : null;
+              storedRole && storedRole.organizationId === selectedOrg.orgId ? storedRole : null;
 
             if (
               selectedOrg.userRole === OrganizationRole.Admin &&
@@ -243,8 +219,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
             }
 
             const expectedRoleForActAs =
-              selectedOrg.userRole === OrganizationRole.Admin &&
-              storedRoleForSelectedOrg
+              selectedOrg.userRole === OrganizationRole.Admin && storedRoleForSelectedOrg
                 ? storedRoleForSelectedOrg.role
                 : (selectedOrg.userRole as OrganizationRole);
             const currentActAs = tokenManager.getCurrentActAs();
@@ -260,9 +235,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
               );
 
               if (!refreshedToken) {
-                throw new Error(
-                  "Failed to refresh token with organization context",
-                );
+                throw new Error("Failed to refresh token with organization context");
               }
             } else {
               setAccessToken(token);
@@ -288,11 +261,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   const switchOrganization = useCallback(
     async (org: OrgMemberInfoClass) => {
       // Save to localStorage
-      organizationManager.setActiveOrganization(
-        org.orgId,
-        org.orgName,
-        org.userRole,
-      );
+      organizationManager.setActiveOrganization(org.orgId, org.orgName, org.userRole);
 
       // Clear any role switching when changing organizations
       roleManager.clearActiveRole();
@@ -302,10 +271,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
       setActiveOrg(org);
 
       // Refresh token with loading state
-      await refreshTokenWithContext(
-        org.orgId,
-        org.userRole as OrganizationRole,
-      );
+      await refreshTokenWithContext(org.orgId, org.userRole as OrganizationRole);
 
       // Invalidate queries that depend on organization-bound auth context
       queryClient.invalidateQueries({
@@ -325,9 +291,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Determine new role state - toggle between Admin and Member
     const newActiveRole =
-      activeRole === OrganizationRole.Admin
-        ? OrganizationRole.Member
-        : OrganizationRole.Admin;
+      activeRole === OrganizationRole.Admin ? OrganizationRole.Member : OrganizationRole.Admin;
 
     // Update localStorage first
     if (newActiveRole === OrganizationRole.Member) {
@@ -341,10 +305,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
 
     // Refresh token with the correct context
     // The tokenManager will check roleManager internally for act_as context
-    await refreshTokenWithContext(
-      activeOrg.orgId,
-      activeOrg.userRole as OrganizationRole,
-    );
+    await refreshTokenWithContext(activeOrg.orgId, activeOrg.userRole as OrganizationRole);
 
     // Invalidate queries that depend on organization-bound auth context
     queryClient.invalidateQueries({
@@ -400,7 +361,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   // Show loading while checking existing session
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-3">
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-3">
         <h1 className="text-2xl font-semibold">Loading...</h1>
         <Skeleton className="h-[125px] w-[250px] rounded-xl" />
       </div>
@@ -410,7 +371,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   // Show loading while redirecting to login
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-3">
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-3">
         <h1 className="text-2xl font-semibold">Redirecting to login...</h1>
         <Skeleton className="h-[125px] w-[250px] rounded-xl" />
       </div>
@@ -420,7 +381,7 @@ export const MetaInfoProvider = ({ children }: MetaInfoProviderProps) => {
   // Show loading while fetching initial data
   if (!user || !activeOrg || !accessToken) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-3">
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-3">
         <h1 className="text-2xl font-semibold">Setting up your workspace...</h1>
         <Skeleton className="h-[125px] w-[250px] rounded-xl" />
         <div className="space-y-2">

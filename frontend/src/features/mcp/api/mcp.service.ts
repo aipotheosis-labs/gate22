@@ -21,13 +21,8 @@ const API_ENDPOINTS = {
 export const mcpService = {
   // MCP Tools endpoints
   tools: {
-    getByName: async (
-      token: string,
-      toolName: string,
-    ): Promise<MCPToolPublic> => {
-      return fetcherWithAuth<MCPToolPublic>(token)(
-        `${API_ENDPOINTS.TOOLS}/${toolName}`,
-      );
+    getByName: async (token: string, toolName: string): Promise<MCPToolPublic> => {
+      return fetcherWithAuth<MCPToolPublic>(token)(`${API_ENDPOINTS.TOOLS}/${toolName}`);
     },
   },
 
@@ -37,54 +32,36 @@ export const mcpService = {
       token: string,
       params?: PaginationParams,
     ): Promise<PaginationResponse<MCPServerPublic>> => {
-      return fetcherWithAuth<PaginationResponse<MCPServerPublic>>(token)(
+      return fetcherWithAuth<PaginationResponse<MCPServerPublic>>(token)(API_ENDPOINTS.SERVERS, {
+        params: {
+          offset: params?.offset?.toString() || "0",
+          limit: params?.limit?.toString() || "100",
+        },
+      });
+    },
+
+    getById: async (token: string, serverId: string): Promise<MCPServerPublic> => {
+      return fetcherWithAuth<MCPServerPublic>(token)(`${API_ENDPOINTS.SERVERS}/${serverId}`);
+    },
+
+    getByName: async (token: string, serverName: string): Promise<MCPServerPublic | undefined> => {
+      // This would need a search endpoint on the backend
+      // For now, fetch all and filter client-side
+      const response = await fetcherWithAuth<PaginationResponse<MCPServerPublic>>(token)(
         API_ENDPOINTS.SERVERS,
         {
           params: {
-            offset: params?.offset?.toString() || "0",
-            limit: params?.limit?.toString() || "100",
+            offset: "0",
+            limit: "100",
           },
         },
       );
+      return response.data.find((s) => s.name.toLowerCase() === serverName.toLowerCase());
     },
 
-    getById: async (
-      token: string,
-      serverId: string,
-    ): Promise<MCPServerPublic> => {
-      return fetcherWithAuth<MCPServerPublic>(token)(
-        `${API_ENDPOINTS.SERVERS}/${serverId}`,
-      );
-    },
-
-    getByName: async (
-      token: string,
-      serverName: string,
-    ): Promise<MCPServerPublic | undefined> => {
-      // This would need a search endpoint on the backend
-      // For now, fetch all and filter client-side
-      const response = await fetcherWithAuth<
-        PaginationResponse<MCPServerPublic>
-      >(token)(API_ENDPOINTS.SERVERS, {
-        params: {
-          offset: "0",
-          limit: "100",
-        },
-      });
-      return response.data.find(
-        (s) => s.name.toLowerCase() === serverName.toLowerCase(),
-      );
-    },
-
-    syncTools: async (
-      token: string,
-      serverId: string,
-    ): Promise<ToolsSyncResult> => {
+    syncTools: async (token: string, serverId: string): Promise<ToolsSyncResult> => {
       const api = createAuthenticatedRequest(token);
-      return api.post<ToolsSyncResult>(
-        `${API_ENDPOINTS.SERVERS}/${serverId}/refresh-tools`,
-        {},
-      );
+      return api.post<ToolsSyncResult>(`${API_ENDPOINTS.SERVERS}/${serverId}/refresh-tools`, {});
     },
   },
 
@@ -94,14 +71,15 @@ export const mcpService = {
       token: string,
       params?: PaginationParams,
     ): Promise<PaginationResponse<MCPServerConfigurationPublicBasic>> => {
-      return fetcherWithAuth<
-        PaginationResponse<MCPServerConfigurationPublicBasic>
-      >(token)(API_ENDPOINTS.CONFIGURATIONS, {
-        params: {
-          offset: params?.offset?.toString() || "0",
-          limit: params?.limit?.toString() || "100",
+      return fetcherWithAuth<PaginationResponse<MCPServerConfigurationPublicBasic>>(token)(
+        API_ENDPOINTS.CONFIGURATIONS,
+        {
+          params: {
+            offset: params?.offset?.toString() || "0",
+            limit: params?.limit?.toString() || "100",
+          },
         },
-      });
+      );
     },
 
     getById: async (
@@ -118,10 +96,7 @@ export const mcpService = {
       data: MCPServerConfigurationCreate,
     ): Promise<MCPServerConfigurationPublic> => {
       const api = createAuthenticatedRequest(token);
-      return api.post<MCPServerConfigurationPublic>(
-        API_ENDPOINTS.CONFIGURATIONS,
-        data,
-      );
+      return api.post<MCPServerConfigurationPublic>(API_ENDPOINTS.CONFIGURATIONS, data);
     },
 
     update: async (
@@ -145,15 +120,16 @@ export const mcpService = {
       token: string,
       params?: PaginationParams,
     ): Promise<PaginationResponse<MCPServerConfigurationPublic>> => {
-      return fetcherWithAuth<PaginationResponse<MCPServerConfigurationPublic>>(
-        token,
-      )(API_ENDPOINTS.CONFIGURATIONS, {
-        params: {
-          connected_account_ownerships: "operational",
-          offset: params?.offset?.toString() || "0",
-          limit: params?.limit?.toString() || "100",
+      return fetcherWithAuth<PaginationResponse<MCPServerConfigurationPublic>>(token)(
+        API_ENDPOINTS.CONFIGURATIONS,
+        {
+          params: {
+            connected_account_ownerships: "operational",
+            offset: params?.offset?.toString() || "0",
+            limit: params?.limit?.toString() || "100",
+          },
         },
-      });
+      );
     },
   },
 };

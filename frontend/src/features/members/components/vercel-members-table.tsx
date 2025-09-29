@@ -18,9 +18,7 @@ interface VercelMembersTableProps {
   refreshKey?: number;
 }
 
-export function VercelMembersTable({
-  refreshKey = 0,
-}: VercelMembersTableProps) {
+export function VercelMembersTable({ refreshKey = 0 }: VercelMembersTableProps) {
   const { members = [], isLoading, refetch } = useOrganizationMembers();
   // const router = useRouter(); // Kept for potential future use with handleRemove
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,9 +49,7 @@ export function VercelMembersTable({
     return members.filter((member) => {
       if (!member) return false;
       const fullName =
-        `${member.first_name || ""} ${member.last_name || ""}`.trim() ||
-        member.name ||
-        "";
+        `${member.first_name || ""} ${member.last_name || ""}`.trim() || member.name || "";
       const matchesSearch =
         fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         member.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -61,21 +57,13 @@ export function VercelMembersTable({
 
       // Map backend roles to frontend display
       const displayRole =
-        member.role === "admin"
-          ? "Admin"
-          : member.role === "member"
-            ? "Member"
-            : member.role;
+        member.role === "admin" ? "Admin" : member.role === "member" ? "Member" : member.role;
       const matchesRole = roleFilter === "all" || displayRole === roleFilter;
       return matchesSearch && matchesRole;
     });
   }, [members, searchQuery, roleFilter]);
 
-  const getInitials = (
-    firstName?: string,
-    lastName?: string,
-    email?: string,
-  ) => {
+  const getInitials = (firstName?: string, lastName?: string, email?: string) => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`.toUpperCase();
     }
@@ -90,7 +78,7 @@ export function VercelMembersTable({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-muted-foreground">Loading members...</div>
       </div>
     );
@@ -99,8 +87,8 @@ export function VercelMembersTable({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
           <Input
             placeholder="Filter..."
             value={searchQuery}
@@ -120,7 +108,7 @@ export function VercelMembersTable({
         </Select>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="rounded-lg border">
         <div className="divide-y">
           {filteredMembers.map((member, index) => {
             if (!member) return null;
@@ -132,23 +120,17 @@ export function VercelMembersTable({
             return (
               <div
                 key={member.user_id || `member-${index}`}
-                className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
               >
                 <div className="flex items-center gap-4">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium">
-                      {getInitials(
-                        member.first_name,
-                        member.last_name,
-                        member.email,
-                      )}
+                    <AvatarFallback className="bg-gray-100 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100">
+                      {getInitials(member.first_name, member.last_name, member.email)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="font-medium">{displayName}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {member.email}
-                    </div>
+                    <div className="text-sm text-muted-foreground">{member.email}</div>
                   </div>
                 </div>
 

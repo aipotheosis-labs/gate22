@@ -75,10 +75,8 @@ export function PendingInvitationsTable({
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mb-3" />
-          <p className="text-sm text-muted-foreground">
-            Loading pending invitations...
-          </p>
+          <Loader2 className="mb-3 h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading pending invitations...</p>
         </CardContent>
       </Card>
     );
@@ -88,10 +86,8 @@ export function PendingInvitationsTable({
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <Users className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-sm text-muted-foreground">
-            No pending invitations
-          </p>
+          <Users className="mb-4 h-12 w-12 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No pending invitations</p>
         </CardContent>
       </Card>
     );
@@ -112,8 +108,7 @@ export function PendingInvitationsTable({
         </TableHeader>
         <TableBody>
           {invitations?.map((invitation) => {
-            const isRowCancelling =
-              isCancelling && activeCancelId === invitation.invitation_id;
+            const isRowCancelling = isCancelling && activeCancelId === invitation.invitation_id;
 
             return (
               <TableRow key={invitation.invitation_id}>
@@ -130,11 +125,7 @@ export function PendingInvitationsTable({
                     disabled={isCancelling}
                     className="text-red-600 hover:text-red-700 dark:text-red-400"
                   >
-                    {isRowCancelling ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Cancel"
-                    )}
+                    {isRowCancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancel"}
                   </Button>
                 </TableCell>
               </TableRow>

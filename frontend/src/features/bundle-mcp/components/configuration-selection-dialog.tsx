@@ -19,11 +19,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronsUpDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -62,12 +58,9 @@ export function ConfigurationSelectionDialog({
   );
 
   // Check if selected configuration has available accounts
-  const selectedConfig = availableConfigurations.find(
-    (c) => c.id === selectedConfigId,
-  );
+  const selectedConfig = availableConfigurations.find((c) => c.id === selectedConfigId);
   const isSharedAccount =
-    selectedConfig?.connected_account_ownership ===
-    ConnectedAccountOwnership.SHARED;
+    selectedConfig?.connected_account_ownership === ConnectedAccountOwnership.SHARED;
   const configAccounts = selectedConfigId
     ? connectedAccounts.filter(
         (account) => account.mcp_server_configuration_id === selectedConfigId,
@@ -82,8 +75,7 @@ export function ConfigurationSelectionDialog({
     : false;
 
   const hasAvailableAccounts =
-    (isSharedAccount && hasValidShared) ||
-    (!isSharedAccount && configAccounts.length > 0);
+    (isSharedAccount && hasValidShared) || (!isSharedAccount && configAccounts.length > 0);
   const canAddConfiguration = !!selectedConfigId && !!hasAvailableAccounts;
 
   const handleConfirm = () => {
@@ -104,16 +96,14 @@ export function ConfigurationSelectionDialog({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add MCP Configuration</DialogTitle>
-            <DialogDescription>
-              Select a configuration to add to your bundle.
-            </DialogDescription>
+            <DialogDescription>Select a configuration to add to your bundle.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Configuration</Label>
               {availableToSelect.length === 0 ? (
-                <div className="px-2 py-4 text-sm text-muted-foreground text-center border rounded-md">
+                <div className="rounded-md border px-2 py-4 text-center text-sm text-muted-foreground">
                   No configurations available to add
                 </div>
               ) : (
@@ -128,9 +118,7 @@ export function ConfigurationSelectionDialog({
                       {selectedConfigId ? (
                         <div className="flex items-center gap-2">
                           {(() => {
-                            const config = availableToSelect.find(
-                              (c) => c.id === selectedConfigId,
-                            );
+                            const config = availableToSelect.find((c) => c.id === selectedConfigId);
                             return (
                               <>
                                 {config?.mcp_server?.logo && (
@@ -139,7 +127,7 @@ export function ConfigurationSelectionDialog({
                                       src={config.mcp_server.logo}
                                       alt=""
                                       fill
-                                      className="object-contain rounded-sm"
+                                      className="rounded-sm object-contain"
                                     />
                                   </div>
                                 )}
@@ -165,9 +153,7 @@ export function ConfigurationSelectionDialog({
                               config.connected_account_ownership ===
                               ConnectedAccountOwnership.SHARED;
                             const accountsForConfig = connectedAccounts.filter(
-                              (account) =>
-                                account.mcp_server_configuration_id ===
-                                config.id,
+                              (account) => account.mcp_server_configuration_id === config.id,
                             );
 
                             // For shared accounts, check if a valid shared account exists
@@ -187,15 +173,13 @@ export function ConfigurationSelectionDialog({
                                 value={config.name}
                                 onSelect={() => {
                                   setSelectedConfigId(
-                                    config.id === selectedConfigId
-                                      ? ""
-                                      : config.id,
+                                    config.id === selectedConfigId ? "" : config.id,
                                   );
                                   setOpen(false);
                                 }}
                                 disabled={!hasAccounts}
                               >
-                                <div className="flex items-center justify-between w-full">
+                                <div className="flex w-full items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     {config.mcp_server?.logo && (
                                       <div className="relative h-4 w-4 shrink-0">
@@ -203,17 +187,12 @@ export function ConfigurationSelectionDialog({
                                           src={config.mcp_server.logo}
                                           alt=""
                                           fill
-                                          className="object-contain rounded-sm"
+                                          className="rounded-sm object-contain"
                                         />
                                       </div>
                                     )}
                                     <div className="flex flex-col">
-                                      <span
-                                        className={cn(
-                                          !hasAccounts &&
-                                            "text-muted-foreground",
-                                        )}
-                                      >
+                                      <span className={cn(!hasAccounts && "text-muted-foreground")}>
                                         {config.name}
                                       </span>
                                       {!hasAccounts && (
@@ -236,9 +215,7 @@ export function ConfigurationSelectionDialog({
                                   <Check
                                     className={cn(
                                       "h-4 w-4",
-                                      selectedConfigId === config.id
-                                        ? "opacity-100"
-                                        : "opacity-0",
+                                      selectedConfigId === config.id ? "opacity-100" : "opacity-0",
                                     )}
                                   />
                                 </div>
@@ -260,15 +237,14 @@ export function ConfigurationSelectionDialog({
                 <AlertDescription>
                   {isSharedAccount ? (
                     <>
-                      This configuration requires a shared connected account,
-                      but none is available or valid for your user. Please
-                      contact your administrator to set up the shared account.
+                      This configuration requires a shared connected account, but none is available
+                      or valid for your user. Please contact your administrator to set up the shared
+                      account.
                     </>
                   ) : (
                     <>
-                      This configuration requires an individual connected
-                      account, but none are available. Please create a connected
-                      account for this configuration first.
+                      This configuration requires an individual connected account, but none are
+                      available. Please create a connected account for this configuration first.
                     </>
                   )}
                 </AlertDescription>

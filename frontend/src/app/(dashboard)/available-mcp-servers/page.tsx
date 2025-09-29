@@ -4,13 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Loader2, Plus, Check } from "lucide-react";
 import {
   Select,
@@ -33,9 +27,7 @@ export default function AvailableMCPServersPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(
-    new Set(),
-  );
+  const [selectedConfigs, setSelectedConfigs] = useState<Set<string>>(new Set());
   const [isCreatingBundle, setIsCreatingBundle] = useState(false);
   const [isBundleDialogOpen, setIsBundleDialogOpen] = useState(false);
 
@@ -79,9 +71,7 @@ export default function AvailableMCPServersPage() {
 
   // Get unique categories from MCP servers
   const categories = useMemo(() => {
-    const allCategories = configurations.flatMap(
-      (config) => config.mcp_server?.categories || [],
-    );
+    const allCategories = configurations.flatMap((config) => config.mcp_server?.categories || []);
     return ["all", ...Array.from(new Set(allCategories))].sort();
   }, [configurations]);
 
@@ -92,16 +82,11 @@ export default function AvailableMCPServersPage() {
         searchQuery.toLowerCase() === "" ||
         config.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         config.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        config.mcp_server?.name
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        config.mcp_server?.description
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+        config.mcp_server?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        config.mcp_server?.description.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
-        selectedCategory === "all" ||
-        config.mcp_server?.categories?.includes(selectedCategory);
+        selectedCategory === "all" || config.mcp_server?.categories?.includes(selectedCategory);
 
       return matchesSearch && matchesCategory;
     });
@@ -136,13 +121,12 @@ export default function AvailableMCPServersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="px-4 py-3 border-b">
+      <div className="border-b px-4 py-3">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Available MCP Servers</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Browse available MCP server configurations and create bundles for
-              your AI agents
+            <p className="mt-1 text-sm text-muted-foreground">
+              Browse available MCP server configurations and create bundles for your AI agents
             </p>
           </div>
           {selectedConfigs.size > 0 && (
@@ -151,18 +135,18 @@ export default function AvailableMCPServersPage() {
               disabled={isCreatingBundle}
               onClick={() => setIsBundleDialogOpen(true)}
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Create Bundle ({selectedConfigs.size} selected)
             </Button>
           )}
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative max-w-md flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder="Search available MCP servers..."
               value={searchQuery}
@@ -186,19 +170,15 @@ export default function AvailableMCPServersPage() {
 
         {/* Selection info */}
         {selectedConfigs.size > 0 && (
-          <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-2 text-sm">
-            <span className="font-medium">
-              {selectedConfigs.size} configuration(s) selected.
-            </span>{" "}
-            Click the &quot;Create Bundle&quot; button above to bundle them
-            together.
+          <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm">
+            <span className="font-medium">{selectedConfigs.size} configuration(s) selected.</span>{" "}
+            Click the &quot;Create Bundle&quot; button above to bundle them together.
           </div>
         )}
 
         {/* Results count */}
         <div className="text-sm text-muted-foreground">
-          Showing {filteredConfigurations.length} available MCP server
-          configurations
+          Showing {filteredConfigurations.length} available MCP server configurations
         </div>
 
         {/* Loading state */}
@@ -210,7 +190,7 @@ export default function AvailableMCPServersPage() {
 
         {/* Error state */}
         {error && (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <p className="text-red-500">
               Failed to load MCP server configurations. Please try again.
             </p>
@@ -219,36 +199,35 @@ export default function AvailableMCPServersPage() {
 
         {/* Configuration Cards Grid */}
         {!isLoading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredConfigurations.map((config) => {
               const isSelected = selectedConfigs.has(config.id);
               const configAccounts = connectedAccounts.filter(
                 (account) => account.mcp_server_configuration_id === config.id,
               );
               const requiresAccount = !!config.connected_account_ownership;
-              const hasNoAccounts =
-                requiresAccount && configAccounts.length === 0;
+              const hasNoAccounts = requiresAccount && configAccounts.length === 0;
 
               return (
                 <Card
                   key={config.id}
                   className={cn(
-                    "relative group hover:shadow-md transition-all cursor-pointer min-h-[240px]",
-                    isSelected && "ring-1 ring-primary bg-primary/5",
+                    "group relative min-h-[240px] cursor-pointer transition-all hover:shadow-md",
+                    isSelected && "bg-primary/5 ring-1 ring-primary",
                   )}
                   onClick={() => router.push(`/mcp-configuration/${config.id}`)}
                 >
-                  <div className="flex flex-col h-full">
+                  <div className="flex h-full flex-col">
                     {/* Bundle selector - absolute positioned */}
                     <div className="absolute top-6 right-6 z-10">
                       <button
                         className={cn(
-                          "flex items-center gap-2 px-3 py-1.5 rounded-md border transition-all h-[34px] shrink-0",
+                          "flex h-[34px] shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 transition-all",
                           hasNoAccounts
-                            ? "opacity-40 cursor-not-allowed bg-button-disabled border-button-disabled-border text-button-disabled-foreground"
+                            ? "cursor-not-allowed border-button-disabled-border bg-button-disabled text-button-disabled-foreground opacity-40"
                             : isSelected
-                              ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-sm"
-                              : "bg-button-outline text-button-outline-foreground border-button-outline-border hover:bg-button-outline-hover hover:shadow-sm",
+                              ? "border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                              : "border-button-outline-border bg-button-outline text-button-outline-foreground hover:bg-button-outline-hover hover:shadow-sm",
                         )}
                         disabled={hasNoAccounts}
                         onClick={(e) => {
@@ -257,20 +236,16 @@ export default function AvailableMCPServersPage() {
                             handleCardToggle(config.id);
                           }
                         }}
-                        title={
-                          hasNoAccounts
-                            ? "Setup connected account first"
-                            : "Add to bundle"
-                        }
+                        title={hasNoAccounts ? "Setup connected account first" : "Add to bundle"}
                       >
                         <div
                           className={cn(
-                            "h-5 w-5 rounded border flex items-center justify-center transition-all",
+                            "flex h-5 w-5 items-center justify-center rounded border transition-all",
                             hasNoAccounts
-                              ? "bg-button-disabled border-button-disabled-border"
+                              ? "border-button-disabled-border bg-button-disabled"
                               : isSelected
-                                ? "bg-primary-foreground border-primary-foreground"
-                                : "bg-button-outline border-button-outline-border",
+                                ? "border-primary-foreground bg-primary-foreground"
+                                : "border-button-outline-border bg-button-outline",
                           )}
                         >
                           {isSelected && !hasNoAccounts && (
@@ -280,9 +255,7 @@ export default function AvailableMCPServersPage() {
                         <span
                           className={cn(
                             "text-sm font-semibold",
-                            !hasNoAccounts &&
-                              !isSelected &&
-                              "group-hover:text-primary",
+                            !hasNoAccounts && !isSelected && "group-hover:text-primary",
                           )}
                         >
                           Bundle
@@ -292,9 +265,9 @@ export default function AvailableMCPServersPage() {
 
                     {/* Header content */}
                     <CardHeader className="pb-3">
-                      <div className="flex items-start gap-3 mb-2">
+                      <div className="mb-2 flex items-start gap-3">
                         {config.mcp_server?.logo && (
-                          <div className="size-10 shrink-0 flex items-center justify-center">
+                          <div className="flex size-10 shrink-0 items-center justify-center">
                             <Image
                               src={config.mcp_server.logo}
                               alt={`${config.mcp_server.name} logo`}
@@ -305,11 +278,11 @@ export default function AvailableMCPServersPage() {
                             />
                           </div>
                         )}
-                        <div className="flex-1 min-w-0 pr-12">
-                          <CardTitle className="text-base font-semibold truncate">
+                        <div className="min-w-0 flex-1 pr-12">
+                          <CardTitle className="truncate text-base font-semibold">
                             {config.name}
                           </CardTitle>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <p className="mt-0.5 text-xs text-muted-foreground">
                             {config.mcp_server?.name}
                           </p>
                         </div>
@@ -320,17 +293,14 @@ export default function AvailableMCPServersPage() {
                         <div className="mb-2">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">
-                              {getOwnershipLabel(
-                                config.connected_account_ownership,
-                              )}
+                              {getOwnershipLabel(config.connected_account_ownership)}
                             </Badge>
                             {(() => {
                               if (configAccounts.length > 0) {
                                 return (
                                   <span className="text-xs text-green-600">
                                     {configAccounts.length} account
-                                    {configAccounts.length > 1 ? "s" : ""}{" "}
-                                    available
+                                    {configAccounts.length > 1 ? "s" : ""} available
                                   </span>
                                 );
                               } else {
@@ -345,7 +315,7 @@ export default function AvailableMCPServersPage() {
                         </div>
                       )}
 
-                      <CardDescription className="text-sm line-clamp-2 text-muted-foreground">
+                      <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
                         {config.description || config.mcp_server?.description}
                       </CardDescription>
                     </CardHeader>
@@ -354,18 +324,14 @@ export default function AvailableMCPServersPage() {
                     <div className="flex-1" />
 
                     {/* Bottom content - fixed height for alignment */}
-                    <CardContent className="pt-0 px-6 pb-0">
-                      <div className="flex items-end justify-between gap-2 min-h-[28px]">
+                    <CardContent className="px-6 pt-0 pb-0">
+                      <div className="flex min-h-[28px] items-end justify-between gap-2">
                         {/* Categories - fixed height container */}
-                        <div className="flex flex-wrap gap-1 flex-1 min-w-0 items-end">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-end gap-1">
                           {config.mcp_server?.categories &&
                           config.mcp_server.categories.length > 0 ? (
                             config.mcp_server.categories.map((category) => (
-                              <Badge
-                                key={category}
-                                variant="secondary"
-                                className="text-xs"
-                              >
+                              <Badge key={category} variant="secondary" className="text-xs">
                                 {category}
                               </Badge>
                             ))
@@ -384,10 +350,10 @@ export default function AvailableMCPServersPage() {
 
         {/* Empty state */}
         {!isLoading && !error && filteredConfigurations.length === 0 && (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <p className="text-muted-foreground">
-              No MCP server configurations available. Please contact your
-              administrator to assign MCP servers to your team.
+              No MCP server configurations available. Please contact your administrator to assign
+              MCP servers to your team.
             </p>
           </div>
         )}

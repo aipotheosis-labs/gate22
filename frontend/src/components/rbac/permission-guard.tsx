@@ -55,16 +55,10 @@ export function withPermissionGuard<P extends object>(
   mode: "all" | "any" = "all",
   fallback?: React.ReactNode,
 ) {
-  return function WithPermissionGuardWrapper(
-    Component: React.ComponentType<P>,
-  ) {
+  return function WithPermissionGuardWrapper(Component: React.ComponentType<P>) {
     return function WithPermissionGuardComponent(props: P) {
       return (
-        <PermissionGuard
-          permission={permission}
-          mode={mode}
-          fallback={fallback}
-        >
+        <PermissionGuard permission={permission} mode={mode} fallback={fallback}>
           <Component {...props} />
         </PermissionGuard>
       );

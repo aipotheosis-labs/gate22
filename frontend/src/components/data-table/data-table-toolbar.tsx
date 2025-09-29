@@ -37,10 +37,7 @@ export function DataTableToolbar<TData>({
     <div
       role="toolbar"
       aria-orientation="horizontal"
-      className={cn(
-        "flex w-full items-start justify-between gap-2 p-1",
-        className,
-      )}
+      className={cn("flex w-full items-start justify-between gap-2 p-1", className)}
       {...props}
     >
       <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -71,9 +68,7 @@ interface DataTableToolbarFilterProps<TData> {
   column: Column<TData>;
 }
 
-function DataTableToolbarFilter<TData>({
-  column,
-}: DataTableToolbarFilterProps<TData>) {
+function DataTableToolbarFilter<TData>({ column }: DataTableToolbarFilterProps<TData>) {
   {
     const columnMeta = column.columnDef.meta;
 
@@ -103,7 +98,7 @@ function DataTableToolbarFilter<TData>({
                 className={cn("h-8 w-[120px]", columnMeta.unit && "pr-8")}
               />
               {columnMeta.unit && (
-                <span className="absolute top-0 right-0 bottom-0 flex items-center rounded-r-md bg-accent px-2 text-muted-foreground text-sm">
+                <span className="absolute top-0 right-0 bottom-0 flex items-center rounded-r-md bg-accent px-2 text-sm text-muted-foreground">
                   {columnMeta.unit}
                 </span>
               )}
@@ -111,12 +106,7 @@ function DataTableToolbarFilter<TData>({
           );
 
         case "range":
-          return (
-            <DataTableSliderFilter
-              column={column}
-              title={columnMeta.label ?? column.id}
-            />
-          );
+          return <DataTableSliderFilter column={column} title={columnMeta.label ?? column.id} />;
 
         case "date":
         case "dateRange":

@@ -31,9 +31,7 @@ interface CreateOrganizationFormProps {
   onCreateOrganization: (name: string) => Promise<void>;
 }
 
-export function CreateOrganizationForm({
-  onCreateOrganization,
-}: CreateOrganizationFormProps) {
+export function CreateOrganizationForm({ onCreateOrganization }: CreateOrganizationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,9 +49,7 @@ export function CreateOrganizationForm({
     try {
       await onCreateOrganization(values.name);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create organization",
-      );
+      setError(err instanceof Error ? err.message : "Failed to create organization");
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +68,7 @@ export function CreateOrganizationForm({
                   <FormLabel>Organization Name</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Building2 className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         placeholder="Acme Corporation"
                         className="pl-10"
@@ -99,7 +95,7 @@ export function CreateOrganizationForm({
 
           <Button
             type="submit"
-            className="w-full h-11 transition-all duration-200"
+            className="h-11 w-full transition-all duration-200"
             disabled={isLoading}
           >
             {isLoading ? (

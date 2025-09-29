@@ -1,10 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { useRouter } from "next/navigation";
-import {
-  listOrganizationUsers,
-  removeUser,
-} from "@/features/settings/api/organization";
+import { listOrganizationUsers, removeUser } from "@/features/settings/api/organization";
 import { QUERY_KEYS } from "@/features/settings/constants";
 import { toast } from "sonner";
 import { OrganizationUser } from "@/features/settings/types/organization.types";
@@ -32,8 +29,7 @@ export function useOrganizationMembers() {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: (userId: string) =>
-      removeUser(accessToken, activeOrg.orgId, userId),
+    mutationFn: (userId: string) => removeUser(accessToken, activeOrg.orgId, userId),
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.MEMBERS(activeOrg?.orgId || ""),

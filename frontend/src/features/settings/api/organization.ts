@@ -12,14 +12,11 @@ export async function listOrganizationUsers(
   orgId: string,
 ): Promise<OrganizationUser[]> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/members`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/organizations/${orgId}/members`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
     },
-  );
+  });
 
   if (!response.ok) {
     await throwApiError(response, "Failed to fetch organization users");
@@ -145,17 +142,14 @@ export async function createOrganization(
   description?: string,
 ): Promise<{ organization_id: string; name: string; description?: string }> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/organizations`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, description }),
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/organizations`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify({ name, description }),
+  });
 
   if (!response.ok) {
     await throwApiError(response, "Failed to create organization");

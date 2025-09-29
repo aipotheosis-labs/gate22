@@ -1,9 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  UseQueryOptions,
-  UseMutationOptions,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from "@tanstack/react-query";
 import { tokenManager } from "./token-manager";
 import { throwApiError } from "./api-error-handler";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
@@ -92,11 +87,7 @@ export function fetcherWithAuth<T = unknown>(
     // Use provided token or get from token manager (which handles refresh automatically)
     // Pass organization context for role-aware token generation
     const validToken =
-      token ||
-      (await tokenManager.getAccessToken(
-        organizationId,
-        userRole as OrganizationRole,
-      ));
+      token || (await tokenManager.getAccessToken(organizationId, userRole as OrganizationRole));
 
     if (!validToken) {
       throw new Error("No valid authentication token");
@@ -193,11 +184,7 @@ export const createAuthenticatedRequest = (
   userRole?: string,
 ) => ({
   get: <T = unknown>(endpoint: string, params?: Record<string, string>) =>
-    fetcherWithAuth<T>(
-      token,
-      organizationId,
-      userRole,
-    )(endpoint, { method: "GET", params }),
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, { method: "GET", params }),
 
   post: <T = unknown>(endpoint: string, data?: unknown) =>
     fetcherWithAuth<T>(
@@ -230,9 +217,5 @@ export const createAuthenticatedRequest = (
     }),
 
   delete: <T = unknown>(endpoint: string) =>
-    fetcherWithAuth<T>(
-      token,
-      organizationId,
-      userRole,
-    )(endpoint, { method: "DELETE" }),
+    fetcherWithAuth<T>(token, organizationId, userRole)(endpoint, { method: "DELETE" }),
 });

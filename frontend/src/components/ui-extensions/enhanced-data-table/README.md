@@ -108,11 +108,7 @@ columnHelper.accessor("name", {
 Provide the `searchBarProps` parameter and ensure relevant columns have `enableGlobalFilter: true`:
 
 ```tsx
-<EnhancedDataTable
-  columns={columns}
-  data={data}
-  searchBarProps={{ placeholder: "Search..." }}
-/>
+<EnhancedDataTable columns={columns} data={data} searchBarProps={{ placeholder: "Search..." }} />
 ```
 
 ### Column Filtering Functionality
@@ -131,7 +127,7 @@ columnHelper.accessor("tags", {
   cell: (info) => (
     <div className="flex flex-wrap gap-2">
       {info.getValue().map((tag) => (
-        <span key={tag} className="px-2 py-1 bg-gray-100 rounded-md">
+        <span key={tag} className="rounded-md bg-gray-100 px-2 py-1">
           {tag}
         </span>
       ))}
@@ -272,7 +268,7 @@ columnHelper.accessor("tags", {
       {(info.getValue() || []).map((tag) => (
         <span
           key={tag}
-          className="rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 border border-gray-200"
+          className="rounded-md border border-gray-200 bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600"
         >
           {tag}
         </span>
@@ -296,7 +292,7 @@ columnHelper.accessor(
     cell: (info) => {
       const item = info.getValue();
       return (
-        <div className="space-x-2 flex">
+        <div className="flex space-x-2">
           <Link href={`/items/${item.id}`}>
             <Button variant="outline" size="sm">
               Open

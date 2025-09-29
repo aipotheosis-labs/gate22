@@ -17,23 +17,19 @@ interface TeamsTableToolbarProps<TData> {
   table: Table<TData>;
 }
 
-export function TeamsTableToolbar<TData>({
-  table,
-}: TeamsTableToolbarProps<TData>) {
+export function TeamsTableToolbar<TData>({ table }: TeamsTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search teams..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
-            className="pl-10 h-9"
+            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+            className="h-9 pl-10"
           />
         </div>
 
@@ -60,10 +56,7 @@ export function TeamsTableToolbar<TData>({
           <DropdownMenuSeparator />
           {table
             .getAllColumns()
-            .filter(
-              (column) =>
-                typeof column.accessorFn !== "undefined" && column.getCanHide(),
-            )
+            .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
             .map((column) => {
               return (
                 <DropdownMenuCheckboxItem

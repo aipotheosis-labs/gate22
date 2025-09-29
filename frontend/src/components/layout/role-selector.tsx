@@ -5,17 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState } from "react";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { OrganizationRole } from "@/features/settings/types/organization.types";
@@ -46,8 +37,7 @@ export const RoleSelector = () => {
     },
   ];
 
-  const currentRole =
-    activeRole === OrganizationRole.Member ? "member" : "admin";
+  const currentRole = activeRole === OrganizationRole.Member ? "member" : "admin";
   const currentRoleData = roles.find((role) => role.value === currentRole);
 
   const handleRoleChange = async (roleValue: string) => {
@@ -82,17 +72,17 @@ export const RoleSelector = () => {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between h-9 px-3 text-sm font-medium min-w-[140px]"
+          className="h-9 min-w-[140px] justify-between px-3 text-sm font-medium"
         >
           <div className="flex items-center gap-2 truncate">
             {currentRoleData && (
               <>
-                <currentRoleData.icon className="h-3 w-3 text-muted-foreground shrink-0" />
+                <currentRoleData.icon className="h-3 w-3 shrink-0 text-muted-foreground" />
                 <span className="truncate">{currentRoleData.label}</span>
               </>
             )}
           </div>
-          <ChevronsUpDown className="h-3 w-3 opacity-50 shrink-0" />
+          <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-48 p-0" align="end">
@@ -104,17 +94,12 @@ export const RoleSelector = () => {
                   key={role.value}
                   value={role.value}
                   onSelect={handleRoleChange}
-                  className="flex justify-between items-center relative"
+                  className="relative flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-2 w-full">
+                  <div className="flex w-full items-center gap-2">
                     <role.icon className="h-4 w-4 text-muted-foreground" />
                     <div className="grow truncate">{role.label}</div>
-                    <Check
-                      className={cn(
-                        "h-4 w-4",
-                        role.active ? "opacity-100" : "opacity-0",
-                      )}
-                    />
+                    <Check className={cn("h-4 w-4", role.active ? "opacity-100" : "opacity-0")} />
                   </div>
                 </CommandItem>
               ))}

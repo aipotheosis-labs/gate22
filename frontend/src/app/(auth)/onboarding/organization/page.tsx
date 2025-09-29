@@ -56,21 +56,17 @@ export default function CreateOrganizationPage() {
         throw new Error("No authentication token available");
       }
 
-      const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const response = await fetch(
-        `${baseUrl}${CONTROL_PLANE_PATH}/organizations/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name,
-          }),
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/organizations/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          name,
+        }),
+      });
 
       if (!response.ok) {
         let errorMessage = response.statusText;
@@ -91,9 +87,7 @@ export default function CreateOrganizationPage() {
 
       // Find the newly created organization in the user's organizations
       const newOrg = updatedProfile.organizations?.find(
-        (org) =>
-          org.organization_id === createdOrg.id ||
-          org.organization_name === name,
+        (org) => org.organization_id === createdOrg.id || org.organization_name === name,
       );
 
       if (newOrg) {
@@ -111,9 +105,7 @@ export default function CreateOrganizationPage() {
         }
 
         // Store the organization info in localStorage for future use
-        const { organizationManager } = await import(
-          "@/lib/organization-manager"
-        );
+        const { organizationManager } = await import("@/lib/organization-manager");
         organizationManager.setActiveOrganization(
           newOrg.organization_id,
           newOrg.organization_name,
@@ -133,7 +125,7 @@ export default function CreateOrganizationPage() {
   };
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       {/* Grid Background */}
       <div
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -143,7 +135,7 @@ export default function CreateOrganizationPage() {
       {/* Main Content */}
       <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="border border-primary/50 bg-background/95 backdrop-blur-sm rounded-lg p-8">
+          <div className="rounded-lg border border-primary/50 bg-background/95 p-8 backdrop-blur-sm">
             <div className="mb-8 text-center">
               <h1 className="text-2xl font-bold tracking-tight">
                 Welcome{userName ? `, ${userName}` : ""}!
@@ -153,9 +145,7 @@ export default function CreateOrganizationPage() {
               </p>
             </div>
 
-            <CreateOrganizationForm
-              onCreateOrganization={handleCreateOrganization}
-            />
+            <CreateOrganizationForm onCreateOrganization={handleCreateOrganization} />
           </div>
         </div>
       </div>

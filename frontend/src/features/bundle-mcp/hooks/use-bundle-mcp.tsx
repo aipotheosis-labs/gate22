@@ -80,18 +80,15 @@ export function useCreateMCPServerBundle() {
       }
 
       try {
-        const response = await fetch(
-          `${getApiBaseUrl()}${CONTROL_PLANE_PATH}/mcp-server-bundles`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify(data),
-            credentials: "include",
+        const response = await fetch(`${getApiBaseUrl()}${CONTROL_PLANE_PATH}/mcp-server-bundles`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
-        );
+          body: JSON.stringify(data),
+          credentials: "include",
+        });
 
         if (!response.ok) {
           await throwApiError(response, "Failed to create MCP server bundle");
@@ -149,10 +146,7 @@ export function useDeleteMCPServerBundle() {
         }
 
         // Handle empty response (204 No Content) or other successful responses
-        if (
-          response.status === 204 ||
-          response.headers.get("content-length") === "0"
-        ) {
+        if (response.status === 204 || response.headers.get("content-length") === "0") {
           return null;
         }
 

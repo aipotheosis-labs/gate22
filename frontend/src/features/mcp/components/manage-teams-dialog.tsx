@@ -54,9 +54,7 @@ export function ManageTeamsDialog({
   }, [open, configuration.allowed_teams]);
 
   // Create auth context key for cache invalidation
-  const authContextKey = activeOrg
-    ? `${activeOrg.orgId}:${activeRole}`
-    : undefined;
+  const authContextKey = activeOrg ? `${activeOrg.orgId}:${activeRole}` : undefined;
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -68,13 +66,7 @@ export function ManageTeamsDialog({
       // Invalidate all relevant queries to refresh the data
       // Using the correct query keys that match the hooks
       queryClient.invalidateQueries({
-        queryKey: [
-          "mcp",
-          "configurations",
-          "detail",
-          configuration.id,
-          authContextKey,
-        ],
+        queryKey: ["mcp", "configurations", "detail", configuration.id, authContextKey],
       });
       queryClient.invalidateQueries({
         queryKey: ["mcp", "configurations", "list"],
@@ -123,18 +115,15 @@ export function ManageTeamsDialog({
           <div className="space-y-4">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                <span className="text-sm text-muted-foreground">
-                  Loading teams...
-                </span>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <span className="text-sm text-muted-foreground">Loading teams...</span>
               </div>
             ) : !allTeams || allTeams.length === 0 ? (
               <div className="space-y-4">
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    No teams found. Create a team to manage access to this MCP
-                    configuration.
+                    No teams found. Create a team to manage access to this MCP configuration.
                   </AlertDescription>
                 </Alert>
                 <Button
@@ -142,7 +131,7 @@ export function ManageTeamsDialog({
                   className="w-full"
                   variant="outline"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Create New Team
                 </Button>
               </div>
@@ -183,21 +172,14 @@ export function ManageTeamsDialog({
 
           <DialogFooter className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              {selectedTeams.length}{" "}
-              {selectedTeams.length === 1 ? "team" : "teams"} selected
+              {selectedTeams.length} {selectedTeams.length === 1 ? "team" : "teams"} selected
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={updateMutation.isPending}
-              >
+              <Button variant="outline" onClick={handleCancel} disabled={updateMutation.isPending}>
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={updateMutation.isPending}>
-                {updateMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
             </div>

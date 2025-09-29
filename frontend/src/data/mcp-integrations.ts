@@ -168,8 +168,7 @@ export const mcpIntegrations: MCPIntegration[] = [
   {
     name: "Asana",
     iconUrl: "https://cdn.simpleicons.org/asana",
-    description:
-      "Asana remote MCP (beta) over SSE with OAuth; brings the Work Graph to AI tools.",
+    description: "Asana remote MCP (beta) over SSE with OAuth; brings the Work Graph to AI tools.",
     tools: {
       examples: ["projects", "tasks", "users", "goals", "teams", "typeahead"],
       count: "30",
@@ -185,13 +184,7 @@ export const mcpIntegrations: MCPIntegration[] = [
     description:
       "Open-source MCP for Neon Postgres; managed remote at mcp.neon.tech supports OAuth & API keys; local mode too.",
     tools: {
-      examples: [
-        "list_projects",
-        "describe_project",
-        "create_project",
-        "create_branch",
-        "run_sql",
-      ],
+      examples: ["list_projects", "describe_project", "create_project", "create_branch", "run_sql"],
       count: "21",
     },
     docsUrl: "https://neon.com/docs/ai/neon-mcp-server",
@@ -206,12 +199,7 @@ export const mcpIntegrations: MCPIntegration[] = [
     description:
       "Remote MCP Server (beta) with OAuth 2.1; surfaces Jira/Confluence/Compass into AI tools (rate-limited by plan).",
     tools: {
-      examples: [
-        "search pages",
-        "summarize issues",
-        "create issues",
-        "update pages",
-      ],
+      examples: ["search pages", "summarize issues", "create issues", "update pages"],
       count: "not published",
     },
     docsUrl:
@@ -248,15 +236,7 @@ export const mcpIntegrations: MCPIntegration[] = [
     description:
       "Official Wix MCP (remote helper @wix/mcp-remote to https://mcp.wix.com/sse); OAuth flow; broad Wix solutions.",
     tools: {
-      examples: [
-        "eCommerce",
-        "Bookings",
-        "Payments",
-        "CMS",
-        "CRM",
-        "Blog",
-        "Events",
-      ],
+      examples: ["eCommerce", "Bookings", "Payments", "CMS", "CRM", "Blog", "Events"],
       count: "not published",
     },
     docsUrl: "https://www.wix.com/studio/developers/mcp-server",

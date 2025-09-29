@@ -63,11 +63,11 @@ export function UserProfileDropdown() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-9 w-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-600"
+          className="relative h-9 w-9 rounded-full transition-all duration-200 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:outline-none dark:hover:bg-gray-800 dark:focus-visible:ring-gray-600"
         >
           <Avatar className="h-9 w-9">
             <AvatarImage src={getAvatarUrl()} alt={getDisplayName()} />
-            <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold text-sm">
+            <AvatarFallback className="bg-gray-100 text-sm font-semibold text-gray-900 dark:bg-gray-800 dark:text-gray-100">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
@@ -79,17 +79,13 @@ export function UserProfileDropdown() {
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={getAvatarUrl()} alt={getDisplayName()} />
-                <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold">
+                <AvatarFallback className="bg-gray-100 font-semibold text-gray-900 dark:bg-gray-800 dark:text-gray-100">
                   {getInitials()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  {getDisplayName()}
-                </p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user.email}
-                </p>
+                <p className="text-sm leading-none font-medium">{getDisplayName()}</p>
+                <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
               </div>
             </div>
           </div>
@@ -97,16 +93,14 @@ export function UserProfileDropdown() {
         <DropdownMenuSeparator />
 
         {/* Theme Selector */}
-        <div className="px-2 py-2 mr-2">
-          <p className="text-xs font-medium text-muted-foreground mb-2">
-            Theme
-          </p>
+        <div className="mr-2 px-2 py-2">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Theme</p>
           <div className="flex items-center gap-1">
             <Button
               variant={theme === "light" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setTheme("light")}
-              className="flex-1 h-8 px-1"
+              className="h-8 flex-1 px-1"
             >
               <Sun className="h-4 w-4" />
               <span className="text-xs">Light</span>
@@ -115,7 +109,7 @@ export function UserProfileDropdown() {
               variant={theme === "dark" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setTheme("dark")}
-              className="flex-1 h-8 px-2"
+              className="h-8 flex-1 px-2"
             >
               <Moon className="h-4 w-4" />
               <span className="text-xs">Dark</span>
@@ -124,7 +118,7 @@ export function UserProfileDropdown() {
               variant={theme === "system" ? "secondary" : "ghost"}
               size="sm"
               onClick={() => setTheme("system")}
-              className="flex-1 h-8 px-2"
+              className="h-8 flex-1 px-2"
             >
               <Monitor className="h-4 w-4" />
               <span className="text-xs">System</span>
@@ -136,7 +130,7 @@ export function UserProfileDropdown() {
 
         <DropdownMenuItem
           onClick={handleLogout}
-          className="cursor-pointer text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 transition-colors duration-150"
+          className="cursor-pointer text-destructive transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>

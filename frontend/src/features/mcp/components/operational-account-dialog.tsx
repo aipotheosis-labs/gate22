@@ -51,8 +51,7 @@ export function OperationalAccountDialog({
   operationalConfigId,
   onSuccess,
 }: OperationalAccountDialogProps) {
-  const { mutateAsync: createAccount, isPending: isCreating } =
-    useCreateConnectedAccount();
+  const { mutateAsync: createAccount, isPending: isCreating } = useCreateConnectedAccount();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -123,9 +122,7 @@ export function OperationalAccountDialog({
     } catch (error) {
       console.error("Error configuring operational account:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to configure operational account",
+        error instanceof Error ? error.message : "Failed to configure operational account",
       );
     }
   };
@@ -189,20 +186,13 @@ export function OperationalAccountDialog({
               Setting up operational account for <strong>{server.name}</strong>
             </p>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">
-                Operational Account Auth Method:
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {getAuthMethodLabel()}
-              </span>
+              <span className="text-sm font-medium">Operational Account Auth Method:</span>
+              <span className="text-sm text-muted-foreground">{getAuthMethodLabel()}</span>
             </div>
           </div>
 
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-4"
-            >
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               {/* API Key Input (only for API_KEY auth type) */}
               {authType === AuthType.API_KEY && (
                 <FormField
@@ -212,11 +202,7 @@ export function OperationalAccountDialog({
                     <FormItem>
                       <FormLabel>API Key</FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Enter your API key"
-                          {...field}
-                        />
+                        <Input type="password" placeholder="Enter your API key" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -226,20 +212,19 @@ export function OperationalAccountDialog({
 
               {/* OAuth Info */}
               {authType === AuthType.OAUTH && (
-                <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="rounded-lg bg-muted/50 p-4">
                   <p className="text-sm text-muted-foreground">
-                    You will be redirected to the authentication provider to
-                    authorize access.
+                    You will be redirected to the authentication provider to authorize access.
                   </p>
                 </div>
               )}
 
               {/* No Auth Info */}
               {authType === AuthType.NO_AUTH && (
-                <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="rounded-lg bg-muted/50 p-4">
                   <p className="text-sm text-muted-foreground">
-                    This server requires no authentication. Click configure to
-                    set up the operational account.
+                    This server requires no authentication. Click configure to set up the
+                    operational account.
                   </p>
                 </div>
               )}

@@ -18,12 +18,7 @@ export function useOAuth2Discovery() {
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
       }
-      return customMCPService.discoverOAuth2(
-        accessToken,
-        activeOrg?.orgId,
-        activeRole,
-        request,
-      );
+      return customMCPService.discoverOAuth2(accessToken, activeOrg?.orgId, activeRole, request);
     },
     onSuccess: () => {
       toast.success("OAuth2 configuration discovered successfully");
@@ -31,9 +26,7 @@ export function useOAuth2Discovery() {
     onError: (error) => {
       console.error("Failed to discover OAuth2 configuration:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to discover OAuth2 configuration",
+        error instanceof Error ? error.message : "Failed to discover OAuth2 configuration",
       );
     },
   });
@@ -60,11 +53,7 @@ export function useOAuth2ClientRegistration() {
     },
     onError: (error) => {
       console.error("Failed to register OAuth2 client:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to register OAuth2 client",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to register OAuth2 client");
     },
   });
 }
@@ -79,12 +68,7 @@ export function useCreateCustomMCPServer() {
       if (!accessToken) {
         throw new Error("Authentication required. Please log in.");
       }
-      return customMCPService.create(
-        accessToken,
-        activeOrg?.orgId,
-        activeRole,
-        request,
-      );
+      return customMCPService.create(accessToken, activeOrg?.orgId, activeRole, request);
     },
     onSuccess: (response) => {
       toast.success("Custom MCP server added successfully");
@@ -100,11 +84,7 @@ export function useCreateCustomMCPServer() {
     },
     onError: (error) => {
       console.error("Failed to create custom MCP server:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create custom MCP server",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to create custom MCP server");
     },
   });
 }

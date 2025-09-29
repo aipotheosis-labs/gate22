@@ -38,14 +38,12 @@ export function getPendingInvitation(): PendingInvitationState | null {
     }
 
     const invitationId =
-      typeof parsed.invitationId === "string" &&
-      parsed.invitationId.trim().length
+      typeof parsed.invitationId === "string" && parsed.invitationId.trim().length
         ? parsed.invitationId
         : null;
 
     const organizationId =
-      typeof parsed.organizationId === "string" &&
-      parsed.organizationId.trim().length
+      typeof parsed.organizationId === "string" && parsed.organizationId.trim().length
         ? parsed.organizationId
         : null;
 

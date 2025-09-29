@@ -1,8 +1,6 @@
 const FALLBACK_ORIGIN = "http://localhost";
 
-export function sanitizeRedirectPath(
-  path: string | null | undefined,
-): string | null {
+export function sanitizeRedirectPath(path: string | null | undefined): string | null {
   if (!path) {
     return null;
   }

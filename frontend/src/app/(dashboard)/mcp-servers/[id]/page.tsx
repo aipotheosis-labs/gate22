@@ -29,11 +29,7 @@ import { OperationalAccountDialog } from "@/features/mcp/components/operational-
 import { SyncResultsDialog } from "@/features/mcp/components/sync-results-dialog";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAuthTypeLabel, getAuthTypeDetailedInfo } from "@/utils/auth-labels";
 import { toast } from "sonner";
 import { useMetaInfo } from "@/components/context/metainfo";
@@ -66,15 +62,13 @@ export default function MCPServerDetailPage() {
   const operationalConfig = operationalConfigs?.data?.find(
     (config) => config.mcp_server_id === serverId,
   );
-  const hasOperationalAccount =
-    operationalConfig?.has_operational_connected_account || false;
+  const hasOperationalAccount = operationalConfig?.has_operational_connected_account || false;
 
   // Check if enough time has passed since last sync
   // Current cooldown is 1 minute
   const canSyncByTime =
     !server?.last_synced_at ||
-    new Date().getTime() - new Date(server.last_synced_at).getTime() >=
-      60 * 1000;
+    new Date().getTime() - new Date(server.last_synced_at).getTime() >= 60 * 1000;
 
   // Update timer every minute when sync is on cooldown
   useEffect(() => {
@@ -102,9 +96,7 @@ export default function MCPServerDetailPage() {
         if (totalChanges === 0) {
           toast.success("Tools are already up to date");
         } else {
-          toast.success(
-            `Tools synced successfully - ${totalChanges} changes made`,
-          );
+          toast.success(`Tools synced successfully - ${totalChanges} changes made`);
         }
       },
       onError: (error) => {
@@ -125,13 +117,11 @@ export default function MCPServerDetailPage() {
   if (error || !server) {
     return (
       <div className="p-6">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold mb-2">Server Not Found</h2>
-          <p className="text-muted-foreground mb-4">
-            The MCP server could not be found.
-          </p>
+        <div className="py-12 text-center">
+          <h2 className="mb-2 text-2xl font-semibold">Server Not Found</h2>
+          <p className="mb-4 text-muted-foreground">The MCP server could not be found.</p>
           <Button variant="outline" onClick={() => router.push("/mcp-servers")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to MCP Servers
           </Button>
         </div>
@@ -140,19 +130,15 @@ export default function MCPServerDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl p-6">
       {/* Back Button */}
-      <Button
-        variant="outline"
-        onClick={() => router.push("/mcp-servers")}
-        className="mb-6"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
+      <Button variant="outline" onClick={() => router.push("/mcp-servers")} className="mb-6">
+        <ArrowLeft className="mr-2 h-4 w-4" />
         Back to MCP Servers
       </Button>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
             <Image
@@ -165,46 +151,45 @@ export default function MCPServerDetailPage() {
           </div>
           <div>
             <h1 className="text-2xl font-semibold">{server.name}</h1>
-            {server.supported_auth_types &&
-              server.supported_auth_types.length > 0 && (
-                <div className="flex gap-1.5 mt-2">
-                  {server.supported_auth_types.map((authType) => (
-                    <div key={authType} className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {getAuthTypeLabel(authType)}
-                      </Badge>
-                      {getAuthTypeDetailedInfo(authType) && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              aria-label={`About ${getAuthTypeLabel(authType)}`}
-                              className="inline-flex p-0 m-0"
-                            >
-                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>{getAuthTypeDetailedInfo(authType)}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+            {server.supported_auth_types && server.supported_auth_types.length > 0 && (
+              <div className="mt-2 flex gap-1.5">
+                {server.supported_auth_types.map((authType) => (
+                  <div key={authType} className="flex items-center gap-1">
+                    <Badge variant="secondary" className="text-xs">
+                      {getAuthTypeLabel(authType)}
+                    </Badge>
+                    {getAuthTypeDetailedInfo(authType) && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={`About ${getAuthTypeLabel(authType)}`}
+                            className="m-0 inline-flex p-0"
+                          >
+                            <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>{getAuthTypeDetailedInfo(authType)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <PermissionGuard permission={PERMISSIONS.MCP_CONFIGURATION_CREATE}>
           <Button onClick={() => setIsConfigModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Configure Server
           </Button>
         </PermissionGuard>
       </div>
 
       {/* Description */}
-      <p className="text-muted-foreground mb-6">{server.description}</p>
+      <p className="mb-6 text-muted-foreground">{server.description}</p>
 
       <Separator className="mb-4" />
 
@@ -212,7 +197,7 @@ export default function MCPServerDetailPage() {
       {server.categories.length > 0 && (
         <>
           <div className="mb-4">
-            <h2 className="text-lg font-semibold mb-3">Categories</h2>
+            <h2 className="mb-3 text-lg font-semibold">Categories</h2>
             <div className="flex flex-wrap gap-2">
               {server.categories.map((category) => (
                 <Badge key={category} variant="secondary" className="text-sm">
@@ -229,7 +214,7 @@ export default function MCPServerDetailPage() {
       {server.organization_id === activeOrg?.orgId && (
         <>
           <div className="mb-4">
-            <div className="flex justify-between mb-3">
+            <div className="mb-3 flex justify-between">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -237,10 +222,9 @@ export default function MCPServerDetailPage() {
                 </div>
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    The operational account is exclusively used by the system
-                    for administrative purposes such as fetching MCP server
-                    metadata and monitoring server status. It will never be used
-                    by any users.
+                    The operational account is exclusively used by the system for administrative
+                    purposes such as fetching MCP server metadata and monitoring server status. It
+                    will never be used by any users.
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -261,15 +245,13 @@ export default function MCPServerDetailPage() {
                   )}
                 </div>
               </div>
-              <PermissionGuard
-                permission={PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OPERATIONAL}
-              >
+              <PermissionGuard permission={PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OPERATIONAL}>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsOperationalDialogOpen(true)}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   {hasOperationalAccount ? "Update Account" : "Setup Account"}
                 </Button>
               </PermissionGuard>
@@ -282,12 +264,10 @@ export default function MCPServerDetailPage() {
 
       {/* Tools */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">
-              Available Tools ({server.tools?.length || 0})
-            </h2>
+            <h2 className="text-lg font-semibold">Available Tools ({server.tools?.length || 0})</h2>
           </div>
           {server.organization_id === activeOrg?.orgId && (
             <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_SYNC}>
@@ -298,18 +278,14 @@ export default function MCPServerDetailPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleSync}
-                      disabled={
-                        syncMutation.isPending ||
-                        !hasOperationalAccount ||
-                        !canSyncByTime
-                      }
+                      disabled={syncMutation.isPending || !hasOperationalAccount || !canSyncByTime}
                     >
                       {syncMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : !canSyncByTime ? (
-                        <Clock className="h-4 w-4 mr-2" />
+                        <Clock className="mr-2 h-4 w-4" />
                       ) : (
-                        <RefreshCw className="h-4 w-4 mr-2" />
+                        <RefreshCw className="mr-2 h-4 w-4" />
                       )}
                       {server.last_synced_at ? "Re-sync now" : "Sync now"}
                     </Button>
@@ -318,13 +294,11 @@ export default function MCPServerDetailPage() {
                 {(!hasOperationalAccount || !canSyncByTime) && (
                   <TooltipContent>
                     {!hasOperationalAccount ? (
-                      <p>
-                        Setup an operational account first to enable syncing
-                      </p>
+                      <p>Setup an operational account first to enable syncing</p>
                     ) : !canSyncByTime ? (
                       <p>
-                        Please wait a while before syncing again. You can
-                        re-sync the tools once every minute.
+                        Please wait a while before syncing again. You can re-sync the tools once
+                        every minute.
                       </p>
                     ) : null}
                   </TooltipContent>
@@ -334,17 +308,12 @@ export default function MCPServerDetailPage() {
           )}
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="mb-4 text-sm text-muted-foreground">
           Last synced:{" "}
-          {server.last_synced_at
-            ? new Date(server.last_synced_at).toLocaleString()
-            : "Never"}
+          {server.last_synced_at ? new Date(server.last_synced_at).toLocaleString() : "Never"}
         </p>
 
-        <ToolsTable
-          tools={server.tools || []}
-          emptyMessage="No tools available for this server"
-        />
+        <ToolsTable tools={server.tools || []} emptyMessage="No tools available for this server" />
       </div>
 
       {/* Configuration Stepper */}

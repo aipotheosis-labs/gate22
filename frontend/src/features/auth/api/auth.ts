@@ -40,28 +40,22 @@ export interface IssueTokenRequest {
 }
 
 // Auth functions
-export async function register(
-  data: EmailRegistrationRequest,
-): Promise<boolean> {
+export async function register(data: EmailRegistrationRequest): Promise<boolean> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/auth/register/email`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", // Include cookies
-      body: JSON.stringify(data),
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/register/email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    credentials: "include", // Include cookies
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     try {
       const errorData = await response.json();
       // Handle different error response formats
-      const errorMessage =
-        errorData.detail || errorData.message || errorData.error;
+      const errorMessage = errorData.detail || errorData.message || errorData.error;
 
       // Provide user-friendly messages for common errors
       if (typeof errorMessage === "string") {
@@ -73,9 +67,7 @@ export async function register(
           normalizedError === "user_already_exists" ||
           normalizedError.includes("email already")
         ) {
-          toast.error(
-            "This email is already registered. Please try logging in instead.",
-          );
+          toast.error("This email is already registered. Please try logging in instead.");
           return false;
         }
         toast.error(errorMessage);
@@ -98,41 +90,31 @@ export interface LoginResult {
   redirectTo?: string | null;
 }
 
-export async function login(
-  email: string,
-  password: string,
-): Promise<LoginResult> {
+export async function login(email: string, password: string): Promise<LoginResult> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/auth/login/email`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", // Include cookies
-      body: JSON.stringify({
-        email,
-        password,
-      } as EmailLoginRequest),
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/login/email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    credentials: "include", // Include cookies
+    body: JSON.stringify({
+      email,
+      password,
+    } as EmailLoginRequest),
+  });
 
   if (!response.ok) {
     try {
       const errorData = await response.json();
       // Handle different error response formats
-      const errorMessage =
-        errorData.detail || errorData.message || errorData.error;
+      const errorMessage = errorData.detail || errorData.message || errorData.error;
 
       // Provide user-friendly messages for common errors
       if (typeof errorMessage === "string") {
         const normalizedError = errorMessage.toLowerCase();
 
-        if (
-          normalizedError.includes("invalid") ||
-          normalizedError.includes("incorrect")
-        ) {
+        if (normalizedError.includes("invalid") || normalizedError.includes("incorrect")) {
           toast.error("Invalid email or password. Please try again.");
           return { success: false };
         }
@@ -145,13 +127,8 @@ export async function login(
           );
           return { success: false };
         }
-        if (
-          normalizedError === "user_not_found" ||
-          normalizedError.includes("not found")
-        ) {
-          toast.error(
-            "No account found with this email. Please sign up first.",
-          );
+        if (normalizedError === "user_not_found" || normalizedError.includes("not found")) {
+          toast.error("No account found with this email. Please sign up first.");
           return { success: false };
         }
         if (
@@ -181,10 +158,7 @@ export async function login(
     const rawRedirect = payload?.redirect_to;
 
     if (typeof rawRedirect === "string" && rawRedirect.trim().length > 0) {
-      const origin =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "http://localhost";
+      const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost";
       const redirectUrl = new URL(rawRedirect, origin);
       const invitationId = redirectUrl.searchParams.get("invitation_id");
       const organizationId = redirectUrl.searchParams.get("organization_id");
@@ -210,9 +184,7 @@ export async function login(
   return { success: true, redirectTo };
 }
 
-export async function issueToken(
-  act_as?: IssueTokenRequest["act_as"],
-): Promise<TokenResponse> {
+export async function issueToken(act_as?: IssueTokenRequest["act_as"]): Promise<TokenResponse> {
   const baseUrl = getApiBaseUrl();
   const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/auth/token`, {
     method: "POST",
@@ -226,8 +198,7 @@ export async function issueToken(
   if (!response.ok) {
     try {
       const errorData = await response.json();
-      const errorMessage =
-        errorData.detail || errorData.message || errorData.error;
+      const errorMessage = errorData.detail || errorData.message || errorData.error;
 
       if (typeof errorMessage === "string") {
         throw new Error(errorMessage);
@@ -254,21 +225,17 @@ export async function logout(): Promise<void> {
 
 export async function getProfile(token: string): Promise<UserInfo> {
   const baseUrl = getApiBaseUrl();
-  const response = await fetch(
-    `${baseUrl}${CONTROL_PLANE_PATH}/users/me/profile`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  const response = await fetch(`${baseUrl}${CONTROL_PLANE_PATH}/users/me/profile`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-  );
+  });
 
   if (!response.ok) {
     try {
       const errorData = await response.json();
-      const errorMessage =
-        errorData.detail || errorData.message || errorData.error;
+      const errorMessage = errorData.detail || errorData.message || errorData.error;
 
       if (typeof errorMessage === "string") {
         throw new Error(errorMessage);

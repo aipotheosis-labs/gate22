@@ -4,11 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  listTeamMembers,
-  removeTeamMember,
-  getTeam,
-} from "@/features/teams/api/team";
+import { listTeamMembers, removeTeamMember, getTeam } from "@/features/teams/api/team";
 import { AddTeamMemberDialog } from "@/features/teams/components/add-team-member-dialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,8 +46,7 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: (userId: string) =>
-      removeTeamMember(accessToken, activeOrg!.orgId, teamId, userId),
+    mutationFn: (userId: string) => removeTeamMember(accessToken, activeOrg!.orgId, teamId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["team-members", activeOrg?.orgId, teamId],
@@ -86,25 +81,22 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
   const renderLoadingState = () => (
     <div className="container max-w-6xl py-8">
       <div className="mb-8">
-        <Skeleton className="h-8 w-32 mb-4" />
-        <Skeleton className="h-10 w-64 mb-2" />
+        <Skeleton className="mb-4 h-8 w-32" />
+        <Skeleton className="mb-2 h-10 w-64" />
         <Skeleton className="h-6 w-96" />
       </div>
       <div className="space-y-4">
         <div>
-          <Skeleton className="h-7 w-48 mb-2" />
+          <Skeleton className="mb-2 h-7 w-48" />
           <Skeleton className="h-5 w-32" />
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between p-4 border rounded-lg"
-            >
+            <div key={i} className="flex items-center justify-between rounded-lg border p-4">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div>
-                  <Skeleton className="h-5 w-32 mb-1" />
+                  <Skeleton className="mb-1 h-5 w-32" />
                   <Skeleton className="h-4 w-40" />
                 </div>
               </div>
@@ -124,13 +116,10 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
   }
 
   const renderMemberCard = (member: TeamMember) => (
-    <div
-      key={member.user_id}
-      className="flex items-center justify-between p-4 border rounded-lg"
-    >
+    <div key={member.user_id} className="flex items-center justify-between rounded-lg border p-4">
       <div className="flex items-center gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarFallback className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium">
+          <AvatarFallback className="bg-gray-100 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100">
             {getInitials(member.name)}
           </AvatarFallback>
         </Avatar>
@@ -156,7 +145,7 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
               onClick={() => handleRemoveMember(member.user_id)}
               disabled={removingMemberId === member.user_id}
             >
-              <UserMinus className="h-4 w-4 mr-2" />
+              <UserMinus className="mr-2 h-4 w-4" />
               Remove from team
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -174,20 +163,18 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
           className="mb-4"
           onClick={() => router.push("/settings/teams")}
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Teams
         </Button>
 
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{team?.name}</h1>
-            {team?.description && (
-              <p className="text-muted-foreground mt-2">{team.description}</p>
-            )}
+            {team?.description && <p className="mt-2 text-muted-foreground">{team.description}</p>}
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowAddMemberDialog(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
+              <UserPlus className="mr-2 h-4 w-4" />
               Add Members
             </Button>
           </div>
@@ -198,20 +185,17 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
         <div>
           <h2 className="text-lg font-semibold">Team Members</h2>
           <p className="text-sm text-muted-foreground">
-            {members?.length || 0}{" "}
-            {members?.length === 1 ? "member" : "members"} in this team
+            {members?.length || 0} {members?.length === 1 ? "member" : "members"} in this team
           </p>
         </div>
 
         {members && members.length > 0 ? (
           <div className="space-y-4">{members.map(renderMemberCard)}</div>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <UserPlus className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <div className="py-12 text-center text-muted-foreground">
+            <UserPlus className="mx-auto mb-3 h-12 w-12 opacity-50" />
             <p className="text-sm">No members in this team yet</p>
-            <p className="text-xs mt-1">
-              Click &ldquo;Add Members&rdquo; to add team members
-            </p>
+            <p className="mt-1 text-xs">Click &ldquo;Add Members&rdquo; to add team members</p>
           </div>
         )}
       </div>

@@ -15,8 +15,7 @@ export function useTeamMembers(teamId: string) {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: (userId: string) =>
-      removeTeamMember(accessToken, activeOrg.orgId, teamId, userId),
+    mutationFn: (userId: string) => removeTeamMember(accessToken, activeOrg.orgId, teamId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.TEAM_MEMBERS(activeOrg?.orgId || "", teamId),

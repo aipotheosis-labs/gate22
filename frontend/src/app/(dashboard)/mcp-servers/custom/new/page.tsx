@@ -16,11 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowLeft, HelpCircle, Loader2, Plus } from "lucide-react";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { toast } from "sonner";
@@ -62,12 +58,10 @@ export default function AddCustomMCPServerPage() {
   const [authorizeUrl, setAuthorizeUrl] = useState("");
   const [tokenUrl, setTokenUrl] = useState("");
   const [dcrResult, setDcrResult] = useState<OAuth2DCRResponse | null>(null);
-  const [oauth2RegistrationMode, setOauth2RegistrationMode] =
-    useState<string>("");
+  const [oauth2RegistrationMode, setOauth2RegistrationMode] = useState<string>("");
 
   // Manual OAuth2 registration fields
-  const [manualEndpointAuthMethod, setManualEndpointAuthMethod] =
-    useState<string>("");
+  const [manualEndpointAuthMethod, setManualEndpointAuthMethod] = useState<string>("");
   const [manualClientId, setManualClientId] = useState("");
   const [manualClientSecret, setManualClientSecret] = useState("");
   const [manualScope, setManualScope] = useState("");
@@ -78,13 +72,10 @@ export default function AddCustomMCPServerPage() {
   const [apiKeyPrefix, setApiKeyPrefix] = useState("");
 
   // Step 3 fields - Operational Account
-  const [operationalAccountAuthType, setOperationalAccountAuthType] =
-    useState<string>("");
+  const [operationalAccountAuthType, setOperationalAccountAuthType] = useState<string>("");
 
   // Step 4 fields - Created server info
-  const [createdServer, setCreatedServer] = useState<MCPServerPublic | null>(
-    null,
-  );
+  const [createdServer, setCreatedServer] = useState<MCPServerPublic | null>(null);
   const [serverCreated, setServerCreated] = useState<boolean>(false);
 
   const { accessToken } = useMetaInfo();
@@ -103,8 +94,7 @@ export default function AddCustomMCPServerPage() {
   const operationalConfig = operationalConfigs?.data?.find(
     (config) => config.mcp_server.id === createdServer?.id,
   );
-  const hasOperationalAccount =
-    operationalConfig?.has_operational_connected_account || false;
+  const hasOperationalAccount = operationalConfig?.has_operational_connected_account || false;
 
   const isAutomaticRegistrationAvailable = useCallback(() => {
     return !!(
@@ -112,16 +102,10 @@ export default function AddCustomMCPServerPage() {
       oauth2Config.token_endpoint_auth_method_supported &&
       oauth2Config.token_endpoint_auth_method_supported.length > 0
     );
-  }, [
-    oauth2Config.registration_url,
-    oauth2Config.token_endpoint_auth_method_supported,
-  ]);
+  }, [oauth2Config.registration_url, oauth2Config.token_endpoint_auth_method_supported]);
 
   // Auth method management functions
-  const handleAuthMethodChange = (
-    method: keyof typeof authMethods,
-    checked: boolean,
-  ) => {
+  const handleAuthMethodChange = (method: keyof typeof authMethods, checked: boolean) => {
     setAuthMethods((prev) => ({
       ...prev,
       [method]: checked,
@@ -172,10 +156,7 @@ export default function AddCustomMCPServerPage() {
           return false;
         }
         // Check if client secret is required and provided
-        if (
-          manualEndpointAuthMethod.includes("client_secret_") &&
-          !manualClientSecret.trim()
-        ) {
+        if (manualEndpointAuthMethod.includes("client_secret_") && !manualClientSecret.trim()) {
           return false;
         }
       }
@@ -341,8 +322,7 @@ export default function AddCustomMCPServerPage() {
       if (oauth2RegistrationMode === "automatic" && dcrResult) {
         oauth2AuthConfig.client_id = dcrResult.client_id;
         oauth2AuthConfig.client_secret = dcrResult.client_secret;
-        oauth2AuthConfig.token_endpoint_auth_method =
-          dcrResult.token_endpoint_auth_method;
+        oauth2AuthConfig.token_endpoint_auth_method = dcrResult.token_endpoint_auth_method;
       } else if (oauth2RegistrationMode === "manual") {
         oauth2AuthConfig.client_id = manualClientId.trim();
         oauth2AuthConfig.client_secret = manualClientSecret.trim() || undefined;
@@ -421,9 +401,7 @@ export default function AddCustomMCPServerPage() {
 
       if (oauth2RegistrationMode === "automatic") {
         if (!dcrResult) {
-          toast.error(
-            "Please complete auto client registration before proceeding",
-          );
+          toast.error("Please complete auto client registration before proceeding");
           return;
         }
       } else if (oauth2RegistrationMode === "manual") {
@@ -436,13 +414,8 @@ export default function AddCustomMCPServerPage() {
           return;
         }
         // Validate client secret is provided when required by auth method
-        if (
-          manualEndpointAuthMethod.includes("client_secret_") &&
-          !manualClientSecret.trim()
-        ) {
-          toast.error(
-            "Please enter a client secret for the selected auth method",
-          );
+        if (manualEndpointAuthMethod.includes("client_secret_") && !manualClientSecret.trim()) {
+          toast.error("Please enter a client secret for the selected auth method");
           return;
         }
       }
@@ -464,22 +437,18 @@ export default function AddCustomMCPServerPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl p-6">
       {/* Back Button */}
-      <Button
-        variant="outline"
-        onClick={() => router.push("/mcp-servers")}
-        className="mb-6"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
+      <Button variant="outline" onClick={() => router.push("/mcp-servers")} className="mb-6">
+        <ArrowLeft className="mr-2 h-4 w-4" />
         Back to MCP Servers
       </Button>
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Add Custom MCP Server</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1 text-muted-foreground">
             {currentStep === 1
               ? needsStep3()
                 ? `Step ${currentStep} of 4: Server Details`
@@ -500,7 +469,7 @@ export default function AddCustomMCPServerPage() {
       {/* Step 1: Server Details */}
       {currentStep === 1 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Server Details</h2>
+          <h2 className="mb-4 text-lg font-semibold">Server Details</h2>
           <form onSubmit={handleStep1Submit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">
@@ -513,9 +482,7 @@ export default function AddCustomMCPServerPage() {
                 value={name}
                 onChange={(e) => {
                   // Only allow uppercase letters, digits, and underscores
-                  const filteredValue = e.target.value
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9_]/g, "");
+                  const filteredValue = e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "");
                   setName(filteredValue);
                 }}
                 disabled={oAuth2Discovery.isPending}
@@ -523,8 +490,7 @@ export default function AddCustomMCPServerPage() {
                 className="max-w-md"
               />
               <p className="text-sm text-muted-foreground">
-                Use uppercase letters, numbers, and underscores only. No
-                consecutive underscores.
+                Use uppercase letters, numbers, and underscores only. No consecutive underscores.
               </p>
             </div>
 
@@ -575,8 +541,7 @@ export default function AddCustomMCPServerPage() {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Select one or more authentication methods supported by your
-                server.
+                Select one or more authentication methods supported by your server.
               </p>
             </div>
 
@@ -685,8 +650,7 @@ export default function AddCustomMCPServerPage() {
                 }
                 className="flex items-center gap-2"
               >
-                {oAuth2Discovery.isPending ||
-                createCustomMCPServer.isPending ? (
+                {oAuth2Discovery.isPending || createCustomMCPServer.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="h-4 w-4" />
@@ -703,9 +667,7 @@ export default function AddCustomMCPServerPage() {
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/mcp-servers")}
-                disabled={
-                  oAuth2Discovery.isPending || createCustomMCPServer.isPending
-                }
+                disabled={oAuth2Discovery.isPending || createCustomMCPServer.isPending}
               >
                 Cancel
               </Button>
@@ -717,10 +679,10 @@ export default function AddCustomMCPServerPage() {
       {/* Step 2: Setup Auth Method */}
       {currentStep === 2 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Setup Auth Method</h2>
+          <h2 className="mb-4 text-lg font-semibold">Setup Auth Method</h2>
           <form onSubmit={handleStep2Submit} className="space-y-6">
             {authMethods.api_key && (
-              <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+              <div className="space-y-4 rounded-lg border border-gray-200 p-4">
                 <h3 className="text-md font-medium">API Key Configuration</h3>
 
                 <div className="space-y-2">
@@ -762,8 +724,7 @@ export default function AddCustomMCPServerPage() {
                     className="max-w-md"
                   />
                   <p className="text-sm text-muted-foreground">
-                    The name of the API key in the request, e.g.,
-                    &apos;X-Subscription-Token&apos;.
+                    The name of the API key in the request, e.g., &apos;X-Subscription-Token&apos;.
                   </p>
                 </div>
 
@@ -779,15 +740,14 @@ export default function AddCustomMCPServerPage() {
                     className="max-w-md"
                   />
                   <p className="text-sm text-muted-foreground">
-                    The prefix of the API key in the request, e.g.,
-                    &apos;Bearer&apos;.
+                    The prefix of the API key in the request, e.g., &apos;Bearer&apos;.
                   </p>
                 </div>
               </div>
             )}
 
             {authMethods.oauth2 && (
-              <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+              <div className="space-y-4 rounded-lg border border-gray-200 p-4">
                 <h3 className="text-md font-medium">OAuth2 Configuration</h3>
 
                 <div className="space-y-2">
@@ -827,11 +787,7 @@ export default function AddCustomMCPServerPage() {
                   <Input
                     id="authMethodsSupported"
                     type="text"
-                    value={
-                      oauth2Config.token_endpoint_auth_method_supported?.join(
-                        ", ",
-                      ) || "None"
-                    }
+                    value={oauth2Config.token_endpoint_auth_method_supported?.join(", ") || "None"}
                     disabled
                     readOnly
                     className="max-w-md bg-muted"
@@ -855,21 +811,18 @@ export default function AddCustomMCPServerPage() {
                         value="automatic"
                         id="automatic"
                         disabled={
-                          !isAutomaticRegistrationAvailable() ||
-                          createCustomMCPServer.isPending
+                          !isAutomaticRegistrationAvailable() || createCustomMCPServer.isPending
                         }
                       />
                       <Label
                         htmlFor="automatic"
                         className={`text-sm font-normal ${
-                          !isAutomaticRegistrationAvailable()
-                            ? "text-muted-foreground"
-                            : ""
+                          !isAutomaticRegistrationAvailable() ? "text-muted-foreground" : ""
                         }`}
                       >
                         Automatic
                         {!isAutomaticRegistrationAvailable() && (
-                          <span className="text-xs text-muted-foreground ml-1">
+                          <span className="ml-1 text-xs text-muted-foreground">
                             (Not available)
                           </span>
                         )}
@@ -884,91 +837,79 @@ export default function AddCustomMCPServerPage() {
                   </RadioGroup>
                   {!isAutomaticRegistrationAvailable() && (
                     <p className="text-sm text-muted-foreground">
-                      Automatic registration is not available because the server
-                      did not provide a registration URL or supported
-                      authentication methods during discovery.
+                      Automatic registration is not available because the server did not provide a
+                      registration URL or supported authentication methods during discovery.
                     </p>
                   )}
                 </div>
 
-                {oauth2RegistrationMode === "automatic" &&
-                  oauth2Config.registration_url && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleAutoRegisterClient}
-                          disabled={
-                            oAuth2ClientRegistration.isPending ||
-                            createCustomMCPServer.isPending
-                          }
-                          className="flex items-center gap-2"
-                        >
-                          {oAuth2ClientRegistration.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Plus className="h-4 w-4" />
-                          )}
-                          {oAuth2ClientRegistration.isPending
-                            ? "Registering..."
-                            : "Auto Register Client"}
-                        </Button>
-                        {dcrResult && (
-                          <span className="text-sm text-green-600 font-medium">
-                            ✓ Client registered successfully
-                          </span>
+                {oauth2RegistrationMode === "automatic" && oauth2Config.registration_url && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAutoRegisterClient}
+                        disabled={
+                          oAuth2ClientRegistration.isPending || createCustomMCPServer.isPending
+                        }
+                        className="flex items-center gap-2"
+                      >
+                        {oAuth2ClientRegistration.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
                         )}
-                      </div>
-
+                        {oAuth2ClientRegistration.isPending
+                          ? "Registering..."
+                          : "Auto Register Client"}
+                      </Button>
                       {dcrResult && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                          <h4 className="text-sm font-medium text-green-800">
-                            Registration Results
-                          </h4>
-                          <div className="grid grid-cols-1 gap-3 text-sm">
-                            <div>
-                              <span className="font-medium text-green-700">
-                                Auth Method:
-                              </span>{" "}
-                              <span className="text-green-600">
-                                {dcrResult.token_endpoint_auth_method}
-                              </span>
-                            </div>
-                            {dcrResult.client_id && (
-                              <div>
-                                <span className="font-medium text-green-700">
-                                  Client ID:
-                                </span>{" "}
-                                <span className="text-green-600 font-mono text-xs">
-                                  {dcrResult.client_id}
-                                </span>
-                              </div>
-                            )}
-                            {dcrResult.client_secret && (
-                              <div>
-                                <span className="font-medium text-green-700">
-                                  Client Secret:
-                                </span>{" "}
-                                <span className="text-green-600 font-mono text-xs">
-                                  {"•".repeat(8)}...
-                                  {dcrResult.client_secret.slice(-4)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        <span className="text-sm font-medium text-green-600">
+                          ✓ Client registered successfully
+                        </span>
                       )}
                     </div>
-                  )}
+
+                    {dcrResult && (
+                      <div className="space-y-3 rounded-lg border border-green-200 bg-green-50 p-4">
+                        <h4 className="text-sm font-medium text-green-800">Registration Results</h4>
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div>
+                            <span className="font-medium text-green-700">Auth Method:</span>{" "}
+                            <span className="text-green-600">
+                              {dcrResult.token_endpoint_auth_method}
+                            </span>
+                          </div>
+                          {dcrResult.client_id && (
+                            <div>
+                              <span className="font-medium text-green-700">Client ID:</span>{" "}
+                              <span className="font-mono text-xs text-green-600">
+                                {dcrResult.client_id}
+                              </span>
+                            </div>
+                          )}
+                          {dcrResult.client_secret && (
+                            <div>
+                              <span className="font-medium text-green-700">Client Secret:</span>{" "}
+                              <span className="font-mono text-xs text-green-600">
+                                {"•".repeat(8)}...
+                                {dcrResult.client_secret.slice(-4)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Manual Registration */}
                 {oauth2RegistrationMode === "manual" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="manualEndpointAuthMethod">
-                        Endpoint Auth Method{" "}
-                        <span className="text-red-500">*</span>
+                        Endpoint Auth Method <span className="text-red-500">*</span>
                       </Label>
                       <Select
                         value={manualEndpointAuthMethod}
@@ -979,13 +920,11 @@ export default function AddCustomMCPServerPage() {
                           <SelectValue placeholder="Select auth method" />
                         </SelectTrigger>
                         <SelectContent>
-                          {oauth2Config.token_endpoint_auth_method_supported?.map(
-                            (method) => (
-                              <SelectItem key={method} value={method}>
-                                {method}
-                              </SelectItem>
-                            ),
-                          )}
+                          {oauth2Config.token_endpoint_auth_method_supported?.map((method) => (
+                            <SelectItem key={method} value={method}>
+                              {method}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -997,13 +936,12 @@ export default function AddCustomMCPServerPage() {
                         </Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                            <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p className="text-sm">
-                              Enter the Client ID from your OAuth2 provider
-                              registration results. This is the unique
-                              identifier for your application.
+                              Enter the Client ID from your OAuth2 provider registration results.
+                              This is the unique identifier for your application.
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -1024,18 +962,16 @@ export default function AddCustomMCPServerPage() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Label htmlFor="manualClientSecret">
-                            Client Secret{" "}
-                            <span className="text-red-500">*</span>
+                            Client Secret <span className="text-red-500">*</span>
                           </Label>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                              <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                               <p className="text-sm">
-                                Enter the Client Secret from your OAuth2
-                                provider registration results. This confidential
-                                key is required for client_secret_*
+                                Enter the Client Secret from your OAuth2 provider registration
+                                results. This confidential key is required for client_secret_*
                                 authentication methods.
                               </p>
                             </TooltipContent>
@@ -1046,9 +982,7 @@ export default function AddCustomMCPServerPage() {
                           type="password"
                           placeholder="Paste client secret from registration results"
                           value={manualClientSecret}
-                          onChange={(e) =>
-                            setManualClientSecret(e.target.value)
-                          }
+                          onChange={(e) => setManualClientSecret(e.target.value)}
                           disabled={createCustomMCPServer.isPending}
                           className="max-w-md"
                         />
@@ -1060,13 +994,12 @@ export default function AddCustomMCPServerPage() {
                         <Label htmlFor="manualScope">Scope</Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                            <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p className="text-sm">
-                              Enter the OAuth2 scope you used to register the
-                              client, or copy the scope from the registration
-                              results.
+                              Enter the OAuth2 scope you used to register the client, or copy the
+                              scope from the registration results.
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -1105,9 +1038,7 @@ export default function AddCustomMCPServerPage() {
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {createCustomMCPServer.isPending
-                  ? "Registering..."
-                  : "Next: Operational Account"}
+                {createCustomMCPServer.isPending ? "Registering..." : "Next: Operational Account"}
               </Button>
               <Button
                 type="button"
@@ -1125,27 +1056,24 @@ export default function AddCustomMCPServerPage() {
       {/* Step 3: Operational Account */}
       {currentStep === 3 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Operational Account</h2>
+          <h2 className="mb-4 text-lg font-semibold">Operational Account</h2>
           <form onSubmit={handleStep3Submit} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  The operational account is exclusively used by the system for
-                  administrative purposes such as fetching MCP server metadata
-                  and monitoring server status. It will never be used by any
-                  users.
+                  The operational account is exclusively used by the system for administrative
+                  purposes such as fetching MCP server metadata and monitoring server status. It
+                  will never be used by any users.
                 </p>
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Please select the authentication method used to connect
-                Operational Account.
+                Please select the authentication method used to connect Operational Account.
               </p>
 
               <div className="space-y-2">
                 <Label htmlFor="operationalAccountAuthType">
-                  Operational Account Auth Method{" "}
-                  <span className="text-red-500">*</span>
+                  Operational Account Auth Method <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={operationalAccountAuthType}
@@ -1184,9 +1112,7 @@ export default function AddCustomMCPServerPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={
-                  createCustomMCPServer.isPending || !operationalAccountAuthType
-                }
+                disabled={createCustomMCPServer.isPending || !operationalAccountAuthType}
                 className="flex items-center gap-2"
               >
                 {createCustomMCPServer.isPending ? (
@@ -1194,9 +1120,7 @@ export default function AddCustomMCPServerPage() {
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {createCustomMCPServer.isPending
-                  ? "Registering..."
-                  : "Register Server"}
+                {createCustomMCPServer.isPending ? "Registering..." : "Register Server"}
               </Button>
               <Button
                 type="button"
@@ -1214,34 +1138,31 @@ export default function AddCustomMCPServerPage() {
       {/* Step 4: Setup Operational Account (Optional) */}
       {currentStep === 4 && serverCreated && createdServer && (
         <div className="mb-8">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-green-500"></div>
               <span className="text-sm font-medium text-green-800">
                 Server Created Successfully
               </span>
             </div>
             <p className="text-sm text-green-700">
-              Your MCP server &ldquo;{createdServer.name}&rdquo; has been
-              created and is ready to use.
+              Your MCP server &ldquo;{createdServer.name}&rdquo; has been created and is ready to
+              use.
             </p>
           </div>
-          <h2 className="text-lg font-semibold mb-4">
-            Setup Operational Account (Optional)
-          </h2>
+          <h2 className="mb-4 text-lg font-semibold">Setup Operational Account (Optional)</h2>
 
           <div className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  The operational account is exclusively used by the system for
-                  administrative purposes such as fetching MCP server metadata
-                  and monitoring server status. It will never be used by any
-                  users.
+                  The operational account is exclusively used by the system for administrative
+                  purposes such as fetching MCP server metadata and monitoring server status. It
+                  will never be used by any users.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  You can set this up now or skip and configure it later from
-                  the server details page.
+                  You can set this up now or skip and configure it later from the server details
+                  page.
                 </p>
               </div>
 
@@ -1249,21 +1170,17 @@ export default function AddCustomMCPServerPage() {
                 {hasOperationalAccount ? (
                   <>
                     <div className="flex items-center gap-2 text-green-600">
-                      <div className="h-4 w-4 bg-green-500 rounded-full flex items-center justify-center">
-                        <div className="h-2 w-2 bg-white rounded-full"></div>
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-green-500">
+                        <div className="h-2 w-2 rounded-full bg-white"></div>
                       </div>
-                      <span className="text-sm">
-                        Operational account is configured
-                      </span>
+                      <span className="text-sm">Operational account is configured</span>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 text-red-600">
-                      <div className="h-4 w-4 border-2 border-red-500 rounded-full"></div>
-                      <span className="text-sm">
-                        No operational account configured
-                      </span>
+                      <div className="h-4 w-4 rounded-full border-2 border-red-500"></div>
+                      <span className="text-sm">No operational account configured</span>
                     </div>
                   </>
                 )}

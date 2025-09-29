@@ -112,30 +112,20 @@ export function EnhancedDataTable<TData, TValue>({
   const allColumns = useMemo(() => {
     if (!rowSelectionProps) return columns;
 
-    return [getRowSelectionColumn<TData>(), ...columns] as ColumnDef<
-      TData,
-      TValue
-    >[];
+    return [getRowSelectionColumn<TData>(), ...columns] as ColumnDef<TData, TValue>[];
   }, [columns, rowSelectionProps]);
 
   const handlePaginationChange = (
     updater: PaginationState | ((old: PaginationState) => PaginationState),
   ) => {
-    const newPagination =
-      typeof updater === "function" ? updater(pagination) : updater;
+    const newPagination = typeof updater === "function" ? updater(pagination) : updater;
     setPagination(newPagination);
 
     // Call external handlers if provided
-    if (
-      paginationOptions?.onPageChange &&
-      newPagination.pageIndex !== pagination.pageIndex
-    ) {
+    if (paginationOptions?.onPageChange && newPagination.pageIndex !== pagination.pageIndex) {
       paginationOptions.onPageChange(newPagination.pageIndex);
     }
-    if (
-      paginationOptions?.onPageSizeChange &&
-      newPagination.pageSize !== pagination.pageSize
-    ) {
+    if (paginationOptions?.onPageSizeChange && newPagination.pageSize !== pagination.pageSize) {
       paginationOptions.onPageSizeChange(newPagination.pageSize);
     }
   };
@@ -209,12 +199,7 @@ export function EnhancedDataTable<TData, TValue>({
 
             /** Render the column filter component */
             return (
-              <ColumnFilter
-                key={column.id}
-                column={column}
-                options={options}
-                {...filterProps}
-              />
+              <ColumnFilter key={column.id} column={column} options={options} {...filterProps} />
             );
           }
           return null;
@@ -233,19 +218,16 @@ export function EnhancedDataTable<TData, TValue>({
           filterComponent={filterComponents}
         />
       )}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="overflow-hidden rounded-lg border">
         <Table>
-          <TableHeader className="bg-muted rounded-t-lg">
+          <TableHeader className="rounded-t-lg bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} className="px-4 py-2">
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -254,29 +236,17 @@ export function EnhancedDataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="px-4 py-2 whitespace-normal"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                    <TableCell key={cell.id} className="px-4 py-2 whitespace-normal">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results found
                 </TableCell>
               </TableRow>
@@ -284,11 +254,8 @@ export function EnhancedDataTable<TData, TValue>({
           </TableBody>
         </Table>
         {paginationOptions && (
-          <div className="border-t border-border bg-muted ">
-            <DataTablePagination
-              table={table}
-              totalCount={paginationOptions.totalCount}
-            />
+          <div className="border-t border-border bg-muted">
+            <DataTablePagination table={table} totalCount={paginationOptions.totalCount} />
           </div>
         )}
       </div>

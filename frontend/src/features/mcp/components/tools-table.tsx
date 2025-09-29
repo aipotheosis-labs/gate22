@@ -11,24 +11,19 @@ interface ToolsTableProps {
   emptyMessage?: string;
 }
 
-export function ToolsTable({
-  tools,
-  emptyMessage = "No tools available",
-}: ToolsTableProps) {
+export function ToolsTable({ tools, emptyMessage = "No tools available" }: ToolsTableProps) {
   const [selectedTool, setSelectedTool] = useState<MCPToolBasic | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   return (
     <>
-      <div className="border rounded-lg">
+      <div className="rounded-lg border">
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="text-left p-3 font-medium text-sm">Name</th>
-              <th className="text-left p-3 font-medium text-sm">Description</th>
-              <th className="text-center p-3 font-medium text-sm w-20">
-                Action
-              </th>
+              <th className="p-3 text-left text-sm font-medium">Name</th>
+              <th className="p-3 text-left text-sm font-medium">Description</th>
+              <th className="w-20 p-3 text-center text-sm font-medium">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -36,7 +31,7 @@ export function ToolsTable({
               tools.map((tool) => (
                 <tr
                   key={tool.id}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  className="border-b transition-colors last:border-0 hover:bg-muted/30"
                 >
                   <td className="p-3">
                     <code className="text-sm">{tool.name}</code>
@@ -65,10 +60,7 @@ export function ToolsTable({
               ))
             ) : (
               <tr>
-                <td
-                  colSpan={3}
-                  className="p-4 text-center text-muted-foreground"
-                >
+                <td colSpan={3} className="p-4 text-center text-muted-foreground">
                   {emptyMessage}
                 </td>
               </tr>

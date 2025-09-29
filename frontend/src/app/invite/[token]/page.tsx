@@ -25,8 +25,7 @@ export default async function InviteRedirectPage({
   const invitationId = Array.isArray(invitationIdParam)
     ? invitationIdParam.at(0)
     : invitationIdParam;
-  const normalizedInvitationId =
-    invitationId && invitationId.trim().length ? invitationId : null;
+  const normalizedInvitationId = invitationId && invitationId.trim().length ? invitationId : null;
 
   const organizationIdParam = resolvedSearchParams?.organization_id;
   const organizationId = Array.isArray(organizationIdParam)

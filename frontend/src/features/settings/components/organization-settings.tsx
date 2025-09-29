@@ -29,7 +29,7 @@ export function OrganizationSettings() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Organization Settings</h2>
-        <p className="text-muted-foreground mt-1">
+        <p className="mt-1 text-muted-foreground">
           Manage your organization information and settings
         </p>
       </div>
@@ -37,29 +37,17 @@ export function OrganizationSettings() {
       <Card className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold mb-4">
-              Organization Information
-            </h3>
+            <h3 className="mb-4 text-lg font-semibold">Organization Information</h3>
 
             <div className="space-y-6">
               <div className="grid gap-2">
                 <Label htmlFor="org-id">Organization ID</Label>
-                <Input
-                  id="org-id"
-                  value={activeOrg.orgId}
-                  disabled
-                  className="bg-muted"
-                />
+                <Input id="org-id" value={activeOrg.orgId} disabled className="bg-muted" />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="org-name">Organization Name</Label>
-                <Input
-                  id="org-name"
-                  value={organizationName}
-                  disabled
-                  className="bg-muted"
-                />
+                <Input id="org-name" value={organizationName} disabled className="bg-muted" />
               </div>
 
               <div className="grid gap-2">

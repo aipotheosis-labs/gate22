@@ -70,7 +70,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="email"
                         placeholder="you@example.com"
@@ -92,7 +92,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                   <FormLabel>Password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         type="password"
                         placeholder="••••••••"
@@ -112,7 +112,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             control={form.control}
             name="rememberMe"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+              <FormItem className="flex flex-row items-center space-y-0 space-x-2">
                 <FormControl>
                   <Checkbox
                     checked={field.value}
@@ -120,7 +120,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                     disabled={isLoading}
                   />
                 </FormControl>
-                <FormLabel className="text-sm font-normal cursor-pointer">
+                <FormLabel className="cursor-pointer text-sm font-normal">
                   Remember me for 30 days
                 </FormLabel>
               </FormItem>
@@ -136,7 +136,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
 
           <Button
             type="submit"
-            className="w-full h-11 transition-all duration-200"
+            className="h-11 w-full transition-all duration-200"
             disabled={isLoading}
           >
             {isLoading ? (

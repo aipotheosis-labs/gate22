@@ -35,29 +35,23 @@ export function JsonViewer({
   const jsonTheme = theme === "dark" ? "monokai" : "rjv-default";
 
   return (
-    <div
-      className={cn("rounded-lg border bg-muted/10 overflow-hidden", className)}
-    >
+    <div className={cn("overflow-hidden rounded-lg border bg-muted/10", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b bg-background/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b bg-background/50 px-3 py-2 backdrop-blur-sm">
         <span className="text-xs font-medium text-foreground/70">{title}</span>
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground transition-colors"
+          className="h-6 w-6 p-0 text-muted-foreground transition-colors hover:text-foreground"
           onClick={handleCopy}
         >
-          {copied ? (
-            <Check className="h-3 w-3 text-green-500" />
-          ) : (
-            <Copy className="h-3 w-3" />
-          )}
+          {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
         </Button>
       </div>
 
       {/* JSON Content */}
       <div
-        className="p-3 overflow-auto bg-background/30 json-viewer-container"
+        className="json-viewer-container overflow-auto bg-background/30 p-3"
         style={{
           maxHeight: maxHeight,
         }}
@@ -82,11 +76,7 @@ export function JsonViewer({
           shouldCollapse={(field) => {
             // Collapse large arrays and objects at deeper levels
             if (field.namespace && field.namespace.length > 2) {
-              if (
-                field.type === "array" &&
-                Array.isArray(field.src) &&
-                field.src.length > 3
-              )
+              if (field.type === "array" && Array.isArray(field.src) && field.src.length > 3)
                 return true;
               if (
                 field.type === "object" &&

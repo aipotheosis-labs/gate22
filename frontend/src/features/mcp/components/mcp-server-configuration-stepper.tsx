@@ -19,20 +19,9 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Loader2,
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft,
-  Search,
-  HelpCircle,
-} from "lucide-react";
+import { Loader2, AlertCircle, ChevronRight, ChevronLeft, Search, HelpCircle } from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   MCPServerPublic,
   MCPServerConfigurationCreate,
@@ -81,8 +70,9 @@ export function MCPServerConfigurationStepper({
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType>(
     server?.supported_auth_types?.[0] || AuthType.NO_AUTH,
   );
-  const [configurationType, setConfigurationType] =
-    useState<ConnectedAccountOwnership>(ConnectedAccountOwnership.INDIVIDUAL);
+  const [configurationType, setConfigurationType] = useState<ConnectedAccountOwnership>(
+    ConnectedAccountOwnership.INDIVIDUAL,
+  );
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [toolSearchQuery, setToolSearchQuery] = useState("");
@@ -106,9 +96,7 @@ export function MCPServerConfigurationStepper({
       setToolSearchQuery("");
       setSelectedTeams(new Set());
       setAllToolsEnabled(true);
-      setSelectedAuthType(
-        server?.supported_auth_types?.[0] || AuthType.NO_AUTH,
-      );
+      setSelectedAuthType(server?.supported_auth_types?.[0] || AuthType.NO_AUTH);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -178,9 +166,7 @@ export function MCPServerConfigurationStepper({
       router.push(`/mcp-configuration/${result.id}`);
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to configure MCP server";
+        error instanceof Error ? error.message : "Failed to configure MCP server";
       toast.error(errorMessage);
     }
   };
@@ -215,8 +201,8 @@ export function MCPServerConfigurationStepper({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] max-w-[95vw] h-[80vh] p-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
+        <DialogContent className="flex h-[80vh] max-w-[95vw] flex-col p-0 sm:max-w-[500px]">
+          <DialogHeader className="flex-shrink-0 border-b px-6 pt-6 pb-4">
             <DialogTitle>Configure {server?.name}</DialogTitle>
             <DialogDescription>
               Set up authentication and access permissions for this MCP server
@@ -224,24 +210,20 @@ export function MCPServerConfigurationStepper({
           </DialogHeader>
 
           {/* Main Content */}
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full w-full">
               <div className="space-y-6 px-6 py-4">
                 {stepper.current.id === "general" && (
                   <div className="space-y-4">
                     <div className="px-1">
-                      <h3 className="text-sm font-medium mb-1">
-                        General Information
-                      </h3>
+                      <h3 className="mb-1 text-sm font-medium">General Information</h3>
                       <p className="text-xs text-muted-foreground">
                         Provide a name and description for this configuration
                       </p>
                     </div>
                     <div className="space-y-3">
-                      <div className="px-1 space-y-2">
-                        <Label htmlFor="config-name">
-                          Configuration Name *
-                        </Label>
+                      <div className="space-y-2 px-1">
+                        <Label htmlFor="config-name">Configuration Name *</Label>
                         <Input
                           id="config-name"
                           value={name}
@@ -254,11 +236,9 @@ export function MCPServerConfigurationStepper({
                           maxLength={100}
                           required
                         />
-                        {nameError && (
-                          <p className="text-xs text-red-500">{nameError}</p>
-                        )}
+                        {nameError && <p className="text-xs text-red-500">{nameError}</p>}
                       </div>
-                      <div className="px-1 space-y-2">
+                      <div className="space-y-2 px-1">
                         <Label htmlFor="config-description">Description</Label>
                         <Textarea
                           id="config-description"
@@ -276,16 +256,13 @@ export function MCPServerConfigurationStepper({
                 {stepper.current.id === "authentication" && (
                   <div className="space-y-4">
                     <div className="px-1">
-                      <h3 className="text-sm font-medium mb-1">
-                        Authentication
-                      </h3>
+                      <h3 className="mb-1 text-sm font-medium">Authentication</h3>
                       <p className="text-xs text-muted-foreground">
                         Choose how users will authenticate with this server
                       </p>
                     </div>
 
-                    {!server?.supported_auth_types ||
-                    server.supported_auth_types.length === 0 ? (
+                    {!server?.supported_auth_types || server.supported_auth_types.length === 0 ? (
                       <div className="px-1">
                         <Alert>
                           <AlertCircle className="h-4 w-4" />
@@ -297,21 +274,16 @@ export function MCPServerConfigurationStepper({
                     ) : (
                       <RadioGroup
                         value={selectedAuthType}
-                        onValueChange={(value) =>
-                          setSelectedAuthType(value as AuthType)
-                        }
+                        onValueChange={(value) => setSelectedAuthType(value as AuthType)}
                         className="space-y-1.5 px-1"
                       >
                         {server.supported_auth_types.map((authType) => (
                           <label
                             key={authType}
                             htmlFor={`auth-${authType}`}
-                            className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                            className="flex cursor-pointer items-center space-x-2 rounded border p-2 transition-colors hover:bg-accent/50"
                           >
-                            <RadioGroupItem
-                              value={authType}
-                              id={`auth-${authType}`}
-                            />
+                            <RadioGroupItem value={authType} id={`auth-${authType}`} />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">
@@ -324,7 +296,7 @@ export function MCPServerConfigurationStepper({
                                       className="inline-flex items-center justify-center rounded-sm hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                                       aria-label={`More information about ${getAuthTypeLabel(authType)} authentication`}
                                     >
-                                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground transition-colors hover:text-foreground" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs">
@@ -346,12 +318,9 @@ export function MCPServerConfigurationStepper({
                 {stepper.current.id === "type" && (
                   <div className="space-y-4">
                     <div className="px-1">
-                      <h3 className="text-sm font-medium mb-1">
-                        Connected Account Type
-                      </h3>
+                      <h3 className="mb-1 text-sm font-medium">Connected Account Type</h3>
                       <p className="text-xs text-muted-foreground">
-                        Choose how this configuration will be used in your
-                        organization
+                        Choose how this configuration will be used in your organization
                       </p>
                     </div>
 
@@ -364,7 +333,7 @@ export function MCPServerConfigurationStepper({
                     >
                       <label
                         htmlFor="stepper-individual"
-                        className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                        className="flex cursor-pointer items-center space-x-2 rounded border p-2 transition-colors hover:bg-accent/50"
                       >
                         <RadioGroupItem
                           value={ConnectedAccountOwnership.INDIVIDUAL}
@@ -373,15 +342,13 @@ export function MCPServerConfigurationStepper({
                         <div className="flex-1">
                           <div className="text-sm font-medium">Individual</div>
                           <p className="text-xs text-muted-foreground">
-                            {getConfigurationTypeDetailedInfo(
-                              ConnectedAccountOwnership.INDIVIDUAL,
-                            )}
+                            {getConfigurationTypeDetailedInfo(ConnectedAccountOwnership.INDIVIDUAL)}
                           </p>
                         </div>
                       </label>
                       <label
                         htmlFor="stepper-shared"
-                        className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                        className="flex cursor-pointer items-center space-x-2 rounded border p-2 transition-colors hover:bg-accent/50"
                       >
                         <RadioGroupItem
                           value={ConnectedAccountOwnership.SHARED}
@@ -390,9 +357,7 @@ export function MCPServerConfigurationStepper({
                         <div className="flex-1">
                           <div className="text-sm font-medium">Shared</div>
                           <p className="text-xs text-muted-foreground">
-                            {getConfigurationTypeDetailedInfo(
-                              ConnectedAccountOwnership.SHARED,
-                            )}
+                            {getConfigurationTypeDetailedInfo(ConnectedAccountOwnership.SHARED)}
                           </p>
                         </div>
                       </label>
@@ -403,24 +368,20 @@ export function MCPServerConfigurationStepper({
                 {stepper.current.id === "tools" && (
                   <div className="space-y-4">
                     <div className="px-1">
-                      <h3 className="text-sm font-medium mb-1">Select Tools</h3>
+                      <h3 className="mb-1 text-sm font-medium">Select Tools</h3>
                       <p className="text-xs text-muted-foreground">
                         Choose which tools should be available
                       </p>
                     </div>
 
                     <div className="px-1">
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center justify-between rounded-lg border p-3">
                         <div className="flex-1 space-y-0.5">
-                          <Label
-                            htmlFor="all-tools"
-                            className="text-sm font-medium"
-                          >
+                          <Label htmlFor="all-tools" className="text-sm font-medium">
                             Enable all tools
                           </Label>
                           <p className="text-xs text-muted-foreground">
-                            Grant access to all {server?.tools?.length || 0}{" "}
-                            available tools
+                            Grant access to all {server?.tools?.length || 0} available tools
                           </p>
                         </div>
                         <Switch
@@ -431,81 +392,69 @@ export function MCPServerConfigurationStepper({
                       </div>
                     </div>
 
-                    {!allToolsEnabled &&
-                      server?.tools &&
-                      server.tools.length > 0 && (
-                        <div className="space-y-3 px-1">
-                          {/* Search Input */}
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                              placeholder="Search tools..."
-                              value={toolSearchQuery}
-                              onChange={(e) =>
-                                setToolSearchQuery(e.target.value)
-                              }
-                              className="pl-9"
-                            />
-                          </div>
+                    {!allToolsEnabled && server?.tools && server.tools.length > 0 && (
+                      <div className="space-y-3 px-1">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Search tools..."
+                            value={toolSearchQuery}
+                            onChange={(e) => setToolSearchQuery(e.target.value)}
+                            className="pl-9"
+                          />
+                        </div>
 
-                          <div className="space-y-2">
-                            <Label className="text-xs font-medium text-muted-foreground">
-                              Select specific tools:
-                            </Label>
-                            <div className="grid gap-1.5 border rounded-lg p-2 max-h-[400px] overflow-y-auto">
-                              {(() => {
-                                const filteredTools = server.tools.filter(
-                                  (tool) =>
-                                    tool.name
-                                      .toLowerCase()
-                                      .includes(
-                                        toolSearchQuery.toLowerCase(),
-                                      ) ||
-                                    tool.description
-                                      ?.toLowerCase()
-                                      .includes(toolSearchQuery.toLowerCase()),
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground">
+                            Select specific tools:
+                          </Label>
+                          <div className="grid max-h-[400px] gap-1.5 overflow-y-auto rounded-lg border p-2">
+                            {(() => {
+                              const filteredTools = server.tools.filter(
+                                (tool) =>
+                                  tool.name.toLowerCase().includes(toolSearchQuery.toLowerCase()) ||
+                                  tool.description
+                                    ?.toLowerCase()
+                                    .includes(toolSearchQuery.toLowerCase()),
+                              );
+
+                              if (filteredTools.length === 0) {
+                                return (
+                                  <p className="py-8 text-center text-sm text-muted-foreground">
+                                    {toolSearchQuery
+                                      ? "No tools match your search"
+                                      : "No tools available"}
+                                  </p>
                                 );
+                              }
 
-                                if (filteredTools.length === 0) {
-                                  return (
-                                    <p className="text-sm text-muted-foreground text-center py-8">
-                                      {toolSearchQuery
-                                        ? "No tools match your search"
-                                        : "No tools available"}
-                                    </p>
-                                  );
-                                }
-
-                                return filteredTools.map((tool) => (
-                                  <label
-                                    key={tool.id}
-                                    className="flex items-start space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
-                                  >
-                                    <Checkbox
-                                      id={tool.id}
-                                      checked={selectedTools.has(tool.id)}
-                                      onCheckedChange={() =>
-                                        handleToolToggle(tool.id)
-                                      }
-                                      className="mt-0.5"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-medium">
-                                        {tool.name}
-                                      </div>
-                                      {tool.description && (
-                                        <p className="text-xs text-muted-foreground line-clamp-1">
-                                          {tool.description}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </label>
-                                ));
-                              })()}
-                            </div>
+                              return filteredTools.map((tool) => (
+                                <label
+                                  key={tool.id}
+                                  className="flex cursor-pointer items-start space-x-2 rounded border p-2 transition-colors hover:bg-accent/50"
+                                >
+                                  <Checkbox
+                                    id={tool.id}
+                                    checked={selectedTools.has(tool.id)}
+                                    onCheckedChange={() => handleToolToggle(tool.id)}
+                                    className="mt-0.5"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-sm font-medium">{tool.name}</div>
+                                    {tool.description && (
+                                      <p className="line-clamp-1 text-xs text-muted-foreground">
+                                        {tool.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </label>
+                              ));
+                            })()}
                           </div>
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {!allToolsEnabled && selectedTools.size === 0 && (
                       <div className="px-1">
@@ -522,11 +471,9 @@ export function MCPServerConfigurationStepper({
 
                 {stepper.current.id === "teams" && (
                   <div className="space-y-4">
-                    <div className="px-1 flex items-start justify-between">
+                    <div className="flex items-start justify-between px-1">
                       <div>
-                        <h3 className="text-sm font-medium mb-1">
-                          Assign Teams
-                        </h3>
+                        <h3 className="mb-1 text-sm font-medium">Assign Teams</h3>
                         <p className="text-xs text-muted-foreground">
                           Select which teams can access this server
                         </p>
@@ -545,18 +492,15 @@ export function MCPServerConfigurationStepper({
 
                     {teamsLoading ? (
                       <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                        <span className="text-sm text-muted-foreground">
-                          Loading teams...
-                        </span>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Loading teams...</span>
                       </div>
                     ) : teams.length === 0 ? (
                       <div className="px-1">
                         <Alert>
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription className="text-xs">
-                            No teams found. Create teams in your organization
-                            settings first.
+                            No teams found. Create teams in your organization settings first.
                           </AlertDescription>
                         </Alert>
                       </div>
@@ -568,9 +512,7 @@ export function MCPServerConfigurationStepper({
                             label: `${team.name}${team.member_count !== undefined ? ` (${team.member_count} member${team.member_count !== 1 ? "s" : ""})` : ""}`,
                           }))}
                           selected={Array.from(selectedTeams)}
-                          onChange={(selected) =>
-                            setSelectedTeams(new Set(selected))
-                          }
+                          onChange={(selected) => setSelectedTeams(new Set(selected))}
                           placeholder="Select teams..."
                           searchPlaceholder="Search teams..."
                           emptyText="No teams found."
@@ -591,8 +533,8 @@ export function MCPServerConfigurationStepper({
           </div>
 
           {/* Footer with navigation */}
-          <div className="border-t px-6 py-3 flex-shrink-0">
-            <div className="flex justify-between items-center">
+          <div className="flex-shrink-0 border-t px-6 py-3">
+            <div className="flex items-center justify-between">
               <Button
                 variant="outline"
                 size="sm"
@@ -604,7 +546,7 @@ export function MCPServerConfigurationStepper({
                   }
                 }}
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeft className="mr-1 h-4 w-4" />
                 {stepper.isFirst ? "Cancel" : "Back"}
               </Button>
 
@@ -613,13 +555,9 @@ export function MCPServerConfigurationStepper({
                   Step {currentStepIndex + 1} of {steps.length}
                 </span>
                 {!stepper.isLast ? (
-                  <Button
-                    size="sm"
-                    onClick={() => stepper.next()}
-                    disabled={!canProceed}
-                  >
+                  <Button size="sm" onClick={() => stepper.next()} disabled={!canProceed}>
                     Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                    <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : (
                   <Button

@@ -18,18 +18,14 @@ interface MCPServerDetailModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function MCPServerDetailModal({
-  server,
-  open,
-  onOpenChange,
-}: MCPServerDetailModalProps) {
+export function MCPServerDetailModal({ server, open, onOpenChange }: MCPServerDetailModalProps) {
   if (!server) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-4 mb-4">
+          <div className="mb-4 flex items-center gap-4">
             <div className="relative h-16 w-16 shrink-0">
               <Image
                 src={server.iconUrl}
@@ -41,7 +37,7 @@ export function MCPServerDetailModal({
               />
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-2xl mb-1">{server.name}</DialogTitle>
+              <DialogTitle className="mb-1 text-2xl">{server.name}</DialogTitle>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>by {server.provider}</span>
                 {server.authType && (
@@ -53,15 +49,13 @@ export function MCPServerDetailModal({
               </div>
             </div>
           </div>
-          <DialogDescription className="text-base">
-            {server.description}
-          </DialogDescription>
+          <DialogDescription className="text-base">{server.description}</DialogDescription>
         </DialogHeader>
 
         <div className="mt-6 space-y-6">
           {/* Categories */}
           <div>
-            <h3 className="text-sm font-semibold mb-2">Categories</h3>
+            <h3 className="mb-2 text-sm font-semibold">Categories</h3>
             <div className="flex flex-wrap gap-2">
               {server.categories.map((category) => (
                 <Badge key={category} variant="secondary">
@@ -75,27 +69,21 @@ export function MCPServerDetailModal({
 
           {/* Tools */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <Wrench className="h-4 w-4" />
-              <h3 className="text-sm font-semibold">
-                Available Tools ({server.tools.count})
-              </h3>
+              <h3 className="text-sm font-semibold">Available Tools ({server.tools.count})</h3>
             </div>
             <div className="space-y-2">
               {server.tools.examples.map((tool, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-2 p-2 rounded-md bg-muted/50"
-                >
-                  <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                <div key={index} className="flex items-start gap-2 rounded-md bg-muted/50 p-2">
+                  <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
                   <div className="flex-1">
-                    <div className="font-medium text-sm">{tool}</div>
-                    {server.tools.descriptions &&
-                      server.tools.descriptions[index] && (
-                        <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
-                          {server.tools.descriptions[index]}
-                        </div>
-                      )}
+                    <div className="text-sm font-medium">{tool}</div>
+                    {server.tools.descriptions && server.tools.descriptions[index] && (
+                      <div className="mt-0.5 text-xs whitespace-pre-wrap text-muted-foreground">
+                        {server.tools.descriptions[index]}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -108,30 +96,22 @@ export function MCPServerDetailModal({
           <div className="flex gap-3">
             {server.repoUrl && (
               <Button variant="outline" asChild>
-                <a
-                  href={server.repoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Github className="h-4 w-4 mr-2" />
+                <a href={server.repoUrl} target="_blank" rel="noopener noreferrer">
+                  <Github className="mr-2 h-4 w-4" />
                   View Repository
                 </a>
               </Button>
             )}
             {server.docsUrl && (
               <Button variant="outline" asChild>
-                <a
-                  href={server.docsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
+                <a href={server.docsUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" />
                   Documentation
                 </a>
               </Button>
             )}
             <Button className="ml-auto">
-              <ExternalLink className="h-4 w-4 mr-2" />
+              <ExternalLink className="mr-2 h-4 w-4" />
               Configure Server
             </Button>
           </div>

@@ -31,8 +31,7 @@ export function SettingsNavigation() {
     <nav className="w-full space-y-1">
       {settingsNavItems.map((item) => {
         const isActive =
-          pathname === item.href ||
-          (item.href !== "/settings" && pathname.startsWith(item.href));
+          pathname === item.href || (item.href !== "/settings" && pathname.startsWith(item.href));
 
         return (
           <Link
@@ -41,7 +40,7 @@ export function SettingsNavigation() {
             className={cn(
               "block rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
               isActive
-                ? "bg-accent text-accent-foreground font-medium"
+                ? "bg-accent font-medium text-accent-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

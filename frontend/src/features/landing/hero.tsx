@@ -14,14 +14,14 @@ import { cn } from "@/lib/utils";
 const BadgeLabel = ({ text }: { text: string }) => {
   return (
     <div
-      className="border border-primary/50 bg-background/50 mb-8 inline-flex items-center gap-3 rounded-full px-6 py-2.5 text-base"
+      className="mb-8 inline-flex items-center gap-3 rounded-full border border-primary/50 bg-background/50 px-6 py-2.5 text-base"
       role="note"
     >
       <span
-        className="bg-primary flex h-2.5 w-2.5 rounded-full animate-pulse"
+        className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-primary"
         aria-hidden="true"
       ></span>
-      <span className="text-muted-foreground text-sm font-medium">{text}</span>
+      <span className="text-sm font-medium text-muted-foreground">{text}</span>
     </div>
   );
 };
@@ -66,11 +66,7 @@ const CTAButton = ({
  */
 export function Hero() {
   return (
-    <section
-      className="relative overflow-hidden"
-      id="home"
-      aria-labelledby="hero-heading"
-    >
+    <section className="relative overflow-hidden" id="home" aria-labelledby="hero-heading">
       {/* Background elements */}
       <div
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -82,24 +78,21 @@ export function Hero() {
           <BadgeLabel text="New: Enterprise MCP Management" />
 
           <div className="relative">
-            <h1 className="inline-block max-w-5xl font-bold tracking-tight border border-primary/50 rounded-lg p-6 sm:p-8 bg-background/50 backdrop-blur-sm">
-              <div className="mb-4 text-3xl sm:text-4xl md:text-5xl leading-tight">
+            <h1 className="inline-block max-w-5xl rounded-lg border border-primary/50 bg-background/50 p-6 font-bold tracking-tight backdrop-blur-sm sm:p-8">
+              <div className="mb-4 text-3xl leading-tight sm:text-4xl md:text-5xl">
                 <span className="inline-block">The Control Plane for Your</span>
               </div>
-              <div className="text-4xl sm:text-5xl md:text-6xl leading-none">
-                <span className="text-primary font-bold">Enterprise MCP</span>
-                <span className="text-foreground ml-3 inline-block">
-                  Server
-                </span>
+              <div className="text-4xl leading-none sm:text-5xl md:text-6xl">
+                <span className="font-bold text-primary">Enterprise MCP</span>
+                <span className="ml-3 inline-block text-foreground">Server</span>
               </div>
             </h1>
           </div>
 
-          <p className="text-muted-foreground/80 mt-8 max-w-3xl text-center text-base leading-relaxed">
-            Centrally manage, share, and secure MCP connections for your entire
-            engineering organization. Stop wrestling with configs in agentic
-            IDEs like Cursor and Claude, and start accelerating development with
-            a unified gateway.
+          <p className="mt-8 max-w-3xl text-center text-base leading-relaxed text-muted-foreground/80">
+            Centrally manage, share, and secure MCP connections for your entire engineering
+            organization. Stop wrestling with configs in agentic IDEs like Cursor and Claude, and
+            start accelerating development with a unified gateway.
           </p>
 
           <div className="mt-12 flex flex-col gap-4 sm:flex-row sm:gap-4">
@@ -113,7 +106,7 @@ export function Hero() {
             <CTAButton variant="outline">Deploy on Your Infra</CTAButton>
           </div>
 
-          <p className="text-muted-foreground/60 mt-6 text-xs font-medium tracking-widest uppercase">
+          <p className="mt-6 text-xs font-medium tracking-widest text-muted-foreground/60 uppercase">
             Open source • Self-hostable • Enterprise ready
           </p>
         </div>

@@ -35,8 +35,7 @@ export default function AuthLayout({
             closeButton:
               "text-muted-foreground! hover:text-red-500! h-6! w-6! bg-background! hover:bg-red-50! dark:hover:bg-red-950! rounded! border! border-border! hover:border-red-200! dark:hover:border-red-800! transition-colors! duration-150!",
             error: "bg-background! text-foreground! border-border! shadow-lg!",
-            success:
-              "bg-background! text-foreground! border-border! shadow-lg!",
+            success: "bg-background! text-foreground! border-border! shadow-lg!",
           },
         }}
       />

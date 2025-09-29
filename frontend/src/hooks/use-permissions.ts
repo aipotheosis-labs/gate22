@@ -27,10 +27,7 @@ export function usePermission(permission: Permission): boolean {
 /**
  * Hook to check if current user has multiple permissions
  */
-export function usePermissions(
-  permissions: Permission[],
-  mode: "all" | "any" = "all",
-): boolean {
+export function usePermissions(permissions: Permission[], mode: "all" | "any" = "all"): boolean {
   const { activeOrg, activeRole } = useMetaInfo();
 
   return useMemo(() => {
@@ -39,11 +36,7 @@ export function usePermissions(
     // Use the active role for permission checking
     const roleToCheck = activeRole;
 
-    return checkMultiplePermissions(
-      roleToCheck.toLowerCase(),
-      permissions,
-      mode,
-    );
+    return checkMultiplePermissions(roleToCheck.toLowerCase(), permissions, mode);
   }, [activeOrg, activeRole, permissions, mode]);
 }
 
@@ -61,9 +54,7 @@ export function useRole(): {
 
   return useMemo(() => {
     const userRole = activeOrg?.userRole || "";
-    const effectiveRole = activeRole
-      ? activeRole.toLowerCase()
-      : userRole.toLowerCase();
+    const effectiveRole = activeRole ? activeRole.toLowerCase() : userRole.toLowerCase();
 
     return {
       role: userRole.toLowerCase(),
@@ -71,8 +62,7 @@ export function useRole(): {
       isAdmin: userRole === OrganizationRole.Admin,
       isMember: userRole === OrganizationRole.Member,
       isActingAsMember:
-        userRole === OrganizationRole.Admin &&
-        activeRole === OrganizationRole.Member,
+        userRole === OrganizationRole.Admin && activeRole === OrganizationRole.Member,
     };
   }, [activeOrg, activeRole]);
 }
@@ -97,10 +87,7 @@ export function useUserPermissions(): readonly Permission[] {
  * Hook to check if user can perform an action on a resource
  * Considers ownership for resource-specific actions
  */
-export function useCanPerformAction(
-  action: Permission,
-  resourceOwnerId?: string,
-): boolean {
+export function useCanPerformAction(action: Permission, resourceOwnerId?: string): boolean {
   const { activeOrg, activeRole, user } = useMetaInfo();
 
   return useMemo(() => {

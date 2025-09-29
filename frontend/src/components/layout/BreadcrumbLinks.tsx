@@ -22,8 +22,7 @@ export const BreadcrumbLinks = ({ pathname }: BreadcrumbLinksProps) => {
 
     if (index === 0) {
       const matchingRoute = allRoutes.find(
-        (item) =>
-          item.url === cumulativePath || item.url.startsWith(cumulativePath),
+        (item) => item.url === cumulativePath || item.url.startsWith(cumulativePath),
       );
 
       if (matchingRoute) {

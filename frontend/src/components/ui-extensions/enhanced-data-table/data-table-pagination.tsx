@@ -38,10 +38,7 @@ function getPageItems(current0: number, total: number): PageItem[] {
   if (current >= total - 2) {
     // let the tail interval start dynamically: total - 4, but not less than 2
     const tailStart = Math.max(total - 4, 2);
-    const tail = Array.from(
-      { length: total - tailStart },
-      (_, i) => tailStart + i,
-    );
+    const tail = Array.from({ length: total - tailStart }, (_, i) => tailStart + i);
     return [1, "ellipsis", ...tail, total];
   }
 
@@ -49,10 +46,7 @@ function getPageItems(current0: number, total: number): PageItem[] {
   return [1, "ellipsis", current - 1, current, current + 1, "ellipsis", total];
 }
 
-export function DataTablePagination<TData>({
-  table,
-  totalCount,
-}: DataTablePaginationProps<TData>) {
+export function DataTablePagination<TData>({ table, totalCount }: DataTablePaginationProps<TData>) {
   const { pageIndex, pageSize } = table.getState().pagination;
   const pageCount = table.getPageCount();
   const rowsThisPage = table.getPaginationRowModel().rows.length;
@@ -75,22 +69,15 @@ export function DataTablePagination<TData>({
   };
 
   /* Page number button array */
-  const pageItems = useMemo(
-    () => getPageItems(pageIndex, pageCount),
-    [pageIndex, pageCount],
-  );
+  const pageItems = useMemo(() => getPageItems(pageIndex, pageCount), [pageIndex, pageCount]);
 
   // Handle empty table
   if (table.getRowCount() === 0) {
-    return (
-      <div className="text-sm text-muted-foreground py-2 ml-4">
-        No results to display
-      </div>
-    );
+    return <div className="ml-4 py-2 text-sm text-muted-foreground">No results to display</div>;
   }
 
   return (
-    <div className="flex flex-nowrap justify-between items-center px-3 py-1">
+    <div className="flex flex-nowrap items-center justify-between px-3 py-1">
       {/* Left: Total row number information */}
       <div className="flex items-center gap-4">
         <div className="text-sm font-medium">
@@ -127,9 +114,7 @@ export function DataTablePagination<TData>({
               <PaginationLink
                 aria-label="Previous page"
                 className={
-                  !table.getCanPreviousPage()
-                    ? "pointer-events-none opacity-50"
-                    : undefined
+                  !table.getCanPreviousPage() ? "pointer-events-none opacity-50" : undefined
                 }
                 onClick={() => table.previousPage()}
               >
@@ -142,7 +127,7 @@ export function DataTablePagination<TData>({
               <PaginationItem key={i}>
                 {item === "ellipsis" ? (
                   <span
-                    className="px-2 text-sm select-none text-muted-foreground"
+                    className="px-2 text-sm text-muted-foreground select-none"
                     aria-hidden="true"
                   >
                     …
@@ -164,11 +149,7 @@ export function DataTablePagination<TData>({
             <PaginationItem>
               <PaginationLink
                 aria-label="Next page"
-                className={
-                  !table.getCanNextPage()
-                    ? "pointer-events-none opacity-50"
-                    : undefined
-                }
+                className={!table.getCanNextPage() ? "pointer-events-none opacity-50" : undefined}
                 onClick={() => table.nextPage()}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -187,15 +168,13 @@ export function DataTablePagination<TData>({
                 onChange={(e) => setPageInput(Number(e.target.value))}
                 onKeyDown={(e) => e.key === "Enter" && jumpToPage()}
                 // Hide the arrow of the input box  [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
-                className="h-7 w-14 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="h-7 w-14 [appearance:textfield] text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 aria-label="To Page"
               />
               <Button
                 size="sm"
                 className="h-7"
-                disabled={
-                  isNaN(pageInput) || pageInput < 1 || pageInput > pageCount
-                }
+                disabled={isNaN(pageInput) || pageInput < 1 || pageInput > pageCount}
                 onClick={jumpToPage}
                 aria-label="Go"
               >

@@ -8,12 +8,7 @@ interface MembersTableProps {
 }
 
 export function MembersTable({ refreshKey = 0 }: MembersTableProps) {
-  const {
-    members = [],
-    isLoading,
-    removeMember,
-    refetch,
-  } = useOrganizationMembers();
+  const { members = [], isLoading, removeMember, refetch } = useOrganizationMembers();
 
   useEffect(() => {
     if (refreshKey > 0) {
@@ -31,7 +26,7 @@ export function MembersTable({ refreshKey = 0 }: MembersTableProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-muted-foreground">Loading members...</div>
       </div>
     );

@@ -25,19 +25,13 @@ interface UseMemberInvitationMutationOptions {
   ) => void | Promise<void>;
 }
 
-export function useMemberInvitationMutation(
-  options: UseMemberInvitationMutationOptions = {},
-) {
+export function useMemberInvitationMutation(options: UseMemberInvitationMutationOptions = {}) {
   const { accessToken, activeOrg } = useMetaInfo();
   const queryClient = useQueryClient();
   const invalidateMembers = options.invalidateMembers ?? false;
   const invalidateInvitations = options.invalidateInvitations ?? true;
 
-  return useMutation<
-    OrganizationInvitationDetail,
-    unknown,
-    MemberInvitationVariables
-  >({
+  return useMutation<OrganizationInvitationDetail, unknown, MemberInvitationVariables>({
     mutationFn: async ({ email, role }) => {
       if (!accessToken || !activeOrg?.orgId) {
         throw new Error("Organization context unavailable");

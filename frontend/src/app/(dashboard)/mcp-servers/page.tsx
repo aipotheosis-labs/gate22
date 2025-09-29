@@ -8,13 +8,7 @@ import { usePermission } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { Shield } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Loader2 } from "lucide-react";
 import {
   Select,
@@ -56,10 +50,7 @@ export default function MCPServersPage() {
     limit: pageSize,
   });
 
-  const servers = useMemo(
-    () => serversResponse?.data || [],
-    [serversResponse?.data],
-  );
+  const servers = useMemo(() => serversResponse?.data || [], [serversResponse?.data]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -76,8 +67,7 @@ export default function MCPServersPage() {
         server.description.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
-        selectedCategory === "all" ||
-        server.categories.includes(selectedCategory);
+        selectedCategory === "all" || server.categories.includes(selectedCategory);
 
       return matchesSearch && matchesCategory;
     });
@@ -86,12 +76,11 @@ export default function MCPServersPage() {
   // Show access denied for non-admins only after org context is loaded
   if (activeOrg && !canView) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-        <p className="text-muted-foreground max-w-md">
-          This page is restricted to administrators only. Redirecting to
-          Available MCP Servers...
+      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+        <Shield className="mb-4 h-12 w-12 text-muted-foreground" />
+        <h3 className="mb-2 text-lg font-semibold">Access Restricted</h3>
+        <p className="max-w-md text-muted-foreground">
+          This page is restricted to administrators only. Redirecting to Available MCP Servers...
         </p>
       </div>
     );
@@ -100,13 +89,13 @@ export default function MCPServersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="px-4 py-3 border-b">
-        <div className="flex justify-between items-start">
+      <div className="border-b px-4 py-3">
+        <div className="flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold">MCP Servers</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Browse and configure Model Context Protocol servers to extend your
-              AI agent&apos;s capabilities
+            <p className="mt-1 text-sm text-muted-foreground">
+              Browse and configure Model Context Protocol servers to extend your AI agent&apos;s
+              capabilities
             </p>
           </div>
           <PermissionGuard permission={PERMISSIONS.CUSTOM_MCP_SERVER_CREATE}>
@@ -121,11 +110,11 @@ export default function MCPServersPage() {
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative max-w-md flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder="Search MCP servers..."
               value={searchQuery}
@@ -161,25 +150,23 @@ export default function MCPServersPage() {
 
         {/* Error state */}
         {error && (
-          <div className="text-center py-12">
-            <p className="text-red-500">
-              Failed to load MCP servers. Please try again.
-            </p>
+          <div className="py-12 text-center">
+            <p className="text-red-500">Failed to load MCP servers. Please try again.</p>
           </div>
         )}
 
         {/* Integration Grid */}
         {!isLoading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredServers.map((server) => (
               <Card
                 key={server.id}
-                className="flex flex-col hover:shadow-md transition-shadow cursor-pointer min-h-[180px]"
+                className="flex min-h-[180px] cursor-pointer flex-col transition-shadow hover:shadow-md"
                 onClick={() => router.push(`/mcp-servers/${server.id}`)}
               >
-                <CardHeader className="flex flex-col flex-1 pb-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="size-8 shrink-0 flex items-center justify-center">
+                <CardHeader className="flex flex-1 flex-col pb-2">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex size-8 shrink-0 items-center justify-center">
                       <Image
                         src={server.logo}
                         alt={`${server.name} logo`}
@@ -191,7 +178,7 @@ export default function MCPServersPage() {
                     </div>
                     <CardTitle className="text-lg">{server.name}</CardTitle>
                   </div>
-                  <CardDescription className="text-sm line-clamp-2 flex-1">
+                  <CardDescription className="line-clamp-2 flex-1 text-sm">
                     {server.description}
                   </CardDescription>
                 </CardHeader>
@@ -199,11 +186,7 @@ export default function MCPServersPage() {
                   {/* Categories */}
                   <div className="flex flex-wrap gap-1">
                     {server.categories.map((category) => (
-                      <Badge
-                        key={category}
-                        variant="secondary"
-                        className="text-xs"
-                      >
+                      <Badge key={category} variant="secondary" className="text-xs">
                         {category}
                       </Badge>
                     ))}
@@ -216,16 +199,14 @@ export default function MCPServersPage() {
 
         {/* Empty state */}
         {!isLoading && !error && filteredServers.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No MCP servers found matching your criteria.
-            </p>
+          <div className="py-12 text-center">
+            <p className="text-muted-foreground">No MCP servers found matching your criteria.</p>
           </div>
         )}
 
         {/* Pagination */}
         {servers.length > pageSize && (
-          <div className="flex justify-center gap-2 mt-6">
+          <div className="mt-6 flex justify-center gap-2">
             <Button
               variant="outline"
               onClick={() => setPage(Math.max(0, page - 1))}

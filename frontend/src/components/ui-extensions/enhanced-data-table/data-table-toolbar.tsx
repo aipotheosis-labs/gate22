@@ -35,12 +35,12 @@ export function EnhancedDataTableToolbar<TData>({
       <div className="flex items-center gap-4">
         {showSearchInput && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder={placeholder}
               value={searchValue}
               onChange={(event) => handleSearch(event.target.value)}
-              className="pl-10 w-[250px]"
+              className="w-[250px] pl-10"
             />
           </div>
         )}

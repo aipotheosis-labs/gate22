@@ -23,15 +23,13 @@ export function SettingsItem({
   return (
     <div className="flex items-center gap-4">
       <div
-        className={`w-10 h-10 rounded-full ${containerClassName} flex items-center justify-center`}
+        className={`h-10 w-10 rounded-full ${containerClassName} flex items-center justify-center`}
       >
         <Icon className={`h-5 w-5 ${iconClassName}`} />
       </div>
       <div className="flex-1">
         <Label className="text-sm font-medium">{label}</Label>
-        {description && (
-          <div className="text-sm text-muted-foreground">{description}</div>
-        )}
+        {description && <div className="text-sm text-muted-foreground">{description}</div>}
       </div>
       {children}
     </div>

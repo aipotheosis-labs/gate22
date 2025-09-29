@@ -47,15 +47,11 @@ export default function BundleMCPPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { activeOrg, activeRole } = useMetaInfo();
   const isAdmin = activeOrg?.userRole === OrganizationRole.Admin;
-  const isAdminViewingAsAdmin =
-    isAdmin && activeRole === OrganizationRole.Admin;
-  const {
-    data: bundles = [],
-    isLoading: isBundlesLoading,
-    canCreate,
-  } = useMCPServerBundles();
-  const { data: configurationsData, isLoading: isConfigsLoading } =
-    useMCPServerConfigurations({ limit: 100 });
+  const isAdminViewingAsAdmin = isAdmin && activeRole === OrganizationRole.Admin;
+  const { data: bundles = [], isLoading: isBundlesLoading, canCreate } = useMCPServerBundles();
+  const { data: configurationsData, isLoading: isConfigsLoading } = useMCPServerConfigurations({
+    limit: 100,
+  });
   const configurations = configurationsData?.data || [];
 
   // Extract configuration IDs to fetch related connected accounts
@@ -132,7 +128,7 @@ export default function BundleMCPPage() {
                 return bundleKey ? (
                   <div className="flex items-center gap-1">
                     <div
-                      className="font-mono text-xs truncate max-w-[200px]"
+                      className="max-w-[200px] truncate font-mono text-xs"
                       title="Hidden for security - use copy button to copy full URL"
                     >
                       {maskedUrl}
@@ -141,7 +137,7 @@ export default function BundleMCPPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleCopyUrl(bundleKey)}
-                      className="h-6 w-6 p-0 shrink-0"
+                      className="h-6 w-6 shrink-0 p-0"
                       title="Copy full MCP URL"
                     >
                       {copiedBundleUrl === bundleKey ? (
@@ -180,7 +176,7 @@ export default function BundleMCPPage() {
         header: ({ column }) => (
           <button
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="flex items-center gap-1 hover:text-foreground/80 transition-colors"
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
           >
             <span>CREATED</span>
             <ArrowUpDown className="h-4 w-4" />
@@ -188,11 +184,7 @@ export default function BundleMCPPage() {
         ),
         cell: (info) => {
           const dateString = info.getValue();
-          return (
-            <div className="text-sm">
-              {dateString ? formatToLocalTime(dateString) : "-"}
-            </div>
-          );
+          return <div className="text-sm">{dateString ? formatToLocalTime(dateString) : "-"}</div>;
         },
         enableGlobalFilter: false,
       }),
@@ -213,10 +205,7 @@ export default function BundleMCPPage() {
               </Button>
 
               <PermissionGuard
-                permission={[
-                  PERMISSIONS.BUNDLE_DELETE_OWN,
-                  PERMISSIONS.BUNDLE_DELETE_ALL,
-                ]}
+                permission={[PERMISSIONS.BUNDLE_DELETE_OWN, PERMISSIONS.BUNDLE_DELETE_ALL]}
                 mode="any"
               >
                 <AlertDialog>
@@ -229,8 +218,8 @@ export default function BundleMCPPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Bundle?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete the bundle &quot;{bundle.name}&quot;.
+                        This action cannot be undone. This will permanently delete the bundle &quot;
+                        {bundle.name}&quot;.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -256,9 +245,9 @@ export default function BundleMCPPage() {
   if (isBundlesLoading) {
     return (
       <div>
-        <div className="px-4 py-3 border-b">
+        <div className="border-b px-4 py-3">
           <h1 className="text-2xl font-bold">MCP Bundles</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage your MCP server bundles and configurations
           </p>
         </div>
@@ -274,10 +263,10 @@ export default function BundleMCPPage() {
 
   return (
     <div>
-      <div className="px-4 py-3 border-b flex items-center justify-between">
+      <div className="flex items-center justify-between border-b px-4 py-3">
         <div>
           <h1 className="text-2xl font-bold">MCP Bundles</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage your MCP server bundles and configurations
           </p>
         </div>
@@ -287,13 +276,13 @@ export default function BundleMCPPage() {
             disabled={isConfigsLoading || !canCreate}
             onClick={() => setShowCreateDialog(true)}
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Create Bundle
           </Button>
         </PermissionGuard>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         {isAdminViewingAsAdmin && (
           <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
             <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -318,14 +307,13 @@ export default function BundleMCPPage() {
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <div className="space-y-3 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <Package className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold">No bundles yet</h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Create your first bundle to group MCP server configurations
-                  for easier management
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Create your first bundle to group MCP server configurations for easier management
                 </p>
                 <PermissionGuard permission={PERMISSIONS.BUNDLE_CREATE}>
                   <Button
@@ -333,7 +321,7 @@ export default function BundleMCPPage() {
                     disabled={isConfigsLoading || !canCreate}
                     onClick={() => setShowCreateDialog(true)}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Create Bundle
                   </Button>
                 </PermissionGuard>

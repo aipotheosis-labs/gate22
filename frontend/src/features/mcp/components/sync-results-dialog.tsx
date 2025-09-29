@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -62,20 +57,16 @@ export function SyncResultsDialog({
       <div>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 mb-3 p-0 h-auto hover:bg-transparent"
+          className="mb-3 flex h-auto items-center gap-2 p-0 hover:bg-transparent"
           onClick={() => toggleSection(sectionKey)}
         >
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           <h3 className={`font-semibold ${colorClass}`}>
             {title} ({count})
           </h3>
         </Button>
         {isExpanded && count > 0 && (
-          <div className="flex flex-wrap gap-2 ml-6">
+          <div className="ml-6 flex flex-wrap gap-2">
             {tools.map((tool) => (
               <Badge key={tool} variant="outline" className={badgeClass}>
                 {tool}
@@ -92,7 +83,7 @@ export function SyncResultsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Tools Sync Results for {serverName}</DialogTitle>
         </DialogHeader>

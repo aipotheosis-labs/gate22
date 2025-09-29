@@ -1,11 +1,5 @@
 import { ReactNode } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 interface SettingsSectionProps {
   title: string;
@@ -13,11 +7,7 @@ interface SettingsSectionProps {
   children: ReactNode;
 }
 
-export function SettingsSection({
-  title,
-  description,
-  children,
-}: SettingsSectionProps) {
+export function SettingsSection({ title, description, children }: SettingsSectionProps) {
   return (
     <Card className="border-none">
       <CardHeader>

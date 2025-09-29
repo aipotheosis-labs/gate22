@@ -22,7 +22,7 @@ export const Header = () => {
   const pathname = usePathname();
 
   return (
-    <header className="flex-shrink-0 bg-background sticky top-0 z-50">
+    <header className="sticky top-0 z-50 flex-shrink-0 bg-background">
       <div className="flex w-full items-center justify-between px-4 py-3">
         <div className="flex items-center gap-4">
           {/* Organization Selector and Breadcrumbs */}
@@ -38,7 +38,7 @@ export const Header = () => {
         <div className="flex items-center gap-2">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="px-2 h-9">
+              <Button variant="outline" className="h-9 px-2">
                 <BsQuestionCircle />
                 <span>Support</span>
               </Button>
@@ -47,19 +47,12 @@ export const Header = () => {
               <DialogHeader>
                 <DialogTitle>Support</DialogTitle>
               </DialogHeader>
-              <p>
-                For support or to report a bug, please email us at
-                support@aipolabs.xyz
-              </p>
+              <p>For support or to report a bug, please email us at support@aipolabs.xyz</p>
             </DialogContent>
           </Dialog>
 
-          <a
-            href="https://discord.gg/bT2eQ2m9vm"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline" className="px-2 h-9">
+          <a href="https://discord.gg/bT2eQ2m9vm" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="h-9 px-2">
               <BsDiscord />
               <span>Discord</span>
             </Button>
@@ -69,7 +62,7 @@ export const Header = () => {
             <GoBell />
           </Button> */}
 
-          <div className="h-6 w-px bg-border mx-1" />
+          <div className="mx-1 h-6 w-px bg-border" />
 
           <RoleSelector />
 

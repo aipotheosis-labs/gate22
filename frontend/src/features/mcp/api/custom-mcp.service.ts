@@ -66,10 +66,7 @@ export const customMCPService = {
     request: OAuth2DiscoveryRequest,
   ): Promise<OAuth2DiscoveryResponse> => {
     const api = createAuthenticatedRequest(token, orgId, role);
-    return api.post<OAuth2DiscoveryResponse>(
-      API_ENDPOINTS.OAUTH2_DISCOVERY,
-      request,
-    );
+    return api.post<OAuth2DiscoveryResponse>(API_ENDPOINTS.OAUTH2_DISCOVERY, request);
   },
 
   // OAuth2 Dynamic Client Registration

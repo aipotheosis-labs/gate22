@@ -50,28 +50,20 @@ export function MemberInvitationForm({ onSuccess }: MemberInvitationFormProps) {
   };
 
   return (
-    <div className="border rounded-lg bg-card">
-      <div className="p-6 space-y-4">
+    <div className="rounded-lg border bg-card">
+      <div className="space-y-4 p-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-medium">
-            Invite new members by email address
-          </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Link2 className="h-4 w-4 mr-2" />
+          <h3 className="text-base font-medium">Invite new members by email address</h3>
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <Link2 className="mr-2 h-4 w-4" />
             Invite Link
           </Button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-muted-foreground">
-              Email Address
-            </label>
-            <div className="flex gap-3 mt-2">
+            <label className="text-sm text-muted-foreground">Email Address</label>
+            <div className="mt-2 flex gap-3">
               <Input
                 type="email"
                 placeholder="jane@example.com"
@@ -108,7 +100,7 @@ export function MemberInvitationForm({ onSuccess }: MemberInvitationFormProps) {
             className="text-muted-foreground hover:text-foreground"
             disabled
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="mr-1 h-4 w-4" />
             Add more
           </Button>
         </div>
@@ -120,10 +112,7 @@ export function MemberInvitationForm({ onSuccess }: MemberInvitationFormProps) {
               Team Members
             </a>
           </p>
-          <Button
-            onClick={handleCreateMemberInvitation}
-            disabled={isInviting || !email.trim()}
-          >
+          <Button onClick={handleCreateMemberInvitation} disabled={isInviting || !email.trim()}>
             {isInviting ? "Sending..." : "Send Invitation"}
           </Button>
         </div>

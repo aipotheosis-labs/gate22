@@ -30,11 +30,7 @@ class OrganizationManager {
     }
   }
 
-  setActiveOrganization(
-    orgId: string,
-    orgName: string,
-    userRole: string,
-  ): void {
+  setActiveOrganization(orgId: string, orgName: string, userRole: string): void {
     if (typeof window === "undefined") return;
 
     const orgData: StoredOrganization = {

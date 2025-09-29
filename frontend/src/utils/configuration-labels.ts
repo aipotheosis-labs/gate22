@@ -1,7 +1,4 @@
-import {
-  ConnectedAccountOwnership,
-  AuthType,
-} from "@/features/mcp/types/mcp.types";
+import { ConnectedAccountOwnership, AuthType } from "@/features/mcp/types/mcp.types";
 
 /**
  * Utility functions for displaying connected account type labels and information
@@ -28,9 +25,7 @@ export const getOwnershipLabel = (
 /**
  * Get detailed information/tooltip content for connected account type
  */
-export const getConfigurationTypeDetailedInfo = (
-  type: ConnectedAccountOwnership,
-): string => {
+export const getConfigurationTypeDetailedInfo = (type: ConnectedAccountOwnership): string => {
   switch (type) {
     case ConnectedAccountOwnership.INDIVIDUAL:
       return "Members can create individual connected accounts with their own credentials. Each member manages their own authentication and access.";
@@ -44,9 +39,7 @@ export const getConfigurationTypeDetailedInfo = (
 /**
  * Get display label for authentication type
  */
-export const getAuthTypeLabel = (
-  authType: AuthType | undefined | null,
-): string => {
+export const getAuthTypeLabel = (authType: AuthType | undefined | null): string => {
   switch (authType) {
     case AuthType.OAUTH:
       return "OAuth 2.0";

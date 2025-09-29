@@ -32,15 +32,13 @@ export const TABLE_AGGREGATION_OPTIONS = [
   "All time",
 ] as const;
 
-export type DashboardDateRangeAggregationOption =
-  (typeof DASHBOARD_AGGREGATION_OPTIONS)[number];
+export type DashboardDateRangeAggregationOption = (typeof DASHBOARD_AGGREGATION_OPTIONS)[number];
 
 export type TableDateRange = {
   from: Date;
 };
 
-export type TableDateRangeAggregationOption =
-  (typeof TABLE_AGGREGATION_OPTIONS)[number];
+export type TableDateRangeAggregationOption = (typeof TABLE_AGGREGATION_OPTIONS)[number];
 
 export type DashboardDateRange = {
   from: Date;
@@ -69,49 +67,48 @@ export const dateTimeAggregationOptions = [
   ...DASHBOARD_AGGREGATION_OPTIONS,
 ] as const;
 
-export const dashboardDateRangeAggregationSettings: DashboardDateRangeAggregationSettings =
-  {
-    "1 year": {
-      date_trunc: "month",
-      minutes: 365 * 24 * 60,
-    },
-    "3 months": {
-      date_trunc: "week",
-      minutes: 3 * 30 * 24 * 60,
-    },
-    "1 month": {
-      date_trunc: "day",
-      minutes: 30 * 24 * 60,
-    },
-    "7 days": {
-      date_trunc: "hour",
-      minutes: 7 * 24 * 60,
-    },
-    "3 days": {
-      date_trunc: "hour",
-      minutes: 3 * 24 * 60,
-    },
-    "24 hours": {
-      date_trunc: "hour",
-      minutes: 24 * 60,
-    },
-    "3 hours": {
-      date_trunc: "minute",
-      minutes: 3 * 60,
-    },
-    "1 hour": {
-      date_trunc: "minute",
-      minutes: 60,
-    },
-    "30 min": {
-      date_trunc: "minute",
-      minutes: 30,
-    },
-    "5 min": {
-      date_trunc: "minute",
-      minutes: 5,
-    },
-  };
+export const dashboardDateRangeAggregationSettings: DashboardDateRangeAggregationSettings = {
+  "1 year": {
+    date_trunc: "month",
+    minutes: 365 * 24 * 60,
+  },
+  "3 months": {
+    date_trunc: "week",
+    minutes: 3 * 30 * 24 * 60,
+  },
+  "1 month": {
+    date_trunc: "day",
+    minutes: 30 * 24 * 60,
+  },
+  "7 days": {
+    date_trunc: "hour",
+    minutes: 7 * 24 * 60,
+  },
+  "3 days": {
+    date_trunc: "hour",
+    minutes: 3 * 24 * 60,
+  },
+  "24 hours": {
+    date_trunc: "hour",
+    minutes: 24 * 60,
+  },
+  "3 hours": {
+    date_trunc: "minute",
+    minutes: 3 * 60,
+  },
+  "1 hour": {
+    date_trunc: "minute",
+    minutes: 60,
+  },
+  "30 min": {
+    date_trunc: "minute",
+    minutes: 30,
+  },
+  "5 min": {
+    date_trunc: "minute",
+    minutes: 5,
+  },
+};
 
 export const SelectedTimeOptionSchema = z
   .discriminatedUnion("filterSource", [
@@ -172,9 +169,7 @@ export const isTableDataRangeOptionAvailable = ({
   return limitDays >= durationMinutes / (24 * 60);
 };
 
-export const getDateFromOption = (
-  selectedTimeOption: SelectedTimeOption,
-): Date | undefined => {
+export const getDateFromOption = (selectedTimeOption: SelectedTimeOption): Date | undefined => {
   if (!selectedTimeOption) return undefined;
 
   const { filterSource, option } = selectedTimeOption;

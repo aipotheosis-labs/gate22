@@ -58,9 +58,7 @@ export function ManageToolsDialog({
   }, [open, configuration]);
 
   // Create auth context key for cache invalidation
-  const authContextKey = activeOrg
-    ? `${activeOrg.orgId}:${activeRole}`
-    : undefined;
+  const authContextKey = activeOrg ? `${activeOrg.orgId}:${activeRole}` : undefined;
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -74,13 +72,7 @@ export function ManageToolsDialog({
       // Invalidate all relevant queries to refresh the data
       // Using the correct query keys that match the hooks
       queryClient.invalidateQueries({
-        queryKey: [
-          "mcp",
-          "configurations",
-          "detail",
-          configuration.id,
-          authContextKey,
-        ],
+        queryKey: ["mcp", "configurations", "detail", configuration.id, authContextKey],
       });
       queryClient.invalidateQueries({
         queryKey: ["mcp", "configurations", "list"],
@@ -134,7 +126,7 @@ export function ManageToolsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-h-[80vh] max-w-2xl">
         <DialogHeader>
           <DialogTitle>Manage Tools</DialogTitle>
           <DialogDescription>
@@ -144,14 +136,13 @@ export function ManageToolsDialog({
 
         <div className="space-y-4">
           {/* Enable All Tools Toggle - matching stepper style */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="flex-1 space-y-0.5">
               <Label htmlFor="all-tools" className="text-sm font-medium">
                 Enable all tools
               </Label>
               <p className="text-xs text-muted-foreground">
-                Grant access to all {serverData?.tools?.length || 0} available
-                tools
+                Grant access to all {serverData?.tools?.length || 0} available tools
               </p>
             </div>
             <Switch
@@ -162,68 +153,62 @@ export function ManageToolsDialog({
           </div>
 
           {/* Tool Selection (only shown when all tools is not enabled) */}
-          {!allToolsEnabled &&
-            serverData?.tools &&
-            serverData.tools.length > 0 && (
-              <div className="space-y-3">
-                {/* Search Input with integrated icon */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search tools..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    Select specific tools:
-                  </Label>
-                  <div className="grid gap-1.5 max-h-[300px] overflow-y-auto pr-2 border rounded-lg p-2">
-                    {filteredTools && filteredTools.length > 0 ? (
-                      filteredTools.map((tool) => (
-                        <label
-                          key={tool.id}
-                          className="flex items-start space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
-                        >
-                          <Checkbox
-                            id={tool.id}
-                            checked={selectedTools.includes(tool.id)}
-                            onCheckedChange={() => handleToggleTool(tool.id)}
-                            className="mt-0.5"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium">
-                              {tool.name}
-                            </div>
-                            {tool.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-1">
-                                {tool.description}
-                              </p>
-                            )}
-                          </div>
-                        </label>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        {searchQuery
-                          ? "No tools match your search"
-                          : "No tools available"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {selectedTools.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {selectedTools.length} tool
-                    {selectedTools.length !== 1 ? "s" : ""} selected
-                  </p>
-                )}
+          {!allToolsEnabled && serverData?.tools && serverData.tools.length > 0 && (
+            <div className="space-y-3">
+              {/* Search Input with integrated icon */}
+              <div className="relative">
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search tools..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-            )}
+
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  Select specific tools:
+                </Label>
+                <div className="grid max-h-[300px] gap-1.5 overflow-y-auto rounded-lg border p-2 pr-2">
+                  {filteredTools && filteredTools.length > 0 ? (
+                    filteredTools.map((tool) => (
+                      <label
+                        key={tool.id}
+                        className="flex cursor-pointer items-start space-x-2 rounded border p-2 transition-colors hover:bg-accent/50"
+                      >
+                        <Checkbox
+                          id={tool.id}
+                          checked={selectedTools.includes(tool.id)}
+                          onCheckedChange={() => handleToggleTool(tool.id)}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium">{tool.name}</div>
+                          {tool.description && (
+                            <p className="line-clamp-1 text-xs text-muted-foreground">
+                              {tool.description}
+                            </p>
+                          )}
+                        </div>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      {searchQuery ? "No tools match your search" : "No tools available"}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {selectedTools.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedTools.length} tool
+                  {selectedTools.length !== 1 ? "s" : ""} selected
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -235,9 +220,7 @@ export function ManageToolsDialog({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={updateMutation.isPending}>
-            {updateMutation.isPending && (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            )}
+            {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save Changes
           </Button>
         </DialogFooter>

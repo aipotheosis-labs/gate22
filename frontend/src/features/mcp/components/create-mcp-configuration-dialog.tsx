@@ -25,14 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import {
-  Plus,
-  Loader2,
-  HelpCircle,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-} from "lucide-react";
+import { Plus, Loader2, HelpCircle, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import {
   useMCPServers,
   useMCPServer,
@@ -45,11 +38,7 @@ import {
   ConnectedAccountOwnership,
 } from "../types/mcp.types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getConfigurationTypeDetailedInfo } from "@/utils/configuration-labels";
 import { getAuthTypeLabel, getAuthTypeDescription } from "@/utils/auth-labels";
 import { cn } from "@/lib/utils";
@@ -68,11 +57,7 @@ interface StepIndicatorProps {
   completedSteps: Set<ConfigurationStep>;
 }
 
-function StepIndicator({
-  currentStep,
-  onClick,
-  completedSteps,
-}: StepIndicatorProps) {
+function StepIndicator({ currentStep, onClick, completedSteps }: StepIndicatorProps) {
   const steps = [
     { id: ConfigurationStep.BASIC_INFO, label: "Basic Info" },
     { id: ConfigurationStep.AUTHENTICATION, label: "Authentication" },
@@ -82,27 +67,24 @@ function StepIndicator({
   ];
 
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="mb-6 flex items-center justify-between">
       {steps.map((step, index) => (
-        <div key={step.id} className="flex items-center flex-1">
+        <div key={step.id} className="flex flex-1 items-center">
           <button
             onClick={() => onClick?.(step.id)}
-            disabled={
-              !onClick ||
-              (!completedSteps.has(step.id) && step.id > currentStep)
-            }
+            disabled={!onClick || (!completedSteps.has(step.id) && step.id > currentStep)}
             className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors",
+              "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors",
               "disabled:cursor-not-allowed",
               currentStep === step.id
-                ? "bg-primary text-primary-foreground border-primary"
+                ? "border-primary bg-primary text-primary-foreground"
                 : completedSteps.has(step.id)
-                  ? "bg-primary/10 text-primary border-primary"
-                  : "bg-background text-muted-foreground border-muted-foreground/30",
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-muted-foreground/30 bg-background text-muted-foreground",
             )}
           >
             {completedSteps.has(step.id) && currentStep !== step.id ? (
-              <Check className="w-4 h-4" />
+              <Check className="h-4 w-4" />
             ) : (
               <span className="text-sm font-medium">{step.id}</span>
             )}
@@ -110,7 +92,7 @@ function StepIndicator({
           <div className="ml-2 flex-1">
             <p
               className={cn(
-                "text-xs font-medium hidden sm:block",
+                "hidden text-xs font-medium sm:block",
                 currentStep === step.id
                   ? "text-foreground"
                   : completedSteps.has(step.id)
@@ -124,10 +106,8 @@ function StepIndicator({
           {index < steps.length - 1 && (
             <div
               className={cn(
-                "h-0.5 flex-1 mx-2",
-                completedSteps.has(step.id)
-                  ? "bg-primary"
-                  : "bg-muted-foreground/30",
+                "mx-2 h-0.5 flex-1",
+                completedSteps.has(step.id) ? "bg-primary" : "bg-muted-foreground/30",
               )}
             />
           )}
@@ -139,12 +119,8 @@ function StepIndicator({
 
 export function CreateMCPConfigurationDialog() {
   const [open, setOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState<ConfigurationStep>(
-    ConfigurationStep.BASIC_INFO,
-  );
-  const [completedSteps, setCompletedSteps] = useState<Set<ConfigurationStep>>(
-    new Set(),
-  );
+  const [currentStep, setCurrentStep] = useState<ConfigurationStep>(ConfigurationStep.BASIC_INFO);
+  const [completedSteps, setCompletedSteps] = useState<Set<ConfigurationStep>>(new Set());
 
   // Form state
   const [name, setName] = useState<string>("");
@@ -152,8 +128,9 @@ export function CreateMCPConfigurationDialog() {
   const [description, setDescription] = useState<string>("");
   const [selectedServerId, setSelectedServerId] = useState<string>("");
   const [selectedAuthType, setSelectedAuthType] = useState<AuthType | "">("");
-  const [configurationType, setConfigurationType] =
-    useState<ConnectedAccountOwnership>(ConnectedAccountOwnership.INDIVIDUAL);
+  const [configurationType, setConfigurationType] = useState<ConnectedAccountOwnership>(
+    ConnectedAccountOwnership.INDIVIDUAL,
+  );
   const [allToolsEnabled, setAllToolsEnabled] = useState(true);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
@@ -194,10 +171,7 @@ export function CreateMCPConfigurationDialog() {
       if (currentStep === ConfigurationStep.BASIC_INFO && !selectedServerId) {
         toast.error("Please select an MCP server");
       }
-      if (
-        currentStep === ConfigurationStep.AUTHENTICATION &&
-        !selectedAuthType
-      ) {
+      if (currentStep === ConfigurationStep.AUTHENTICATION && !selectedAuthType) {
         toast.error("Please select an authentication type");
       }
     }
@@ -265,17 +239,13 @@ export function CreateMCPConfigurationDialog() {
 
   const handleToolToggle = (toolId: string) => {
     setSelectedTools((prev) =>
-      prev.includes(toolId)
-        ? prev.filter((id) => id !== toolId)
-        : [...prev, toolId],
+      prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId],
     );
   };
 
   const handleTeamToggle = (teamId: string) => {
     setSelectedTeams((prev) =>
-      prev.includes(teamId)
-        ? prev.filter((id) => id !== teamId)
-        : [...prev, teamId],
+      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId],
     );
   };
 
@@ -284,9 +254,7 @@ export function CreateMCPConfigurationDialog() {
     if (
       selectedServer &&
       selectedAuthType &&
-      !selectedServer.supported_auth_types.includes(
-        selectedAuthType as AuthType,
-      )
+      !selectedServer.supported_auth_types.includes(selectedAuthType as AuthType)
     ) {
       setSelectedAuthType("");
     }
@@ -294,11 +262,7 @@ export function CreateMCPConfigurationDialog() {
 
   // Set default auth type when server is selected
   useEffect(() => {
-    if (
-      selectedServer &&
-      !selectedAuthType &&
-      selectedServer.supported_auth_types.length > 0
-    ) {
+    if (selectedServer && !selectedAuthType && selectedServer.supported_auth_types.length > 0) {
       setSelectedAuthType(selectedServer.supported_auth_types[0]);
     }
   }, [selectedServer, selectedAuthType]);
@@ -308,9 +272,7 @@ export function CreateMCPConfigurationDialog() {
     if (selectedServer) {
       // Filter out tools that don't exist on the new server
       setSelectedTools((prev) =>
-        prev.filter((id) =>
-          (selectedServer.tools ?? []).some((t) => t.id === id),
-        ),
+        prev.filter((id) => (selectedServer.tools ?? []).some((t) => t.id === id)),
       );
       // If the server has no tools, force-enable "all tools"
       if ((selectedServer.tools?.length ?? 0) === 0) {
@@ -355,10 +317,7 @@ export function CreateMCPConfigurationDialog() {
 
             <div className="space-y-2">
               <Label htmlFor="server">MCP Server *</Label>
-              <Select
-                value={selectedServerId}
-                onValueChange={setSelectedServerId}
-              >
+              <Select value={selectedServerId} onValueChange={setSelectedServerId}>
                 <SelectTrigger id="server">
                   <SelectValue placeholder="Select an MCP server" />
                 </SelectTrigger>
@@ -367,7 +326,7 @@ export function CreateMCPConfigurationDialog() {
                     <SelectItem key={server.id} value={server.id}>
                       <div className="flex items-center gap-2">
                         <span>{server.name}</span>
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           ({server.description})
                         </span>
                       </div>
@@ -382,23 +341,22 @@ export function CreateMCPConfigurationDialog() {
       case ConfigurationStep.AUTHENTICATION:
         if (!selectedServer) {
           return (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="py-8 text-center text-muted-foreground">
               Please select a server first
             </div>
           );
         }
         return (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
               <Label>Authentication Type *</Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                  <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <p className="text-sm">
-                    Choose the authentication method for accessing this MCP
-                    server.
+                    Choose the authentication method for accessing this MCP server.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -412,17 +370,11 @@ export function CreateMCPConfigurationDialog() {
                 <label
                   key={authType}
                   htmlFor={`auth-${authType}`}
-                  className="flex items-start space-x-3 cursor-pointer rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                  className="flex cursor-pointer items-start space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
                 >
-                  <RadioGroupItem
-                    value={authType}
-                    id={`auth-${authType}`}
-                    className="mt-0.5"
-                  />
-                  <div className="space-y-1 flex-1">
-                    <div className="font-medium text-sm">
-                      {getAuthTypeLabel(authType)}
-                    </div>
+                  <RadioGroupItem value={authType} id={`auth-${authType}`} className="mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <div className="text-sm font-medium">{getAuthTypeLabel(authType)}</div>
                     <p className="text-xs text-muted-foreground">
                       {getAuthTypeDescription(authType)}
                     </p>
@@ -436,60 +388,54 @@ export function CreateMCPConfigurationDialog() {
       case ConfigurationStep.CONFIGURATION_TYPE:
         return (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
               <Label>Connected Account Type *</Label>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                  <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <p className="text-sm">
-                    Choose whether this configuration is for individual use or
-                    shared across the team.
+                    Choose whether this configuration is for individual use or shared across the
+                    team.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </div>
             <RadioGroup
               value={configurationType}
-              onValueChange={(value) =>
-                setConfigurationType(value as ConnectedAccountOwnership)
-              }
+              onValueChange={(value) => setConfigurationType(value as ConnectedAccountOwnership)}
               className="grid gap-3"
             >
               <label
                 htmlFor="config-individual"
-                className="flex items-start space-x-3 cursor-pointer rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                className="flex cursor-pointer items-start space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
               >
                 <RadioGroupItem
                   value={ConnectedAccountOwnership.INDIVIDUAL}
                   id="config-individual"
                   className="mt-0.5"
                 />
-                <div className="space-y-1 flex-1">
-                  <div className="font-medium text-sm">Individual</div>
+                <div className="flex-1 space-y-1">
+                  <div className="text-sm font-medium">Individual</div>
                   <p className="text-xs text-muted-foreground">
-                    {getConfigurationTypeDetailedInfo(
-                      ConnectedAccountOwnership.INDIVIDUAL,
-                    )}
+                    {getConfigurationTypeDetailedInfo(ConnectedAccountOwnership.INDIVIDUAL)}
                   </p>
                 </div>
               </label>
               <label
                 htmlFor="config-shared"
-                className="flex items-start space-x-3 cursor-pointer rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                className="flex cursor-pointer items-start space-x-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
               >
                 <RadioGroupItem
                   value={ConnectedAccountOwnership.SHARED}
                   id="config-shared"
                   className="mt-0.5"
                 />
-                <div className="space-y-1 flex-1">
-                  <div className="font-medium text-sm">Shared</div>
+                <div className="flex-1 space-y-1">
+                  <div className="text-sm font-medium">Shared</div>
                   <p className="text-xs text-muted-foreground">
-                    {getConfigurationTypeDetailedInfo(
-                      ConnectedAccountOwnership.SHARED,
-                    )}
+                    {getConfigurationTypeDetailedInfo(ConnectedAccountOwnership.SHARED)}
                   </p>
                 </div>
               </label>
@@ -500,14 +446,14 @@ export function CreateMCPConfigurationDialog() {
       case ConfigurationStep.TOOLS:
         if (!selectedServer) {
           return (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="py-8 text-center text-muted-foreground">
               Please select a server first
             </div>
           );
         }
         return (
           <div className="space-y-2">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <Label>Tools Configuration</Label>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="all-tools" className="text-sm">
@@ -522,7 +468,7 @@ export function CreateMCPConfigurationDialog() {
             </div>
 
             {!allToolsEnabled && (selectedServer.tools?.length ?? 0) > 0 && (
-              <ScrollArea className="h-64 border rounded-md p-3">
+              <ScrollArea className="h-64 rounded-md border p-3">
                 <div className="space-y-2">
                   {(selectedServer.tools ?? []).map((tool) => (
                     <div key={tool.id} className="flex items-start space-x-2">
@@ -532,16 +478,11 @@ export function CreateMCPConfigurationDialog() {
                         onCheckedChange={() => handleToolToggle(tool.id)}
                       />
                       <div className="space-y-1">
-                        <Label
-                          htmlFor={tool.id}
-                          className="text-sm font-normal cursor-pointer"
-                        >
+                        <Label htmlFor={tool.id} className="cursor-pointer text-sm font-normal">
                           {tool.name}
                         </Label>
                         {tool.description && (
-                          <p className="text-xs text-muted-foreground">
-                            {tool.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{tool.description}</p>
                         )}
                       </div>
                     </div>
@@ -551,7 +492,7 @@ export function CreateMCPConfigurationDialog() {
             )}
 
             {(selectedServer.tools?.length ?? 0) === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="py-8 text-center text-muted-foreground">
                 No tools available for this server
               </div>
             )}
@@ -561,7 +502,7 @@ export function CreateMCPConfigurationDialog() {
       case ConfigurationStep.TEAMS:
         if (!teams || teams.length === 0) {
           return (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="py-8 text-center text-muted-foreground">
               No teams available. You can skip this step.
             </div>
           );
@@ -570,26 +511,20 @@ export function CreateMCPConfigurationDialog() {
           <div className="space-y-2">
             <div className="mb-4">
               <Label>Allowed Teams</Label>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Select which teams can access this configuration
               </p>
             </div>
-            <ScrollArea className="h-64 border rounded-md p-3">
+            <ScrollArea className="h-64 rounded-md border p-3">
               <div className="space-y-2">
                 {teams.map((team) => (
-                  <div
-                    key={team.team_id}
-                    className="flex items-center space-x-2"
-                  >
+                  <div key={team.team_id} className="flex items-center space-x-2">
                     <Checkbox
                       id={team.team_id}
                       checked={selectedTeams.includes(team.team_id)}
                       onCheckedChange={() => handleTeamToggle(team.team_id)}
                     />
-                    <Label
-                      htmlFor={team.team_id}
-                      className="text-sm font-normal cursor-pointer"
-                    >
+                    <Label htmlFor={team.team_id} className="cursor-pointer text-sm font-normal">
                       {team.name}
                     </Label>
                   </div>
@@ -654,7 +589,7 @@ export function CreateMCPConfigurationDialog() {
           Create Configuration
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-h-[80vh] max-w-2xl">
         <DialogHeader>
           <DialogTitle>{getStepTitle()}</DialogTitle>
           <DialogDescription>{getStepDescription()}</DialogDescription>
@@ -667,9 +602,7 @@ export function CreateMCPConfigurationDialog() {
             completedSteps={completedSteps}
           />
 
-          <ScrollArea className="h-[400px] pr-4">
-            {renderStepContent()}
-          </ScrollArea>
+          <ScrollArea className="h-[400px] pr-4">{renderStepContent()}</ScrollArea>
         </div>
 
         <DialogFooter className="flex items-center justify-between">
@@ -706,9 +639,7 @@ export function CreateMCPConfigurationDialog() {
                   createConfiguration.isPending
                 }
               >
-                {createConfiguration.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {createConfiguration.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Configuration
               </Button>
             )}

@@ -2,20 +2,16 @@
 
 import { SettingsNavigation } from "@/features/settings/components/settings-navigation";
 
-export default function SettingsLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col lg:flex-row h-full">
-      <aside className="w-full lg:w-48 lg:flex-shrink-0 lg:border-r p-4">
+    <div className="flex h-full flex-col lg:flex-row">
+      <aside className="w-full p-4 lg:w-48 lg:flex-shrink-0 lg:border-r">
         <div className="sticky top-4">
-          <h1 className="text-2xl font-bold mb-6 px-3">Settings</h1>
+          <h1 className="mb-6 px-3 text-2xl font-bold">Settings</h1>
           <SettingsNavigation />
         </div>
       </aside>
-      <main className="flex-1 max-w-4xl p-4 lg:pl-12">{children}</main>
+      <main className="max-w-4xl flex-1 p-4 lg:pl-12">{children}</main>
     </div>
   );
 }

@@ -21,10 +21,8 @@ export default function LoginPage() {
 
 function LoginPageFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <span className="text-sm text-muted-foreground">
-        Preparing sign-in experience...
-      </span>
+    <div className="flex min-h-screen items-center justify-center px-6">
+      <span className="text-sm text-muted-foreground">Preparing sign-in experience...</span>
     </div>
   );
 }
@@ -34,10 +32,7 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
 
-  const nextPath = useMemo(
-    () => sanitizeRedirectPath(searchParams.get("next")),
-    [searchParams],
-  );
+  const nextPath = useMemo(() => sanitizeRedirectPath(searchParams.get("next")), [searchParams]);
 
   const handleLogin = async (email: string, password: string) => {
     // Call the real login API (sets refresh token in cookie)
@@ -72,7 +67,7 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative min-h-screen">
       {/* Grid Background */}
       <div
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -82,11 +77,9 @@ function LoginPageContent() {
       {/* Main Content */}
       <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <div className="border border-primary/50 bg-background/95 backdrop-blur-sm rounded-lg p-8">
+          <div className="rounded-lg border border-primary/50 bg-background/95 p-8 backdrop-blur-sm">
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold tracking-tight">
-                Welcome Back
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Sign in to your account to continue
               </p>
@@ -99,9 +92,7 @@ function LoginPageContent() {
                 <div className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
               </div>
             </div>
 
@@ -110,7 +101,7 @@ function LoginPageContent() {
                 variant="outline"
                 type="button"
                 disabled={isLoadingGoogle}
-                className="w-full h-11 transition-all duration-200 hover:bg-accent/50"
+                className="h-11 w-full transition-all duration-200 hover:bg-accent/50"
                 onClick={handleGoogleLogin}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -136,15 +127,9 @@ function LoginPageContent() {
             </div>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">
-                Don&apos;t have an account?{" "}
-              </span>
+              <span className="text-muted-foreground">Don&apos;t have an account? </span>
               <Link
-                href={
-                  nextPath
-                    ? `/signup?next=${encodeURIComponent(nextPath)}`
-                    : "/signup"
-                }
+                href={nextPath ? `/signup?next=${encodeURIComponent(nextPath)}` : "/signup"}
                 className="text-primary hover:underline"
               >
                 Sign up

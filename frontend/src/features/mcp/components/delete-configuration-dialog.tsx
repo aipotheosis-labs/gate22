@@ -49,15 +49,12 @@ export function DeleteConfigurationDialog({
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Are you sure you want to delete &ldquo;{configurationName}&rdquo;
-            MCP configuration?
+            Are you sure you want to delete &ldquo;{configurationName}&rdquo; MCP configuration?
           </AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone.
-          </AlertDialogDescription>
+          <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-4 py-2">
-          <div className="text-sm text-muted-foreground space-y-1">
+          <div className="space-y-1 text-sm text-muted-foreground">
             <p>• All connected accounts will be deleted</p>
             <p>• Removed from all bundles</p>
             <p>• Teams will lose access to this configuration</p>
@@ -66,7 +63,7 @@ export function DeleteConfigurationDialog({
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
               To confirm, type{" "}
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted font-mono text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-mono text-xs font-medium text-foreground">
                 {expectedDeleteText}
               </span>{" "}
               below:
@@ -92,7 +89,7 @@ export function DeleteConfigurationDialog({
           >
             {isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Deleting...
               </>
             ) : (

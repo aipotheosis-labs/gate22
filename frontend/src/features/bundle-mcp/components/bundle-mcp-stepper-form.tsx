@@ -68,8 +68,7 @@ export function BundleMCPStepperForm({
   const [nameError, setNameError] = useState("");
   const [description, setDescription] = useState("");
   const [selections, setSelections] = useState<ConfigurationSelection[]>([]);
-  const [showConfigSelectionDialog, setShowConfigSelectionDialog] =
-    useState(false);
+  const [showConfigSelectionDialog, setShowConfigSelectionDialog] = useState(false);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -99,14 +98,9 @@ export function BundleMCPStepperForm({
   }, [selections, onSelectionChange]);
 
   // Handle managing configurations (adding/removing)
-  const handleManageConfigurations = (
-    additions: string[],
-    removals: string[],
-  ) => {
+  const handleManageConfigurations = (additions: string[], removals: string[]) => {
     setSelections((prev) => [
-      ...prev.filter(
-        (selection) => !removals.includes(selection.configurationId),
-      ),
+      ...prev.filter((selection) => !removals.includes(selection.configurationId)),
       ...additions.map((id) => ({ configurationId: id })),
     ]);
   };
@@ -118,17 +112,13 @@ export function BundleMCPStepperForm({
 
   // Get available accounts for a configuration
   const getAccountsForConfiguration = (configId: string) => {
-    return connectedAccounts.filter(
-      (account) => account.mcp_server_configuration_id === configId,
-    );
+    return connectedAccounts.filter((account) => account.mcp_server_configuration_id === configId);
   };
 
   // Check if a shared account configuration has a valid shared account
   const hasValidSharedAccount = (configId: string) => {
     const config = availableConfigurations.find((c) => c.id === configId);
-    if (
-      config?.connected_account_ownership === ConnectedAccountOwnership.SHARED
-    ) {
+    if (config?.connected_account_ownership === ConnectedAccountOwnership.SHARED) {
       // Check if there's any connected account that is shared for this configuration
       // Shared accounts should have a specific indicator in the connected accounts
       // If no accounts exist for this shared configuration, it means the shared account is not set up
@@ -193,8 +183,8 @@ export function BundleMCPStepperForm({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] p-0 flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
+        <DialogContent className="flex max-h-[90vh] flex-col p-0 sm:max-w-3xl">
+          <DialogHeader className="flex-shrink-0 border-b px-6 pt-6 pb-4">
             <DialogTitle>Create MCP Bundle</DialogTitle>
             <DialogDescription>
               Create a new MCP server bundle with selected configurations
@@ -207,15 +197,13 @@ export function BundleMCPStepperForm({
               {stepper.current.id === "details" && (
                 <div className="space-y-4">
                   <div className="px-1">
-                    <h3 className="text-sm font-medium mb-1">
-                      Bundle Information
-                    </h3>
+                    <h3 className="mb-1 text-sm font-medium">Bundle Information</h3>
                     <p className="text-xs text-muted-foreground">
                       Provide a name and description for your bundle
                     </p>
                   </div>
                   <div className="space-y-3">
-                    <div className="px-1 space-y-2">
+                    <div className="space-y-2 px-1">
                       <Label htmlFor="bundle-name">Bundle Name *</Label>
                       <Input
                         id="bundle-name"
@@ -228,11 +216,9 @@ export function BundleMCPStepperForm({
                         className={nameError ? "border-red-500" : ""}
                         required
                       />
-                      {nameError && (
-                        <p className="text-xs text-red-500">{nameError}</p>
-                      )}
+                      {nameError && <p className="text-xs text-red-500">{nameError}</p>}
                     </div>
-                    <div className="px-1 space-y-2">
+                    <div className="space-y-2 px-1">
                       <Label htmlFor="bundle-description">Description</Label>
                       <Textarea
                         id="bundle-description"
@@ -250,27 +236,23 @@ export function BundleMCPStepperForm({
               {stepper.current.id === "configurations" && (
                 <div className="space-y-4">
                   <div className="px-1">
-                    <h3 className="text-sm font-medium mb-1">
-                      MCP Server Configurations
-                    </h3>
+                    <h3 className="mb-1 text-sm font-medium">MCP Server Configurations</h3>
                     <p className="text-xs text-muted-foreground">
                       Select configurations to include in your bundle
                     </p>
                   </div>
 
                   {/* Configuration Selection Table */}
-                  <div className="border rounded-lg overflow-x-auto">
+                  <div className="overflow-x-auto rounded-lg border">
                     {selections.length === 0 ? (
                       <div className="p-8 text-center">
-                        <p className="text-muted-foreground mb-4">
-                          No configurations added yet
-                        </p>
+                        <p className="mb-4 text-muted-foreground">No configurations added yet</p>
                         <Button
                           type="button"
                           variant="outline"
                           onClick={() => setShowConfigSelectionDialog(true)}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="mr-2 h-4 w-4" />
                           Manage MCP Configuration
                         </Button>
                       </div>
@@ -279,15 +261,9 @@ export function BundleMCPStepperForm({
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-[300px]">
-                                Configuration
-                              </TableHead>
-                              <TableHead className="w-[200px]">
-                                Connected Account
-                              </TableHead>
-                              <TableHead className="w-[80px]">
-                                Actions
-                              </TableHead>
+                              <TableHead className="w-[300px]">Configuration</TableHead>
+                              <TableHead className="w-[200px]">Connected Account</TableHead>
+                              <TableHead className="w-[80px]">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -298,9 +274,7 @@ export function BundleMCPStepperForm({
 
                               if (!config) return null;
 
-                              const accounts = getAccountsForConfiguration(
-                                config.id,
-                              );
+                              const accounts = getAccountsForConfiguration(config.id);
                               const isShared =
                                 config.connected_account_ownership ===
                                 ConnectedAccountOwnership.SHARED;
@@ -317,20 +291,16 @@ export function BundleMCPStepperForm({
                                                 src={config.mcp_server.logo}
                                                 alt=""
                                                 fill
-                                                className="object-contain rounded-sm"
+                                                className="rounded-sm object-contain"
                                               />
                                             </div>
                                           )}
-                                          <span className="font-medium">
-                                            {config.name}
-                                          </span>
+                                          <span className="font-medium">{config.name}</span>
                                         </div>
                                         {config.connected_account_ownership && (
                                           <div className="text-sm text-muted-foreground">
                                             Type:{" "}
-                                            {getOwnershipLabel(
-                                              config.connected_account_ownership,
-                                            )}
+                                            {getOwnershipLabel(config.connected_account_ownership)}
                                           </div>
                                         )}
                                       </div>
@@ -338,9 +308,7 @@ export function BundleMCPStepperForm({
                                   </TableCell>
                                   <TableCell>
                                     {isShared ? (
-                                      <Badge variant="secondary">
-                                        Shared Account
-                                      </Badge>
+                                      <Badge variant="secondary">Shared Account</Badge>
                                     ) : (
                                       <div className="text-sm">
                                         {accounts.length > 0 ? (
@@ -362,9 +330,7 @@ export function BundleMCPStepperForm({
                                       type="button"
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() =>
-                                        handleRemoveConfiguration(config.id)
-                                      }
+                                      onClick={() => handleRemoveConfiguration(config.id)}
                                     >
                                       <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
@@ -376,7 +342,7 @@ export function BundleMCPStepperForm({
                         </Table>
 
                         {/* Add More Configuration Button */}
-                        <div className="p-3 border-t bg-muted/50">
+                        <div className="border-t bg-muted/50 p-3">
                           <Button
                             type="button"
                             variant="outline"
@@ -384,7 +350,7 @@ export function BundleMCPStepperForm({
                             onClick={() => setShowConfigSelectionDialog(true)}
                             className="w-full"
                           >
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="mr-2 h-4 w-4" />
                             Manage MCP Configuration
                           </Button>
                         </div>
@@ -394,7 +360,7 @@ export function BundleMCPStepperForm({
 
                   {/* Selection Summary */}
                   {selections.length > 0 && (
-                    <div className="text-sm text-muted-foreground px-1">
+                    <div className="px-1 text-sm text-muted-foreground">
                       {selections.length} configuration
                       {selections.length !== 1 ? "s" : ""} selected
                     </div>
@@ -405,8 +371,8 @@ export function BundleMCPStepperForm({
           </div>
 
           {/* Footer with navigation */}
-          <div className="border-t px-6 py-3 flex-shrink-0">
-            <div className="flex justify-between items-center">
+          <div className="flex-shrink-0 border-t px-6 py-3">
+            <div className="flex items-center justify-between">
               <Button
                 variant="outline"
                 size="sm"
@@ -419,7 +385,7 @@ export function BundleMCPStepperForm({
                 }}
                 disabled={isSubmitting}
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeft className="mr-1 h-4 w-4" />
                 {stepper.isFirst ? "Cancel" : "Back"}
               </Button>
 
@@ -428,23 +394,13 @@ export function BundleMCPStepperForm({
                   Step {currentStepIndex + 1} of {steps.length}
                 </span>
                 {!stepper.isLast ? (
-                  <Button
-                    size="sm"
-                    onClick={() => stepper.next()}
-                    disabled={!canProceed}
-                  >
+                  <Button size="sm" onClick={() => stepper.next()} disabled={!canProceed}>
                     Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                    <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button
-                    size="sm"
-                    onClick={handleSubmit}
-                    disabled={isSubmitting || !canProceed}
-                  >
-                    {isSubmitting && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                  <Button size="sm" onClick={handleSubmit} disabled={isSubmitting || !canProceed}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Bundle
                   </Button>
                 )}
