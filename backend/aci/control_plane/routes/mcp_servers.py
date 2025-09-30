@@ -32,7 +32,12 @@ from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCr
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, config, schema_utils
 from aci.control_plane import dependencies as deps
-from aci.control_plane.exceptions import MCPToolsRefreshTooFrequent, OAuth2MetadataDiscoveryError
+from aci.control_plane.exceptions import (
+    MCPServerNotFoundError,
+    MCPToolsRefreshTooFrequent,
+    NotPermittedError,
+    OAuth2MetadataDiscoveryError,
+)
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
 )
@@ -227,10 +232,12 @@ async def update_mcp_server(
         context.db_session, mcp_server_id, throw_error_if_not_found=False
     )
     if not mcp_server:
-        raise HTTPException(status_code=404, detail="MCP server not found")
+        logger.error(f"MCP server {mcp_server_id} not found")
+        raise MCPServerNotFoundError("MCP server not found")
 
     if mcp_server.organization_id is None:
-        raise HTTPException(status_code=403, detail="MCP server is public")
+        logger.error(f"MCP server {mcp_server_id} is public")
+        raise NotPermittedError("MCP server is public")
 
     # Enforce only admin to perform this action
     access_control.check_act_as_organization_role(
@@ -283,10 +290,12 @@ async def delete_mcp_server(
         context.db_session, mcp_server_id, throw_error_if_not_found=False
     )
     if not mcp_server:
-        raise HTTPException(status_code=404, detail="MCP server not found")
+        logger.error(f"MCP server {mcp_server_id} not found")
+        raise MCPServerNotFoundError("MCP server not found")
 
     if mcp_server.organization_id is None:
-        raise HTTPException(status_code=403, detail="MCP server is public")
+        logger.error(f"MCP server {mcp_server_id} is public")
+        raise NotPermittedError("MCP server is public")
 
     # Enforce only admin to perform this action
     access_control.check_act_as_organization_role(

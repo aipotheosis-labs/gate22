@@ -308,3 +308,14 @@ class InvalidInvitationTokenError(ControlPlaneException):
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class MCPServerNotFoundError(ControlPlaneException):
+    """Raised when an MCP server is not found."""
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="MCP server not found",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )
