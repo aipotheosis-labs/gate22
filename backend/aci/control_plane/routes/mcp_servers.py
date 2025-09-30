@@ -247,25 +247,22 @@ async def update_mcp_server(
         throw_error_if_not_permitted=True,
     )
 
-    regen_embedding = False
-    if body.description is not None and body.description != mcp_server.description:
-        regen_embedding = True
-    if body.categories is not None and body.categories != mcp_server.categories:
-        regen_embedding = True
+    # Re-embed if any fields that are set is part of embedding fields
+    # Note: we don't check if a field "is None" because user might want to explicitly set any
+    # fields to None
+    embedding_fields = set(MCPServerEmbeddingFields.model_fields.keys())
+    updated_embedding_fields = body.model_fields_set.intersection(embedding_fields)
+    if len(updated_embedding_fields) > 0:
+        # Load Embedding Fields with original mcp server data
+        mcp_server_data = MCPServerEmbeddingFields.model_validate(mcp_server, from_attributes=True)
 
-    if regen_embedding:
+        # Replace fields that are set (instead of checking if a field is None)
+        for field in updated_embedding_fields:
+            setattr(mcp_server_data, field, getattr(body, field))
+
         mcp_server_embedding = embeddings.generate_mcp_server_embedding(
             get_openai_client(),
-            MCPServerEmbeddingFields(
-                name=mcp_server.name,
-                url=mcp_server.url,
-                description=body.description
-                if body.description is not None
-                else mcp_server.description,
-                categories=body.categories
-                if body.categories is not None
-                else mcp_server.categories,
-            ),
+            mcp_server_data,
         )
     else:
         mcp_server_embedding = None
