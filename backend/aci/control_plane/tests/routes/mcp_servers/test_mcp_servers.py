@@ -429,6 +429,18 @@ def test_delete_mcp_server(
             ),
             False,
         ),
+        (
+            MCPServerPartialUpdateRequest(
+                description="",
+            ),
+            True,
+        ),
+        (
+            MCPServerPartialUpdateRequest(
+                categories=[],
+            ),
+            True,
+        ),
         (MCPServerPartialUpdateRequest(), False),
     ],
 )
