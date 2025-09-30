@@ -270,6 +270,8 @@ async def update_mcp_server(
     mcp_server = crud.mcp_servers.update_mcp_server(
         context.db_session,
         mcp_server,
+        # Here the `body` is validated by the `MCPServerPartialUpdateRequest` model, should not
+        # contain non-nullable fields set to None
         MCPServerPartialUpdate.model_validate(body.model_dump(exclude_unset=True)),
         mcp_server_embedding,
     )
