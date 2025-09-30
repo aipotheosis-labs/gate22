@@ -15,9 +15,11 @@ from aci.common.enums import (
     MCPServerTransportType,
 )
 from aci.common.logging_setup import get_logger
+from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_auth import APIKeyConfig, AuthConfig, NoAuthConfig
 from aci.common.schemas.mcp_server import (
     CustomMCPServerCreateRequest,
+    MCPServerEmbeddingFields,
     MCPServerMetadata,
     MCPServerPartialUpdateRequest,
     MCPServerPublic,
@@ -482,6 +484,9 @@ def test_update_mcp_server(
     original_mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         db_session, dummy_mcp_server.id, throw_error_if_not_found=True
     )
+    original_description = original_mcp_server.description
+    original_logo = original_mcp_server.logo
+    original_categories = original_mcp_server.categories
 
     response = test_client.patch(
         f"{config.ROUTER_PREFIX_MCP_SERVERS}/{dummy_mcp_server.id}",
@@ -516,24 +521,28 @@ def test_update_mcp_server(
         db_session, dummy_mcp_server.id, throw_error_if_not_found=True
     )
 
-    assert (
-        db_mcp_server.description == update_data.description
-        if update_data.description is not None
-        else original_mcp_server.description
+    expected_description = (
+        update_data.description if update_data.description is not None else original_description
     )
-    assert (
-        db_mcp_server.logo == update_data.logo
-        if update_data.logo is not None
-        else original_mcp_server.logo
+    expected_logo = update_data.logo if update_data.logo is not None else original_logo
+    expected_categories = (
+        update_data.categories if update_data.categories is not None else original_categories
     )
-    assert (
-        db_mcp_server.categories == update_data.categories
-        if update_data.categories is not None
-        else original_mcp_server.categories
-    )
+
+    assert db_mcp_server.description == expected_description
+    assert db_mcp_server.logo == expected_logo
+    assert db_mcp_server.categories == expected_categories
 
     # Verify the embedding was regenerated if needed
     if should_regen_embedding:
-        assert mock_generate_embedding.call_count == 1
+        mock_generate_embedding.assert_called_once_with(
+            get_openai_client(),
+            MCPServerEmbeddingFields(
+                name=db_mcp_server.name,
+                url=db_mcp_server.url,
+                description=expected_description,
+                categories=expected_categories,
+            ),
+        )
     else:
         assert mock_generate_embedding.call_count == 0
