@@ -10,7 +10,7 @@
       "type": "api_key",
       "location": "header",
       "name": "Authorization",
-      "prefix": "Bearer "
+      "prefix": "Bearer"
     }
   ],
   "server_metadata": {

@@ -158,7 +158,8 @@ def _parse_auth_token(x_virtual_mcp_auth_token: str) -> VirtualMCPAuthTokenData:
         token="1234567890"
     )
     """
-    token_data = x_virtual_mcp_auth_token.split(" ")
+    # Strip leading/trailing whitespace and split by any amount of whitespace
+    token_data = x_virtual_mcp_auth_token.strip().split()
     if len(token_data) != 3 and len(token_data) != 4:
         raise InvalidAuthTokenError()
 
