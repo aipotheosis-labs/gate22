@@ -8,6 +8,7 @@ from aci.common.db import crud
 from aci.common.logging_setup import get_logger
 from aci.mcp import dependencies as deps
 from aci.mcp.exceptions import InvalidJSONRPCPayloadError, UnsupportedJSONRPCMethodError
+from aci.mcp.routes import handlers
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
     JSONRPCErrorResponse,
@@ -19,13 +20,9 @@ from aci.mcp.routes.jsonrpc import (
     JSONRPCToolsCallRequest,
     JSONRPCToolsListRequest,
 )
-from aci.mcp.routes.tools.execute_tool import EXECUTE_TOOL, handle_execute_tool
-from aci.mcp.routes.tools.search_tools import SEARCH_TOOLS, handle_search_tools
 
 logger = get_logger(__name__)
 router = APIRouter()
-
-SUPPORTED_PROTOCOL_VERSION = "2025-06-18"
 
 
 # TODO: this is not a pure jsonrpc endpoint
@@ -88,52 +85,15 @@ async def mcp_post(
     match payload:
         case JSONRPCInitializeRequest():
             logger.info(f"Received initialize request={payload.model_dump()}")
-            return JSONRPCSuccessResponse(
-                id=payload.id,
-                result={
-                    "protocolVersion": SUPPORTED_PROTOCOL_VERSION
-                    if mcp_protocol_version is None
-                    else mcp_protocol_version,
-                    "capabilities": {"tools": {}},
-                    "serverInfo": {
-                        "name": "ACI.dev MCP Gateway",
-                        "title": "ACI.dev MCP Gateway",
-                        "version": "0.0.1",
-                    },
-                    # TODO: add instructions
-                    "instructions": f"use {SEARCH_TOOLS.get('name')} and {EXECUTE_TOOL.get('name')} to discover and execute tools",  # noqa: E501
-                },
-            )
+            return await handlers.handle_initialize(payload, mcp_protocol_version)
 
         case JSONRPCToolsListRequest():
             logger.info(f"Received tools/list request={payload.model_dump()}")
-            return JSONRPCSuccessResponse(
-                id=payload.id,
-                result={
-                    "tools": [
-                        SEARCH_TOOLS,
-                        EXECUTE_TOOL,
-                    ],
-                },
-            )
+            return await handlers.handle_tools_list(payload)
 
         case JSONRPCToolsCallRequest():
             logger.info(f"Received tools/call request={payload.model_dump()}")
-            match payload.params.name:
-                # TODO: derive from SEARCH_TOOLS and EXECUTE_TOOL instead of string literals
-                case "SEARCH_TOOLS":
-                    return await handle_search_tools(db_session, mcp_server_bundle, payload)
-                case "EXECUTE_TOOL":
-                    return await handle_execute_tool(db_session, mcp_server_bundle, payload)
-                case _:
-                    logger.error(f"Unknown tool: {payload.params.name}")
-                    return JSONRPCErrorResponse(
-                        id=payload.id,
-                        error=JSONRPCErrorResponse.ErrorData(
-                            code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
-                            message=f"Unknown tool: {payload.params.name}",
-                        ),
-                    )
+            return await handlers.handle_tools_call(payload, db_session, mcp_server_bundle)
 
         case JSONRPCNotificationInitialized():
             # NOTE: no-op for initialized notifications

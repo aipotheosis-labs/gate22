@@ -616,7 +616,41 @@ class MCPServerBundle(Base):
     )
 
 
-# TODO: sessions table for mcp server that require sessions
+class MCPSession(Base):
+    """
+    Sessions table for maintaining the session state among:
+    mcp client (user) - gate22 mcp server - external mcp servers (e.g., RENDER, GITHUB, etc.)
+    """
+
+    __tablename__ = "mcp_sessions"
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    # which mcp server bundle this session is used for
+    bundle_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    # the session id of the gate22 mcp server (ACI.dev controlled)
+    session_id: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    # a map between mcp server id and its session id, e.g.,
+    # {"RENDER": "session_id_1", "GITHUB": "session_id_2"}
+    # NOTE: not every mcp server requires and/or supports sessions
+    external_mcp_sessions: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+
+    last_accessed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
 
 
 ###################################################################################################
