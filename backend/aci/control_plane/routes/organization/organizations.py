@@ -18,6 +18,7 @@ from aci.common.schemas.organization import (
 from aci.control_plane import dependencies as deps
 from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
 from aci.control_plane.services.rbac import access_control
+from aci.control_plane.services.rbac.definitions import OrganizationAction
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -76,9 +77,10 @@ async def list_organization_members(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
 ) -> list[OrganizationMembershipInfo]:
-    # Check user's role permission
-    access_control.check_act_as_organization_role(
-        context.act_as, requested_organization_id=organization_id
+    access_control.is_action_permitted(
+        context=context,
+        user_action=OrganizationAction.LIST_MEMBER,
+        resource_id=organization_id,
     )
 
     # Get organization members

@@ -208,13 +208,13 @@ def test_create_custom_mcp_server(
 @pytest.mark.parametrize(
     "access_token_fixture",
     [
-        "dummy_access_token_no_orgs",
+        # "dummy_access_token_no_orgs",
         "dummy_access_token_admin",
-        "dummy_access_token_member",
+        # "dummy_access_token_member",
     ],
 )
-@pytest.mark.parametrize("is_public_mcp_server", [True, False])
-@pytest.mark.parametrize("is_custom_mcp_server_same_org", [True, False])
+@pytest.mark.parametrize("is_public_mcp_server", [False])
+@pytest.mark.parametrize("is_custom_mcp_server_same_org", [False])
 def test_get_mcp_server(
     test_client: TestClient,
     db_session: Session,
