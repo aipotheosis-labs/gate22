@@ -82,7 +82,9 @@ async def mcp_post(
     match payload:
         case JSONRPCInitializeRequest():
             logger.info(f"Received initialize request={payload.model_dump()}")
-            return await handlers.handle_initialize(payload)
+            return await handlers.handle_initialize(
+                db_session, response, mcp_server_bundle, payload
+            )
 
         case JSONRPCToolsListRequest():
             logger.info(f"Received tools/list request={payload.model_dump()}")

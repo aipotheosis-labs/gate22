@@ -38,3 +38,6 @@ MAX_LOG_FIELD_SIZE = 8 * 1024
 
 # Ops
 SENTRY_DSN = check_and_get_env_variable("MCP_SENTRY_DSN")
+
+# mcp
+MCP_SESSION_ID_HEADER = "mcp-session-id"

@@ -623,19 +623,20 @@ class MCPSession(Base):
     """
 
     __tablename__ = "mcp_sessions"
+    # the id is also the session id of the gate22 mcp server (ACI.dev controlled)
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
     # which mcp server bundle this session is used for
     bundle_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
-    # the session id of the gate22 mcp server (ACI.dev controlled)
-    session_id: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     # a map between mcp server id and its session id, e.g.,
-    # {"RENDER": "session_id_1", "GITHUB": "session_id_2"}
+    # {"0000-0000-0000-0000": "session_id_1", "0000-0000-0000-0001": "session_id_2"}
     # NOTE: not every mcp server requires and/or supports sessions
     external_mcp_sessions: Mapped[dict] = mapped_column(JSONB, nullable=False)
 
-    deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+    deleted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=false(), init=False
+    )
 
     last_accessed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
