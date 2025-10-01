@@ -58,9 +58,16 @@ def is_action_permitted(
     """
     Check if the user has permission to perform the action on the resource.
     """
+    logger.debug(
+        f"[ABAC Checking] User {context.user_id} (Acted as: {context.act_as.role}) requested to perform action {user_action} on the resource {resource.id if resource else resource_id}"  # noqa: E501
+    )
+
     # Make sure only either of resource or resource_id is provided
     if resource is not None and resource_id is not None:
         if throw_error_if_not_permitted:
+            logger.error(
+                "[ABAC Checking] Resource and resource_id cannot be provided at the same time. Provide either one to avoid ambiguity."  # noqa: E501
+            )
             raise ValueError(
                 "Resource and resource_id cannot be provided at the same time. Provide either one to avoid ambiguity."  # noqa: E501
             )
@@ -70,6 +77,9 @@ def is_action_permitted(
     permission = _match_user_action_permission(context, user_action)
     if permission is None:
         if throw_error_if_not_permitted:
+            logger.info(
+                "[ABAC Checking] Access denied. No permission found for action {user_action}"
+            )
             raise NotPermittedError(
                 message=f"User {context.user_id} (Acted as: {context.act_as.role}) is not permitted to perform action {user_action}"  # noqa: E501
             )
@@ -85,6 +95,9 @@ def is_action_permitted(
 
     if not resource:
         if throw_error_if_not_permitted:
+            logger.info(
+                "[ABAC Checking] Access denied. Resource not found for action {user_action}"
+            )
             raise NotPermittedError(
                 message=f"User {context.user_id} (Acted as: {context.act_as.role}) does not have permission to perform action {user_action} on the resource {resource_id}"  # noqa: E501
             )
@@ -94,12 +107,39 @@ def is_action_permitted(
     # Make sure the resource provided match the permission resource type
     if resource.__class__.__name__ != permission.resource_type:
         if throw_error_if_not_permitted:
+            logger.info(
+                "[ABAC Checking] Access denied. Resource type mismatch for action {user_action}"
+            )
             raise NotPermittedError(
                 message=f"User {context.user_id} (Acted as: {context.act_as.role}) does not have permission to perform action {user_action} on the resource {resource_id}"  # noqa: E501
             )
         return False
 
     # Check all the defined allowed resource criteria, reject if any of them is not met
+    if not _check_resource_access_permitted(context, resource, permission):
+        if throw_error_if_not_permitted:
+            logger.info(
+                "[ABAC Checking] Access denied. Resource does not match the allowed resource criteria for action {user_action}"  # noqa: E501
+            )
+            raise NotPermittedError(
+                message=f"User {context.user_id} (Acted as: {context.act_as.role}) does not have permission to perform action {user_action} on the resource {resource_id}"  # noqa: E501
+            )
+        return False
+
+    return True
+
+
+def _check_resource_access_permitted(
+    context: RequestContext,
+    resource: AccessibleResource,
+    permission: ControlPlanePermission,
+) -> bool:
+    """
+    Check if the resource matches the allowed resource criteria.
+    """
+    if permission.allowed_resource_criteria is None:
+        return True
+
     for criterion in permission.allowed_resource_criteria:
         if criterion.resource_scope is not None:
             if not _is_resource_match_allowed_resource_scope(
@@ -134,7 +174,7 @@ def _is_resource_match_allowed_resource_scope(
     allowed_resource_scope: ResourceScope,
 ) -> bool:
     """
-    Check if the resource scope is allowed.
+    Check if the resource is within the allowed resource scope from user's perspective.
     """
     match allowed_resource_scope:
         case ResourceScope.SAME_ORG:
@@ -152,7 +192,7 @@ def _is_resource_same_org(
     resource: AccessibleResource,
 ) -> bool:
     """
-    Helper function to check if the resource is within the organization of the act_as.
+    Check if the resource is within the organization of the act_as.
     """
     if isinstance(resource, MCPServer):
         return resource.organization_id == act_as.organization_id
@@ -174,7 +214,7 @@ def _is_user_in_resource_allowed_teams(
     resource: AccessibleResource,
 ) -> bool:
     """
-    Helper function to check if the resource has allowed any of the user's team.
+    Check if the resource has allowed any of the user's team.
     """
     if isinstance(resource, MCPServerConfiguration):
         return _is_mcp_server_configuration_in_allowed_team(db_session, user_id, resource.id)
@@ -184,7 +224,7 @@ def _is_user_in_resource_allowed_teams(
 
 def _is_resource_self(user_id: UUID, resource: AccessibleResource) -> bool:
     """
-    Helper function to check if the resource belongs to user itself
+    Check if the resource belongs to user itself
     """
     if isinstance(resource, ConnectedAccount):
         return resource.user_id == user_id

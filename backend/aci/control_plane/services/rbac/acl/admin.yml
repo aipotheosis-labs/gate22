@@ -15,8 +15,6 @@ roles:
 
       - action: "mcp_server:create"
         resource_type: "MCPServer"
-        allowed:
-          - resource_scope: "same_org"
 
       - action: "mcp_server:update"
         resource_type: "MCPServer"

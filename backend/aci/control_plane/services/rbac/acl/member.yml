@@ -87,3 +87,26 @@ roles:
         resource_type: "MCPServerBundle"
         allowed:
           - resource_scope: "same_org:self"
+
+
+      # ------------------------------------------------------------
+      # Team
+      # ------------------------------------------------------------
+      - action: "team:list"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "team:list_member"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+
+      # ------------------------------------------------------------
+      # Organization
+      # ------------------------------------------------------------
+      - action: "organization:list_member"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"
