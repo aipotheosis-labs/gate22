@@ -31,3 +31,12 @@ def update_session_last_accessed_at(
     db_session.flush()
     db_session.refresh(mcp_session)
     return None
+
+
+def update_session_external_mcp_sessions(
+    db_session: Session, mcp_session: MCPSession, external_mcp_sessions: dict[str, str]
+) -> None:
+    mcp_session.external_mcp_sessions = external_mcp_sessions
+    db_session.flush()
+    db_session.refresh(mcp_session)
+    return None

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import auth_credentials_manager as acm
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServerBundle, MCPServerConfiguration
+from aci.common.db.sql_models import MCPServerBundle, MCPServerConfiguration, MCPSession
 from aci.common.enums import MCPServerTransportType
 from aci.common.logging_setup import get_logger
 from aci.common.mcp_auth_manager import MCPAuthManager
@@ -23,6 +23,7 @@ logger = get_logger(__name__)
 
 async def handle_initialize(
     db_session: Session,
+    mcp_session: MCPSession,
     response: Response,
     mcp_server_bundle: MCPServerBundle,
     payload: JSONRPCInitializeRequest,
@@ -30,9 +31,9 @@ async def handle_initialize(
     """
     Handle the initialize request from mcp clients.
     """
-    external_mcp_sessions = await _initialize_sessions(db_session, mcp_server_bundle)
-    mcp_session = crud.mcp_sessions.create_session(
-        db_session, mcp_server_bundle.id, external_mcp_sessions
+    external_mcp_sessions = await _initialize_external_mcp_sessions(db_session, mcp_server_bundle)
+    crud.mcp_sessions.update_session_external_mcp_sessions(
+        db_session, mcp_session, external_mcp_sessions
     )
     db_session.commit()
 
@@ -58,7 +59,7 @@ async def handle_initialize(
     )
 
 
-async def _initialize_sessions(
+async def _initialize_external_mcp_sessions(
     db_session: Session, mcp_server_bundle: MCPServerBundle
 ) -> dict[str, str]:
     """
@@ -89,7 +90,7 @@ async def _initialize_sessions(
         mcp_server_configurations.append(mcp_server_configuration)
 
     for mcp_server_configuration in mcp_server_configurations:
-        session_id = await _initialize_session(
+        session_id = await _initialize_external_mcp_session(
             db_session,
             mcp_server_configuration,
             mcp_server_bundle,
@@ -100,7 +101,7 @@ async def _initialize_sessions(
     return external_mcp_sessions
 
 
-async def _initialize_session(
+async def _initialize_external_mcp_session(
     db_session: Session,
     mcp_server_configuration: MCPServerConfiguration,
     mcp_server_bundle: MCPServerBundle,

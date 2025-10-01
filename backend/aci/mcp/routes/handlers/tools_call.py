@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from aci.common.db.sql_models import MCPServerBundle
+from aci.common.db.sql_models import MCPServerBundle, MCPSession
 from aci.common.logging_setup import get_logger
 from aci.mcp.routes.handlers.tools.execute_tool import EXECUTE_TOOL, handle_execute_tool
 from aci.mcp.routes.handlers.tools.search_tools import SEARCH_TOOLS, handle_search_tools
@@ -15,8 +15,9 @@ logger = get_logger(__name__)
 
 
 async def handle_tools_call(
-    payload: JSONRPCToolsCallRequest,
     db_session: Session,
+    mcp_session: MCPSession,
+    payload: JSONRPCToolsCallRequest,
     mcp_server_bundle: MCPServerBundle,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse:
     """

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import utils
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPSession
+from aci.common.db.sql_models import MCPServerBundle, MCPSession
 from aci.common.logging_setup import get_logger
 from aci.mcp import config
 from aci.mcp import dependencies as deps
@@ -86,10 +86,12 @@ async def mcp_post(
         )
 
     # validate mcp session: session id is required except for initialize request
-    validation_response = _validate_mcp_session(db_session, request, response, payload)
+    validation_response = _validate_or_create_mcp_session(
+        db_session, request, response, mcp_server_bundle, payload
+    )
     if isinstance(validation_response, JSONRPCErrorResponse):
         return validation_response
-    elif isinstance(validation_response, MCPSession):
+    else:
         mcp_session = validation_response
         crud.mcp_sessions.update_session_last_accessed_at(
             db_session, mcp_session, datetime.now(UTC)
@@ -101,7 +103,7 @@ async def mcp_post(
         case JSONRPCInitializeRequest():
             logger.info(f"Received initialize request={payload.model_dump()}")
             return await handlers.handle_initialize(
-                db_session, response, mcp_server_bundle, payload
+                db_session, mcp_session, response, mcp_server_bundle, payload
             )
 
         case JSONRPCToolsListRequest():
@@ -110,7 +112,9 @@ async def mcp_post(
 
         case JSONRPCToolsCallRequest():
             logger.info(f"Received tools/call request={payload.model_dump()}")
-            return await handlers.handle_tools_call(payload, db_session, mcp_server_bundle)
+            return await handlers.handle_tools_call(
+                db_session, mcp_session, payload, mcp_server_bundle
+            )
 
         case JSONRPCNotificationInitialized():
             # NOTE: no-op for initialized notifications
@@ -204,26 +208,26 @@ async def _parse_payload(
         raise InvalidJSONRPCPayloadError(f"Invalid payload type: {type(payload)}")
 
 
-def _validate_mcp_session(
+def _validate_or_create_mcp_session(
     db_session: Session,
     request: Request,
     response: Response,
+    mcp_server_bundle: MCPServerBundle,
     payload: JSONRPCInitializeRequest
     | JSONRPCToolsListRequest
     | JSONRPCToolsCallRequest
     | JSONRPCNotificationInitialized
     | JSONRPCPingRequest,
-) -> JSONRPCErrorResponse | MCPSession | None:
+) -> JSONRPCErrorResponse | MCPSession:
     """
     Validate the mcp session id.
     Returns:
         JSONRPCErrorResponse: if the mcp session id is invalid
-        MCPSession: if the mcp session id is valid
-        None: if the mcp session id is not required (initialize request)
+        MCPSession: if the mcp session id is valid or a new session is created
     """
     # initialize request does not require a mcp session id
     if isinstance(payload, JSONRPCInitializeRequest):
-        return None
+        return crud.mcp_sessions.create_session(db_session, mcp_server_bundle.id, {})
 
     jrpc_request_id: str | int | None = None
     if (
@@ -257,8 +261,11 @@ def _validate_mcp_session(
             ),
         )
     mcp_session = crud.mcp_sessions.get_session(db_session, UUID(mcp_session_id))
-    if mcp_session is None or mcp_session.deleted:
-        logger.warning(f"MCP session not found or deleted, mcp_session_id={mcp_session_id}")
+    if mcp_session is None or mcp_session.deleted or mcp_session.bundle_id != mcp_server_bundle.id:
+        logger.warning(
+            f"MCP session not found, "
+            f"mcp_session_id={mcp_session_id}, bundle_id={mcp_server_bundle.id}"
+        )
         response.status_code = status.HTTP_404_NOT_FOUND
         return JSONRPCErrorResponse(
             id=jrpc_request_id,
