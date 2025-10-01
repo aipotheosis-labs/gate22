@@ -632,7 +632,7 @@ class MCPSession(Base):
     # a map between mcp server id and its session id, e.g.,
     # {"0000-0000-0000-0000": "session_id_1", "0000-0000-0000-0001": "session_id_2"}
     # NOTE: not every mcp server requires and/or supports sessions
-    external_mcp_sessions: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    external_mcp_sessions: Mapped[dict[str, str]] = mapped_column(JSONB, nullable=False)
 
     deleted: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=false(), init=False

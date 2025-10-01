@@ -27,7 +27,7 @@ async def handle_tools_call(
         case SEARCH_TOOLS.name:
             return await handle_search_tools(db_session, mcp_server_bundle, payload)
         case EXECUTE_TOOL.name:
-            return await handle_execute_tool(db_session, mcp_server_bundle, payload)
+            return await handle_execute_tool(db_session, mcp_session, mcp_server_bundle, payload)
         case _:
             logger.error(f"Unknown tool: {payload.params.name}")
             return JSONRPCErrorResponse(

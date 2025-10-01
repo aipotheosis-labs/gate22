@@ -1,16 +1,19 @@
-import time
-
 from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
-from mcp.client.streamable_http import streamablehttp_client
 from mcp.shared import exceptions as mcp_exceptions
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from aci.common import auth_credentials_manager as acm
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServer, MCPServerBundle, MCPServerConfiguration, MCPTool
+from aci.common.db.sql_models import (
+    MCPServer,
+    MCPServerBundle,
+    MCPServerConfiguration,
+    MCPSession,
+    MCPTool,
+)
 from aci.common.enums import MCPServerTransportType
 from aci.common.logging_setup import get_logger
 from aci.common.mcp_auth_manager import MCPAuthManager
@@ -24,6 +27,7 @@ from aci.mcp.exceptions import (
     MCPToolNotEnabled,
     MCPToolNotFound,
 )
+from aci.mcp.protocol.streamable_http import streamablehttp_client_fork
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
     JSONRPCErrorResponse,
@@ -60,6 +64,7 @@ EXECUTE_TOOL = mcp_types.Tool(
 # TODO: handle wrong input where tool arguments are under tool_arguments?
 async def handle_execute_tool(
     db_session: Session,
+    mcp_session: MCPSession,
     mcp_server_bundle: MCPServerBundle,
     jsonrpc_tools_call_request: JSONRPCToolsCallRequest,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse:
@@ -123,6 +128,8 @@ async def handle_execute_tool(
         result = await _forward_tool_call(
             name=MCPToolMetadata.model_validate(mcp_tool.tool_metadata).canonical_tool_name,
             arguments=tool_arguments,
+            db_session=db_session,
+            mcp_session=mcp_session,
             mcp_server=mcp_server,
             auth_config=auth_config,
             auth_credentials=auth_credentials,
@@ -214,6 +221,8 @@ async def _tool_call_permissions_check(
 async def _forward_tool_call(
     name: str,
     arguments: dict,
+    db_session: Session,
+    mcp_session: MCPSession,
     mcp_server: MCPServer,
     auth_config: AuthConfig,
     auth_credentials: AuthCredentials,
@@ -224,50 +233,100 @@ async def _forward_tool_call(
         auth_config=auth_config,
         auth_credentials=auth_credentials,
     )
+    existing_mcp_session_id = mcp_session.external_mcp_sessions.get(str(mcp_server.id))
+
     match mcp_server.transport_type:
         case MCPServerTransportType.STREAMABLE_HTTP:
-            async with streamablehttp_client(mcp_server.url, auth=mcp_auth_credentials_manager) as (
+            async with streamablehttp_client_fork(
+                mcp_server.url,
+                session_id=existing_mcp_session_id,
+                auth=mcp_auth_credentials_manager,
+                # NOTE: we don't want to terminate the session when the tool call returns
+                terminate_on_close=False,
+            ) as (
                 read,
                 write,
-                _,
+                get_session_id,
             ):
-                async with ClientSession(read, write) as session:
-                    return await _call_tool(session, name, arguments)
+                async with ClientSession(read, write) as client_session:
+                    tool_call_result = await _call_tool(
+                        client_session, existing_mcp_session_id is None, name, arguments
+                    )
+                    new_mcp_session_id = get_session_id()
+                    if (
+                        new_mcp_session_id is not None
+                        and new_mcp_session_id != existing_mcp_session_id
+                    ):
+                        logger.debug("New MCP session id")
+                        crud.mcp_sessions.update_session_external_mcp_session(
+                            db_session, mcp_session, mcp_server.id, new_mcp_session_id
+                        )
+                        db_session.commit()
+                    return tool_call_result
 
         case MCPServerTransportType.SSE:
             async with sse_client(mcp_server.url, auth=mcp_auth_credentials_manager) as (
                 read,
                 write,
             ):
-                async with ClientSession(read, write) as session:
-                    return await _call_tool(session, name, arguments)
+                async with ClientSession(read, write) as client_session:
+                    return await _call_tool(
+                        client_session, existing_mcp_session_id is None, name, arguments
+                    )
 
 
 async def _call_tool(
-    session: ClientSession, name: str, arguments: dict
+    client_session: ClientSession, need_initialize: bool, name: str, arguments: dict
 ) -> mcp_types.CallToolResult | mcp_exceptions.McpError:
     """
-    Initialize the session and call a tool on the mcp server.
-    TODO: here we return the mcp error as response because the async taskgroup
+    Initialize the session (if needed) and call a tool on the mcp server.
+    NOTE: here we return the mcp error as response because the async taskgroup
     will wrap the exception under the exception group.
     """
-    # initialize
-    # TODO: conditionally initialize the session based on the mcp server?
-    # many mcp servers don't support/need to initialize the session
-    try:
-        start_time = time.time()
-        await session.initialize()
-        logger.info(f"Initialize took {time.time() - start_time} seconds")
+    if need_initialize:
+        try:
+            await client_session.initialize()
+        except mcp_exceptions.McpError as e:
+            logger.exception(f"Initialize failed, error={e}")
+            return e
+        # TODO: will it throw other errors that is not McpError? httpx.HTTPStatusError?
+        # raised by _handle_post_request of StreamableHTTPTransport?
+        try:
+            return await client_session.call_tool(name=name, arguments=arguments)
+        except mcp_exceptions.McpError as e:
+            logger.exception(f"tool call failed, tool={name}, arguments={arguments}, error={e}")
+            return e
 
-        # call tool
-        start_time = time.time()
-        tool_call_response = await session.call_tool(
-            name=name,
-            arguments=arguments,
-        )
-        logger.info(f"Tool call took {time.time() - start_time} seconds")
-        logger.debug(tool_call_response.model_dump_json())
-        return tool_call_response
-    except mcp_exceptions.McpError as e:
-        logger.exception(f"tool call failed, tool={name}, arguments={arguments}, error={e}")
-        return e
+    else:
+        try:
+            return await client_session.call_tool(name=name, arguments=arguments)
+        except mcp_exceptions.McpError as e:
+            # If it's a session terminated error, try to reinitialize the session and
+            # call the tool again.
+            # TODO: this is based on _send_session_terminated_error method from
+            # StreamableHTTPTransport class of mcp python sdk. This approach is not robust as
+            # the error code and message might change in the future.
+            # We can write test case to make sure this assumption stands. Otherwise we can
+            # fork the StreamableHTTPTransport class.
+            if e.error.code == 32600 and e.error.message == "Session terminated":
+                logger.warning(
+                    "Session terminated error, reinitializing session and calling tool again"
+                )
+                try:
+                    await client_session.initialize()
+                except mcp_exceptions.McpError as init_error:
+                    logger.exception(
+                        f"Initialize failed after session terminated error, error={init_error}"
+                    )
+                    return init_error
+
+                try:
+                    return await client_session.call_tool(name=name, arguments=arguments)
+                except mcp_exceptions.McpError as retry_error:
+                    logger.exception(
+                        f"tool call failed, tool={name}, arguments={arguments}, error={retry_error}"
+                    )
+                    return retry_error
+            else:
+                logger.exception(f"tool call failed, tool={name}, arguments={arguments}, error={e}")
+                return e

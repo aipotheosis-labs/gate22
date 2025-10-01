@@ -40,3 +40,22 @@ def update_session_external_mcp_sessions(
     db_session.flush()
     db_session.refresh(mcp_session)
     return None
+
+
+def update_session_external_mcp_session(
+    db_session: Session, mcp_session: MCPSession, mcp_server_id: UUID, mcp_session_id: str
+) -> None:
+    # NOTE: JSONB is not mutable (didn't set it to avoid suprises), assigning new value
+    # directly will not trigger the update.
+    new_dict = mcp_session.external_mcp_sessions.copy()
+    new_dict[str(mcp_server_id)] = mcp_session_id
+    mcp_session.external_mcp_sessions = new_dict
+    db_session.flush()
+
+    return None
+
+
+def delete_session(db_session: Session, mcp_session: MCPSession) -> None:
+    mcp_session.deleted = True
+    db_session.flush()
+    return None

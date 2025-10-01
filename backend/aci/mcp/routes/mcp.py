@@ -132,11 +132,20 @@ async def mcp_post(
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
-async def mcp_delete() -> None:
+async def mcp_delete(
+    request: Request,
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
+) -> None:
     """
-    NOTE: delete is a no-op for now.
+    Delete the mcp session if it exists.
     """
-    pass
+    mcp_session_id = request.headers.get(config.MCP_SESSION_ID_HEADER)
+    if mcp_session_id is not None and utils.is_uuid(mcp_session_id):
+        mcp_session = crud.mcp_sessions.get_session(db_session, UUID(mcp_session_id))
+        if mcp_session is not None:
+            logger.debug(f"Deleting mcp session, mcp_session_id={mcp_session_id}")
+            crud.mcp_sessions.delete_session(db_session, mcp_session)
+            db_session.commit()
 
 
 # NOTE: for now we don't support sse stream feature so for GET return 405
