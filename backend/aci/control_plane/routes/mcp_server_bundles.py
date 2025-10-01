@@ -14,9 +14,10 @@ from aci.common.schemas.mcp_server_bundle import (
     MCPServerBundlePublicWithBundleKey,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import access_control, schema_utils
 from aci.control_plane import dependencies as deps
+from aci.control_plane import schema_utils
 from aci.control_plane.exceptions import NotPermittedError
+from aci.control_plane.services.rbac import access_control
 
 logger = get_logger(__name__)
 router = APIRouter()

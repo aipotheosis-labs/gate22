@@ -41,6 +41,7 @@ dependencies = [
     "favicon>=0.7.0",
     "tldextract>=5.3.0",
     "tenacity>=9.1.2",
+    "pyyaml>=6.0.2",
 ]
 
 [dependency-groups]
@@ -58,6 +59,7 @@ dev = [
     "types-jsonschema>=4.23.0.20250516",
     "google-api-python-client-stubs>=1.29.0",
     "import-linter>=2.1",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 

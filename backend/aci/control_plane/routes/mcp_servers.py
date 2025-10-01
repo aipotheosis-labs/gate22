@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from aci.common import embeddings, utils
 from aci.common.db import crud
-from aci.common.enums import ConnectedAccountOwnership, MCPServerTransportType, OrganizationRole
+from aci.common.enums import ConnectedAccountOwnership, MCPServerTransportType
 from aci.common.logging_setup import get_logger
 from aci.common.openai_client import get_openai_client
 from aci.common.schemas.mcp_server import (
@@ -30,12 +30,11 @@ from aci.common.schemas.mcp_server import (
 )
 from aci.common.schemas.mcp_server_configuration import MCPServerConfigurationCreate
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import access_control, config, schema_utils
+from aci.control_plane import config, schema_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     MCPServerNotFoundError,
     MCPToolsRefreshTooFrequent,
-    NotPermittedError,
     OAuth2MetadataDiscoveryError,
 )
 from aci.control_plane.routes.connected_accounts import (
@@ -48,6 +47,8 @@ from aci.control_plane.services.oauth2_client import (
     OAuthClientMetadata,
 )
 from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
+from aci.control_plane.services.rbac import access_control
+from aci.control_plane.services.rbac.definitions import MCPServerAction
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -59,20 +60,18 @@ async def get_mcp_server(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     mcp_server_id: UUID,
 ) -> MCPServerPublic:
-    access_control.check_mcp_server_accessibility(
-        db_session=context.db_session,
-        act_as=context.act_as,
-        user_id=context.user_id,
-        mcp_server_id=mcp_server_id,
-        throw_error_if_not_permitted=True,
-    )
-
     mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         context.db_session, mcp_server_id, throw_error_if_not_found=False
     )
     if not mcp_server:
         # TODO: should we only use custom error class here, e.g, MCPServerNotFoundError?
         raise HTTPException(status_code=404, detail="MCP server not found")
+
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.READ,
+        resource=mcp_server,
+    )
 
     return schema_utils.construct_mcp_server_public(mcp_server)
 
@@ -87,6 +86,11 @@ async def list_mcp_servers(
         organization_id=context.act_as.organization_id,
         offset=pagination_params.offset,
         limit=pagination_params.limit,
+    )
+
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.LIST,
     )
 
     return PaginationResponse(
@@ -161,8 +165,9 @@ async def create_custom_mcp_server(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     mcp_server_data: CustomMCPServerCreateRequest,
 ) -> MCPServerPublic:
-    access_control.check_act_as_organization_role(
-        context.act_as, required_role=OrganizationRole.ADMIN
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.CREATE,
     )
 
     mcp_server_embedding = embeddings.generate_mcp_server_embedding(
@@ -236,16 +241,10 @@ async def update_mcp_server(
         logger.error(f"MCP server {mcp_server_id} not found")
         raise MCPServerNotFoundError("MCP server not found")
 
-    if mcp_server.organization_id is None:
-        logger.error(f"MCP server {mcp_server_id} is public")
-        raise NotPermittedError("MCP server is public")
-
-    # Enforce only admin to perform this action
-    access_control.check_act_as_organization_role(
-        context.act_as,
-        requested_organization_id=mcp_server.organization_id,
-        required_role=OrganizationRole.ADMIN,
-        throw_error_if_not_permitted=True,
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.UPDATE,
+        resource=mcp_server,
     )
 
     # Re-embed if any fields that are set is part of embedding fields
@@ -290,28 +289,22 @@ async def delete_mcp_server(
         context.db_session, mcp_server_id, throw_error_if_not_found=False
     )
     if not mcp_server:
-        logger.error(f"MCP server {mcp_server_id} not found")
         raise MCPServerNotFoundError("MCP server not found")
 
-    if mcp_server.organization_id is None:
-        logger.error(f"MCP server {mcp_server_id} is public")
-        raise NotPermittedError("MCP server is public")
-
-    # Enforce only admin to perform this action
-    access_control.check_act_as_organization_role(
-        context.act_as,
-        requested_organization_id=mcp_server.organization_id,
-        required_role=OrganizationRole.ADMIN,
-        throw_error_if_not_permitted=True,
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.DELETE,
+        resource=mcp_server,
     )
 
     crud.mcp_servers.delete_mcp_server(context.db_session, mcp_server_id)
 
-    removal_result = OrphanRecordsRemover(context.db_session).on_mcp_server_deleted(
-        organization_id=mcp_server.organization_id,
-        mcp_server_id=mcp_server_id,
-    )
-    logger.info(f"Orphan records removal: {removal_result}")
+    if mcp_server.organization_id is not None:
+        removal_result = OrphanRecordsRemover(context.db_session).on_mcp_server_deleted(
+            organization_id=mcp_server.organization_id,
+            mcp_server_id=mcp_server_id,
+        )
+        logger.info(f"Orphan records removal: {removal_result}")
 
     context.db_session.commit()
 
@@ -328,9 +321,9 @@ async def mcp_server_oauth2_discovery(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: MCPServerOAuth2DiscoveryRequest,
 ) -> MCPServerOAuth2DiscoveryResponse:
-    # Enforce only admin to perform this action
-    access_control.check_act_as_organization_role(
-        context.act_as, required_role=OrganizationRole.ADMIN
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.OAUTH2_DISCOVERY,
     )
 
     try:
@@ -379,9 +372,9 @@ async def mcp_server_oauth2_dcr(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: MCPServerOAuth2DCRRequest,
 ) -> MCPServerOAuth2DCRResponse:
-    # Enforce only admin to perform this action
-    access_control.check_act_as_organization_role(
-        context.act_as, required_role=OrganizationRole.ADMIN
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.OAUTH2_DCR,
     )
 
     # For whitelabeling purposes, we allow user to provide custom callback URL for their MCP OAuth2
@@ -428,15 +421,10 @@ async def refresh_mcp_server_tools(
     if not mcp_server:
         raise HTTPException(status_code=404, detail="MCP server not found")
 
-    if mcp_server.organization_id is None:
-        raise HTTPException(status_code=403, detail="MCP server is public")
-
-    # Enforce only admin to perform this action
-    access_control.check_act_as_organization_role(
-        context.act_as,
-        requested_organization_id=mcp_server.organization_id,
-        required_role=OrganizationRole.ADMIN,
-        throw_error_if_not_permitted=True,
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.REFRESH_TOOLS,
+        resource=mcp_server,
     )
 
     # Basic rate limiting by checking the last synced at time

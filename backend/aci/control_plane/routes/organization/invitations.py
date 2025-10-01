@@ -17,7 +17,7 @@ from aci.common.schemas.organization_invitation import (
     OrganizationInvitationUpdate,
     SendOrganizationInvitationRequest,
 )
-from aci.control_plane import access_control, config, token_utils
+from aci.control_plane import config, token_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     InvalidInvitationTokenError,
@@ -25,6 +25,7 @@ from aci.control_plane.exceptions import (
     InvitationNotPendingError,
 )
 from aci.control_plane.services.email_service import EmailService
+from aci.control_plane.services.rbac import access_control
 
 logger = get_logger(__name__)
 router = APIRouter()

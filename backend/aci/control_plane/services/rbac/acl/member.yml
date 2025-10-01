@@ -1,0 +1,89 @@
+roles:
+  member:
+    permissions:
+      # ------------------------------------------------------------
+      # MCP Server
+      # ------------------------------------------------------------
+      - action: "mcp_server:list"
+
+      - action: "mcp_server:read"
+        resource_type: "MCPServer"
+        allowed:
+          # Can read public MCP servers or MCP servers in the same org
+          - resource_scope: "same_org"
+          - is_public: true
+
+
+      # ------------------------------------------------------------
+      # MCP Server Configuration
+      # ------------------------------------------------------------
+      - action: "mcp_server_configuration:list"
+
+      - action: "mcp_server_configuration:read"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          # Member can only Read MCP server configurations that are:
+          # - shared typed configuration in the same org
+          # - individual typed configuration with allowed teams
+          - resource_scope: "same_org"
+            connected_account_ownership: "shared"
+          - resource_scope: "same_org:allowed_team"
+            connected_account_ownership: "individual"
+
+      - action: "mcp_server_configuration:create_connected_account_on"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          # Member can only create connected accounts on MCP server configurations that are in the same org
+          # with allowed teams and individual type
+          - resource_scope: "same_org:allowed_team"
+            connected_account_ownership: "individual"
+
+      - action: "mcp_server_configuration:create_bundle_on"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          # Member can only create bundles on MCP server configurations that are:
+          # - shared typed configuration in the same org
+          # - individual typed configuration with allowed teams
+          - resource_scope: "same_org"
+            connected_account_ownership: "shared"
+          - resource_scope: "same_org:allowed_team"
+            connected_account_ownership: "individual"
+
+
+      # ------------------------------------------------------------
+      # Connected Account
+      # ------------------------------------------------------------
+      - action: "connected_account:create"
+        resource_type: "ConnectedAccount"
+        allowed:
+          - resource_scope: "same_org:self"
+            ownership: "individual"
+
+      - action: "connected_account:list"
+
+      - action: "connected_account:delete"
+        resource_type: "ConnectedAccount"
+        allowed:
+          - resource_scope: "same_org:self"
+            ownership: "individual"
+
+
+      # ------------------------------------------------------------
+      # MCP Server Bundle
+      # ------------------------------------------------------------
+      - action: "mcp_server_bundle:create"
+        resource_type: "MCPServerBundle"
+        allowed:
+          - resource_scope: "same_org:self"
+
+      - action: "mcp_server_bundle:list"
+
+      - action: "mcp_server_bundle:read"
+        resource_type: "MCPServerBundle"
+        allowed:
+          - resource_scope: "same_org:self"
+
+      - action: "mcp_server_bundle:delete"
+        resource_type: "MCPServerBundle"
+        allowed:
+          - resource_scope: "same_org:self"

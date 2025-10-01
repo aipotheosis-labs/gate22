@@ -1,0 +1,188 @@
+roles:
+  admin:
+    permissions:
+      # ------------------------------------------------------------
+      # MCP Server
+      # ------------------------------------------------------------
+      - action: "mcp_server:list"
+
+      - action: "mcp_server:read"
+        resource_type: "MCPServer"
+        allowed:
+          # Can read public MCP servers or MCP servers in the same org
+          - resource_scope: "same_org"
+          - is_public: true
+
+      - action: "mcp_server:create"
+        resource_type: "MCPServer"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "mcp_server:update"
+        resource_type: "MCPServer"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "mcp_server:delete"
+        resource_type: "MCPServer"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "mcp_server:refresh_tools"
+        resource_type: "MCPServer"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "mcp_server:oauth2_discovery"
+
+      - action: "mcp_server:oauth2_dcr"
+
+      - action: "mcp_server:create_configuration_on"
+        resource_type: "MCPServer"
+        allowed:
+          # Can create a MCP server configuration on a Public MCP server or a MCP server in the same org
+          - resource_scope: "same_org"
+          - is_public: true
+
+
+      # ------------------------------------------------------------
+      # MCP Server Configuration
+      # ------------------------------------------------------------
+      - action: "mcp_server_configuration:list"
+
+      - action: "mcp_server_configuration:create"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          - resource_scope: "same_org"
+            connected_account_ownership: "individual"
+          - resource_scope: "same_org"
+            connected_account_ownership: "shared"
+
+      - action: "mcp_server_configuration:update"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          - resource_scope: "same_org"
+            connected_account_ownership: "individual"
+          - resource_scope: "same_org"
+            connected_account_ownership: "shared"
+
+      - action: "mcp_server_configuration:delete"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          - resource_scope: "same_org"
+            connected_account_ownership: "individual"
+          - resource_scope: "same_org"
+            connected_account_ownership: "shared"
+
+      - action: "mcp_server_configuration:create_connected_account_on"
+        resource_type: "MCPServerConfiguration"
+        allowed:
+          # Admin can only create operational or shared accounts on MCP server configurations of the org
+          - resource_scope: "same_org"
+            connected_account_ownership: "operational"
+          - resource_scope: "same_org"
+            connected_account_ownership: "shared"
+
+
+      # ------------------------------------------------------------
+      # Connected Account
+      # ------------------------------------------------------------
+      - action: "connected_account:create"
+        resource_type: "ConnectedAccount"
+        allowed:
+          - resource_scope: "same_org"
+            ownership: "shared"
+          - resource_scope: "same_org"
+            ownership: "operational"
+
+      - action: "connected_account:delete"
+        resource_type: "ConnectedAccount"
+        allowed:
+          - resource_scope: "same_org"
+            ownership: "shared"
+          - resource_scope: "same_org"
+            ownership: "operational"
+
+      - action: "connected_account:list"
+
+
+      # ------------------------------------------------------------
+      # MCP Server Bundle
+      # ------------------------------------------------------------
+      - action: "mcp_server_bundle:list"
+        resource_type: "MCPServerBundle"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "mcp_server_bundle:read"
+        resource_type: "MCPServerBundle"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "mcp_server_bundle:delete"
+        resource_type: "MCPServerBundle"
+        allowed:
+          - resource_scope: "same_org"
+
+
+      # ------------------------------------------------------------
+      # Team
+      # ------------------------------------------------------------
+      - action: "team:create"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "team:list"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "team:list_member"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "team:add_member"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "team:remove_member"
+        resource_type: "Team"
+        allowed:
+          - resource_scope: "same_org"
+
+
+      # ------------------------------------------------------------
+      # Organization
+      # ------------------------------------------------------------
+      - action: "organization:remove_member"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "organization:update_member_role"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "organization:list_member"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "organization:create_invitation"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "organization:cancel_invitation"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"
+
+      - action: "organization:list_invitation"
+        resource_type: "Organization"
+        allowed:
+          - resource_scope: "same_org"

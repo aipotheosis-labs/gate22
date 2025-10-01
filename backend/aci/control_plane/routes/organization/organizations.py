@@ -15,9 +15,9 @@ from aci.common.schemas.organization import (
     TeamMembershipInfo,
     UpdateOrganizationMemberRoleRequest,
 )
-from aci.control_plane import access_control
 from aci.control_plane import dependencies as deps
 from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
+from aci.control_plane.services.rbac import access_control
 
 logger = get_logger(__name__)
 router = APIRouter()

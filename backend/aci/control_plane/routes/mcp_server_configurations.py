@@ -13,10 +13,15 @@ from aci.common.schemas.mcp_server_configuration import (
     MCPServerConfigurationUpdate,
 )
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import access_control, schema_utils
 from aci.control_plane import dependencies as deps
+from aci.control_plane import schema_utils
 from aci.control_plane.exceptions import NotPermittedError
 from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
+from aci.control_plane.services.rbac import access_control
+from aci.control_plane.services.rbac.definitions import (
+    MCPServerAction,
+    MCPServerConfigurationAction,
+)
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -27,22 +32,19 @@ async def create_mcp_server_configuration(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     body: MCPServerConfigurationCreate,
 ) -> MCPServerConfigurationPublic:
-    # TODO: check allowed_teams are actually in the org
-    # TODO: check enabled_tools are actually in the mcp server
-    access_control.check_act_as_organization_role(
-        context.act_as,
-        requested_organization_id=context.act_as.organization_id,
-        required_role=OrganizationRole.ADMIN,
-        throw_error_if_not_permitted=True,
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerConfigurationAction.CREATE,
     )
 
-    access_control.check_mcp_server_accessibility(
-        db_session=context.db_session,
-        act_as=context.act_as,
-        user_id=context.user_id,
-        mcp_server_id=body.mcp_server_id,
-        throw_error_if_not_permitted=True,
+    access_control.is_action_permitted(
+        context=context,
+        user_action=MCPServerAction.CREATE_CONFIGURATION_ON,
+        resource_id=body.mcp_server_id,
     )
+
+    # TODO: check allowed_teams are actually in the org
+    # TODO: check enabled_tools are actually in the mcp server
 
     if body.connected_account_ownership == ConnectedAccountOwnership.OPERATIONAL:
         raise NotPermittedError(
