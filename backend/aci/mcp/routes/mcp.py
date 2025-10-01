@@ -1,11 +1,16 @@
+from datetime import UTC, datetime
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from aci.common import utils
 from aci.common.db import crud
+from aci.common.db.sql_models import MCPSession
 from aci.common.logging_setup import get_logger
+from aci.mcp import config
 from aci.mcp import dependencies as deps
 from aci.mcp.exceptions import InvalidJSONRPCPayloadError, UnsupportedJSONRPCMethodError
 from aci.mcp.routes import handlers
@@ -65,6 +70,7 @@ async def mcp_post(
             ),
         )
 
+    # validate bundle existence
     mcp_server_bundle = crud.mcp_server_bundles.get_mcp_server_bundle_by_bundle_key(
         db_session,
         bundle_key,
@@ -79,6 +85,18 @@ async def mcp_post(
             ),
         )
 
+    # validate mcp session: session id is required except for initialize request
+    validation_response = _validate_mcp_session(db_session, request, response, payload)
+    if isinstance(validation_response, JSONRPCErrorResponse):
+        return validation_response
+    elif isinstance(validation_response, MCPSession):
+        mcp_session = validation_response
+        crud.mcp_sessions.update_session_last_accessed_at(
+            db_session, mcp_session, datetime.now(UTC)
+        )
+        db_session.commit()
+
+    # handle the request based on the request type
     match payload:
         case JSONRPCInitializeRequest():
             logger.info(f"Received initialize request={payload.model_dump()}")
@@ -184,3 +202,70 @@ async def _parse_payload(
     else:
         logger.error(f"Invalid payload type: {type(payload)}")
         raise InvalidJSONRPCPayloadError(f"Invalid payload type: {type(payload)}")
+
+
+def _validate_mcp_session(
+    db_session: Session,
+    request: Request,
+    response: Response,
+    payload: JSONRPCInitializeRequest
+    | JSONRPCToolsListRequest
+    | JSONRPCToolsCallRequest
+    | JSONRPCNotificationInitialized
+    | JSONRPCPingRequest,
+) -> JSONRPCErrorResponse | MCPSession | None:
+    """
+    Validate the mcp session id.
+    Returns:
+        JSONRPCErrorResponse: if the mcp session id is invalid
+        MCPSession: if the mcp session id is valid
+        None: if the mcp session id is not required (initialize request)
+    """
+    # initialize request does not require a mcp session id
+    if isinstance(payload, JSONRPCInitializeRequest):
+        return None
+
+    jrpc_request_id: str | int | None = None
+    if (
+        isinstance(payload, JSONRPCToolsListRequest)
+        or isinstance(payload, JSONRPCToolsCallRequest)
+        or isinstance(payload, JSONRPCPingRequest)
+    ):
+        jrpc_request_id = payload.id
+
+    mcp_session_id = request.headers.get(config.MCP_SESSION_ID_HEADER)
+
+    if mcp_session_id is None:
+        logger.warning("MCP session ID is missing")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return JSONRPCErrorResponse(
+            id=jrpc_request_id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_REQUEST,
+                message="MCP session ID header is required, please initialize first",
+            ),
+        )
+
+    # this check is needed otherwise UUID(mcp_session_id) will raise a ValueError
+    if not utils.is_uuid(mcp_session_id):
+        logger.warning(f"Invalid MCP session ID, mcp_session_id={mcp_session_id}")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return JSONRPCErrorResponse(
+            id=jrpc_request_id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_REQUEST, message="Invalid MCP session ID"
+            ),
+        )
+    mcp_session = crud.mcp_sessions.get_session(db_session, UUID(mcp_session_id))
+    if mcp_session is None or mcp_session.deleted:
+        logger.warning(f"MCP session not found or deleted, mcp_session_id={mcp_session_id}")
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return JSONRPCErrorResponse(
+            id=jrpc_request_id,
+            error=JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_REQUEST,
+                message="MCP session not found, please initialize a new session",
+            ),
+        )
+
+    return mcp_session
