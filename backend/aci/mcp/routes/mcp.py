@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Request, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -34,13 +34,11 @@ async def mcp_post(
     request: Request,
     response: Response,
     bundle_key: str,
-    mcp_protocol_version: Annotated[str | None, Header()] = None,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse | None:
     # parse payload
     try:
         payload = await _parse_payload(request)
     except UnsupportedJSONRPCMethodError as e:
-        logger.error(str(e))
         return JSONRPCErrorResponse(
             id=e.id,
             error=JSONRPCErrorResponse.ErrorData(
@@ -49,7 +47,6 @@ async def mcp_post(
             ),
         )
     except InvalidJSONRPCPayloadError as e:
-        logger.error(str(e))
         return JSONRPCErrorResponse(
             id=e.id,
             error=JSONRPCErrorResponse.ErrorData(
@@ -85,7 +82,7 @@ async def mcp_post(
     match payload:
         case JSONRPCInitializeRequest():
             logger.info(f"Received initialize request={payload.model_dump()}")
-            return await handlers.handle_initialize(payload, mcp_protocol_version)
+            return await handlers.handle_initialize(payload)
 
         case JSONRPCToolsListRequest():
             logger.info(f"Received tools/list request={payload.model_dump()}")
@@ -180,6 +177,8 @@ async def _parse_payload(
                         f"Invalid ping request: {e}", jprc_payload.id
                     ) from e
             case _:
+                logger.debug(f"Unsupported jsonrpc method: {jprc_payload.method}")
                 raise UnsupportedJSONRPCMethodError(jprc_payload.method, jprc_payload.id)
     else:
+        logger.error(f"Invalid payload type: {type(payload)}")
         raise InvalidJSONRPCPayloadError(f"Invalid payload type: {type(payload)}")

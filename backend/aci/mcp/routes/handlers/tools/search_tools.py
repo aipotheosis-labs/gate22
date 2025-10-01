@@ -42,11 +42,11 @@ class SearchToolsInputSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-SEARCH_TOOLS = {
-    "name": "SEARCH_TOOLS",
-    "description": "This tool allows you to find relevant tools and their schemas that can help complete your tasks.",  # noqa: E501
-    "inputSchema": SearchToolsInputSchema.model_json_schema(),
-}
+SEARCH_TOOLS = mcp_types.Tool(
+    name="SEARCH_TOOLS",
+    description="This tool allows you to find relevant tools and their schemas that can help complete your tasks.",  # noqa: E501
+    inputSchema=SearchToolsInputSchema.model_json_schema(),
+)
 
 
 async def handle_search_tools(

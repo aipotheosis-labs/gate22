@@ -47,12 +47,12 @@ class ExecuteToolInputSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-EXECUTE_TOOL = {
-    "name": "EXECUTE_TOOL",
-    "description": "Execute a specific retrieved tool. Provide the executable tool name, and the "
+EXECUTE_TOOL = mcp_types.Tool(
+    name="EXECUTE_TOOL",
+    description="Execute a specific retrieved tool. Provide the executable tool name, and the "
     "required tool parameters for that tool based on tool definition retrieved.",
-    "inputSchema": ExecuteToolInputSchema.model_json_schema(),
-}
+    inputSchema=ExecuteToolInputSchema.model_json_schema(),
+)
 
 
 # TODO: handle direct tool call that is not through the "EXECUTE_TOOL" tool

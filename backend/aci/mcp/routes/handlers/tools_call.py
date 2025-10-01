@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import MCPServerBundle
 from aci.common.logging_setup import get_logger
-from aci.mcp.routes.handlers.tools.execute_tool import handle_execute_tool
-from aci.mcp.routes.handlers.tools.search_tools import handle_search_tools
+from aci.mcp.routes.handlers.tools.execute_tool import EXECUTE_TOOL, handle_execute_tool
+from aci.mcp.routes.handlers.tools.search_tools import SEARCH_TOOLS, handle_search_tools
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
     JSONRPCErrorResponse,
@@ -15,25 +15,24 @@ logger = get_logger(__name__)
 
 
 async def handle_tools_call(
-    request: JSONRPCToolsCallRequest,
+    payload: JSONRPCToolsCallRequest,
     db_session: Session,
     mcp_server_bundle: MCPServerBundle,
 ) -> JSONRPCSuccessResponse | JSONRPCErrorResponse:
     """
     Handle the tools/call request for a MCP server bundle.
     """
-    match request.params.name:
-        # TODO: derive from SEARCH_TOOLS and EXECUTE_TOOL instead of string literals
-        case "SEARCH_TOOLS":
-            return await handle_search_tools(db_session, mcp_server_bundle, request)
-        case "EXECUTE_TOOL":
-            return await handle_execute_tool(db_session, mcp_server_bundle, request)
+    match payload.params.name:
+        case SEARCH_TOOLS.name:
+            return await handle_search_tools(db_session, mcp_server_bundle, payload)
+        case EXECUTE_TOOL.name:
+            return await handle_execute_tool(db_session, mcp_server_bundle, payload)
         case _:
-            logger.error(f"Unknown tool: {request.params.name}")
+            logger.error(f"Unknown tool: {payload.params.name}")
             return JSONRPCErrorResponse(
-                id=request.id,
+                id=payload.id,
                 error=JSONRPCErrorResponse.ErrorData(
                     code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
-                    message=f"Unknown tool: {request.params.name}",
+                    message=f"Unknown tool: {payload.params.name}",
                 ),
             )

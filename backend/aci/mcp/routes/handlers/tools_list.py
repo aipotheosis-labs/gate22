@@ -1,3 +1,5 @@
+from mcp import types as mcp_types
+
 from aci.mcp.routes.handlers.tools.execute_tool import EXECUTE_TOOL
 from aci.mcp.routes.handlers.tools.search_tools import SEARCH_TOOLS
 from aci.mcp.routes.jsonrpc import (
@@ -7,18 +9,18 @@ from aci.mcp.routes.jsonrpc import (
 
 
 async def handle_tools_list(
-    request: JSONRPCToolsListRequest,
+    payload: JSONRPCToolsListRequest,
 ) -> JSONRPCSuccessResponse:
     """
     Handle the tools/list request for a MCP server.
     """
 
     return JSONRPCSuccessResponse(
-        id=request.id,
-        result={
-            "tools": [
+        id=payload.id,
+        result=mcp_types.ListToolsResult(
+            tools=[
                 SEARCH_TOOLS,
                 EXECUTE_TOOL,
             ],
-        },
+        ).model_dump(exclude_none=True),
     )
