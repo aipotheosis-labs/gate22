@@ -24,13 +24,14 @@ from aci.common.schemas.connected_account import (
 )
 from aci.common.schemas.mcp_auth import APIKeyCredentials, NoAuthCredentials
 from aci.common.schemas.pagination import PaginationParams, PaginationResponse
-from aci.control_plane import access_control, config, schema_utils
+from aci.control_plane import config, schema_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     MCPServerConfigurationNotFound,
     NotPermittedError,
     OAuth2Error,
 )
+from aci.control_plane.services.rbac import access_control
 
 logger = get_logger(__name__)
 router = APIRouter()
