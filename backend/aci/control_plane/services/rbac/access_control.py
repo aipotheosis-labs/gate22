@@ -19,6 +19,7 @@ from aci.control_plane.exceptions import NotPermittedError
 from aci.control_plane.services.rbac.acl_loader import ACL
 from aci.control_plane.services.rbac.definitions import (
     AccessibleResource,
+    AllowedResourceCriterion,
     ConnectedAccountAction,
     ControlPlaneActionEnum,
     ControlPlanePermission,
@@ -116,7 +117,9 @@ def is_action_permitted(
         return False
 
     # Check all the defined allowed resource criteria, reject if any of them is not met
-    if not _check_resource_access_permitted(context, resource, permission):
+    if not _check_resource_access_permitted(
+        context, resource, permission.allowed_resource_criteria
+    ):
         if throw_error_if_not_permitted:
             logger.info(
                 "[ABAC Checking] Access denied. Resource does not match the allowed resource criteria for action {user_action}"  # noqa: E501
@@ -132,15 +135,12 @@ def is_action_permitted(
 def _check_resource_access_permitted(
     context: RequestContext,
     resource: AccessibleResource,
-    permission: ControlPlanePermission,
+    allowed_resource_criteria: list[AllowedResourceCriterion],
 ) -> bool:
     """
     Check if the resource matches the allowed resource criteria.
     """
-    if permission.allowed_resource_criteria is None:
-        return True
-
-    for criterion in permission.allowed_resource_criteria:
+    for criterion in allowed_resource_criteria:
         if criterion.resource_scope is not None:
             if not _is_resource_match_allowed_resource_scope(
                 context, resource, criterion.resource_scope
