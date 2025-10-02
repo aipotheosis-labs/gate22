@@ -50,7 +50,13 @@ def update_session_external_mcp_session(
 ) -> None:
     # NOTE: JSONB is not mutable (didn't set it to avoid suprises), assigning new value
     # directly will not trigger the update.
-    new_dict = mcp_session.external_mcp_sessions.copy()
+
+    # Copying from the in-memory external_mcp_sessions risks clobbering entries added by concurrent
+    # ool calls handled in other transactions (e.g., server A writes its session ID, server B
+    # races and overwrites the JSON with only its entry).
+    # Refresh from the database before copying so you merge against the latest committed state.
+    db_session.refresh(mcp_session)
+    new_dict = dict(mcp_session.external_mcp_sessions)
     new_dict[str(mcp_server_id)] = mcp_session_id
     mcp_session.external_mcp_sessions = new_dict
     db_session.flush()
