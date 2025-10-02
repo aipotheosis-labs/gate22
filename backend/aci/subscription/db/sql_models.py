@@ -99,8 +99,7 @@ class OrganizationSubscription(Base):
     stripe_subscription_id: Mapped[str | None] = mapped_column(
         String(MAX_STRING_LENGTH), nullable=True
     )
-    stripe_item_id: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
-    stripe_price_id: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+
     seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[OrganizationSubscriptionStatus] = mapped_column(
         SQLEnum(OrganizationSubscriptionStatus, native_enum=False, length=MAX_ENUM_LENGTH),
@@ -114,6 +113,9 @@ class OrganizationSubscription(Base):
     )
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False)
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subsription_start_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
