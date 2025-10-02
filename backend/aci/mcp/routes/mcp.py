@@ -270,7 +270,7 @@ def _validate_or_create_mcp_session(
             ),
         )
     mcp_session = crud.mcp_sessions.get_session(db_session, UUID(mcp_session_id))
-    if mcp_session is None or mcp_session.deleted or mcp_session.bundle_id != mcp_server_bundle.id:
+    if mcp_session is None or mcp_session.bundle_id != mcp_server_bundle.id:
         logger.warning(
             f"MCP session not found, "
             f"mcp_session_id={mcp_session_id}, bundle_id={mcp_server_bundle.id}"

@@ -20,8 +20,11 @@ def create_session(
     return mcp_session
 
 
-def get_session(db_session: Session, id: UUID) -> MCPSession | None:
-    return db_session.execute(select(MCPSession).where(MCPSession.id == id)).scalar_one_or_none()
+def get_session(db_session: Session, id: UUID, include_deleted: bool = False) -> MCPSession | None:
+    statement = select(MCPSession).where(MCPSession.id == id)
+    if not include_deleted:
+        statement = statement.where(MCPSession.deleted.is_(False))
+    return db_session.execute(statement).scalar_one_or_none()
 
 
 def update_session_last_accessed_at(
