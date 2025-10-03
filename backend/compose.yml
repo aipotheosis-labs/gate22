@@ -31,23 +31,6 @@ services:
       - "5432:5432"
     restart: no
 
-  subscription-db:
-    # Note: we need to use the pgvector/pgvector:pg17 image to use the pgvector extension, instead of the official postgres image
-    image: pgvector/pgvector:pg17
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d subscription_db"]
-      interval: 1s
-      retries: 5
-      start_period: 1s
-      timeout: 10s
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: subscription_db
-    ports:
-      - "5433:5432"
-    restart: no
-
   test-db:
     image: pgvector/pgvector:pg17
     healthcheck:
@@ -80,21 +63,6 @@ services:
     ports:
       - "8000:8000"
     command: uvicorn aci.control_plane.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8000 --no-access-log
-    depends_on:
-      db:
-        condition: service_healthy
-
-  subscription:
-    build:
-      context: .
-      dockerfile: Dockerfile.subscription
-    env_file:
-      - .env.local
-    volumes:
-      - ./aci/subscription:/workdir/aci/subscription
-    ports:
-      - "8003:8000"
-    command: uvicorn aci.subscription.main:app --reload --proxy-headers --forwarded-allow-ips=* --host 0.0.0.0 --port 8000 --no-access-log
     depends_on:
       db:
         condition: service_healthy

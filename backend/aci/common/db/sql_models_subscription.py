@@ -14,19 +14,22 @@ from sqlalchemy import (
 )
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from aci.subscription.schemas.organization_subscription import OrganizationSubscriptionStatus
+from aci.common.db.sql_models import MAX_ENUM_LENGTH, MAX_STRING_LENGTH, Base
+from aci.common.schemas.subscription import SubscriptionStatus
 
-MAX_STRING_LENGTH = 512
-MAX_ENUM_LENGTH = 50
+"""
+This file contains the SQL models for the subscription module.
+Note that the schema is "subscription".
+"""
 
 
-class Base(MappedAsDataclass, DeclarativeBase):
-    pass
+class SubscriptionBase(Base):
+    __schema__ = "subscription"
 
 
-class Organization(Base):
+class Organization(SubscriptionBase):
     __tablename__ = "organizations"
 
     id: Mapped[UUID] = mapped_column(
@@ -53,7 +56,7 @@ class Organization(Base):
     )
 
 
-class SubscriptionPlan(Base):
+class SubscriptionPlan(SubscriptionBase):
     __tablename__ = "subscription_plans"
 
     plan_code: Mapped[str] = mapped_column(
@@ -84,7 +87,7 @@ class SubscriptionPlan(Base):
     )
 
 
-class OrganizationSubscription(Base):
+class OrganizationSubscription(SubscriptionBase):
     __tablename__ = "organization_subscriptions"
 
     id: Mapped[UUID] = mapped_column(
@@ -101,8 +104,8 @@ class OrganizationSubscription(Base):
     )
 
     seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    status: Mapped[OrganizationSubscriptionStatus] = mapped_column(
-        SQLEnum(OrganizationSubscriptionStatus, native_enum=False, length=MAX_ENUM_LENGTH),
+    status: Mapped[SubscriptionStatus] = mapped_column(
+        SQLEnum(SubscriptionStatus, native_enum=False, length=MAX_ENUM_LENGTH),
         nullable=False,
     )
     current_period_start: Mapped[datetime | None] = mapped_column(
@@ -137,7 +140,7 @@ class OrganizationSubscription(Base):
     )
 
 
-class OrganizationEntitlementOverride(Base):
+class OrganizationEntitlementOverride(SubscriptionBase):
     __tablename__ = "organization_entitlement_overrides"
 
     id: Mapped[UUID] = mapped_column(

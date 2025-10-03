@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, EmailStr, HttpUrl
+from pydantic import BaseModel, ConfigDict, EmailStr, HttpUrl
 
 
-class OrganizationSubscriptionStatus(StrEnum):
+class SubscriptionStatus(StrEnum):
     ACTIVE = "active"
     PAST_DUE = "past_due"
     CANCELLED = "cancelled"
@@ -21,7 +21,7 @@ class Entitlement(BaseModel):
 
 class SubscriptionPublic(BaseModel):
     plan_code: str
-    status: OrganizationSubscriptionStatus
+    status: SubscriptionStatus
     seat_count: int
     current_period_start: datetime | None
     current_period_end: datetime | None
@@ -48,3 +48,33 @@ class SubscriptionCheckout(BaseModel):
 
 class SubscriptionCancelResult(BaseModel):
     pass
+
+
+class StripeEventData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    object: str
+
+    cancel_at_period_end: bool
+    canceled_at: int | None
+
+    current_period_end: int
+    current_period_start: int
+
+    quantity: int
+    status: str
+    subsription_start_date: int | None
+
+
+class StripeEventDataObject(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    object: StripeEventData
+
+
+class StripeWebhookEvent(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    type: str
+    data: StripeEventDataObject
