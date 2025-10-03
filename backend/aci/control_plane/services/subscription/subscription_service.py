@@ -132,7 +132,7 @@ def is_new_entitlement_meet_existing_usage(
     if new_entitlement.max_custom_mcp_servers < len(custom_mcp_servers_in_use):
         logger.info(
             f"Requested max custom mcp servers ({new_entitlement.max_custom_mcp_servers}) less "
-            f"than existing max custom mcp servers ({custom_mcp_servers_in_use})"
+            f"than existing max custom mcp servers ({len(custom_mcp_servers_in_use)})"
         )
         return False
 
