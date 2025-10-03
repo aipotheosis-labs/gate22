@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
+from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
     FREE_PLAN_CODE,
@@ -15,6 +16,7 @@ from aci.common.schemas.subscription import (
     SubscriptionRequest,
     SubscriptionStatusPublic,
 )
+from aci.control_plane import access_control
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     OrganizationNotFound,
@@ -33,11 +35,18 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
 )
 async def get_organization_entitlement(
-    db_session: Annotated[Session, Depends(deps.yield_db_session)], organization_id: UUID
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
 ) -> SubscriptionStatusPublic:
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
+
     organization = crud.organizations.get_organization_by_id(
-        db_session=db_session,
-        organization_id=organization_id,
+        db_session=context.db_session, organization_id=organization_id
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
@@ -68,7 +77,7 @@ async def get_organization_entitlement(
     status_code=status.HTTP_200_OK,
 )
 async def change_organization_subscription(
-    db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
     input: SubscriptionRequest,
 ) -> SubscriptionCheckout | SubscriptionCancelResult:
@@ -78,18 +87,24 @@ async def change_organization_subscription(
     If the organization does not have a stripe customer id, it will be created.
     Returns the checkout url.
     """
-    organization = crud.organizations.get_organization_by_id(
-        db_session=db_session,
-        organization_id=organization_id,
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
     )
 
+    organization = crud.organizations.get_organization_by_id(
+        db_session=context.db_session,
+        organization_id=organization_id,
+    )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
         raise OrganizationNotFound()
 
     # Check if the plan is active
     plan = crud.subscriptions.get_active_plan_by_plan_code(
-        db_session=db_session,
+        db_session=context.db_session,
         plan_code=input.plan_code,
     )
     if plan is None or not plan.is_public:
@@ -126,7 +141,7 @@ async def change_organization_subscription(
         override=organization.entitlement_override,
     )
     if not subscription_service.is_new_entitlement_meet_existing_usage(
-        db_session=db_session,
+        db_session=context.db_session,
         organization_id=organization_id,
         new_entitlement=effective_entitlement_after_change,
     ):
@@ -135,7 +150,7 @@ async def change_organization_subscription(
         )
 
     result = subscription_service.change_subscription(
-        db_session=db_session,
+        db_session=context.db_session,
         organization=organization,
         existing_subscription=organization.subscription,
         requested_plan=plan,
