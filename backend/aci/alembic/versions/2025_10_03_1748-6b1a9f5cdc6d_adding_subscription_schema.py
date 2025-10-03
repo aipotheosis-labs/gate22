@@ -1,8 +1,8 @@
 """adding subscription schema
 
-Revision ID: 790f12871b0d
+Revision ID: 6b1a9f5cdc6d
 Revises: 2416fc891646
-Create Date: 2025-10-03 16:15:49.278601+00:00
+Create Date: 2025-10-03 17:48:09.621260+00:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '790f12871b0d'
+revision: str = '6b1a9f5cdc6d'
 down_revision: Union[str, None] = '2416fc891646'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -65,7 +65,7 @@ def upgrade() -> None:
     sa.Column('organization_id', sa.UUID(), nullable=False),
     sa.Column('plan_code', sa.String(length=512), nullable=False),
     sa.Column('seat_count', sa.Integer(), nullable=False),
-    sa.Column('status', sa.Enum('ACTIVE', 'PAST_DUE', 'CANCELLED', name='subscriptionstatus', native_enum=False, length=50), nullable=False),
+    sa.Column('status', sa.Enum('ACTIVE', 'PAST_DUE', name='subscriptionstatus', native_enum=False, length=50), nullable=False),
     sa.Column('stripe_subscription_id', sa.String(length=512), nullable=True),
     sa.Column('current_period_start', sa.DateTime(timezone=True), nullable=True),
     sa.Column('current_period_end', sa.DateTime(timezone=True), nullable=True),
@@ -89,5 +89,5 @@ def downgrade() -> None:
     op.drop_table('organization_subscription_metadata', schema='subscription')
     op.drop_table('organization_entitlement_overrides', schema='subscription')
     op.drop_table('subscription_plans', schema='subscription')
-    op.execute("DROP SCHEMA IF EXISTS subscription")
     # ### end Alembic commands ###
+    op.execute("DROP SCHEMA IF EXISTS subscription")
