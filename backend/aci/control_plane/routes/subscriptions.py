@@ -92,14 +92,9 @@ async def change_organization_subscription(
         db_session=db_session,
         plan_code=input.plan_code,
     )
-    if plan is None or plan.stripe_price_id is None:
+    if plan is None or not plan.is_public:
         logger.error(f"Subscription plan {input.plan_code} not available for subscription")
         raise RequestedSubscriptionNotAvailable()
-    if plan.is_public is False:
-        logger.error(f"Subscription plan {input.plan_code} is not public")
-        raise RequestedSubscriptionNotAvailable(
-            f"subscription plan {input.plan_code} is not public"
-        )
 
     # This is a special case for the free plan, where we auto set the seat count to max available
     # seats for Free Plan.
@@ -110,6 +105,10 @@ async def change_organization_subscription(
             raise RequestedSubscriptionInvalid("Seat count must be provided")
         if input.success_url is None or input.cancel_url is None:
             raise RequestedSubscriptionInvalid("success_url and cancel_url must be provided")
+        if plan.stripe_price_id is None:
+            raise RequestedSubscriptionInvalid(
+                "Subscription plan not available for self-served subscription"
+            )
 
     # Check if the seat_requested matches the plan
     # plan.min_seat_for_subscription < requested_seat < plan.max_seat_for_subscription
