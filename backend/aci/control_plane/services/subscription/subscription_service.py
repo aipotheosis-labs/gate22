@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
@@ -12,16 +13,95 @@ from aci.common.db.sql_models import (
 )
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
+    FREE_PLAN_CODE,
     Entitlement,
+    OrganizationSubscriptionUpsert,
+    SubscriptionCancelResult,
+    SubscriptionCheckout,
+    SubscriptionStatus,
 )
 from aci.control_plane import config
 from aci.control_plane.exceptions import (
+    RequestedSubscriptionInvalid,
     StripeOperationError,
 )
 
 logger = get_logger(__name__)
 
 stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
+
+
+def change_subscription(
+    db_session: Session,
+    organization: Organization,
+    existing_subscription: OrganizationSubscription,
+    requested_plan: SubscriptionPlan,
+    requested_seat_count: int,
+    success_url: str,
+    cancel_url: str,
+) -> SubscriptionCheckout | SubscriptionCancelResult:
+    """
+    Routing function for changing the subscription.
+    All the change to subscription should go through this function.
+    """
+    # If the existing subscription seat / plan is same as the requested, nothing to do.
+    if (
+        existing_subscription.plan_code == requested_plan.plan_code
+        and existing_subscription.seat_count == requested_seat_count
+    ):
+        raise RequestedSubscriptionInvalid("The requested subscription is the same as the existing")
+
+    # Existing: free
+    # Requested: paid
+    # Upgrade from free plan to paid plan.
+    if (
+        existing_subscription.plan_code == FREE_PLAN_CODE
+        and requested_plan.plan_code != FREE_PLAN_CODE
+    ):
+        url = _change_stripe_subscription(
+            db_session=db_session,
+            organization=organization,
+            plan=requested_plan,
+            seat_count=requested_seat_count,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        return SubscriptionCheckout(url=url)
+
+    # Existing: paid
+    # Requested: free
+    # Downgrade from paid stripe plan to non-stripe plan.
+    elif (
+        existing_subscription.plan_code != FREE_PLAN_CODE
+        and requested_plan.plan_code == FREE_PLAN_CODE
+    ):
+        # cancel the stripe subscription
+        _cancel_stripe_subscription(existing_subscription)
+        return SubscriptionCancelResult()
+
+    # Existing: paid
+    # Requested: paid
+    # Change from one paid plan to another paid plan, or change seat count
+    elif (
+        existing_subscription.plan_code != FREE_PLAN_CODE
+        and requested_plan.plan_code != FREE_PLAN_CODE
+    ):
+        # change the stripe subscription
+        url = _change_stripe_subscription(
+            db_session=db_session,
+            organization=organization,
+            plan=requested_plan,
+            seat_count=requested_seat_count,
+            success_url=success_url,
+            cancel_url=cancel_url,
+        )
+        return SubscriptionCheckout(url=url)
+
+    else:
+        # Invalid subscription change
+        # This should not happen
+        logger.error("cannot change from free plan to free plan")
+        raise RequestedSubscriptionInvalid("cannot change from free plan to free plan")
 
 
 def is_new_entitlement_meet_existing_usage(
@@ -59,7 +139,56 @@ def is_new_entitlement_meet_existing_usage(
     return True
 
 
-def cancel_stripe_subscription(
+def compute_effective_entitlement(
+    seat_count: int,
+    plan: SubscriptionPlan,
+    override: OrganizationEntitlementOverride | None,
+) -> Entitlement:
+    """
+    Compute the effective entitlement based on the subscription and the override.
+    """
+    if override is None or (
+        override.expires_at is not None and override.expires_at > datetime.now()
+    ):
+        return Entitlement(
+            seat_count=seat_count,
+            max_custom_mcp_servers=plan.config_max_custom_mcp_servers,
+            log_retention_days=plan.config_log_retention_days,
+        )
+    return Entitlement(
+        seat_count=(override.seat_count if override.seat_count else seat_count),
+        max_custom_mcp_servers=(
+            override.max_custom_mcp_servers
+            if override.max_custom_mcp_servers
+            else plan.config_max_custom_mcp_servers
+        ),
+        log_retention_days=(
+            override.log_retention_days
+            if override.log_retention_days
+            else plan.config_log_retention_days
+        ),
+    )
+
+
+def _set_active_organization_subscription(
+    db_session: Session,
+    organization: Organization,
+    plan: SubscriptionPlan,
+    seat_count: int,
+) -> None:
+    crud.subscriptions.upsert_organization_subscription(
+        db_session=db_session,
+        organization_id=organization.id,
+        upsert_data=OrganizationSubscriptionUpsert(
+            plan_code=plan.plan_code,
+            seat_count=seat_count,
+            status=SubscriptionStatus.ACTIVE,
+            cancel_at_period_end=False,
+        ),
+    )
+
+
+def _cancel_stripe_subscription(
     subscription: OrganizationSubscription,
 ) -> None:
     if subscription.stripe_subscription_id is None:
@@ -70,7 +199,7 @@ def cancel_stripe_subscription(
     # Do not update the subscription in the database, it will be updated by the stripe webhook
 
 
-def change_stripe_subscription(
+def _change_stripe_subscription(
     db_session: Session,
     organization: Organization,
     plan: SubscriptionPlan,
@@ -129,26 +258,3 @@ def change_stripe_subscription(
         )
 
     return stripe_checkout_session.url
-
-
-def compute_effective_entitlement(
-    seat_count: int,
-    plan: SubscriptionPlan,
-    override: OrganizationEntitlementOverride | None,
-) -> Entitlement:
-    """
-    Compute the effective entitlement based on the subscription and the override.
-    """
-    return Entitlement(
-        seat_count=(override.seat_count if override and override.seat_count else seat_count),
-        max_custom_mcp_servers=(
-            override.max_custom_mcp_servers
-            if override and override.max_custom_mcp_servers
-            else plan.config_max_custom_mcp_servers
-        ),
-        log_retention_days=(
-            override.log_retention_days
-            if override and override.log_retention_days
-            else plan.config_log_retention_days
-        ),
-    )

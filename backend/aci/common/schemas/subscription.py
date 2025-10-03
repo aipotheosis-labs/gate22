@@ -20,7 +20,6 @@ class SubscriptionPlanCreate(BaseModel):
 class SubscriptionStatus(StrEnum):
     ACTIVE = "active"
     PAST_DUE = "past_due"
-    CANCELLED = "cancelled"
 
 
 FREE_PLAN_CODE = "GATE22_FREE_PLAN"
@@ -39,7 +38,6 @@ class SubscriptionPublic(BaseModel):
     current_period_start: datetime | None
     current_period_end: datetime | None
     cancel_at_period_end: bool
-    cancelled_at: datetime | None
 
 
 class SubscriptionStatusPublic(BaseModel):
@@ -50,8 +48,8 @@ class SubscriptionStatusPublic(BaseModel):
 class SubscriptionRequest(BaseModel):
     plan_code: str
     seat_count: int | None
-    success_url: HttpUrl
-    cancel_url: HttpUrl
+    success_url: HttpUrl | None
+    cancel_url: HttpUrl | None
 
 
 class SubscriptionCheckout(BaseModel):
@@ -76,7 +74,6 @@ class OrganizationSubscriptionUpsert(UndefinedAwareBaseModel):
     current_period_start: datetime | None = None
     current_period_end: datetime | None = None
     cancel_at_period_end: bool | None = None
-    cancelled_at: datetime | None = None
     subscription_start_date: datetime | None = None
     stripe_subscription_id: str | None = None
 

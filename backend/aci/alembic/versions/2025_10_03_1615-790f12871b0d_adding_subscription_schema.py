@@ -70,7 +70,6 @@ def upgrade() -> None:
     sa.Column('current_period_start', sa.DateTime(timezone=True), nullable=True),
     sa.Column('current_period_end', sa.DateTime(timezone=True), nullable=True),
     sa.Column('cancel_at_period_end', sa.Boolean(), nullable=False),
-    sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('subscription_start_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),

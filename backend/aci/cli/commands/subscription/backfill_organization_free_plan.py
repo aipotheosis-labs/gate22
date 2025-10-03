@@ -30,7 +30,11 @@ def backfill_organization_free_plan_impl(db_session: Session) -> None:
 
     count = 0
     for organization in organizations:
-        if organization.subscription is not None:
+        # Check if the organization already has a subscription
+        if (
+            crud.subscriptions.get_organization_subscription(db_session, organization.id)
+            is not None
+        ):
             console.print(
                 f"[yellow]Organization {organization.id} already has a subscription. Skip.[/yellow]"
             )
