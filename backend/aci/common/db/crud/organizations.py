@@ -68,6 +68,17 @@ def get_organization_members(
     )
 
 
+def count_organization_members(
+    db_session: Session,
+    organization_id: UUID,
+) -> int:
+    return (
+        db_session.query(OrganizationMembership)
+        .filter(OrganizationMembership.organization_id == organization_id)
+        .count()
+    )
+
+
 def get_organization_membership(
     db_session: Session,
     organization_id: UUID,

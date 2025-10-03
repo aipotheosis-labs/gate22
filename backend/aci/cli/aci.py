@@ -1,7 +1,7 @@
 import click
 
 from aci.cli import config
-from aci.cli.commands import adhoc, mcp, mock_data, virtual_mcp
+from aci.cli.commands import adhoc, mcp, mock_data, subscription, virtual_mcp
 from aci.common.logging_setup import setup_logging
 from aci.common.openai_client import init_openai_client
 
@@ -28,6 +28,11 @@ def adhoc_group() -> None:
     pass
 
 
+@cli.group(name="subscription")
+def subscription_group() -> None:
+    pass
+
+
 # Virtual MCP commands
 virtual_mcp_group.add_command(virtual_mcp.upsert_server, name="upsert-server")
 virtual_mcp_group.add_command(virtual_mcp.upsert_tools, name="upsert-tools")
@@ -36,6 +41,12 @@ virtual_mcp_group.add_command(virtual_mcp.upsert_tools, name="upsert-tools")
 mcp_group.add_command(mcp.upsert_mcp_server, name="upsert-server")
 mcp_group.add_command(mcp.upsert_mcp_tools, name="upsert-tools")
 mcp_group.add_command(mcp.generate_tools, name="generate-tools")
+
+# Subscription commands
+subscription_group.add_command(subscription.insert_plan, name="insert-plan")
+subscription_group.add_command(
+    subscription.backfill_organization_free_plan, name="backfill-organization-free-plan"
+)
 
 # Adhoc commands: commands that are one-off but keeping them in the CLI for convenience
 adhoc_group.add_command(
