@@ -25,6 +25,7 @@ from aci.control_plane.routes import (
     mcp_server_configurations,
     mcp_servers,
     mcp_tools,
+    subscriptions,
     users,
 )
 from aci.control_plane.routes.organization import (
@@ -158,4 +159,10 @@ app.include_router(
     logs.router,
     prefix=config.ROUTER_PREFIX_LOGS,
     tags=[config.ROUTER_PREFIX_LOGS.split("/")[-1]],
+)
+
+app.include_router(
+    subscriptions.router,
+    prefix=config.ROUTER_PREFIX_SUBSCRIPTIONS,
+    tags=[config.ROUTER_PREFIX_SUBSCRIPTIONS.split("/")[-1]],
 )
