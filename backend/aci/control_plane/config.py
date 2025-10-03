@@ -24,6 +24,7 @@ ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/connected-accounts"
 ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/mcp-server-bundles"
 ROUTER_PREFIX_MCP_TOOLS = "/mcp-tools"
 ROUTER_PREFIX_LOGS = "/logs"
+ROUTER_PREFIX_SUBSCRIPTIONS = "/subscriptions"
 
 # Frontend
 FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")
@@ -61,3 +62,7 @@ DEFAULT_MCP_SERVER_LOGO = (
 
 # Ops
 SENTRY_DSN = check_and_get_env_variable("CONTROL_PLANE_SENTRY_DSN")
+
+# SUBSCRIPTION
+SUBSCRIPTION_ENABLED = check_and_get_env_variable("SUBSCRIPTION_ENABLED")
+SUBSCRIPTION_STRIPE_SECRET_KEY = check_and_get_env_variable("SUBSCRIPTION_STRIPE_SECRET_KEY")

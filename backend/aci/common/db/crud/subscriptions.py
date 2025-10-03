@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from aci.subscription.db.sql_models import (
+from aci.common.db.sql_models_subscription import (
     Organization,
     SubscriptionPlan,
 )
