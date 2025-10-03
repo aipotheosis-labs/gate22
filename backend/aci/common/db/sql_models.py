@@ -179,8 +179,8 @@ class Organization(Base):
         back_populates="organization", cascade="all, delete-orphan", single_parent=True, init=False
     )
 
-    # One organization can have only one subscription
-    subscription: Mapped[OrganizationSubscription | None] = relationship(
+    # One organization has one subscription
+    subscription: Mapped[OrganizationSubscription] = relationship(
         back_populates="organization", init=False
     )
     entitlement_override: Mapped[OrganizationEntitlementOverride | None] = relationship(
@@ -912,7 +912,6 @@ class OrganizationSubscription(Base):
         DateTime(timezone=True), nullable=True
     )
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     subscription_start_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

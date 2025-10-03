@@ -74,3 +74,12 @@ def upsert_organization_subscription(
     db_session.flush()
     db_session.refresh(organization_subscription)
     return organization_subscription
+
+
+def get_organization_subscription(
+    db_session: Session, organization_id: UUID
+) -> OrganizationSubscription | None:
+    statement = select(OrganizationSubscription).where(
+        OrganizationSubscription.organization_id == organization_id
+    )
+    return db_session.execute(statement).scalar_one_or_none()

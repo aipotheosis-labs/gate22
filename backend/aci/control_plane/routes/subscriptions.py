@@ -18,7 +18,6 @@ from aci.common.schemas.subscription import (
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     OrganizationNotFound,
-    OrganizationSubscriptionNotFound,
     RequestedSubscriptionInvalid,
     RequestedSubscriptionNotAvailable,
 )
@@ -43,9 +42,6 @@ async def get_organization_entitlement(
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
         raise OrganizationNotFound()
-    if organization.subscription is None:
-        logger.error(f"Organization {organization_id} has no subscription")
-        raise OrganizationSubscriptionNotFound()
 
     # Compute the effective entitlement
     effective_entitlement = subscription_service.compute_effective_entitlement(
@@ -96,9 +92,14 @@ async def change_organization_subscription(
         db_session=db_session,
         plan_code=input.plan_code,
     )
-    if plan is None or not plan.is_public or plan.stripe_price_id is None:
+    if plan is None or plan.stripe_price_id is None:
         logger.error(f"Subscription plan {input.plan_code} not available for subscription")
         raise RequestedSubscriptionNotAvailable()
+    if plan.is_public is False:
+        logger.error(f"Subscription plan {input.plan_code} is not public")
+        raise RequestedSubscriptionNotAvailable(
+            f"subscription plan {input.plan_code} is not public"
+        )
 
     # This is a special case for the free plan, where we auto set the seat count to max available
     # seats for Free Plan.
@@ -107,6 +108,8 @@ async def change_organization_subscription(
     else:
         if input.seat_count is None:
             raise RequestedSubscriptionInvalid("Seat count must be provided")
+        if input.success_url is None or input.cancel_url is None:
+            raise RequestedSubscriptionInvalid("success_url and cancel_url must be provided")
 
     # Check if the seat_requested matches the plan
     # plan.min_seat_for_subscription < requested_seat < plan.max_seat_for_subscription
@@ -114,10 +117,8 @@ async def change_organization_subscription(
         input.seat_count < plan.min_seats_for_subscription
         or input.seat_count > plan.max_seats_for_subscription
     ):
-        logger.info(
-            f"Requested seat count {input.seat_count} is invalid for plan {input.plan_code}"
-        )
-        raise RequestedSubscriptionInvalid("Requested seat count is invalid for plan")
+        logger.info(f"Requested seat count {input.seat_count} invalid for plan {input.plan_code}")
+        raise RequestedSubscriptionInvalid("requested seat count is invalid for plan")
 
     # calculate effective entitlement after the change
     effective_entitlement_after_change = subscription_service.compute_effective_entitlement(
@@ -131,30 +132,19 @@ async def change_organization_subscription(
         new_entitlement=effective_entitlement_after_change,
     ):
         raise RequestedSubscriptionInvalid(
-            "New entitlement does not meet existing usage. Must reduce current usage."
+            "new entitlement does not meet existing usage. Must reduce current usage."
         )
 
-    if input.plan_code == FREE_PLAN_CODE:
-        if organization.subscription is None:
-            logger.error(f"Organization {organization_id} has no subscription")
-            raise OrganizationSubscriptionNotFound()
-        if organization.subscription.plan_code == FREE_PLAN_CODE:
-            logger.error(f"Organization {organization_id} is already on the free plan")
-            raise RequestedSubscriptionInvalid("Organization is already on the free plan")
-
-        subscription_service.cancel_stripe_subscription(organization.subscription)
-
-        return SubscriptionCancelResult()
-    else:
-        url = subscription_service.change_stripe_subscription(
-            db_session=db_session,
-            organization=organization,
-            plan=plan,
-            seat_count=input.seat_count,
-            success_url=str(input.success_url),
-            cancel_url=str(input.cancel_url),
-        )
-    return SubscriptionCheckout(url=url)
+    result = subscription_service.change_subscription(
+        db_session=db_session,
+        organization=organization,
+        existing_subscription=organization.subscription,
+        requested_plan=plan,
+        requested_seat_count=input.seat_count,
+        success_url=str(input.success_url),
+        cancel_url=str(input.cancel_url),
+    )
+    return result
 
 
 EVENT_TYPES = [
