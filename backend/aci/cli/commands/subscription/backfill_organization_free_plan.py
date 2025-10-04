@@ -9,7 +9,6 @@ from aci.common.db.sql_models import Organization
 from aci.common.schemas.subscription import (
     FREE_PLAN_CODE,
     OrganizationSubscriptionUpsert,
-    SubscriptionStatus,
 )
 
 console = Console()
@@ -46,7 +45,7 @@ def backfill_organization_free_plan_impl(db_session: Session) -> None:
             OrganizationSubscriptionUpsert(
                 plan_code=free_plan.plan_code,
                 seat_count=free_plan.max_seats_for_subscription,
-                status=SubscriptionStatus.ACTIVE,
+                status="active",
                 cancel_at_period_end=False,
             ),
         )

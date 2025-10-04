@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, HttpUrl
 
@@ -17,11 +16,6 @@ class SubscriptionPlanCreate(BaseModel):
     config_log_retention_days: int | None
 
 
-class SubscriptionStatus(StrEnum):
-    ACTIVE = "active"
-    PAST_DUE = "past_due"
-
-
 FREE_PLAN_CODE = "GATE22_FREE_PLAN"
 
 
@@ -33,7 +27,7 @@ class Entitlement(BaseModel):
 
 class SubscriptionPublic(BaseModel):
     plan_code: str
-    status: SubscriptionStatus
+    status: str
     seat_count: int
     current_period_start: datetime | None
     current_period_end: datetime | None
@@ -47,16 +41,20 @@ class SubscriptionStatusPublic(BaseModel):
 
 class SubscriptionRequest(BaseModel):
     plan_code: str
-    seat_count: int | None
-    success_url: HttpUrl | None
-    cancel_url: HttpUrl | None
+    seat_count: int | None = None
+    success_url: HttpUrl | None = None
+    cancel_url: HttpUrl | None = None
 
 
 class SubscriptionCheckout(BaseModel):
     url: str
 
 
-class SubscriptionCancelResult(BaseModel):
+class SubscriptionResult(BaseModel):
+    subscription_id: str
+
+
+class SubscriptionCancellation(BaseModel):
     pass
 
 
@@ -70,12 +68,35 @@ class OrganizationSubscriptionUpsert(UndefinedAwareBaseModel):
 
     plan_code: str | None = None
     seat_count: int | None = None
-    status: SubscriptionStatus | None = None
+    status: str | None = None
     current_period_start: datetime | None = None
     current_period_end: datetime | None = None
     cancel_at_period_end: bool | None = None
     subscription_start_date: datetime | None = None
     stripe_subscription_id: str | None = None
+    stripe_subscription_item_id: str | None = None
+
+
+##############################
+# Stripe Event Data
+#############################
+class StripeEventDataItemPrice(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    active: bool
+
+
+class StripeEventDataItemData(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    quantity: int
+    subscription: str
+    price: StripeEventDataItemPrice
+
+
+class StripeEventDataItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    data: list[StripeEventDataItemData]
 
 
 class StripeEventData(BaseModel):
@@ -83,21 +104,21 @@ class StripeEventData(BaseModel):
 
     id: str
     object: str
-
+    customer: str
     cancel_at_period_end: bool
     canceled_at: int | None
+    items: StripeEventDataItem
 
     current_period_end: int
     current_period_start: int
 
     quantity: int
     status: str
-    subscription_start_date: int | None
+    start_date: int | None
 
 
 class StripeEventDataObject(BaseModel):
     model_config = ConfigDict(extra="allow")
-
     object: StripeEventData
 
 

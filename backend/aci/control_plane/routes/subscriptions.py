@@ -10,10 +10,11 @@ from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
     FREE_PLAN_CODE,
     StripeWebhookEvent,
-    SubscriptionCancelResult,
+    SubscriptionCancellation,
     SubscriptionCheckout,
     SubscriptionPublic,
     SubscriptionRequest,
+    SubscriptionResult,
     SubscriptionStatusPublic,
 )
 from aci.control_plane import access_control
@@ -23,7 +24,7 @@ from aci.control_plane.exceptions import (
     RequestedSubscriptionInvalid,
     RequestedSubscriptionNotAvailable,
 )
-from aci.control_plane.services.subscription import subscription_service
+from aci.control_plane.services.subscription import stripe_event_handler, subscription_service
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -73,14 +74,14 @@ async def get_organization_entitlement(
 
 @router.post(
     "/organizations/{organization_id}/change-subscription",
-    response_model=SubscriptionCheckout | SubscriptionCancelResult,
+    response_model=SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult,
     status_code=status.HTTP_200_OK,
 )
 async def change_organization_subscription(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
     input: SubscriptionRequest,
-) -> SubscriptionCheckout | SubscriptionCancelResult:
+) -> SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult:
     """
     Change the stripe subscription for the organization.
     Use this to change seat count or change plan.
@@ -158,6 +159,8 @@ async def change_organization_subscription(
         success_url=str(input.success_url),
         cancel_url=str(input.cancel_url),
     )
+
+    context.db_session.commit()
     return result
 
 
@@ -177,12 +180,16 @@ async def stripe_webhook(
     db_session: Annotated[Session, Depends(deps.yield_db_session)], body: StripeWebhookEvent
 ) -> None:
     match body.type:
-        case "customer.subscription.created":
-            # subscription = body.data.object
-            pass
-        case "customer.subscription.updated":
-            pass
+        case "customer.subscription.created" | "customer.subscription.updated":
+            stripe_event_handler.handle_customer_subscription_upsert(
+                db_session=db_session,
+                subscription_data=body.data.object,
+            )
         case "customer.subscription.deleted":
-            pass
+            stripe_event_handler.handle_customer_subscription_deleted(
+                db_session=db_session,
+                subscription_data=body.data.object,
+            )
 
+    db_session.commit()
     return None
