@@ -1,8 +1,8 @@
-"""adding subscription schema
+"""added subscription tables
 
-Revision ID: 6b1a9f5cdc6d
+Revision ID: c1bda345f91f
 Revises: 2416fc891646
-Create Date: 2025-10-03 17:48:09.621260+00:00
+Create Date: 2025-10-04 00:30:14.227504+00:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6b1a9f5cdc6d'
+revision: str = 'c1bda345f91f'
 down_revision: Union[str, None] = '2416fc891646'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -67,6 +67,7 @@ def upgrade() -> None:
     sa.Column('seat_count', sa.Integer(), nullable=False),
     sa.Column('status', sa.Enum('ACTIVE', 'PAST_DUE', name='subscriptionstatus', native_enum=False, length=50), nullable=False),
     sa.Column('stripe_subscription_id', sa.String(length=512), nullable=True),
+    sa.Column('stripe_subscription_item_id', sa.String(length=512), nullable=True),
     sa.Column('current_period_start', sa.DateTime(timezone=True), nullable=True),
     sa.Column('current_period_end', sa.DateTime(timezone=True), nullable=True),
     sa.Column('cancel_at_period_end', sa.Boolean(), nullable=False),

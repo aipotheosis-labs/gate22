@@ -33,7 +33,6 @@ from aci.common.enums import (
     UserIdentityProvider,
     UserVerificationType,
 )
-from aci.common.schemas.subscription import SubscriptionStatus
 
 EMBEDDING_DIMENSION = 1024
 MAX_STRING_LENGTH = 512
@@ -812,11 +811,11 @@ class VirtualMCPTool(Base):
     )
 
 
-# ---------------------------------------------------------
-#
-# Tables in "subscription" schema
-#
-# ---------------------------------------------------------
+###################################################################################################
+# Below tables are used only by the "subscription" service.
+# Note: They are all in the `subscription` schema.
+# https://www.notion.so/Billing-Payment-27d8378d6a478049bcbcdc1e494942e9?source=copy_link
+###################################################################################################
 class OrganizationSubscriptionMetadata(Base):
     __tablename__ = "organization_subscription_metadata"
 
@@ -898,11 +897,11 @@ class OrganizationSubscription(Base):
         nullable=False,
     )
     seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    status: Mapped[SubscriptionStatus] = mapped_column(
-        SQLEnum(SubscriptionStatus, native_enum=False, length=MAX_ENUM_LENGTH),
-        nullable=False,
-    )
+    status: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     stripe_subscription_id: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=True
+    )
+    stripe_subscription_item_id: Mapped[str | None] = mapped_column(
         String(MAX_STRING_LENGTH), nullable=True
     )
     current_period_start: Mapped[datetime | None] = mapped_column(
