@@ -2,10 +2,8 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 
 from aci.common.db import crud
-from aci.common.db.sql_models import MCPServerConfiguration
 from aci.common.enums import ConnectedAccountOwnership, OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_auth import AuthConfig
@@ -18,6 +16,7 @@ from aci.common.schemas.pagination import PaginationParams, PaginationResponse
 from aci.control_plane import access_control, schema_utils
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import NotPermittedError
+from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemover
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -232,72 +231,19 @@ async def update_mcp_server_configuration(
     )
 
     if body.allowed_teams is not None:
-        # If the allowed teams are updated, check and clean up any stale connected accounts and
-        # bundles
-        _check_stale_connected_accounts_and_bundles(
-            db_session=context.db_session,
+        # If the allowed teams are updated, check and clean up any orphan records
+        removal_result = OrphanRecordsRemover(
+            db_session=context.db_session
+        ).on_mcp_server_configuration_allowed_teams_updated(
             mcp_server_configuration=mcp_server_configuration,
         )
+        logger.info(f"Orphan records removal: {removal_result}")
 
     context.db_session.commit()
 
     return schema_utils.construct_mcp_server_configuration_public(
         context.db_session, mcp_server_configuration
     )
-
-
-def _check_stale_connected_accounts_and_bundles(
-    db_session: Session, mcp_server_configuration: MCPServerConfiguration
-) -> None:
-    # If the MCP server configuration is individual, we need to check for stale connected accounts
-    if mcp_server_configuration.connected_account_ownership == ConnectedAccountOwnership.INDIVIDUAL:
-        # Check and clean up any connected accounts that are no longer accessible to the
-        # MCPServerConfiguration by the ConnectedAccount's owner.
-        connected_accounts = (
-            crud.connected_accounts.get_connected_accounts_by_mcp_server_configuration_id(
-                db_session=db_session,
-                mcp_server_configuration_id=mcp_server_configuration.id,
-            )
-        )
-        for connected_account in connected_accounts:
-            accessible = access_control.check_mcp_server_config_accessibility(
-                db_session=db_session,
-                user_id=connected_account.user_id,
-                mcp_server_configuration_id=mcp_server_configuration.id,
-                throw_error_if_not_permitted=False,
-            )
-            if not accessible:
-                logger.info(
-                    f"Deleting the connected account {connected_account.id} as the user does not have access to the MCP server configuration {mcp_server_configuration.id}"  # noqa: E501
-                )
-                crud.connected_accounts.delete_connected_account(
-                    db_session=db_session,
-                    connected_account_id=connected_account.id,
-                )
-
-    # If the allowed teams are updated, check and remove any MCPServerConfiguration inside the
-    # MCPBundles of the organization that is no longer accessible by the MCPBundles's owner.
-    mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
-        db_session=db_session,
-        organization_id=mcp_server_configuration.organization_id,
-        mcp_server_configuration_id=mcp_server_configuration.id,
-    )
-    for mcp_server_bundle in mcp_server_bundles:
-        accessible = access_control.check_mcp_server_config_accessibility(
-            db_session=db_session,
-            user_id=mcp_server_bundle.user_id,
-            mcp_server_configuration_id=mcp_server_configuration.id,
-            throw_error_if_not_permitted=False,
-        )
-        if not accessible:
-            updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
-            updated_config_ids.remove(mcp_server_configuration.id)
-
-            crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
-                db_session=db_session,
-                mcp_server_bundle_id=mcp_server_bundle.id,
-                update_mcp_server_bundle_configuration_ids=updated_config_ids,
-            )
 
 
 @router.delete("/{mcp_server_configuration_id}", status_code=status.HTTP_200_OK)
@@ -331,27 +277,13 @@ async def delete_mcp_server_configuration(
             context.db_session, mcp_server_configuration_id
         )
 
-        # Remove all ConnectedAccount under this MCP server configuration
-        crud.connected_accounts.delete_connected_accounts_by_mcp_server_configuration_id(
-            db_session=context.db_session,
-            mcp_server_configuration_id=mcp_server_configuration_id,
-        )
-
-        # Remove the MCP server configuration from all MCPServerBundle in the organization
-        mcp_server_bundles = crud.mcp_server_bundles.get_mcp_server_bundles_by_organization_id_and_contains_mcp_server_configuration_id(  # noqa: E501
-            db_session=context.db_session,
+        removal_result = OrphanRecordsRemover(
+            db_session=context.db_session
+        ).on_mcp_server_configuration_deleted(
             organization_id=mcp_server_configuration.organization_id,
             mcp_server_configuration_id=mcp_server_configuration_id,
         )
-        for mcp_server_bundle in mcp_server_bundles:
-            updated_config_ids = list(dict.fromkeys(mcp_server_bundle.mcp_server_configuration_ids))
-            updated_config_ids.remove(mcp_server_configuration_id)
-
-            crud.mcp_server_bundles.update_mcp_server_bundle_configuration_ids(
-                db_session=context.db_session,
-                mcp_server_bundle_id=mcp_server_bundle.id,
-                update_mcp_server_bundle_configuration_ids=updated_config_ids,
-            )
+        logger.info(f"Orphan records removal: {removal_result}")
 
         context.db_session.commit()
     else:

@@ -178,8 +178,8 @@ def test_list_connected_accounts(
     """
     - dummy_user connected to dummy_mcp_server_configuration_github
     - dummy_user connected to dummy_mcp_server_configuration_notion
-    - dummy_another_org_member connected to dummy_mcp_server_configuration_github
-    - dummy_another_org_member connected to dummy_mcp_server_configuration_shared as shared account
+    - dummy_user_2 connected to dummy_mcp_server_configuration_github
+    - dummy_user_2 connected to dummy_mcp_server_configuration_shared_gmail as shared account
     """
 
     requested_config_ids = [

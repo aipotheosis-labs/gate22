@@ -1,7 +1,7 @@
 import enum
 import re
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,6 +27,7 @@ from aci.common.schemas.mcp_server import (
 from aci.common.schemas.pagination import PaginationResponse
 from aci.control_plane import config
 from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsDiff
+from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemoval
 
 logger = get_logger(__name__)
 
@@ -329,7 +330,9 @@ MCPServerBelongsTo = enum.Enum("MCPServerBelongsTo", ["self", "another_org", "pu
     "mcp_server_belongs_to",
     [MCPServerBelongsTo.self, MCPServerBelongsTo.another_org, MCPServerBelongsTo.public],
 )
+@patch("aci.control_plane.routes.mcp_servers.OrphanRecordsRemover")
 def test_delete_mcp_server(
+    mock_orphan_records_remover_class: Mock,
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
@@ -338,6 +341,11 @@ def test_delete_mcp_server(
     access_token_fixture: str,
     mcp_server_belongs_to: MCPServerBelongsTo,
 ) -> None:
+    # setup the mock
+    mock_orphan_records_remover_instance = Mock()
+    mock_orphan_records_remover_instance.on_mcp_server_deleted.return_value = OrphanRecordsRemoval()
+    mock_orphan_records_remover_class.return_value = mock_orphan_records_remover_instance
+
     access_token = request.getfixturevalue(access_token_fixture)
 
     dummy_random_organization = crud.organizations.create_organization(
@@ -380,11 +388,19 @@ def test_delete_mcp_server(
 
     assert response.status_code == 200
 
+    original_org_id = dummy_mcp_server.organization_id
+
     # Verify the MCP server was actually deleted from the database
     deleted_mcp_server = crud.mcp_servers.get_mcp_server_by_id(
         db_session, dummy_mcp_server.id, throw_error_if_not_found=False
     )
     assert deleted_mcp_server is None
+
+    # Verify the orphan records remover was called
+    mock_orphan_records_remover_instance.on_mcp_server_deleted.assert_called_once_with(
+        organization_id=original_org_id,
+        mcp_server_id=dummy_mcp_server.id,
+    )
 
 
 @pytest.mark.parametrize(

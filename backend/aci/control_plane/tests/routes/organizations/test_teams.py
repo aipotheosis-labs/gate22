@@ -1,3 +1,5 @@
+from unittest.mock import Mock, patch
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -12,6 +14,7 @@ from aci.common.schemas.organization import (
     TeamMembershipInfo,
 )
 from aci.control_plane import config
+from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemoval
 
 logger = get_logger(__name__)
 
@@ -350,7 +353,9 @@ def test_add_team_member(
 )
 @pytest.mark.parametrize("remove_self", [True, False])
 @pytest.mark.parametrize("is_user_in_team", [True, False])
+@patch("aci.control_plane.routes.organization.organizations.OrphanRecordsRemover")
 def test_remove_team_member(
+    mock_orphan_records_remover_class: Mock,
     request: pytest.FixtureRequest,
     db_session: Session,
     test_client: TestClient,
@@ -362,6 +367,13 @@ def test_remove_team_member(
     is_user_in_team: bool,
 ) -> None:
     access_token = request.getfixturevalue(access_token_fixture)
+
+    # setup the mock
+    mock_orphan_records_remover_instance = Mock()
+    mock_orphan_records_remover_instance.on_user_removed_from_team.return_value = (
+        OrphanRecordsRemoval()
+    )
+    mock_orphan_records_remover_class.return_value = mock_orphan_records_remover_instance
 
     # Create a new user and add it to the organization
     new_user = crud.users.create_user(
@@ -426,3 +438,8 @@ def test_remove_team_member(
     # Check if the user is removed from the team
     team_members = crud.teams.get_team_members(db_session, dummy_team.id)
     assert target_user.id not in [member.user_id for member in team_members]
+
+    mock_orphan_records_remover_instance.on_user_removed_from_team.assert_called_once_with(
+        user_id=target_user.id,
+        organization_id=dummy_organization.id,
+    )
