@@ -107,7 +107,6 @@ def delete_mcp_server(
 ) -> None:
     mcp_server = get_mcp_server_by_id(db_session, mcp_server_id, throw_error_if_not_found=True)
     db_session.delete(mcp_server)
-    db_session.flush()
 
 
 def list_mcp_servers(

@@ -689,6 +689,7 @@ def test_on_mcp_server_deleted(
         db_session=db_session,
         mcp_server_id=dummy_custom_mcp_server.id,
     )
+    db_session.commit()
 
     # Execute the orphan records removal
     removal_result = OrphanRecordsRemover(db_session).on_mcp_server_deleted(

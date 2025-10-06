@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
@@ -266,17 +265,12 @@ class OrphanRecordsRemover:
         # Delete all Connected Accounts that connects with any of the MCP Server Configurations
         # This is done automatically by the CASCADE DELETE when deleting MCP Server Configurations,
         # defined in `sql_models.py`, so we do not need to do anything here.
-        statement = (
-            select(ConnectedAccount)
-            .join(
-                MCPServerConfiguration,
-                ConnectedAccount.mcp_server_configuration_id == MCPServerConfiguration.id,
-            )
-            .where(
-                MCPServerConfiguration.mcp_server_id == mcp_server_id,
+        remaining_connected_accounts = (
+            crud.connected_accounts.get_connected_accounts_by_mcp_server_id(
+                db_session=self.db_session,
+                mcp_server_id=mcp_server_id,
             )
         )
-        remaining_connected_accounts = self.db_session.execute(statement).scalars().all()
         if len(remaining_connected_accounts) > 0:
             # This should not happen normally if cascade delete is working properly
             logger.warning(
