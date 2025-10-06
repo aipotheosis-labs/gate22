@@ -1,3 +1,4 @@
+from typing import Literal, overload
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -24,6 +25,35 @@ instead of creating a separate file for each model.
 ########################################
 # Subscription Plan
 ########################################
+@overload
+def get_free_plan(
+    db_session: Session,
+    throw_error_if_not_found: Literal[True],
+) -> SubscriptionPlan: ...
+
+
+@overload
+def get_free_plan(
+    db_session: Session,
+    throw_error_if_not_found: Literal[False],
+) -> SubscriptionPlan | None: ...
+
+
+def get_free_plan(
+    db_session: Session,
+    throw_error_if_not_found: bool,
+) -> SubscriptionPlan | None:
+    statement = select(SubscriptionPlan).where(
+        SubscriptionPlan.is_free.is_(True),
+        SubscriptionPlan.archived_at.is_(None),
+    )
+    plan: SubscriptionPlan | None = db_session.execute(statement).scalar_one_or_none()
+    if plan is None:
+        if throw_error_if_not_found:
+            raise Exception("Free plan not found")
+    return plan
+
+
 def get_active_plan_by_plan_code(
     db_session: Session,
     plan_code: str,
@@ -115,9 +145,18 @@ def get_organization_subscription(
     return db_session.execute(statement).scalar_one_or_none()
 
 
-def delete_organization_subscription(db_session: Session, organization_id: UUID) -> None:
+def get_organization_subscription_by_stripe_subscription_id(
+    db_session: Session, stripe_subscription_id: str
+) -> OrganizationSubscription | None:
+    statement = select(OrganizationSubscription).where(
+        OrganizationSubscription.stripe_subscription_id == stripe_subscription_id
+    )
+    return db_session.execute(statement).scalar_one_or_none()
+
+
+def delete_organization_subscription(db_session: Session, stripe_subscription_id: str) -> None:
     statement = delete(OrganizationSubscription).where(
-        OrganizationSubscription.organization_id == organization_id
+        OrganizationSubscription.stripe_subscription_id == stripe_subscription_id
     )
     db_session.execute(statement)
     db_session.flush()

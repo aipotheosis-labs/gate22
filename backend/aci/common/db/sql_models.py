@@ -178,8 +178,8 @@ class Organization(Base):
         back_populates="organization", cascade="all, delete-orphan", single_parent=True, init=False
     )
 
-    # One organization has one subscription
-    subscription: Mapped[OrganizationSubscription] = relationship(
+    # One organization has maximum one subscription
+    subscription: Mapped[OrganizationSubscription | None] = relationship(
         back_populates="organization", init=False
     )
     entitlement_override: Mapped[OrganizationEntitlementOverride | None] = relationship(
@@ -842,10 +842,6 @@ class OrganizationSubscriptionMetadata(Base):
         back_populates="organization_metadata", init=False
     )
 
-    __table_args__ = {
-        "schema": "subscription",
-    }
-
 
 class SubscriptionPlan(Base):
     __tablename__ = "subscription_plans"
@@ -855,6 +851,7 @@ class SubscriptionPlan(Base):
     )
     plan_code: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    is_free: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False)
     stripe_price_id: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
     min_seats_for_subscription: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -877,9 +874,6 @@ class SubscriptionPlan(Base):
     subscriptions: Mapped[list[OrganizationSubscription]] = relationship(
         back_populates="plan", init=False
     )
-    __table_args__ = {
-        "schema": "subscription",
-    }
 
 
 class OrganizationSubscription(Base):
@@ -893,26 +887,24 @@ class OrganizationSubscription(Base):
     )
     plan_code: Mapped[str] = mapped_column(
         String(MAX_STRING_LENGTH),
-        ForeignKey("subscription.subscription_plans.plan_code"),
+        ForeignKey("subscription_plans.plan_code"),
         nullable=False,
     )
     seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    status: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
-    stripe_subscription_id: Mapped[str | None] = mapped_column(
-        String(MAX_STRING_LENGTH), nullable=True
+    stripe_subscription_status: Mapped[str] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=False
     )
-    stripe_subscription_item_id: Mapped[str | None] = mapped_column(
-        String(MAX_STRING_LENGTH), nullable=True
+    stripe_subscription_id: Mapped[str] = mapped_column(
+        String(MAX_STRING_LENGTH), unique=True, nullable=False
     )
-    current_period_start: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+    stripe_subscription_item_id: Mapped[str] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=False
     )
-    current_period_end: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    subscription_start_date: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+    subscription_start_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
@@ -932,9 +924,6 @@ class OrganizationSubscription(Base):
     __table_args__ = (
         UniqueConstraint("organization_id", name="uc_org_plan"),
         UniqueConstraint("stripe_subscription_id", name="uc_stripe_subscription_id"),
-        {
-            "schema": "subscription",
-        },  # options go last
     )
 
 
@@ -966,10 +955,4 @@ class OrganizationEntitlementOverride(Base):
     )
     organization: Mapped[Organization] = relationship(
         back_populates="entitlement_override", init=False
-    )
-    # One organization can have only one subscription
-    __table_args__ = (
-        {
-            "schema": "subscription",
-        },
     )
