@@ -343,19 +343,6 @@ class SubscriptionException(ControlPlaneException):
     pass
 
 
-class OrganizationSubscriptionNotFound(SubscriptionException):
-    """
-    Exception raised when an organization subscription is not found
-    """
-
-    def __init__(self, message: str | None = None):
-        super().__init__(
-            title="Organization subscription not found",
-            message=message,
-            error_code=status.HTTP_404_NOT_FOUND,
-        )
-
-
 class RequestedSubscriptionInvalid(SubscriptionException):
     """
     Exception raised when a requested subscription is invalid
@@ -366,19 +353,6 @@ class RequestedSubscriptionInvalid(SubscriptionException):
             title="Requested subscription invalid",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
-        )
-
-
-class RequestedSubscriptionNotAvailable(SubscriptionException):
-    """
-    Exception raised when a subscription plan is not available for subscription
-    """
-
-    def __init__(self, message: str | None = None):
-        super().__init__(
-            title="Subscription plan not available for subscription",
-            message=message,
-            error_code=status.HTTP_404_NOT_FOUND,
         )
 
 

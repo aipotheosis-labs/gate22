@@ -1,22 +1,19 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, HttpUrl
-
-from aci.common.schemas.unset_aware_base_model import UndefinedAwareBaseModel
 
 
 class SubscriptionPlanCreate(BaseModel):
     plan_code: str
     display_name: str
+    is_free: bool
     is_public: bool
     stripe_price_id: str | None
     min_seats_for_subscription: int | None
     max_seats_for_subscription: int | None
     config_max_custom_mcp_servers: int | None
     config_log_retention_days: int | None
-
-
-FREE_PLAN_CODE = "GATE22_FREE_PLAN"
 
 
 class Entitlement(BaseModel):
@@ -27,15 +24,15 @@ class Entitlement(BaseModel):
 
 class SubscriptionPublic(BaseModel):
     plan_code: str
-    status: str
     seat_count: int
-    current_period_start: datetime | None
-    current_period_end: datetime | None
+    stripe_subscription_status: Literal["active", "trialing", "past_due"]
+    current_period_start: datetime
+    current_period_end: datetime
     cancel_at_period_end: bool
 
 
 class SubscriptionStatusPublic(BaseModel):
-    subscription: SubscriptionPublic
+    subscription: SubscriptionPublic | None
     entitlement: Entitlement
 
 
@@ -55,66 +52,39 @@ class SubscriptionResult(BaseModel):
 
 
 class SubscriptionCancellation(BaseModel):
-    pass
+    subscription_id: str
 
 
-class OrganizationSubscriptionUpsert(UndefinedAwareBaseModel):
-    _non_nullable_fields = [
-        "plan_code",
-        "seat_count",
-        "status",
-        "cancel_at_period_end",
+class OrganizationSubscriptionUpsert(BaseModel):
+    plan_code: str
+    seat_count: int
+    # See https://docs.stripe.com/billing/subscriptions/overview?locale=en-GB
+    stripe_subscription_status: Literal[
+        "active",
+        "trialing",
+        "past_due",
+        "canceled",
+        "incomplete_expired",
+        "incomplete",
+        "paused",
+        "unpaid",
     ]
-
-    plan_code: str | None = None
-    seat_count: int | None = None
-    status: str | None = None
-    current_period_start: datetime | None = None
-    current_period_end: datetime | None = None
-    cancel_at_period_end: bool | None = None
-    subscription_start_date: datetime | None = None
-    stripe_subscription_id: str | None = None
-    stripe_subscription_item_id: str | None = None
+    stripe_subscription_id: str
+    stripe_subscription_item_id: str
+    current_period_start: datetime
+    current_period_end: datetime
+    cancel_at_period_end: bool
+    subscription_start_date: datetime
 
 
 ##############################
 # Stripe Event Data
 #############################
-class StripeEventDataItemPrice(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    id: str
-    active: bool
-
-
-class StripeEventDataItemData(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    id: str
-    quantity: int
-    subscription: str
-    price: StripeEventDataItemPrice
-
-
-class StripeEventDataItem(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    data: list[StripeEventDataItemData]
-
-
 class StripeEventData(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     id: str
-    object: str
-    customer: str
-    cancel_at_period_end: bool
-    canceled_at: int | None
-    items: StripeEventDataItem
-
-    current_period_end: int
-    current_period_start: int
-
-    quantity: int
     status: str
-    start_date: int | None
 
 
 class StripeEventDataObject(BaseModel):

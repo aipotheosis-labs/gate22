@@ -13,7 +13,6 @@ from aci.common.db.sql_models import (
 )
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
-    FREE_PLAN_CODE,
     Entitlement,
     SubscriptionCancellation,
     SubscriptionCheckout,
@@ -21,7 +20,6 @@ from aci.common.schemas.subscription import (
 )
 from aci.control_plane import config
 from aci.control_plane.exceptions import (
-    RequestedSubscriptionInvalid,
     StripeOperationError,
 )
 
@@ -30,82 +28,7 @@ logger = get_logger(__name__)
 stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
-def change_subscription(
-    db_session: Session,
-    organization: Organization,
-    existing_subscription: OrganizationSubscription,
-    requested_plan: SubscriptionPlan,
-    requested_seat_count: int,
-    success_url: str,
-    cancel_url: str,
-) -> SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult:
-    """
-    Routing function for changing the subscription.
-    All the change to subscription should go through this function.
-    """
-    # If the existing subscription seat / plan is same as the requested, nothing to do.
-    if (
-        existing_subscription.plan_code == requested_plan.plan_code
-        and existing_subscription.seat_count == requested_seat_count
-    ):
-        raise RequestedSubscriptionInvalid("The requested subscription is the same as the existing")
-
-    # Existing: free
-    # Requested: paid
-    # Upgrade from free plan to paid plan.
-    if (
-        existing_subscription.plan_code == FREE_PLAN_CODE
-        and requested_plan.plan_code != FREE_PLAN_CODE
-    ):
-        subscription_result = _change_stripe_subscription(
-            db_session=db_session,
-            organization=organization,
-            plan=requested_plan,
-            seat_count=requested_seat_count,
-            existing_subscription=existing_subscription,
-            success_url=success_url,
-            cancel_url=cancel_url,
-        )
-        return subscription_result
-
-    # Existing: paid
-    # Requested: free
-    # Downgrade from paid stripe plan to non-stripe plan.
-    elif (
-        existing_subscription.plan_code != FREE_PLAN_CODE
-        and requested_plan.plan_code == FREE_PLAN_CODE
-    ):
-        # cancel the stripe subscription
-        subscription_cancellation = _cancel_stripe_subscription(existing_subscription)
-        return subscription_cancellation
-
-    # Existing: paid
-    # Requested: paid
-    # Change from one paid plan to another paid plan, or change seat count
-    elif (
-        existing_subscription.plan_code != FREE_PLAN_CODE
-        and requested_plan.plan_code != FREE_PLAN_CODE
-    ):
-        # change the stripe subscription
-        subscription_result = _change_stripe_subscription(
-            db_session=db_session,
-            organization=organization,
-            plan=requested_plan,
-            seat_count=requested_seat_count,
-            existing_subscription=existing_subscription,
-            success_url=success_url,
-            cancel_url=cancel_url,
-        )
-        return subscription_result
-
-    else:
-        # Invalid subscription change
-        # This should not happen
-        logger.error("cannot change from free plan to free plan")
-        raise RequestedSubscriptionInvalid("cannot change from free plan to free plan")
-
-
-def is_new_entitlement_meet_existing_usage(
+def is_new_entitlement_fulfilling_existing_usage(
     db_session: Session, organization_id: UUID, new_entitlement: Entitlement
 ) -> bool:
     """
@@ -141,13 +64,20 @@ def is_new_entitlement_meet_existing_usage(
 
 
 def compute_effective_entitlement(
-    seat_count: int,
     plan: SubscriptionPlan,
+    seat_count: int | None,
     override: OrganizationEntitlementOverride | None,
 ) -> Entitlement:
     """
     Compute the effective entitlement based on the subscription and the override.
     """
+    if seat_count is None:
+        if plan.is_free:
+            seat_count = plan.max_seats_for_subscription
+        else:
+            logger.error("seat count must be provided for paid plan")
+            raise ValueError("seat count must be provided for paid plan")
+
     if override is None or (
         override.expires_at is not None and override.expires_at > datetime.now()
     ):
@@ -171,27 +101,24 @@ def compute_effective_entitlement(
     )
 
 
-def _cancel_stripe_subscription(
-    subscription: OrganizationSubscription,
-) -> SubscriptionCancellation:
-    if subscription.stripe_subscription_id is None:
-        logger.error(f"Subscription {subscription.id} has no stripe subscription id")
-        raise StripeOperationError(f"Subscription {subscription.id} has no stripe subscription id")
-    stripe_client.subscriptions.cancel(subscription.stripe_subscription_id)
-
-    # Do not update the subscription in the database, it will be updated by the stripe webhook
-    return SubscriptionCancellation()
-
-
-def _change_stripe_subscription(
+def create_stripe_subscription(
     db_session: Session,
     organization: Organization,
     plan: SubscriptionPlan,
     seat_count: int,
-    existing_subscription: OrganizationSubscription,
     success_url: str,
     cancel_url: str,
-) -> SubscriptionCheckout | SubscriptionResult:
+) -> SubscriptionCheckout:
+    """
+    Create a stripe subscription. It will create and return a stripe checkout session.
+    It will also create a stripe customer id if it is not set.
+    Note: This function will NOT update any data in the database. The updated data will be sent
+    asynchronously from Stripe webhook and handled by the stripe_event_handler.
+
+    Returns:
+        SubscriptionCheckout Object with the stripe checkout session url.
+    """
+
     # Create stripe customer id if it is not set (first time stripe subscription)
     if (
         organization.organization_metadata is None
@@ -217,51 +144,94 @@ def _change_stripe_subscription(
     # Checkout the subscription
     idempotency_key = f"{organization.id}-{plan.plan_code}-{uuid4()!s}"
 
+    stripe_checkout_session = stripe_client.checkout.sessions.create(
+        {
+            "customer": stripe_customer_id,
+            "mode": "subscription",
+            "ui_mode": "hosted",
+            "line_items": [
+                {
+                    "price": plan.stripe_price_id,
+                    "quantity": seat_count,
+                }
+            ],
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+        },
+        {
+            "idempotency_key": idempotency_key,
+        },
+    )
+
+    logger.info(f"Stripe checkout session created: {stripe_checkout_session.id}")
+
+    if stripe_checkout_session.url is None:
+        logger.error(f"Stripe checkout session has no url: {stripe_checkout_session.id}")
+        raise StripeOperationError(
+            f"Stripe checkout session has no url: {stripe_checkout_session.id}"
+        )
+
+    return SubscriptionCheckout(url=stripe_checkout_session.url)
+
+
+def update_stripe_subscription(
+    db_session: Session,
+    organization: Organization,
+    plan: SubscriptionPlan,
+    seat_count: int,
+    existing_subscription: OrganizationSubscription,
+) -> SubscriptionResult:
+    """
+    Update the stripe subscription. It will NOT return a stripe checkout session, the update will
+    be effective immediately, and stripe will charge / refund the price difference pro-rated
+    immediately.
+
+    Note: This function will NOT update any data in the database. The updated data will be sent
+    asynchronously from Stripe webhook and handled by the stripe_event_handler.
+
+    Returns:
+        SubscriptionResult Object with the stripe subscription id.
+    """
     if (
-        existing_subscription.stripe_subscription_id
-        and existing_subscription.stripe_subscription_item_id is not None
+        organization.organization_metadata is None
+        or organization.organization_metadata.stripe_customer_id is None
     ):
-        subscription = stripe_client.subscriptions.update(
-            existing_subscription.stripe_subscription_id,
-            {
-                "items": [
-                    {
-                        "id": existing_subscription.stripe_subscription_item_id,
-                        "price": plan.stripe_price_id,
-                        "quantity": seat_count,
-                    }
-                ],
-            },
-        )
-        logger.info(f"Stripe subscription updated: {existing_subscription.stripe_subscription_id}")
+        logger.error(f"Organization {organization.id} has no stripe customer id")
+        raise StripeOperationError(f"Organization {organization.id} has no stripe customer id")
 
-        return SubscriptionResult(subscription_id=subscription.id)
-    else:
-        stripe_checkout_session = stripe_client.checkout.sessions.create(
-            {
-                "customer": stripe_customer_id,
-                "mode": "subscription",
-                "ui_mode": "hosted",
-                "line_items": [
-                    {
-                        "price": plan.stripe_price_id,
-                        "quantity": seat_count,
-                    }
-                ],
-                "success_url": success_url,
-                "cancel_url": cancel_url,
-            },
-            {
-                "idempotency_key": idempotency_key,
-            },
-        )
+    # Should not happen, we should have checked this in caller
+    if plan.stripe_price_id is None:
+        logger.error(f"Subscription plan {plan.plan_code} has no stripe price id")
+        raise StripeOperationError(f"Subscription plan {plan.plan_code} has no stripe price id")
 
-        logger.info(f"Stripe checkout session created: {stripe_checkout_session.id}")
+    subscription = stripe_client.subscriptions.update(
+        existing_subscription.stripe_subscription_id,
+        {
+            "items": [
+                {
+                    "id": existing_subscription.stripe_subscription_item_id,
+                    "price": plan.stripe_price_id,
+                    "quantity": seat_count,
+                }
+            ],
+        },
+    )
+    logger.info(f"Stripe subscription updated: {existing_subscription.stripe_subscription_id}")
 
-        if stripe_checkout_session.url is None:
-            logger.error(f"Stripe checkout session has no url: {stripe_checkout_session.id}")
-            raise StripeOperationError(
-                f"Stripe checkout session has no url: {stripe_checkout_session.id}"
-            )
+    return SubscriptionResult(subscription_id=subscription.id)
 
-        return SubscriptionCheckout(url=stripe_checkout_session.url)
+
+def cancel_stripe_subscription(
+    subscription: OrganizationSubscription,
+) -> SubscriptionCancellation:
+    """
+    Cancel the stripe subscription. It will NOT return a stripe checkout session, the cancellation
+    will be effective immediately, and stripe will refund the price pro-rated immediately.
+
+    Note: This function will NOT update any data in the database. The updated data will be sent
+    asynchronously from Stripe webhook and handled by the stripe_event_handler.
+    """
+    stripe_client.subscriptions.cancel(subscription.stripe_subscription_id)
+
+    # Do not update the subscription in the database, it will be updated by the stripe webhook
+    return SubscriptionCancellation(subscription_id=subscription.stripe_subscription_id)

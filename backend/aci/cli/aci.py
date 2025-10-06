@@ -44,9 +44,6 @@ mcp_group.add_command(mcp.generate_tools, name="generate-tools")
 
 # Subscription commands
 subscription_group.add_command(subscription.insert_plan, name="insert-plan")
-subscription_group.add_command(
-    subscription.backfill_organization_free_plan, name="backfill-organization-free-plan"
-)
 
 # Adhoc commands: commands that are one-off but keeping them in the CLI for convenience
 adhoc_group.add_command(
