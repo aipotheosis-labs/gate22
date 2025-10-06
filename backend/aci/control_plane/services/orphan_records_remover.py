@@ -126,7 +126,7 @@ class OrphanRecordsRemover:
         )
         if len(remaining) > 0:
             # This should not happen normally if cascade delete is working properly
-            logger.warning(
+            logger.error(
                 f"Connected Accounts remained after deletion of MCP Server Configuration "
                 f"{mcp_server_configuration_id}. Connected Accounts: {[ca.id for ca in remaining]}"
             )
@@ -257,7 +257,7 @@ class OrphanRecordsRemover:
         )
         if len(remaining_configs) > 0:
             # This should not happen normally if cascade delete is working properly
-            logger.warning(
+            logger.error(
                 f"MCP Server Configurations remained after deletion of MCP Server {mcp_server_id}. "
                 f"MCP Server Configurations: {[config.id for config in remaining_configs]}"
             )
@@ -273,7 +273,7 @@ class OrphanRecordsRemover:
         )
         if len(remaining_connected_accounts) > 0:
             # This should not happen normally if cascade delete is working properly
-            logger.warning(
+            logger.error(
                 f"Connected Accounts remained after deletion of MCP Server {mcp_server_id}. "
                 f"Connected Accounts: {[ca.id for ca in remaining_connected_accounts]}"
             )
@@ -300,7 +300,7 @@ class OrphanRecordsRemover:
         )
         if len(remaining_mcp_tools) > 0:
             # This should not happen normally if cascade delete is working properly
-            logger.warning(
+            logger.error(
                 f"MCP Tools remained after deletion of MCP Server {mcp_server_id}. "
                 f"MCP Tools: {[tool.id for tool in remaining_mcp_tools]}"
             )
