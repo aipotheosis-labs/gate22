@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -25,6 +26,7 @@ from aci.common.enums import (
     AuthType,
     ConnectedAccountOwnership,
     MCPServerTransportType,
+    MCPToolCallStatus,
     OrganizationInvitationStatus,
     OrganizationRole,
     TeamRole,
@@ -652,6 +654,67 @@ class MCPSession(Base):
         nullable=False,
         init=False,
     )
+
+
+class MCPToolCallLog(Base):
+    """
+    Logs for tool calls handled by the "MCP" service.
+    NOTE: no foreign key constraints are added so that even if other tables' records are deleted,
+    we can still keep the logs for reference.
+    # we store the ids of the bundle, mcp server, and mcp tool for ambiguity avoidance since
+    # the names can change. But we still only display names stored here to user due to:
+    # 1. the records can be deleted, so we can't always get the latest names
+    # 2. slow to join each record to get latest names
+    # 3. for audit logs, we expect logs to reflect the state at the time of the action.
+    NOTE: mcp_server_id/name, mcp_tool_id/name and mcp_server_configuration_id/name are nullable
+    because user might send a tool call that doesn't have a valid value in the database.
+    NOTE: arguments are stored as string because they can be other types than dict due to
+    LLM tool call mistakes.
+    """
+
+    __tablename__ = "mcp_tool_call_logs"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    request_id: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    # the session if of MCPSession table
+    session_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    bundle_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    bundle_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    mcp_server_name: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    mcp_server_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    mcp_tool_name: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    mcp_tool_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    mcp_server_configuration_name: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=True
+    )
+    mcp_server_configuration_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True
+    )
+    arguments: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    status: Mapped[MCPToolCallStatus] = mapped_column(
+        SQLEnum(MCPToolCallStatus, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
+    )
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    # whether the tool call is excecuted via the "EXECUTE_TOOL" tool
+    via_execute_tool: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # The full payload of the tool call: JSONRPCToolsCallRequest
+    jsonrpc_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    # TODO: add index for cursor based pagination
 
 
 ###################################################################################################

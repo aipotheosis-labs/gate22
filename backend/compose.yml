@@ -126,6 +126,7 @@ services:
     environment:
       - ALEMBIC_DB_HOST=test-db
       - CONTROL_PLANE_DB_HOST=test-db
+      - MCP_DB_HOST=test-db
     # Mount the local code into the container so you can run scripts / Alembic
     volumes:
       - ./aci/:/workdir/aci

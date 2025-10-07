@@ -1,3 +1,7 @@
+import json
+import time
+from functools import wraps
+
 from mcp import types as mcp_types
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
@@ -12,7 +16,6 @@ from aci.common.db.sql_models import (
     MCPServerBundle,
     MCPServerConfiguration,
     MCPSession,
-    MCPTool,
 )
 from aci.common.enums import MCPServerTransportType
 from aci.common.logging_setup import get_logger
@@ -22,11 +25,8 @@ from aci.common.schemas.mcp_auth import (
     AuthCredentials,
 )
 from aci.common.schemas.mcp_tool import MCPToolMetadata
-from aci.mcp.exceptions import (
-    MCPServerNotConfigured,
-    MCPToolNotEnabled,
-    MCPToolNotFound,
-)
+from aci.common.schemas.mcp_tool_call_log import MCPToolCallLogData, MCPToolCallStatus
+from aci.mcp.context import request_id_ctx_var
 from aci.mcp.protocol.streamable_http import streamablehttp_client_fork
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
@@ -36,6 +36,30 @@ from aci.mcp.routes.jsonrpc import (
 )
 
 logger = get_logger(__name__)
+
+
+# TODO: add type hint
+def track_duration(func):  # type: ignore
+    """
+    Decorator that tracks execution duration and adds it to MCPToolCallLogData.
+    Expects the function to return a tuple where the second element is MCPToolCallLogData.
+    """
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs):  # type: ignore
+        start_time = time.perf_counter()
+        result = None
+        try:
+            result = await func(*args, **kwargs)
+            return result
+        finally:
+            # Extract tool_call_log_data from the result tuple
+            if result is not None and isinstance(result, tuple) and len(result) == 2:
+                tool_call_log_data = result[1]
+                if isinstance(tool_call_log_data, MCPToolCallLogData):
+                    tool_call_log_data.duration_ms = int((time.perf_counter() - start_time) * 1000)
+
+    return wrapper
 
 
 class ExecuteToolInputSchema(BaseModel):
@@ -62,12 +86,22 @@ EXECUTE_TOOL = mcp_types.Tool(
 # TODO: handle direct tool call that is not through the "EXECUTE_TOOL" tool
 # (can happen due to LLM misbehavior)
 # TODO: handle wrong input where tool arguments are under tool_arguments?
+@track_duration
 async def handle_execute_tool(
     db_session: Session,
     mcp_session: MCPSession,
     mcp_server_bundle: MCPServerBundle,
     jsonrpc_tools_call_request: JSONRPCToolsCallRequest,
-) -> JSONRPCSuccessResponse | JSONRPCErrorResponse:
+) -> tuple[JSONRPCSuccessResponse | JSONRPCErrorResponse, MCPToolCallLogData]:
+    # TODO: a better way to populate the tool_call_log_data
+    tool_call_log_data = MCPToolCallLogData(
+        request_id=request_id_ctx_var.get(),
+        session_id=mcp_session.id,
+        bundle_name=mcp_server_bundle.name,
+        bundle_id=mcp_server_bundle.id,
+        via_execute_tool=True,
+        jsonrpc_payload=jsonrpc_tools_call_request.model_dump(),
+    )
     # validate input
     try:
         validated_input = ExecuteToolInputSchema.model_validate(
@@ -75,35 +109,143 @@ async def handle_execute_tool(
         )
         tool_name = validated_input.tool_name
         tool_arguments = validated_input.tool_arguments
+        tool_call_log_data.mcp_tool_name = tool_name
+        tool_call_log_data.arguments = json.dumps(tool_arguments)
     except Exception as e:
         logger.exception(f"Error validating execute tool input: {e}")
-        return JSONRPCErrorResponse(
-            id=jsonrpc_tools_call_request.id,
-            error=JSONRPCErrorResponse.ErrorData(
-                code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
-                message=str(e),
+        # try to parse the tool name from the arguments even if it's malformed
+        tool_name_raw = jsonrpc_tools_call_request.params.arguments.get("tool_name")
+        if tool_name_raw is not None:
+            tool_call_log_data.mcp_tool_name = str(tool_name_raw)
+            tool_name = str(tool_name_raw)
+        tool_arguments_raw = jsonrpc_tools_call_request.params.arguments.get("tool_arguments")
+        if tool_arguments_raw is not None and isinstance(tool_arguments_raw, dict):
+            tool_call_log_data.arguments = json.dumps(tool_arguments_raw)
+            tool_arguments = tool_arguments_raw
+
+        errorData = JSONRPCErrorResponse.ErrorData(
+            code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
+            message=str(e),
+        )
+        tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+        tool_call_log_data.status = MCPToolCallStatus.ERROR
+        return (
+            JSONRPCErrorResponse(
+                id=jsonrpc_tools_call_request.id,
+                error=errorData,
             ),
+            tool_call_log_data,
         )
 
-    # check tool call permissions and get relevant context
+    # validate resource existence and access permissions
     try:
-        mcp_tool, mcp_server, mcp_server_configuration = await _tool_call_permissions_check(
-            db_session, tool_name, mcp_server_bundle
-        )
+        mcp_tool = crud.mcp_tools.get_mcp_tool_by_name(db_session, tool_name, False)
+        if mcp_tool is None:
+            logger.warning(f"Tool not found, tool_name={tool_name}")
+            errorData = JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
+                message=f"Tool not found, tool_name={tool_name}",
+            )
+            tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+            tool_call_log_data.status = MCPToolCallStatus.ERROR
+            return (
+                JSONRPCErrorResponse(
+                    id=jsonrpc_tools_call_request.id,
+                    error=errorData,
+                ),
+                tool_call_log_data,
+            )
+        mcp_server = mcp_tool.mcp_server
+        mcp_server_configuration: MCPServerConfiguration | None = None
+
+        tool_call_log_data.mcp_server_name = mcp_server.name
+        tool_call_log_data.mcp_server_id = mcp_server.id
+        tool_call_log_data.mcp_tool_id = mcp_tool.id
+        # find the mcp server configuration (from the mcp server bundle's configuration list) that
+        # is associated with the mcp server
+        # TODO: abstract this logic to a service layer function
+        for mcp_server_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
+            mcp_server_configuration_candidate = (
+                crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
+                    db_session,
+                    mcp_server_configuration_id,
+                    False,
+                )
+            )
+            if mcp_server_configuration_candidate is None:
+                logger.error(
+                    f"MCP server configuration not found even though the id is part of the bundle, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
+                )
+                continue
+            # TODO: this is under the assumption that the mcp server configuration is unique
+            # per mcp server
+            if mcp_server_configuration_candidate.mcp_server_id == mcp_server.id:
+                mcp_server_configuration = mcp_server_configuration_candidate
+                break
+
+        if mcp_server_configuration is None:
+            logger.error(
+                f"MCP server not configured, mcp_server_id={mcp_server.id}, mcp_server_name={mcp_server.name}"  # noqa: E501
+            )
+            errorData = JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.INVALID_REQUEST,
+                message=f"MCP server not configured, mcp_server_name={mcp_server.name}",
+            )
+            tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+            tool_call_log_data.status = MCPToolCallStatus.ERROR
+            return (
+                JSONRPCErrorResponse(
+                    id=jsonrpc_tools_call_request.id,
+                    error=errorData,
+                ),
+                tool_call_log_data,
+            )
+
+        tool_call_log_data.mcp_server_configuration_name = mcp_server_configuration.name
+        tool_call_log_data.mcp_server_configuration_id = mcp_server_configuration.id
+
+        # check if this tool is enabled in the mcp server configuration
+        # TODO: test
+        if (
+            not mcp_server_configuration.all_tools_enabled
+            and mcp_tool.id not in mcp_server_configuration.enabled_tools
+        ):
+            logger.warning(
+                f"MCP tool not enabled in mcp server configuration, mcp_tool_id={mcp_tool.id}, mcp_tool_name={mcp_tool.name}"  # noqa: E501
+            )
+            errorData = JSONRPCErrorResponse.ErrorData(
+                code=JSONRPCErrorCode.UNAUTHORIZED,
+                message=f"MCP tool not enabled in mcp server configuration, mcp_tool_name={mcp_tool.name}",  # noqa: E501
+            )
+            tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+            tool_call_log_data.status = MCPToolCallStatus.ERROR
+
+            return (
+                JSONRPCErrorResponse(
+                    id=jsonrpc_tools_call_request.id,
+                    error=errorData,
+                ),
+                tool_call_log_data,
+            )
     except Exception as e:
-        logger.exception(f"Error checking tool call permissions: {e}")
-        return JSONRPCErrorResponse(
-            id=jsonrpc_tools_call_request.id,
-            error=JSONRPCErrorResponse.ErrorData(
-                code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,
-                message=str(e),
+        logger.exception(f"Unexpected error checking tool call resources: {e}")
+        errorData = JSONRPCErrorResponse.ErrorData(
+            code=JSONRPCErrorCode.INTERNAL_ERROR,
+            message="Internal error",
+        )
+        tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+        tool_call_log_data.status = MCPToolCallStatus.ERROR
+        return (
+            JSONRPCErrorResponse(
+                id=jsonrpc_tools_call_request.id,
+                error=errorData,
             ),
+            tool_call_log_data,
         )
 
+    # get auth config and credentials
     try:
-        # Get the auth config and credentials for the mcp server configuration per user
         auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
-        # TODO: handle token refresh for oauth2 credentials
         auth_credentials = await acm.get_auth_credentials(
             db_session,
             mcp_server_configuration.id,
@@ -115,12 +257,18 @@ async def handle_execute_tool(
         db_session.commit()
     except Exception as e:
         logger.exception(f"Error getting auth config and credentials: {e}")
-        return JSONRPCErrorResponse(
-            id=jsonrpc_tools_call_request.id,
-            error=JSONRPCErrorResponse.ErrorData(
-                code=JSONRPCErrorCode.INTERNAL_ERROR,
-                message=str(e),
+        errorData = JSONRPCErrorResponse.ErrorData(
+            code=JSONRPCErrorCode.INTERNAL_ERROR,
+            message="Internal error",
+        )
+        tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+        tool_call_log_data.status = MCPToolCallStatus.ERROR
+        return (
+            JSONRPCErrorResponse(
+                id=jsonrpc_tools_call_request.id,
+                error=errorData,
             ),
+            tool_call_log_data,
         )
 
     # forward tool call to the corresponding mcp server
@@ -138,84 +286,47 @@ async def handle_execute_tool(
         # (SEARCH_TOOLS and EXECUTE_TOOL) error from the unified MCP service itself?
         # e.g., still return JSONRPCSuccessResponse for external tool call error?
         if isinstance(result, mcp_exceptions.McpError):
-            return JSONRPCErrorResponse(
-                # NOTE: JSONRPCErrorResponse.ErrorData is different class from mcp.types.ErrorData
-                # so we assign the error data manually
-                id=jsonrpc_tools_call_request.id,
-                error=JSONRPCErrorResponse.ErrorData(
-                    code=result.error.code,
-                    message=result.error.message,
-                    data=result.error.data,
+            errorData = JSONRPCErrorResponse.ErrorData(
+                code=result.error.code,
+                message=result.error.message,
+                data=result.error.data,
+            )
+            tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+            tool_call_log_data.status = MCPToolCallStatus.ERROR
+            return (
+                JSONRPCErrorResponse(
+                    # NOTE: JSONRPCErrorResponse.ErrorData is different class from
+                    # mcp.types.ErrorData so we assign the error data manually
+                    id=jsonrpc_tools_call_request.id,
+                    error=errorData,
                 ),
+                tool_call_log_data,
             )
         else:
-            return JSONRPCSuccessResponse(
-                id=jsonrpc_tools_call_request.id,
-                result=result.model_dump(exclude_none=True),
+            tool_call_log_data.result = result.model_dump(exclude_none=True)
+            tool_call_log_data.status = MCPToolCallStatus.SUCCESS
+            return (
+                JSONRPCSuccessResponse(
+                    id=jsonrpc_tools_call_request.id,
+                    result=result.model_dump(exclude_none=True),
+                ),
+                tool_call_log_data,
             )
     except Exception as e:
         logger.exception(f"Error forwarding tool call: {e}")
-        return JSONRPCErrorResponse(
-            id=jsonrpc_tools_call_request.id,
-            error=JSONRPCErrorResponse.ErrorData(
-                code=JSONRPCErrorCode.INTERNAL_ERROR,
-                message="Unknown error forwarding tool call",
+        errorData = JSONRPCErrorResponse.ErrorData(
+            code=JSONRPCErrorCode.INTERNAL_ERROR,
+            message="Unknown error forwarding tool call",
+        )
+        tool_call_log_data.result = errorData.model_dump(exclude_none=True)
+        tool_call_log_data.status = MCPToolCallStatus.ERROR
+        return (
+            JSONRPCErrorResponse(
+                id=jsonrpc_tools_call_request.id,
+                error=errorData,
             ),
+            tool_call_log_data,
         )
-
-
-async def _tool_call_permissions_check(
-    db_session: Session,
-    tool_name: str,
-    mcp_server_bundle: MCPServerBundle,
-) -> tuple[MCPTool, MCPServer, MCPServerConfiguration]:
-    mcp_tool = crud.mcp_tools.get_mcp_tool_by_name(db_session, tool_name, False)
-    if mcp_tool is None:
-        logger.error(f"MCP tool not found, tool_name={tool_name}")
-        raise MCPToolNotFound(tool_name)
-
-    mcp_server = mcp_tool.mcp_server
-    mcp_server_configuration: MCPServerConfiguration | None = None
-    # find the mcp server configuration (from the mcp server bundle's configuration list) that is
-    # the mcp server
-    # TODO: abstract this logic to a service layer function
-    for mcp_server_configuration_id in mcp_server_bundle.mcp_server_configuration_ids:
-        mcp_server_configuration_candidate = (
-            crud.mcp_server_configurations.get_mcp_server_configuration_by_id(
-                db_session,
-                mcp_server_configuration_id,
-                False,
-            )
-        )
-        if mcp_server_configuration_candidate is None:
-            logger.error(
-                f"MCP server configuration not found even though the id is part of the bundle, mcp_server_configuration_id={mcp_server_configuration_id}"  # noqa: E501
-            )
-            continue
-        # TODO: this is under the assumption that the mcp server configuration is unique
-        # per mcp server
-        if mcp_server_configuration_candidate.mcp_server_id == mcp_server.id:
-            mcp_server_configuration = mcp_server_configuration_candidate
-            break
-
-    if mcp_server_configuration is None:
-        logger.error(
-            f"MCP server not configured, mcp_server_id={mcp_server.id}, mcp_server_name={mcp_server.name}"  # noqa: E501
-        )
-        raise MCPServerNotConfigured(mcp_server.name)
-
-    # check if this tool is enabled in the mcp server configuration
-    # TODO: test
-    if (
-        not mcp_server_configuration.all_tools_enabled
-        and mcp_tool.id not in mcp_server_configuration.enabled_tools
-    ):
-        logger.error(
-            f"MCP tool not enabled in mcp server configuration, mcp_tool_id={mcp_tool.id}, mcp_tool_name={mcp_tool.name}"  # noqa: E501
-        )
-        raise MCPToolNotEnabled(mcp_tool.name)
-
-    return mcp_tool, mcp_server, mcp_server_configuration
 
 
 async def _forward_tool_call(

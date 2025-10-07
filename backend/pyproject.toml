@@ -45,6 +45,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
+    "pytest-asyncio>=1.2.0",
+    "pytest-mock>=3.15.1",
     "pytest-subtests>=0.14.1",
     "mypy>=1.15.0",
     "alembic>=1.15.2",
