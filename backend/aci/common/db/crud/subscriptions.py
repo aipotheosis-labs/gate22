@@ -1,7 +1,8 @@
+from datetime import UTC, datetime
 from typing import Literal, overload
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import (
@@ -9,9 +10,11 @@ from aci.common.db.sql_models import (
     OrganizationSubscription,
     OrganizationSubscriptionMetadata,
     SubscriptionPlan,
+    SubscriptionStripeEventLogs,
 )
 from aci.common.schemas.subscription import (
     OrganizationSubscriptionUpsert,
+    StripeWebhookEvent,
     SubscriptionPlanCreate,
 )
 
@@ -157,6 +160,53 @@ def get_organization_subscription_by_stripe_subscription_id(
 def delete_organization_subscription(db_session: Session, stripe_subscription_id: str) -> None:
     statement = delete(OrganizationSubscription).where(
         OrganizationSubscription.stripe_subscription_id == stripe_subscription_id
+    )
+    db_session.execute(statement)
+    db_session.flush()
+
+
+def insert_stripe_event_log(
+    db_session: Session,
+    stripe_event: StripeWebhookEvent,
+) -> SubscriptionStripeEventLogs:
+    stripe_event_log = SubscriptionStripeEventLogs(
+        stripe_event_id=stripe_event.id,
+        type=stripe_event.type,
+        payload=stripe_event.data.object.model_dump(),
+        received_at=datetime.now(UTC),
+        process_attempts=0,
+        processed_at=None,
+        process_error=None,
+    )
+    db_session.add(stripe_event_log)
+    db_session.flush()
+    db_session.refresh(stripe_event_log)
+    return stripe_event_log
+
+
+def get_stripe_event_log_by_stripe_event_id(
+    db_session: Session, stripe_event_id: str
+) -> SubscriptionStripeEventLogs | None:
+    statement = select(SubscriptionStripeEventLogs).where(
+        SubscriptionStripeEventLogs.stripe_event_id == stripe_event_id
+    )
+    return db_session.execute(statement).scalar_one_or_none()
+
+
+def log_process_attempt(
+    db_session: Session,
+    stripe_event_id: str,
+    process_error: str | None,
+    processed_at: datetime | None,
+) -> None:
+    statement = (
+        update(SubscriptionStripeEventLogs)
+        .where(SubscriptionStripeEventLogs.stripe_event_id == stripe_event_id)
+        .values(
+            process_attempts=SubscriptionStripeEventLogs.process_attempts + 1,
+            process_error=process_error,
+            processed_at=processed_at,
+        )
     )
     db_session.execute(statement)
     db_session.flush()
