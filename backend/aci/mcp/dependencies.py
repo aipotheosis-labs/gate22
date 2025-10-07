@@ -13,5 +13,9 @@ def yield_db_session() -> Generator[Session, None, None]:
     db_session = utils.create_db_session(config.DB_FULL_URL)
     try:
         yield db_session
+        db_session.commit()
+    except Exception:
+        db_session.rollback()
+        raise
     finally:
         db_session.close()
