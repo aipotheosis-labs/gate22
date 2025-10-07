@@ -7,8 +7,8 @@
     "stripe_price_id": null,
     "min_seats_for_subscription": 0,
     "max_seats_for_subscription": 3,
-    "config_max_custom_mcp_servers": 1,
-    "config_log_retention_days": 3
+    "max_custom_mcp_servers": 1,
+    "log_retention_days": 3
   },
   {
     "plan_code": "GATE22_TEAM_PLAN",
@@ -18,7 +18,7 @@
     "stripe_price_id": "<stripe_price_id>",
     "min_seats_for_subscription": 5,
     "max_seats_for_subscription": 99999,
-    "config_max_custom_mcp_servers": 5,
-    "config_log_retention_days": 7
+    "max_custom_mcp_servers": 5,
+    "log_retention_days": 7
   }
 ]
