@@ -23,6 +23,7 @@ ROUTER_PREFIX_MCP_SERVER_CONFIGURATIONS = "/mcp-server-configurations"
 ROUTER_PREFIX_CONNECTED_ACCOUNTS = "/connected-accounts"
 ROUTER_PREFIX_MCP_SERVER_BUNDLES = "/mcp-server-bundles"
 ROUTER_PREFIX_MCP_TOOLS = "/mcp-tools"
+ROUTER_PREFIX_LOGS = "/logs"
 
 # Frontend
 FRONTEND_URL = check_and_get_env_variable("CONTROL_PLANE_FRONTEND_URL")
