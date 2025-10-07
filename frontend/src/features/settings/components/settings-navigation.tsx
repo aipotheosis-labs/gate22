@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { PermissionGuard } from "@/components/rbac/permission-guard";
+import { Permission, PERMISSIONS } from "@/lib/rbac/permissions";
 
 interface SettingsNavItem {
   title: string;
   href: string;
+  permission?: Permission;
 }
 
 const settingsNavItems: SettingsNavItem[] = [
@@ -22,6 +25,11 @@ const settingsNavItems: SettingsNavItem[] = [
     title: "Members",
     href: "/settings/members",
   },
+  {
+    title: "Subscription",
+    href: "/settings/subscription",
+    permission: PERMISSIONS.SUBSCRIPTION_PAGE_VIEW,
+  },
 ];
 
 export function SettingsNavigation() {
@@ -33,7 +41,7 @@ export function SettingsNavigation() {
         const isActive =
           pathname === item.href || (item.href !== "/settings" && pathname.startsWith(item.href));
 
-        return (
+        const navItem = (
           <Link
             key={item.href}
             href={item.href}
@@ -47,6 +55,16 @@ export function SettingsNavigation() {
             {item.title}
           </Link>
         );
+
+        if (item.permission) {
+          return (
+            <PermissionGuard key={item.href} permission={item.permission}>
+              {navItem}
+            </PermissionGuard>
+          );
+        }
+
+        return navItem;
       })}
     </nav>
   );

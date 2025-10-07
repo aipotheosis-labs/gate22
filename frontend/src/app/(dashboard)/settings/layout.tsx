@@ -4,14 +4,14 @@ import { SettingsNavigation } from "@/features/settings/components/settings-navi
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-full flex-col lg:flex-row">
+    <div className="flex min-h-full flex-col lg:flex-row">
       <aside className="w-full p-4 lg:w-48 lg:flex-shrink-0 lg:border-r">
         <div className="sticky top-4">
           <h1 className="mb-6 px-3 text-2xl font-bold">Settings</h1>
           <SettingsNavigation />
         </div>
       </aside>
-      <main className="max-w-4xl flex-1 p-4 lg:pl-12">{children}</main>
+      <main className="max-w-4xl flex-1 p-4 pb-12 lg:pl-12">{children}</main>
     </div>
   );
 }
