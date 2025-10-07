@@ -248,16 +248,25 @@ def dummy_user(dummy_organization: Organization) -> User:
     """
     `dummy_user` with in `dummy_organization`
     """
-    dummy_user = dummy_organization.memberships[0].user
-    return dummy_user
+    # Find the membership for "dummy@example.com"
+    membership = next(
+        m for m in dummy_organization.memberships if m.user.email == "dummy@example.com"
+    )
+    return membership.user
 
 
 @pytest.fixture(scope="function")
-def dummy_admin(dummy_organization: Organization) -> User:
+def dummy_admin(db_session: Session, dummy_organization: Organization) -> User:
     """
     `dummy_user` with `admin` role in `dummy_organization`
     """
-    return dummy_organization.memberships[0].user
+    # Find the membership for "dummy@example.com" and set it to ADMIN
+    membership = next(
+        m for m in dummy_organization.memberships if m.user.email == "dummy@example.com"
+    )
+    membership.role = OrganizationRole.ADMIN
+    db_session.commit()
+    return membership.user
 
 
 @pytest.fixture(scope="function")
@@ -265,7 +274,10 @@ def dummy_member(db_session: Session, dummy_organization: Organization) -> User:
     """
     `dummy_user` with `member` role in `dummy_organization`
     """
-    membership = dummy_organization.memberships[0]
+    # Find the membership for "dummy@example.com" and set it to MEMBER
+    membership = next(
+        m for m in dummy_organization.memberships if m.user.email == "dummy@example.com"
+    )
     membership.role = OrganizationRole.MEMBER
     db_session.commit()
     return membership.user
@@ -290,6 +302,7 @@ def dummy_member_2(db_session: Session, dummy_organization: Organization) -> Use
         user_id=dummy_user_2.id,
         role=OrganizationRole.MEMBER,
     )
+    db_session.commit()
     return dummy_user_2
 
 
@@ -312,6 +325,7 @@ def dummy_member_3(db_session: Session, dummy_organization: Organization) -> Use
         user_id=dummy_user_3.id,
         role=OrganizationRole.MEMBER,
     )
+    db_session.commit()
     return dummy_user_3
 
 
@@ -330,6 +344,7 @@ def dummy_user_without_org(db_session: Session) -> User:
         identity_provider=UserIdentityProvider.EMAIL,
         email_verified=True,
     )
+    db_session.commit()
     return user
 
 
