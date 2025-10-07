@@ -155,8 +155,8 @@ OrphanConnectedAccountTestCase = enum.Enum(
 def dummy_test_setting_1(
     db_session: Session,
     dummy_organization: Organization,
-    dummy_user: User,
-    dummy_user_2: User,
+    dummy_member: User,
+    dummy_member_2: User,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration: MCPServerConfiguration,
     dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
@@ -169,24 +169,24 @@ def dummy_test_setting_1(
         │
     (allowed_teams)
         │                      ┌─────────────┐   ┌────────────────────────┐
-        │   ┌────────┐   ┌────>│ dummy_user  │──>│ connected_account_user │
+        │   ┌────────┐   ┌────>│ dummy_member  │──>│ connected_account_user │
         ├──>│ team_1 │───┤     └─────────────┘   └────────────────────────┘
         │   └────────┘   │
         │   ┌────────┐   └────>┌──────────────┐   ┌──────────────────────────┐
-        └──>│ team_2 │────────>│ dummy_user_2 │──>│ connected_account_user_2 │
+        └──>│ team_2 │────────>│ dummy_member_2 │──>│ connected_account_user_2 │
             └────────┘         └──────────────┘   └──────────────────────────┘
 
     Bundles:
     - Bundle #1:
-        dummy_user [dummy_mcp_server_configuration, dummy_mcp_server_configuration_github]
+        dummy_member [dummy_mcp_server_configuration, dummy_mcp_server_configuration_github]
     - Bundle #2:
-        dummy_user_2 [dummy_mcp_server_configuration, dummy_mcp_server_configuration_gmail_shared]
+        dummy_member_2 [dummy_mcp_server_configuration, dummy_mcp_server_configuration_gmail_shared]
     """
 
     team_1 = _create_team_with_members(
-        db_session, dummy_organization.id, [dummy_user.id, dummy_user_2.id]
+        db_session, dummy_organization.id, [dummy_member.id, dummy_member_2.id]
     )
-    team_2 = _create_team_with_members(db_session, dummy_organization.id, [dummy_user_2.id])
+    team_2 = _create_team_with_members(db_session, dummy_organization.id, [dummy_member_2.id])
     dummy_mcp_server_configuration.allowed_teams = [team_1.id, team_2.id]
 
     dummy_mcp_server_configuration.connected_account_ownership = (
@@ -196,14 +196,14 @@ def dummy_test_setting_1(
     # Create connected accounts for both users
     connected_account_user = crud.connected_accounts.create_connected_account(
         db_session=db_session,
-        user_id=dummy_user.id,
+        user_id=dummy_member.id,
         mcp_server_configuration_id=dummy_mcp_server_configuration.id,
         auth_credentials={},
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
     )
     connected_account_user_2 = crud.connected_accounts.create_connected_account(
         db_session=db_session,
-        user_id=dummy_user_2.id,
+        user_id=dummy_member_2.id,
         mcp_server_configuration_id=dummy_mcp_server_configuration.id,
         auth_credentials={},
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -212,7 +212,7 @@ def dummy_test_setting_1(
     # Creating others records for Connected Accounts and Bundle's Configuration
     crud.connected_accounts.create_connected_account(
         db_session=db_session,
-        user_id=dummy_user.id,
+        user_id=dummy_member.id,
         mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
         auth_credentials={},
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -220,7 +220,7 @@ def dummy_test_setting_1(
     dummy_mcp_server_configuration_github.allowed_teams = [team_1.id, team_2.id]
     crud.connected_accounts.create_connected_account(
         db_session=db_session,
-        user_id=dummy_user_2.id,
+        user_id=dummy_member_2.id,
         mcp_server_configuration_id=dummy_mcp_server_configuration_gmail_shared.id,
         auth_credentials={},
         ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -230,7 +230,7 @@ def dummy_test_setting_1(
     # Create Bundles for both users, both contains the same MCP Server Configuration
     bundle_user = crud.mcp_server_bundles.create_mcp_server_bundle(
         db_session=db_session,
-        user_id=dummy_user.id,
+        user_id=dummy_member.id,
         organization_id=dummy_organization.id,
         mcp_server_bundle_create=MCPServerBundleCreate(
             name="Test Bundle 1",
@@ -244,7 +244,7 @@ def dummy_test_setting_1(
     )
     bundle_user_2 = crud.mcp_server_bundles.create_mcp_server_bundle(
         db_session=db_session,
-        user_id=dummy_user_2.id,
+        user_id=dummy_member_2.id,
         organization_id=dummy_organization.id,
         mcp_server_bundle_create=MCPServerBundleCreate(
             name="Test Bundle 2",
@@ -278,8 +278,8 @@ def dummy_test_setting_1(
 )
 def test_on_mcp_server_configuration_allowed_teams_updated(
     db_session: Session,
-    dummy_user: User,
-    dummy_user_2: User,
+    dummy_member: User,
+    dummy_member_2: User,
     connected_account_case: OrphanConnectedAccountTestCase,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
@@ -294,8 +294,8 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
     _assert_users_configuration_accessibilities(
         db_session=db_session,
         accessibilities=[
-            (dummy_user.id, dummy_mcp_server_configuration.id, True),
-            (dummy_user_2.id, dummy_mcp_server_configuration.id, True),
+            (dummy_member.id, dummy_mcp_server_configuration.id, True),
+            (dummy_member_2.id, dummy_mcp_server_configuration.id, True),
         ],
     )
 
@@ -358,8 +358,8 @@ def test_on_mcp_server_configuration_allowed_teams_updated(
             )
 
         case OrphanConnectedAccountTestCase.remove_team_team_1:
-            # dummy_user's loses access to the MCP Server Configuration
-            # dummy_user_2's still accessible via team_2
+            # dummy_member's loses access to the MCP Server Configuration
+            # dummy_member_2's still accessible via team_2
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,
@@ -509,8 +509,8 @@ def test_on_mcp_server_configuration_deleted(
 def test_on_user_removed_from_team(
     db_session: Session,
     dummy_organization: Organization,
-    dummy_user: User,
-    dummy_user_2: User,
+    dummy_member: User,
+    dummy_member_2: User,
     dummy_test_setting_1: tuple[
         MCPServerConfiguration, list[Team], list[ConnectedAccount], list[MCPServerBundle]
     ],
@@ -530,25 +530,25 @@ def test_on_user_removed_from_team(
                 db_session=db_session,
                 organization_id=dummy_organization.id,
                 team_id=team_1.id,
-                user_id=dummy_user.id,
+                user_id=dummy_member.id,
             )
-            removed_user = dummy_user
+            removed_user = dummy_member
         case OrphanConnectedAccountTestCase.remove_user_2_from_team_1:
             crud.teams.remove_team_member(
                 db_session=db_session,
                 organization_id=dummy_organization.id,
                 team_id=team_1.id,
-                user_id=dummy_user_2.id,
+                user_id=dummy_member_2.id,
             )
-            removed_user = dummy_user_2
+            removed_user = dummy_member_2
         case OrphanConnectedAccountTestCase.remove_user_2_from_team_2:
             crud.teams.remove_team_member(
                 db_session=db_session,
                 organization_id=dummy_organization.id,
                 team_id=team_2.id,
-                user_id=dummy_user_2.id,
+                user_id=dummy_member_2.id,
             )
-            removed_user = dummy_user_2
+            removed_user = dummy_member_2
 
     db_session.commit()
 
@@ -629,7 +629,7 @@ def test_on_user_removed_from_team(
                 ],
             )
         case OrphanConnectedAccountTestCase.remove_user_2_from_team_2:
-            # dummy_user_2's connected account should be retained (still on team_1)
+            # dummy_member_2's connected account should be retained (still on team_1)
             _assert_connected_accounts_removal(
                 db_session=db_session,
                 removal_result=removal_result,

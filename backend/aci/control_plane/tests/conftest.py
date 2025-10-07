@@ -202,7 +202,6 @@ def dummy_access_token_another_org(db_session: Session) -> str:
 # - dummy_user
 # - dummy_admin (same as dummy_user, but is admin in the dummy_organization)
 # - dummy_member (same as dummy_user, but is member in the dummy_organization)
-# - dummy_user_2 (another user (different from dummy_user), member in the dummy_organization)
 # ------------------------------------------------------------
 
 
@@ -550,7 +549,7 @@ def dummy_mcp_server_configuration_gmail_shared(
 @pytest.fixture(scope="function")
 def dummy_connected_accounts(
     db_session: Session,
-    dummy_user: User,
+    dummy_member: User,
     dummy_member_2: User,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration_notion: MCPServerConfiguration,
@@ -559,10 +558,10 @@ def dummy_connected_accounts(
     """
     Test connection graph:
 
-    dummy_user ──via individual account──> dummy_mcp_server_configuration_github
+    dummy_member ──via individual account──> dummy_mcp_server_configuration_github
                ──via individual account──> dummy_mcp_server_configuration_notion
 
-    dummy_user_2 ──via individual account──> dummy_mcp_server_configuration_github
+    dummy_member_2 ──via individual account──> dummy_mcp_server_configuration_github
                  ──via shared account───> dummy_mcp_server_configuration_gmail_shared
 
     Legend:
@@ -576,7 +575,7 @@ def dummy_connected_accounts(
     connected_accounts.append(
         crud.connected_accounts.create_connected_account(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
             auth_credentials={},
             ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -585,7 +584,7 @@ def dummy_connected_accounts(
     connected_accounts.append(
         crud.connected_accounts.create_connected_account(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_notion.id,
             auth_credentials={},
             ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -616,7 +615,7 @@ def dummy_connected_accounts(
 def dummy_mcp_server_bundles(
     dummy_organization: Organization,
     db_session: Session,
-    dummy_user: User,
+    dummy_member: User,
     dummy_member_2: User,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration_notion: MCPServerConfiguration,
@@ -624,10 +623,10 @@ def dummy_mcp_server_bundles(
     """
     Test bundle graph:
 
-    dummy_user ──owns──> Bundle #1 [github + notion]
+    dummy_member ──owns──> Bundle #1 [github + notion]
                ──owns──> Bundle #2 [github only]
 
-    dummy_user_2 ──owns──> Bundle #3 [github only]
+    dummy_member_2 ──owns──> Bundle #3 [github only]
 
     Legend:
     - Users own MCP server bundles
@@ -638,7 +637,7 @@ def dummy_mcp_server_bundles(
     mcp_server_bundles.append(
         crud.mcp_server_bundles.create_mcp_server_bundle(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             organization_id=dummy_organization.id,
             mcp_server_bundle_create=MCPServerBundleCreate(
                 mcp_server_configuration_ids=[
@@ -654,7 +653,7 @@ def dummy_mcp_server_bundles(
     mcp_server_bundles.append(
         crud.mcp_server_bundles.create_mcp_server_bundle(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             organization_id=dummy_organization.id,
             mcp_server_bundle_create=MCPServerBundleCreate(
                 mcp_server_configuration_ids=[dummy_mcp_server_configuration_github.id],
