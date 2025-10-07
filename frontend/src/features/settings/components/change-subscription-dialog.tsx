@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useChangeSubscription } from "../hooks/use-change-subscription";
+import { usePlans } from "../hooks/use-plans";
 import { PLAN_CODES } from "../types/subscription.types";
 
 interface ChangeSubscriptionDialogProps {
@@ -30,12 +31,26 @@ export function ChangeSubscriptionDialog({
 }: ChangeSubscriptionDialogProps) {
   const [seatCount, setSeatCount] = useState<number | "">(1);
   const { changeSubscription, isChanging } = useChangeSubscription();
+  const { data: plans } = usePlans();
+
+  // Get the team plan to access min/max seat limits
+  const teamPlan = plans?.find((plan) => plan.plan_code === PLAN_CODES.TEAM);
+  const minSeats = teamPlan?.min_seats_for_subscription || 1;
+  const maxSeats = teamPlan?.max_seats_for_subscription;
+
+  // Validation
+  const isValidSeatCount = () => {
+    if (typeof seatCount !== "number" || seatCount < minSeats) return false;
+    if (maxSeats && seatCount > maxSeats) return false;
+    return true;
+  };
 
   const isUpgrade = planType === "team";
 
   const handleConfirm = () => {
     if (planType === "team") {
-      const seats = typeof seatCount === "number" ? seatCount : 1;
+      if (!isValidSeatCount()) return;
+      const seats = typeof seatCount === "number" ? seatCount : minSeats;
       changeSubscription({
         plan_code: PLAN_CODES.TEAM,
         seat_count: seats,
@@ -66,14 +81,25 @@ export function ChangeSubscriptionDialog({
               <Input
                 id="seat-count"
                 type="number"
-                min={1}
+                min={minSeats}
+                max={maxSeats || undefined}
                 value={seatCount}
                 onChange={(e) => {
                   const value = e.target.value;
                   setSeatCount(value === "" ? "" : parseInt(value));
                 }}
-                placeholder="Enter number of seats"
+                placeholder={`Enter number of seats (${minSeats}${maxSeats ? `-${maxSeats}` : "+"})`}
+                className={!isValidSeatCount() && seatCount !== "" ? "border-destructive" : ""}
               />
+              {!isValidSeatCount() && seatCount !== "" && (
+                <p className="text-sm text-destructive">
+                  {typeof seatCount === "number" && seatCount < minSeats
+                    ? `Minimum ${minSeats} seat${minSeats !== 1 ? "s" : ""} required`
+                    : maxSeats && typeof seatCount === "number" && seatCount > maxSeats
+                      ? `Maximum ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} allowed`
+                      : "Invalid seat count"}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
                 Price: ${(29.99 * (typeof seatCount === "number" ? seatCount : 0)).toFixed(2)}/month
               </p>
@@ -97,7 +123,10 @@ export function ChangeSubscriptionDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isChanging}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={isChanging}>
+          <Button
+            onClick={handleConfirm}
+            disabled={isChanging || (isUpgrade && !isValidSeatCount())}
+          >
             {isChanging && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Continue
           </Button>

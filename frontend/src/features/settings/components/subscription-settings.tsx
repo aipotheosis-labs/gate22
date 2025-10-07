@@ -10,8 +10,8 @@ import {
   Clock,
   Users,
   Database,
-  Calendar,
   CreditCard,
+  Loader2,
 } from "lucide-react";
 import {
   Accordion,
@@ -21,9 +21,11 @@ import {
 } from "@/components/ui/accordion";
 import { useSubscriptionStatus } from "../hooks/use-subscription-status";
 import { usePlans } from "../hooks/use-plans";
+import { useCancelSubscription } from "../hooks/use-cancel-subscription";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChangeSubscriptionDialog } from "./change-subscription-dialog";
+import { CancelSubscriptionDialog } from "./cancel-subscription-dialog";
 import { PLAN_CODES } from "../types/subscription.types";
 
 const faqItems = [
@@ -67,7 +69,9 @@ const faqItems = [
 export function SubscriptionSettings() {
   const { data: subscriptionStatus, isLoading, error } = useSubscriptionStatus();
   const { data: plans, isLoading: plansLoading, error: plansError } = usePlans();
+  const { cancelSubscription, isCancelling } = useCancelSubscription();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedPlanType, setSelectedPlanType] = useState<"free" | "team">("team");
 
   // Helper function to get plan by code
@@ -93,19 +97,19 @@ export function SubscriptionSettings() {
   };
 
   // Helper function to get status badge variant
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "active":
-        return "default";
-      case "trialing":
-        return "secondary";
-      case "past_due":
-      case "unpaid":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
+  //   const getStatusBadgeVariant = (status: string) => {
+  //     switch (status) {
+  //       case "active":
+  //         return "default";
+  //       case "trialing":
+  //         return "secondary";
+  //       case "past_due":
+  //       case "unpaid":
+  //         return "destructive";
+  //       default:
+  //         return "outline";
+  //     }
+  //   };
 
   // Get plans data
   const freePlan = getPlanByCode(PLAN_CODES.FREE);
@@ -175,11 +179,11 @@ export function SubscriptionSettings() {
               </CardTitle>
               <CardDescription className="mt-1.5">
                 {isFreePlan
-                  ? "You are currently on the Free Tier plan."
-                  : `You are subscribed to the ${planName} plan.`}
+                  ? "You are currently on the Free Plan."
+                  : `You are currently subscribed to the ${planName} plan.`}
               </CardDescription>
             </div>
-            {isFreePlan && (
+            {isFreePlan ? (
               <Button
                 onClick={() => {
                   setSelectedPlanType("team");
@@ -187,6 +191,16 @@ export function SubscriptionSettings() {
                 }}
               >
                 Upgrade Plan
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedPlanType("team");
+                  setDialogOpen(true);
+                }}
+              >
+                Change Seats
               </Button>
             )}
           </div>
@@ -199,14 +213,6 @@ export function SubscriptionSettings() {
             </Badge>
             {subscriptionStatus?.subscription && (
               <>
-                <Badge
-                  variant={getStatusBadgeVariant(
-                    subscriptionStatus.subscription.stripe_subscription_status,
-                  )}
-                  className="px-3 py-1 text-sm"
-                >
-                  {subscriptionStatus.subscription.stripe_subscription_status.replace("_", " ")}
-                </Badge>
                 {subscriptionStatus.subscription.cancel_at_period_end && (
                   <Badge
                     variant="outline"
@@ -222,52 +228,29 @@ export function SubscriptionSettings() {
 
           {/* Subscription Details */}
           {subscriptionStatus?.subscription && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Seats</p>
-                    <p className="text-2xl font-bold">
-                      {subscriptionStatus.subscription.seat_count}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-lg border bg-card p-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted-foreground">Next Billing Date</p>
-                    <p className="text-lg font-semibold">
-                      {formatDate(subscriptionStatus.subscription.current_period_end)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="mt-4 flex-1">
+              <p className="text-sm font-medium text-muted-foreground">Next Billing Date</p>
+              <p className="text-lg font-semibold">
+                {formatDate(subscriptionStatus.subscription.current_period_end)}
+              </p>
             </div>
           )}
-
           {/* Entitlement Details */}
           {subscriptionStatus?.entitlement && (
             <div>
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                Your Plan Includes
+                Your Entitlements
               </h3>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
-                  <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-fit rounded-full bg-gray-500/10 p-2">
                       <Users className="h-5 w-5 text-gray-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Seats</p>
-                      <p className="mt-1 text-2xl font-bold">
+                      <p className="text-2xl font-bold">
                         {subscriptionStatus.entitlement.seat_count === null ||
                         subscriptionStatus.entitlement.seat_count === 0
                           ? "Unlimited"
@@ -278,7 +261,7 @@ export function SubscriptionSettings() {
                 </div>
 
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
-                  <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-fit rounded-full bg-gray-500/10 p-2">
                       <Database className="h-5 w-5 text-gray-600" />
                     </div>
@@ -286,7 +269,7 @@ export function SubscriptionSettings() {
                       <p className="text-sm font-medium text-muted-foreground">
                         Custom MCP Servers
                       </p>
-                      <p className="mt-1 text-2xl font-bold">
+                      <p className="text-2xl font-bold">
                         {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
                         subscriptionStatus.entitlement.max_custom_mcp_servers === 0
                           ? "Unlimited"
@@ -297,13 +280,13 @@ export function SubscriptionSettings() {
                 </div>
 
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
-                  <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-fit rounded-full bg-gray-500/10 p-2">
                       <Clock className="h-5 w-5 text-gray-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Log Retention</p>
-                      <p className="mt-1 text-2xl font-bold">
+                      <p className="text-2xl font-bold">
                         {subscriptionStatus.entitlement.log_retention_days === null
                           ? "Unlimited"
                           : `${subscriptionStatus.entitlement.log_retention_days} ${subscriptionStatus.entitlement.log_retention_days === 1 ? "day" : "days"}`}
@@ -430,8 +413,9 @@ export function SubscriptionSettings() {
                 setSelectedPlanType("team");
                 setDialogOpen(true);
               }}
+              disabled={!isFreePlan}
             >
-              Upgrade to Team
+              {isFreePlan ? "Upgrade to Team" : "Current Plan"}
             </Button>
           </CardContent>
         </Card>
@@ -498,6 +482,44 @@ export function SubscriptionSettings() {
         onOpenChange={setDialogOpen}
         planType={selectedPlanType}
         currentPlanCode={subscriptionStatus?.subscription?.plan_code}
+      />
+
+      {/* Cancel Subscription Section - Only show for team plan */}
+      {!isFreePlan && (
+        <Card className="border-muted">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Need to cancel?</h3>
+              <p className="mb-4 text-xs text-muted-foreground">
+                Your subscription will remain active until the end of your billing period.
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={isCancelling}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  "Cancel Subscription"
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Cancel Subscription Dialog */}
+      <CancelSubscriptionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={cancelSubscription}
+        isPending={isCancelling}
       />
     </div>
   );
