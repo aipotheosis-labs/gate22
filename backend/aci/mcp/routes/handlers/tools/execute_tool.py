@@ -1,5 +1,5 @@
 import json
-import time
+from datetime import UTC, datetime
 from functools import wraps
 
 from mcp import types as mcp_types
@@ -47,7 +47,7 @@ def track_duration(func):  # type: ignore
 
     @wraps(func)
     async def wrapper(*args, **kwargs):  # type: ignore
-        start_time = time.perf_counter()
+        started_at = datetime.now(UTC)
         result = None
         try:
             result = await func(*args, **kwargs)
@@ -57,7 +57,12 @@ def track_duration(func):  # type: ignore
             if result is not None and isinstance(result, tuple) and len(result) == 2:
                 tool_call_log_data = result[1]
                 if isinstance(tool_call_log_data, MCPToolCallLogCreate):
-                    tool_call_log_data.duration_ms = int((time.perf_counter() - start_time) * 1000)
+                    ended_at = datetime.now(UTC)
+                    tool_call_log_data.duration_ms = int(
+                        (ended_at - started_at).total_seconds() * 1000
+                    )
+                    tool_call_log_data.ended_at = ended_at
+                    tool_call_log_data.started_at = started_at
 
     return wrapper
 

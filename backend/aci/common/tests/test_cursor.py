@@ -17,7 +17,7 @@ def test_encode_decode_roundtrip() -> None:
     print(cur)
     decoded = MCPToolCallLogCursor.decode(cur)
 
-    assert decoded.timestamp == ts
+    assert decoded.started_at == ts
     assert decoded.id == id
 
 
@@ -47,7 +47,7 @@ def test_decode_rejects_non_base64() -> None:
 
 
 def test_decode_rejects_missing_id() -> None:
-    payload = {"timestamp": "2024-01-02T03:04:05"}  # no id
+    payload = {"started_at": "2024-01-02T03:04:05"}  # no id
     cur = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
 
     with pytest.raises(KeyError):
@@ -55,7 +55,7 @@ def test_decode_rejects_missing_id() -> None:
 
 
 def test_decode_rejects_invalid_timestamp() -> None:
-    payload = {"timestamp": "not-a-timestamp", "id": str(uuid4())}
+    payload = {"started_at": "not-a-timestamp", "id": str(uuid4())}
     cur = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
 
     with pytest.raises(ValueError):
@@ -63,7 +63,7 @@ def test_decode_rejects_invalid_timestamp() -> None:
 
 
 def test_decode_rejects_invalid_uuid() -> None:
-    payload = {"timestamp": "2024-01-02T03:04:05", "id": "invalid-uuid"}
+    payload = {"started_at": "2024-01-02T03:04:05", "id": "invalid-uuid"}
     cur = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
 
     with pytest.raises(ValueError):

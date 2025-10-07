@@ -22,9 +22,12 @@ class MCPToolCallLogCreate(BaseModel):
     arguments: str | None = None
     result: dict
     status: MCPToolCallStatus
-    duration_ms: int
     via_execute_tool: bool
     jsonrpc_payload: dict
+
+    started_at: datetime
+    ended_at: datetime
+    duration_ms: int
 
     model_config = ConfigDict(extra="forbid")
 
@@ -44,9 +47,12 @@ class MCPToolCallLogResponse(BaseModel):
     arguments: str | None = None
     result: dict
     status: MCPToolCallStatus
-    duration_ms: int
     via_execute_tool: bool
     jsonrpc_payload: dict
+
+    started_at: datetime
+    ended_at: datetime
+    duration_ms: int
 
     created_at: datetime
     updated_at: datetime
@@ -55,17 +61,16 @@ class MCPToolCallLogResponse(BaseModel):
 class MCPToolCallLogCursor(BaseModel):
     """
     Internal cursor representation for time-series pagination.
-    Format: base64(timestamp:uuid)
     """
 
-    timestamp: datetime
+    started_at: datetime
     id: UUID
 
     @staticmethod
-    def encode(timestamp: datetime, id: UUID) -> str:
+    def encode(started_at: datetime, id: UUID) -> str:
         """Encode cursor to base64 string."""
         payload = {
-            "timestamp": timestamp.isoformat(),
+            "started_at": started_at.isoformat(),
             "id": str(id),
         }
         return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
@@ -75,5 +80,6 @@ class MCPToolCallLogCursor(BaseModel):
         """Decode cursor from base64 string."""
         data = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
         return MCPToolCallLogCursor(
-            timestamp=datetime.fromisoformat(data["timestamp"]), id=UUID(data["id"])
+            started_at=datetime.fromisoformat(data["started_at"]),
+            id=UUID(data["id"]),
         )

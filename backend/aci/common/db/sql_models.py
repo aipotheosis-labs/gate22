@@ -697,11 +697,13 @@ class MCPToolCallLog(Base):
     status: Mapped[MCPToolCallStatus] = mapped_column(
         SQLEnum(MCPToolCallStatus, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
     )
-    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     # whether the tool call is excecuted via the "EXECUTE_TOOL" tool
     via_execute_tool: Mapped[bool] = mapped_column(Boolean, nullable=False)
     # The full payload of the tool call: JSONRPCToolsCallRequest
     jsonrpc_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False

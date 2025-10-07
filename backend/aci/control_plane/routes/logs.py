@@ -12,15 +12,11 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.get(
-    "/tool-calls",
-    response_model=CursorPaginationResponse[MCPToolCallLogResponse],
-    response_model_exclude_none=True,
-)
+@router.get("/tool-calls", response_model=CursorPaginationResponse[MCPToolCallLogResponse])
 async def get_tool_call_logs(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination: Annotated[CursorPaginationParams, Depends()],
-    filter_mcp_tool_name: Annotated[str | None, Query()] = None,
+    mcp_tool_name: Annotated[str | None, Query()] = None,
 ) -> CursorPaginationResponse[MCPToolCallLogResponse]:
     """
     Get paginated tool call logs with cursor-based pagination.
@@ -37,11 +33,11 @@ async def get_tool_call_logs(
         db_session=context.db_session,
         limit=pagination.limit,
         cursor=cursor,
-        filter_mcp_tool_name=filter_mcp_tool_name,
+        mcp_tool_name=mcp_tool_name,
     )
     return CursorPaginationResponse(
         data=[MCPToolCallLogResponse.model_validate(log, from_attributes=True) for log in logs],
-        next_cursor=MCPToolCallLogCursor.encode(next_log.created_at, next_log.id)
+        next_cursor=MCPToolCallLogCursor.encode(next_log.started_at, next_log.id)
         if next_log
         else None,
     )
