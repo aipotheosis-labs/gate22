@@ -12,6 +12,7 @@ from aci.common.schemas.subscription import (
     StripeWebhookEvent,
     SubscriptionCancellation,
     SubscriptionCheckout,
+    SubscriptionPlanPublic,
     SubscriptionPublic,
     SubscriptionRequest,
     SubscriptionResult,
@@ -29,6 +30,16 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
+
+
+@router.get("/plans")
+async def get_plans(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+) -> list[SubscriptionPlanPublic]:
+    return [
+        SubscriptionPlanPublic.model_validate(plan, from_attributes=True)
+        for plan in crud.subscriptions.get_all_plans(db_session=context.db_session)
+    ]
 
 
 @router.get(
@@ -130,7 +141,7 @@ async def change_organization_subscription(
     # This is a special case for the free plan, where we auto treat the requested seat count as the
     # max available seats for Free Plan.
     if requested_plan.is_free:
-        requested_seat_count = requested_plan.max_seats_for_subscription
+        requested_seat_count = requested_plan.max_seats_for_subscription or 1
     else:
         # For paid plans, we require the seat count, and success_url and cancel_url must be provided
         if input.seat_count is None:
@@ -146,8 +157,11 @@ async def change_organization_subscription(
     # Check if the seat_requested matches the plan's requirement
     # plan.min_seat_for_subscription <= requested_seat <= plan.max_seat_for_subscription
     if (
-        requested_seat_count < requested_plan.min_seats_for_subscription
-        or requested_seat_count > requested_plan.max_seats_for_subscription
+        requested_plan.min_seats_for_subscription is not None
+        and requested_seat_count < requested_plan.min_seats_for_subscription
+    ) or (
+        requested_plan.max_seats_for_subscription is not None
+        and requested_seat_count > requested_plan.max_seats_for_subscription
     ):
         logger.info(
             f"requested seat count {requested_seat_count} invalid for plan {input.plan_code}"

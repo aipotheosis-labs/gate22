@@ -57,6 +57,13 @@ def get_free_plan(
     return plan
 
 
+def get_all_plans(
+    db_session: Session,
+) -> list[SubscriptionPlan]:
+    statement = select(SubscriptionPlan).where(SubscriptionPlan.archived_at.is_(None))
+    return list(db_session.execute(statement).scalars().all())
+
+
 def get_active_plan_by_plan_code(
     db_session: Session,
     plan_code: str,

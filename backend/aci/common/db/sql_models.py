@@ -854,10 +854,10 @@ class SubscriptionPlan(Base):
     is_free: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False)
     stripe_price_id: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
-    min_seats_for_subscription: Mapped[int] = mapped_column(Integer, nullable=False)
-    max_seats_for_subscription: Mapped[int] = mapped_column(Integer, nullable=False)
-    max_custom_mcp_servers: Mapped[int] = mapped_column(Integer, nullable=False)
-    log_retention_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    min_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    log_retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, init=False
     )
