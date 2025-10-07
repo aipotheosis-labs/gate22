@@ -93,3 +93,8 @@ class Environment(StrEnum):
     LOCAL = "local"
     DEVELOPMENT = "development"
     PRODUCTION = "production"
+
+
+class MCPToolCallStatus(StrEnum):
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"

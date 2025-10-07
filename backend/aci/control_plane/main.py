@@ -20,6 +20,7 @@ from aci.control_plane.routes import (
     auth,
     connected_accounts,
     health,
+    logs,
     mcp_server_bundles,
     mcp_server_configurations,
     mcp_servers,
@@ -151,4 +152,10 @@ app.include_router(
     mcp_tools.router,
     prefix=config.ROUTER_PREFIX_MCP_TOOLS,
     tags=[config.ROUTER_PREFIX_MCP_TOOLS.split("/")[-1]],
+)
+
+app.include_router(
+    logs.router,
+    prefix=config.ROUTER_PREFIX_LOGS,
+    tags=[config.ROUTER_PREFIX_LOGS.split("/")[-1]],
 )
