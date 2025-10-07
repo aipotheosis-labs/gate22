@@ -228,12 +228,18 @@ def cancel_stripe_subscription(
 ) -> SubscriptionCancellation:
     """
     Cancel the stripe subscription. It will NOT return a stripe checkout session, the cancellation
-    will be effective immediately, and stripe will refund the price pro-rated immediately.
+    will be effective at the end of the current period.
 
     Note: This function will NOT update any data in the database. The updated data will be sent
     asynchronously from Stripe webhook and handled by the stripe_event_handler.
     """
-    stripe_client.subscriptions.cancel(subscription.stripe_subscription_id)
+    # stripe_client.subscriptions.cancel(subscription.stripe_subscription_id)
+    stripe_client.subscriptions.update(
+        subscription.stripe_subscription_id,
+        {
+            "cancel_at_period_end": True,
+        },
+    )
 
     # Do not update the subscription in the database, it will be updated by the stripe webhook
     return SubscriptionCancellation(subscription_id=subscription.stripe_subscription_id)
