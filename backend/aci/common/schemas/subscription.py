@@ -4,6 +4,15 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 
+class SubscriptionPlanPublic(BaseModel):
+    plan_code: str
+    display_name: str
+    min_seats_for_subscription: int | None
+    max_seats_for_subscription: int | None
+    max_custom_mcp_servers: int | None
+    log_retention_days: int | None
+
+
 class SubscriptionPlanCreate(BaseModel):
     plan_code: str
     display_name: str
@@ -17,9 +26,9 @@ class SubscriptionPlanCreate(BaseModel):
 
 
 class Entitlement(BaseModel):
-    seat_count: int
-    max_custom_mcp_servers: int
-    log_retention_days: int
+    seat_count: int | None
+    max_custom_mcp_servers: int | None
+    log_retention_days: int | None
 
 
 class SubscriptionPublic(BaseModel):

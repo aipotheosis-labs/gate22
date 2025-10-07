@@ -1,8 +1,8 @@
-"""add subscription tables
+"""adding subscription tables
 
-Revision ID: 72818bb25ac1
+Revision ID: 00044e0610b0
 Revises: 2416fc891646
-Create Date: 2025-10-07 14:22:23.755967+00:00
+Create Date: 2025-10-07 16:06:58.516784+00:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '72818bb25ac1'
+revision: str = '00044e0610b0'
 down_revision: Union[str, None] = '2416fc891646'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,10 +27,10 @@ def upgrade() -> None:
     sa.Column('is_free', sa.Boolean(), nullable=False),
     sa.Column('is_public', sa.Boolean(), nullable=False),
     sa.Column('stripe_price_id', sa.String(length=512), nullable=True),
-    sa.Column('min_seats_for_subscription', sa.Integer(), nullable=False),
-    sa.Column('max_seats_for_subscription', sa.Integer(), nullable=False),
-    sa.Column('max_custom_mcp_servers', sa.Integer(), nullable=False),
-    sa.Column('log_retention_days', sa.Integer(), nullable=False),
+    sa.Column('min_seats_for_subscription', sa.Integer(), nullable=True),
+    sa.Column('max_seats_for_subscription', sa.Integer(), nullable=True),
+    sa.Column('max_custom_mcp_servers', sa.Integer(), nullable=True),
+    sa.Column('log_retention_days', sa.Integer(), nullable=True),
     sa.Column('archived_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
