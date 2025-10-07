@@ -33,4 +33,9 @@ export const subscriptionApi = {
     const api = createAuthenticatedRequest(token);
     return api.get<Plan[]>("/subscriptions/plans");
   },
+
+  cancelSubscription: async (organizationId: string, token?: string): Promise<void> => {
+    const api = createAuthenticatedRequest(token);
+    return api.post<void>(`/subscriptions/organizations/${organizationId}/cancel-subscription`);
+  },
 };
