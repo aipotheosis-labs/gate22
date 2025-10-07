@@ -70,6 +70,19 @@ class OrganizationNotFound(ControlPlaneException):
         )
 
 
+class OrganizationSubscriptionNotFound(ControlPlaneException):
+    """
+    Exception raised when an organization subscription is not found
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Organization subscription not found",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
 class MCPServerConfigurationNotFound(ControlPlaneException):
     """
     Exception raised when an mcp server configuration is not found
