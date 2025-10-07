@@ -1,0 +1,413 @@
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Users,
+  Database,
+  Calendar,
+  CreditCard,
+} from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { useSubscriptionStatus } from "../hooks/use-subscription-status";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const faqItems = [
+  {
+    question: "Can I upgrade my plan at any time?",
+    answer:
+      "Yes, you can upgrade your plan at any time. Stripe will automatically charge for pro-rata pricing differences during upgrades.",
+  },
+  {
+    question: "What are Control Planes?",
+    answer:
+      "A control plane is a hosted instance of the overall platform, including the authentication process, proxying and gateway service instance. By default all users of our cloud service accesses the same service instance which is physically hosted in the United States. For a dedicated control plane with your own cluster and region requirements, please contact us for a custom plan.",
+  },
+  {
+    question: "What are Custom MCPs?",
+    answer:
+      "ACI.dev allows developers to bring their own MCP servers (whether internal, or external) that they want to use to be managed on the control plane and gateway. These are MCP servers that would be specific to your organization which you can mix and match to use during bundling with the external MCP servers that we natively offer.",
+  },
+  {
+    question: "What happens if I want to bring more of my own MCPs?",
+    answer: "We would be happy to support you, please contact us for a custom plan.",
+  },
+  {
+    question: "Can I cancel my subscription?",
+    answer:
+      "Yes, you can cancel your subscription at any time. The cancellation will take effect at the end of your current billing cycle.",
+  },
+  {
+    question:
+      "What happens to my organizational users accessing the gateway and control plane if I cancel or downgrade my subscription?",
+    answer:
+      "Your organizational users can continue to use the until the end of the billing period, but if your number of organizational users exceeds the allowance for the tier you are downgrading to, they will be locked out of accessing the service until you subscribe for additional seats. By default downgrading to the Free Tier would result in only the administrator having access to the control plane and gateway.",
+  },
+  {
+    question: "What is your refund policy?",
+    answer:
+      'Subscriptions are non-refundable for the duration of the subscription. If you are a consumer in the United Kingdom or the European Union, you have the right to cancel your purchase for a paid subscription service within 14 days of the date of purchase without providing any reason ("Cooling Off Period"). If you choose to cancel your subscription during this period, you will receive a prorated refund of the relevant subscription fee, calculated from the date of your cancellation request to the end of the paid subscription period.',
+  },
+];
+
+export function SubscriptionSettings() {
+  const { data: subscriptionStatus, isLoading, error } = useSubscriptionStatus();
+
+  // Helper function to get plan display name
+  const getPlanDisplayName = () => {
+    if (!subscriptionStatus?.subscription) return "Free Tier";
+    const planCode = subscriptionStatus.subscription.plan_code;
+    if (planCode === "team") return "Team";
+    if (planCode === "enterprise") return "Enterprise";
+    return planCode;
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  // Helper function to get status badge variant
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "active":
+        return "default";
+      case "trialing":
+        return "secondary";
+      case "past_due":
+      case "unpaid":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Subscription</h1>
+          <p className="mt-2 text-muted-foreground">
+            Manage your subscription plan and billing settings.
+          </p>
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="mt-2 h-4 w-64" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold">Subscription</h1>
+          <p className="mt-2 text-muted-foreground">
+            Manage your subscription plan and billing settings.
+          </p>
+        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load subscription information. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const planName = getPlanDisplayName();
+  const isFreePlan = !subscriptionStatus?.subscription;
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold">Subscription</h1>
+        <p className="mt-2 text-muted-foreground">
+          Manage your subscription plan and billing settings.
+        </p>
+      </div>
+
+      {/* Current Plan Status */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Current Plan
+              </CardTitle>
+              <CardDescription className="mt-1.5">
+                {isFreePlan
+                  ? "You are currently on the Free Tier plan."
+                  : `You are subscribed to the ${planName} plan.`}
+              </CardDescription>
+            </div>
+            {isFreePlan && <Button>Upgrade Plan</Button>}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Plan and Status Badges */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="px-3 py-1 text-sm">
+              {planName}
+            </Badge>
+            {subscriptionStatus?.subscription && (
+              <>
+                <Badge
+                  variant={getStatusBadgeVariant(
+                    subscriptionStatus.subscription.stripe_subscription_status,
+                  )}
+                  className="px-3 py-1 text-sm"
+                >
+                  {subscriptionStatus.subscription.stripe_subscription_status.replace("_", " ")}
+                </Badge>
+                {subscriptionStatus.subscription.cancel_at_period_end && (
+                  <Badge
+                    variant="outline"
+                    className="border-orange-500 px-3 py-1 text-sm text-orange-700"
+                  >
+                    <AlertCircle className="mr-1 h-3 w-3" />
+                    Cancels at period end
+                  </Badge>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Subscription Details */}
+          {subscriptionStatus?.subscription && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-primary/10 p-2">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Seats</p>
+                    <p className="text-2xl font-bold">
+                      {subscriptionStatus.subscription.seat_count}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-primary/10 p-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground">Next Billing Date</p>
+                    <p className="text-lg font-semibold">
+                      {formatDate(subscriptionStatus.subscription.current_period_end)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Entitlement Details */}
+          {subscriptionStatus?.entitlement && (
+            <div>
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                Your Plan Includes
+              </h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
+                  <div className="flex flex-col gap-3">
+                    <div className="w-fit rounded-full bg-blue-500/10 p-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Developer Seats</p>
+                      <p className="mt-1 text-2xl font-bold">
+                        {subscriptionStatus.entitlement.seat_count === 0
+                          ? "Unlimited"
+                          : subscriptionStatus.entitlement.seat_count}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
+                  <div className="flex flex-col gap-3">
+                    <div className="w-fit rounded-full bg-green-500/10 p-2">
+                      <Database className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Custom MCP Servers
+                      </p>
+                      <p className="mt-1 text-2xl font-bold">
+                        {subscriptionStatus.entitlement.max_custom_mcp_servers === 0
+                          ? "Unlimited"
+                          : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
+                  <div className="flex flex-col gap-3">
+                    <div className="w-fit rounded-full bg-purple-500/10 p-2">
+                      <Clock className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Log Retention</p>
+                      <p className="mt-1 text-2xl font-bold">
+                        {subscriptionStatus.entitlement.log_retention_days}{" "}
+                        <span className="text-base font-normal text-muted-foreground">
+                          {subscriptionStatus.entitlement.log_retention_days === 1 ? "day" : "days"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Plan Action Cards */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="relative flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Free Tier
+              <Badge variant="secondary">Current</Badge>
+            </CardTitle>
+            <CardDescription>Perfect for getting started</CardDescription>
+            <div className="text-3xl font-bold">$0</div>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col justify-between">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>1 Control Plane</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Max 1 Custom MCP</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Max 2 Seats</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>3 days Log Retention</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="flex flex-col border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Team
+              <Badge>Popular</Badge>
+            </CardTitle>
+            <CardDescription>For growing teams</CardDescription>
+            <div className="text-3xl font-bold">
+              $29.99
+              <span className="text-base font-normal text-muted-foreground">/seat</span>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col justify-between space-y-4">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>1 Control Plane</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Max 5 Custom MCPs</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Unlimited Seats</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>1 week Log Retention</span>
+              </li>
+            </ul>
+            <Button className="w-full">Upgrade to Team</Button>
+          </CardContent>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Enterprise</CardTitle>
+            <CardDescription>For large organizations</CardDescription>
+            <div className="text-3xl font-bold">Custom</div>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col justify-between space-y-4">
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Custom Control Planes</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Custom MCPs</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Custom Developer Seats</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                <span>Custom Log Retention</span>
+              </li>
+            </ul>
+            <Button variant="outline" className="w-full">
+              Contact Sales
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* FAQ Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Frequently Asked Questions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="multiple" className="w-full">
+            {faqItems.map((item, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left">{item.question}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">{item.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

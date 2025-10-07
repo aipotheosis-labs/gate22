@@ -25,6 +25,9 @@ export const PERMISSIONS = {
   BUNDLE_DELETE_OWN: "bundle:delete_own",
   BUNDLE_DELETE_ALL: "bundle:delete_all",
   BUNDLE_MCP_URL_VIEW: "bundle:mcp_url_view",
+
+  // Subscription permissions
+  SUBSCRIPTION_PAGE_VIEW: "subscription:page_view",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -56,6 +59,9 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.BUNDLE_DELETE_ALL,
     // Note: Admins cannot create bundles
     // Note: Admins cannot view MCP URLs of the members
+
+    // Subscription - Only admins can view subscription settings
+    PERMISSIONS.SUBSCRIPTION_PAGE_VIEW,
   ],
   member: [
     // MCP Server - Members can only view accessible servers

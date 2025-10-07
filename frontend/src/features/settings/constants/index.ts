@@ -14,6 +14,7 @@ export const QUERY_KEYS = {
   MEMBERS: (orgId: string) => ["members", orgId] as const,
   ORGANIZATION_INVITATIONS: (orgId: string, status: string = "all") =>
     ["org-invitations", orgId, status] as const,
+  SUBSCRIPTION_STATUS: (orgId: string) => ["subscription-status", orgId] as const,
 } as const;
 
 export const UI_TEXT = {
