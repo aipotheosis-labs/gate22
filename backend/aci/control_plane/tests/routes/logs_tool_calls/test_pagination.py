@@ -18,6 +18,7 @@ def create_test_log(
 ) -> MCPToolCallLog:
     """Helper to create a test log directly in the database."""
     log = MCPToolCallLog(
+        user_id=uuid4(),
         request_id=request_id,
         session_id=uuid4(),
         bundle_name="test_bundle",
