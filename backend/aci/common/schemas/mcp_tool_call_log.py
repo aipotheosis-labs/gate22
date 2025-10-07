@@ -1,3 +1,5 @@
+import base64
+import json
 from datetime import datetime
 from uuid import UUID
 
@@ -48,3 +50,30 @@ class MCPToolCallLogResponse(BaseModel):
 
     created_at: datetime
     updated_at: datetime
+
+
+class MCPToolCallLogCursor(BaseModel):
+    """
+    Internal cursor representation for time-series pagination.
+    Format: base64(timestamp:uuid)
+    """
+
+    timestamp: datetime
+    id: UUID
+
+    @staticmethod
+    def encode(timestamp: datetime, id: UUID) -> str:
+        """Encode cursor to base64 string."""
+        payload = {
+            "timestamp": timestamp.isoformat(),
+            "id": str(id),
+        }
+        return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+
+    @staticmethod
+    def decode(cursor: str) -> "MCPToolCallLogCursor":
+        """Decode cursor from base64 string."""
+        data = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+        return MCPToolCallLogCursor(
+            timestamp=datetime.fromisoformat(data["timestamp"]), id=UUID(data["id"])
+        )
