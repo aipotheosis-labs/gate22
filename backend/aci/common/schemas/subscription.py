@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, HttpUrl
+from pydantic import BaseModel, ConfigDict
 
 
 class SubscriptionPlanCreate(BaseModel):
@@ -12,8 +12,8 @@ class SubscriptionPlanCreate(BaseModel):
     stripe_price_id: str | None
     min_seats_for_subscription: int | None
     max_seats_for_subscription: int | None
-    config_max_custom_mcp_servers: int | None
-    config_log_retention_days: int | None
+    max_custom_mcp_servers: int | None
+    log_retention_days: int | None
 
 
 class Entitlement(BaseModel):
@@ -39,8 +39,6 @@ class SubscriptionStatusPublic(BaseModel):
 class SubscriptionRequest(BaseModel):
     plan_code: str
     seat_count: int | None = None
-    success_url: HttpUrl | None = None
-    cancel_url: HttpUrl | None = None
 
 
 class SubscriptionCheckout(BaseModel):
@@ -83,7 +81,7 @@ class OrganizationSubscriptionUpsert(BaseModel):
 class StripeEventData(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    id: str
+    id: str  # subscription id
     status: str
 
 
@@ -95,5 +93,10 @@ class StripeEventDataObject(BaseModel):
 class StripeWebhookEvent(BaseModel):
     model_config = ConfigDict(extra="allow")
 
+    id: str  # event id
     type: str
     data: StripeEventDataObject
+
+
+class StripeVerifySessionRequest(BaseModel):
+    session_id: str

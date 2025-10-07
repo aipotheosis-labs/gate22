@@ -83,20 +83,18 @@ def compute_effective_entitlement(
     ):
         return Entitlement(
             seat_count=seat_count,
-            max_custom_mcp_servers=plan.config_max_custom_mcp_servers,
-            log_retention_days=plan.config_log_retention_days,
+            max_custom_mcp_servers=plan.max_custom_mcp_servers,
+            log_retention_days=plan.log_retention_days,
         )
     return Entitlement(
         seat_count=(override.seat_count if override.seat_count else seat_count),
         max_custom_mcp_servers=(
             override.max_custom_mcp_servers
             if override.max_custom_mcp_servers
-            else plan.config_max_custom_mcp_servers
+            else plan.max_custom_mcp_servers
         ),
         log_retention_days=(
-            override.log_retention_days
-            if override.log_retention_days
-            else plan.config_log_retention_days
+            override.log_retention_days if override.log_retention_days else plan.log_retention_days
         ),
     )
 
@@ -106,8 +104,6 @@ def create_stripe_subscription(
     organization: Organization,
     plan: SubscriptionPlan,
     seat_count: int,
-    success_url: str,
-    cancel_url: str,
 ) -> SubscriptionCheckout:
     """
     Create a stripe subscription. It will create and return a stripe checkout session.
@@ -144,6 +140,8 @@ def create_stripe_subscription(
     # Checkout the subscription
     idempotency_key = f"{organization.id}-{plan.plan_code}-{uuid4()!s}"
 
+    # Checkout session will created the subscription with `collection_method=automatic_collection`
+    # by default.
     stripe_checkout_session = stripe_client.checkout.sessions.create(
         {
             "customer": stripe_customer_id,
@@ -155,8 +153,9 @@ def create_stripe_subscription(
                     "quantity": seat_count,
                 }
             ],
-            "success_url": success_url,
-            "cancel_url": cancel_url,
+            # Stripe will replace the placeholder {CHECKOUT_SESSION_ID} with the actual session id
+            "success_url": f"{config.SUBSCRIPTION_SUCCESS_URL}?session_id={{CHECKOUT_SESSION_ID}}",
+            "cancel_url": config.SUBSCRIPTION_CANCEL_URL,
         },
         {
             "idempotency_key": idempotency_key,

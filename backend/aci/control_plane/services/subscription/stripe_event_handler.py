@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 from stripe import StripeClient, Subscription, SubscriptionItem
@@ -6,7 +6,10 @@ from stripe import StripeClient, Subscription, SubscriptionItem
 from aci.common.db import crud
 from aci.common.db.sql_models import Organization
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.subscription import OrganizationSubscriptionUpsert
+from aci.common.schemas.subscription import (
+    OrganizationSubscriptionUpsert,
+    StripeWebhookEvent,
+)
 from aci.control_plane import config
 from aci.control_plane.exceptions import OrganizationNotFound, StripeOperationError
 
@@ -15,7 +18,68 @@ logger = get_logger(__name__)
 stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
-def handle_subscription_event(db_session: Session, subscription_id: str) -> None:
+STRIPE_EVENT_MAX_PROCESS_ATTEMPTS = 3
+
+
+def handle_stripe_event(db_session: Session, event_id: str) -> None:
+    """
+    The entry function to handle any stripe events. This function MUST be INDEMPOTENT and can be
+    called multiple times for a same event.
+    """
+    event_data = stripe_client.events.retrieve(event_id)
+    event = StripeWebhookEvent.model_validate(event_data)
+
+    subscription = event.data.object
+    logger.info(
+        f"Stripe webhook received for event {event.type}, event id {event.id}, status {subscription.status}"  # noqa: E501
+    )
+
+    # Log Stripe event
+    stripe_event_log = crud.subscriptions.get_stripe_event_log_by_stripe_event_id(
+        db_session=db_session,
+        stripe_event_id=event.id,
+    )
+    if stripe_event_log is None:
+        logger.info("Stripe event log not found, inserting...")
+        stripe_event_log = crud.subscriptions.insert_stripe_event_log(
+            db_session=db_session,
+            stripe_event=event,
+        )
+
+    if stripe_event_log.processed_at is not None:
+        logger.info(f"Stripe event {event.id} already processed")
+        return
+
+    if stripe_event_log.process_attempts >= STRIPE_EVENT_MAX_PROCESS_ATTEMPTS:
+        logger.error(f"Stripe event {event.id} failed to process after max attempts")
+        raise StripeOperationError(f"Stripe event {event.id} failed to process after max attempts")
+
+    # Process the stripe event
+    try:
+        _process_subscription_event(db_session=db_session, subscription_id=subscription.id)
+        crud.subscriptions.log_process_attempt(
+            db_session=db_session,
+            stripe_event_id=event.id,
+            process_error=None,
+            processed_at=datetime.now(UTC),
+        )
+    except Exception as e:
+        logger.error(f"Stripe event {event.id} failed to process: {e}")
+        # Log the error and do not mark the event as processed
+        crud.subscriptions.log_process_attempt(
+            db_session=db_session,
+            stripe_event_id=event.id,
+            process_error=str(e),
+            processed_at=None,
+        )
+        raise e
+
+
+def _process_subscription_event(db_session: Session, subscription_id: str) -> None:
+    """
+    The entry function to handle any stripe events. This function MUST be INDEMPOTENT and can be
+    called multiple times for a same event.
+    """
     subscription_data = stripe_client.subscriptions.retrieve(subscription_id)
 
     logger.info(f"Subscription id: {subscription_data.id}, status: {subscription_data.status}")
@@ -33,14 +97,14 @@ def handle_subscription_event(db_session: Session, subscription_id: str) -> None
         )
         raise OrganizationNotFound()
 
-    # Check if the subscription has only one item
-    if len(subscription_data.items.data) != 1:
-        logger.error(f"Expected 1 item in subscription, got {len(subscription_data.items.data)}")
-        raise StripeOperationError(
-            f"Expected 1 item in subscription, got {len(subscription_data.items.data)}"
-        )
+    items: list[SubscriptionItem] = subscription_data.get("items", {}).get("data", [])
 
-    subscription_item = subscription_data.items.data[0]
+    # Check if the subscription has only one item
+    if len(items) != 1:
+        logger.error(f"Expected 1 item in subscription, got {len(items)}")
+        raise StripeOperationError(f"Expected 1 item in subscription, got {len(items)}")
+
+    subscription_item = items[0]
 
     match subscription_data.status:
         # "incomplete": Stripe created the subscription but failed to collect the payment yet.
@@ -52,7 +116,7 @@ def handle_subscription_event(db_session: Session, subscription_id: str) -> None
         # "past_due": Stripe has a grace period for the payment.
         # These two are active states. We treat them as valid subscription.
         case "active" | "past_due":
-            upsert_customer_subscription(
+            _upsert_customer_subscription(
                 db_session=db_session,
                 organization=organization,
                 subscription=subscription_data,
@@ -61,18 +125,21 @@ def handle_subscription_event(db_session: Session, subscription_id: str) -> None
 
         # "canceled": Stripe canceled the subscription.
         # "incomplete_expired": Stripe failed to collect the payment for a couple times.
+        #
         # These two are terminal states. We should remove the subscription from the database if it
         # exists.
         case "canceled" | "incomplete_expired":
-            remove_customer_subscription(
+            _remove_customer_subscription(
                 db_session=db_session, organization=organization, subscription=subscription_data
             )
 
-        # "Unpaid": Stripe tries few times and failed to charge the customer. This is unexpected
-        # for us since we have automatic_collection enabled.
+        #
         # "trialing": Subscription is in the trial period. We don't support trial.
-        # "Paused": This state when trial ends without payment method. So this is unexpected for us
-        # as we do not support trial.
+        # "paused": This state when trial ends without payment method. So this is unexpected for us
+        #           as we do not support trial.
+        # "unpaid": Stripe tries few times and failed to charge the customer. This is unexpected
+        #           for us since directly cancel the subscription in that case. Check "Manage failed
+        #           payments" from Stripe Dashboard.
         case "paused" | "unpaid" | "trialing":
             logger.error(f"Unsupported subscription status {subscription_data.status}")
             raise StripeOperationError(
@@ -80,7 +147,7 @@ def handle_subscription_event(db_session: Session, subscription_id: str) -> None
             )
 
 
-def upsert_customer_subscription(
+def _upsert_customer_subscription(
     db_session: Session,
     organization: Organization,
     subscription: Subscription,
@@ -96,7 +163,7 @@ def upsert_customer_subscription(
             f"Failed to map plan by stripe price id {subscription_item.price.id}"
         )
 
-    logger.info(f"Upserting organization subscription for {organization.id}")
+    logger.info(f"Upserting organization subscription for {organization.id}...")
 
     crud.subscriptions.upsert_organization_subscription(
         db_session=db_session,
@@ -121,7 +188,7 @@ def upsert_customer_subscription(
     )
 
 
-def remove_customer_subscription(
+def _remove_customer_subscription(
     db_session: Session, organization: Organization, subscription: Subscription
 ) -> None:
     organization_subscription = (
@@ -131,8 +198,8 @@ def remove_customer_subscription(
         )
     )
     if organization_subscription is not None:
+        logger.info(f"Deleting organization subscription for organization {organization.id}...")
         crud.subscriptions.delete_organization_subscription(
             db_session=db_session,
             stripe_subscription_id=subscription.id,
         )
-    logger.info(f"Deleted organization subscription for organization {organization.id}")

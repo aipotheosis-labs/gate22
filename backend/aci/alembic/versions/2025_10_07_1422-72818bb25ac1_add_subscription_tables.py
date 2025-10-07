@@ -1,18 +1,18 @@
-"""adding subscription tables
+"""add subscription tables
 
-Revision ID: ca0d455b47db
+Revision ID: 72818bb25ac1
 Revises: 2416fc891646
-Create Date: 2025-10-06 17:32:07.060088+00:00
+Create Date: 2025-10-07 14:22:23.755967+00:00
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'ca0d455b47db'
+revision: str = '72818bb25ac1'
 down_revision: Union[str, None] = '2416fc891646'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,13 +29,27 @@ def upgrade() -> None:
     sa.Column('stripe_price_id', sa.String(length=512), nullable=True),
     sa.Column('min_seats_for_subscription', sa.Integer(), nullable=False),
     sa.Column('max_seats_for_subscription', sa.Integer(), nullable=False),
-    sa.Column('config_max_custom_mcp_servers', sa.Integer(), nullable=False),
-    sa.Column('config_log_retention_days', sa.Integer(), nullable=False),
+    sa.Column('max_custom_mcp_servers', sa.Integer(), nullable=False),
+    sa.Column('log_retention_days', sa.Integer(), nullable=False),
     sa.Column('archived_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('plan_code')
+    )
+    op.create_table('subscription_stripe_event_logs',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('stripe_event_id', sa.String(length=512), nullable=False),
+    sa.Column('type', sa.String(length=512), nullable=False),
+    sa.Column('payload', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('received_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('processed_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('process_error', sa.String(length=512), nullable=True),
+    sa.Column('process_attempts', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('stripe_event_id')
     )
     op.create_table('organization_entitlement_overrides',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -86,5 +100,6 @@ def downgrade() -> None:
     op.drop_table('organization_subscriptions')
     op.drop_table('organization_subscription_metadata')
     op.drop_table('organization_entitlement_overrides')
+    op.drop_table('subscription_stripe_event_logs')
     op.drop_table('subscription_plans')
     # ### end Alembic commands ###

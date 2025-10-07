@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+from stripe import StripeClient
 
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
@@ -16,7 +17,7 @@ from aci.common.schemas.subscription import (
     SubscriptionResult,
     SubscriptionStatusPublic,
 )
-from aci.control_plane import access_control
+from aci.control_plane import access_control, config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     OrganizationNotFound,
@@ -26,6 +27,8 @@ from aci.control_plane.services.subscription import stripe_event_handler, subscr
 
 logger = get_logger(__name__)
 router = APIRouter()
+
+stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
 @router.get(
@@ -133,14 +136,12 @@ async def change_organization_subscription(
         if input.seat_count is None:
             logger.warning("seat count must be provided")
             raise RequestedSubscriptionInvalid("seat count must be provided")
-        if input.success_url is None or input.cancel_url is None:
-            logger.warning("success_url and cancel_url must be provided")
-            raise RequestedSubscriptionInvalid("success_url and cancel_url must be provided")
         if requested_plan.stripe_price_id is None:
             logger.warning("subscription plan not available for self-served subscription")
             raise RequestedSubscriptionInvalid(
                 "subscription plan not available for self-served subscription"
             )
+        requested_seat_count = input.seat_count
 
     # Check if the seat_requested matches the plan's requirement
     # plan.min_seat_for_subscription <= requested_seat <= plan.max_seat_for_subscription
@@ -185,16 +186,11 @@ async def change_organization_subscription(
 
     # Existing: free, Requested: paid (Upgrade from free plan to paid plan)
     if organization.subscription is None:
-        if input.success_url is None or input.cancel_url is None:
-            logger.warning("success_url and cancel_url must be provided")
-            raise RequestedSubscriptionInvalid("success_url and cancel_url must be provided")
         result = subscription_service.create_stripe_subscription(
             db_session=context.db_session,
             organization=organization,
             plan=requested_plan,
             seat_count=requested_seat_count,
-            success_url=str(input.success_url),
-            cancel_url=str(input.cancel_url),
         )
 
     # Existing: paid, Requested: free (Downgrade from paid stripe plan to non-stripe plan)
@@ -219,23 +215,19 @@ async def change_organization_subscription(
     "/stripe/webhook",
     response_model=None,
     status_code=status.HTTP_200_OK,
+    description="Stripe webhook for `customer.subscription` events.",
 )
 async def stripe_webhook(
     db_session: Annotated[Session, Depends(deps.yield_db_session)], body: StripeWebhookEvent
 ) -> None:
-    stripe_event_data = body.data.object
-
-    logger.info(f"Stripe webhook received for event {body.type}, status {stripe_event_data.status}")
-
     if not body.type.startswith("customer.subscription."):
         logger.info(f"Unsupported Stripe event type {body.type}. Ignore.")
         return None
 
-    # Pull the subscription from stripe instead of using the payload here because the ordering of
-    # this webhook is not guaranteed.
-    stripe_event_handler.handle_subscription_event(
+    # Pull the event from stripe instead of directly trusting the payload here.
+    stripe_event_handler.handle_stripe_event(
         db_session=db_session,
-        subscription_id=stripe_event_data.id,
+        event_id=body.id,
     )
 
     db_session.commit()
