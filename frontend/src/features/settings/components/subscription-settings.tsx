@@ -306,7 +306,7 @@ export function SubscriptionSettings() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               {freePlan?.display_name || "Free Tier"}
-              <Badge variant="secondary">Current</Badge>
+              {isFreePlan && <Badge variant="secondary">Current</Badge>}
             </CardTitle>
             <CardDescription>Perfect for getting started</CardDescription>
             <div className="text-3xl font-bold">$0</div>
@@ -355,7 +355,7 @@ export function SubscriptionSettings() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               {teamPlan?.display_name || "Team"}
-              <Badge>Popular</Badge>
+              {!isFreePlan ? <Badge variant="secondary">Current</Badge> : <Badge>Popular</Badge>}
             </CardTitle>
             <CardDescription>For growing teams</CardDescription>
             <div className="text-3xl font-bold">
