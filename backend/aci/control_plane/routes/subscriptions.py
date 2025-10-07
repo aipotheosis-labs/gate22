@@ -22,6 +22,7 @@ from aci.control_plane import access_control, config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
     OrganizationNotFound,
+    OrganizationSubscriptionNotFound,
     RequestedSubscriptionInvalid,
 )
 from aci.control_plane.services.subscription import stripe_event_handler, subscription_service
@@ -38,7 +39,7 @@ async def get_plans(
 ) -> list[SubscriptionPlanPublic]:
     return [
         SubscriptionPlanPublic.model_validate(plan, from_attributes=True)
-        for plan in crud.subscriptions.get_all_plans(db_session=context.db_session)
+        for plan in crud.subscriptions.get_all_public_plans(db_session=context.db_session)
     ]
 
 
@@ -98,14 +99,14 @@ async def get_organization_entitlement(
 
 @router.post(
     "/organizations/{organization_id}/change-subscription",
-    response_model=SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult,
+    response_model=SubscriptionCheckout | SubscriptionResult,
     status_code=status.HTTP_200_OK,
 )
 async def change_organization_subscription(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
     input: SubscriptionRequest,
-) -> SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult:
+) -> SubscriptionCheckout | SubscriptionResult:
     """
     Change the stripe subscription for the organization.
     Use this to change seat count or change plan.
@@ -195,6 +196,12 @@ async def change_organization_subscription(
         logger.warning("the requested subscription is same as the existing one")
         raise RequestedSubscriptionInvalid("the requested subscription is same as the existing one")
 
+    if requested_plan.is_free:
+        logger.warning("cannot change subscription to free plan. Use cancel subscription instead.")
+        raise RequestedSubscriptionInvalid(
+            "cannot change subscription to free plan. Use cancel subscription instead."
+        )
+
     # Perform the subscription change
     result: SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult
 
@@ -206,11 +213,6 @@ async def change_organization_subscription(
             plan=requested_plan,
             seat_count=requested_seat_count,
         )
-
-    # Existing: paid, Requested: free (Downgrade from paid stripe plan to non-stripe plan)
-    elif requested_plan.is_free:
-        result = subscription_service.cancel_stripe_subscription(organization.subscription)
-
     # Existing: paid, Requested: paid (Change from one paid plan to another, or change seat count)
     else:
         result = subscription_service.update_stripe_subscription(
@@ -246,3 +248,32 @@ async def stripe_webhook(
 
     db_session.commit()
     return None
+
+
+@router.post("/organizations/{organization_id}/cancel-subscription")
+async def cancel_organization_subscription(
+    context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
+    organization_id: UUID,
+) -> SubscriptionCancellation:
+    access_control.check_act_as_organization_role(
+        context.act_as,
+        requested_organization_id=organization_id,
+        required_role=OrganizationRole.ADMIN,
+        throw_error_if_not_permitted=True,
+    )
+
+    organization = crud.organizations.get_organization_by_id(
+        db_session=context.db_session,
+        organization_id=organization_id,
+    )
+    if organization is None:
+        logger.error(f"Organization {organization_id} not found")
+        raise OrganizationNotFound()
+
+    if organization.subscription is None:
+        logger.warning("organization does not have a subscription")
+        raise OrganizationSubscriptionNotFound("organization does not have a subscription")
+
+    result = subscription_service.cancel_stripe_subscription(organization.subscription)
+    context.db_session.commit()
+    return result
