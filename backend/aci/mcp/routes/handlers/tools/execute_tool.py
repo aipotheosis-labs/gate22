@@ -25,7 +25,7 @@ from aci.common.schemas.mcp_auth import (
     AuthCredentials,
 )
 from aci.common.schemas.mcp_tool import MCPToolMetadata
-from aci.common.schemas.mcp_tool_call_log import MCPToolCallLogData, MCPToolCallStatus
+from aci.common.schemas.mcp_tool_call_log import MCPToolCallLogCreate, MCPToolCallStatus
 from aci.mcp.context import request_id_ctx_var
 from aci.mcp.protocol.streamable_http import streamablehttp_client_fork
 from aci.mcp.routes.jsonrpc import (
@@ -56,7 +56,7 @@ def track_duration(func):  # type: ignore
             # Extract tool_call_log_data from the result tuple
             if result is not None and isinstance(result, tuple) and len(result) == 2:
                 tool_call_log_data = result[1]
-                if isinstance(tool_call_log_data, MCPToolCallLogData):
+                if isinstance(tool_call_log_data, MCPToolCallLogCreate):
                     tool_call_log_data.duration_ms = int((time.perf_counter() - start_time) * 1000)
 
     return wrapper
@@ -92,16 +92,15 @@ async def handle_execute_tool(
     mcp_session: MCPSession,
     mcp_server_bundle: MCPServerBundle,
     jsonrpc_tools_call_request: JSONRPCToolsCallRequest,
-) -> tuple[JSONRPCSuccessResponse | JSONRPCErrorResponse, MCPToolCallLogData]:
+) -> tuple[JSONRPCSuccessResponse | JSONRPCErrorResponse, MCPToolCallLogCreate]:
     # TODO: a better way to populate the tool_call_log_data
-    tool_call_log_data = MCPToolCallLogData(
-        request_id=request_id_ctx_var.get(),
-        session_id=mcp_session.id,
-        bundle_name=mcp_server_bundle.name,
-        bundle_id=mcp_server_bundle.id,
-        via_execute_tool=True,
-        jsonrpc_payload=jsonrpc_tools_call_request.model_dump(),
-    )
+    tool_call_log_data = MCPToolCallLogCreate.model_construct()
+    tool_call_log_data.request_id = request_id_ctx_var.get()
+    tool_call_log_data.session_id = mcp_session.id
+    tool_call_log_data.bundle_name = mcp_server_bundle.name
+    tool_call_log_data.bundle_id = mcp_server_bundle.id
+    tool_call_log_data.via_execute_tool = True
+    tool_call_log_data.jsonrpc_payload = jsonrpc_tools_call_request.model_dump()
     # validate input
     try:
         validated_input = ExecuteToolInputSchema.model_validate(
@@ -116,8 +115,8 @@ async def handle_execute_tool(
         # try to parse the tool name from the arguments even if it's malformed
         tool_name_raw = jsonrpc_tools_call_request.params.arguments.get("tool_name")
         if tool_name_raw is not None:
-            tool_call_log_data.mcp_tool_name = str(tool_name_raw)
-            tool_name = str(tool_name_raw)
+            tool_call_log_data.mcp_tool_name = json.dumps(tool_name_raw)
+            tool_name = json.dumps(tool_name_raw)
         tool_arguments_raw = jsonrpc_tools_call_request.params.arguments.get("tool_arguments")
         if tool_arguments_raw is not None and isinstance(tool_arguments_raw, dict):
             tool_call_log_data.arguments = json.dumps(tool_arguments_raw)

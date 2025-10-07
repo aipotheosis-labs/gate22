@@ -150,19 +150,20 @@ async def test_tool_call_log_data(
     )
     mock_forward_tool_call.return_value = mock_forward_tool_call_result
 
-    # Mock jsonrpc_request
-    mock_jsonrpc_request = MagicMock(spec=JSONRPCToolsCallRequest)
-    mock_jsonrpc_request.id = "1"
-    mock_jsonrpc_request.method = "tools/call"
-    mock_jsonrpc_request.params = JSONRPCToolsCallRequest.CallToolRequestParams(
-        name="EXECUTE_TOOL",
-        arguments={
-            "tool_name": tool_name,
-            "tool_arguments": tool_arguments,
-        },
+    # Create actual jsonrpc_request object because we need to use model_dump() later
+    mock_jsonrpc_request = JSONRPCToolsCallRequest(
+        id="1",
+        method="tools/call",
+        params=JSONRPCToolsCallRequest.CallToolRequestParams(
+            name="EXECUTE_TOOL",
+            arguments={
+                "tool_name": tool_name,
+                "tool_arguments": tool_arguments,
+            },
+        ),
     )
 
-    response, tool_call_log_data = await handle_execute_tool(
+    response, tool_call_log_create = await handle_execute_tool(
         db_session,
         mock_mcp_session,
         mock_mcp_server_bundle,
@@ -172,18 +173,25 @@ async def test_tool_call_log_data(
     # Verify success response
     assert isinstance(response, JSONRPCSuccessResponse)
 
-    assert tool_call_log_data.request_id == "test-request-id"
-    assert tool_call_log_data.session_id == MOCK_MCP_SESSION_UUID
-    assert tool_call_log_data.bundle_name == "mock_mcp_server_bundle"
-    assert tool_call_log_data.bundle_id == MOCK_MCP_SERVER_BUNDLE_UUID
-    assert tool_call_log_data.via_execute_tool is True
-    assert tool_call_log_data.jsonrpc_payload == mock_jsonrpc_request.model_dump()
-    assert tool_call_log_data.mcp_server_name == "MOCK"
-    assert tool_call_log_data.mcp_tool_name == tool_name
-    assert tool_call_log_data.mcp_tool_id == MOCK_MCP_TOOL_UUID
-    assert tool_call_log_data.mcp_server_configuration_name == "mock_mcp_server_configuration"
-    assert tool_call_log_data.mcp_server_configuration_id == MOCK_MCP_SERVER_CONFIGURATION_UUID
-    assert json.loads(tool_call_log_data.arguments) == tool_arguments
-    assert tool_call_log_data.result == mock_forward_tool_call_result.model_dump(exclude_none=True)
-    assert tool_call_log_data.status == MCPToolCallStatus.SUCCESS
-    assert tool_call_log_data.duration_ms >= 0
+    try:
+        tool_call_log_create.model_validate(tool_call_log_create.model_dump())
+    except Exception as e:
+        pytest.fail(f"Error validating tool call log create: {e}")
+
+    assert tool_call_log_create.request_id == "test-request-id"
+    assert tool_call_log_create.session_id == MOCK_MCP_SESSION_UUID
+    assert tool_call_log_create.bundle_name == "mock_mcp_server_bundle"
+    assert tool_call_log_create.bundle_id == MOCK_MCP_SERVER_BUNDLE_UUID
+    assert tool_call_log_create.via_execute_tool is True
+    assert tool_call_log_create.jsonrpc_payload == mock_jsonrpc_request.model_dump()
+    assert tool_call_log_create.mcp_server_name == "MOCK"
+    assert tool_call_log_create.mcp_tool_name == tool_name
+    assert tool_call_log_create.mcp_tool_id == MOCK_MCP_TOOL_UUID
+    assert tool_call_log_create.mcp_server_configuration_name == "mock_mcp_server_configuration"
+    assert tool_call_log_create.mcp_server_configuration_id == MOCK_MCP_SERVER_CONFIGURATION_UUID
+    assert json.loads(tool_call_log_create.arguments) == tool_arguments
+    assert tool_call_log_create.result == mock_forward_tool_call_result.model_dump(
+        exclude_none=True
+    )
+    assert tool_call_log_create.status == MCPToolCallStatus.SUCCESS
+    assert tool_call_log_create.duration_ms >= 0
