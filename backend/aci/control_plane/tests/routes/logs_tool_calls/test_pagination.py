@@ -1,10 +1,10 @@
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from aci.common.db.sql_models import MCPToolCallLog
+from aci.common.db.sql_models import MCPToolCallLog, User
 from aci.common.enums import MCPToolCallStatus
 from aci.common.schemas.mcp_tool_call_log import MCPToolCallLogCursor, MCPToolCallLogResponse
 from aci.control_plane import config
@@ -14,11 +14,14 @@ def create_test_log(
     db_session: Session,
     request_id: str,
     started_at: datetime,
+    organization_id: UUID,
+    user_id: UUID,
     mcp_tool_name: str | None = None,
 ) -> MCPToolCallLog:
     """Helper to create a test log directly in the database."""
     log = MCPToolCallLog(
-        user_id=uuid4(),
+        organization_id=organization_id,
+        user_id=user_id,
         request_id=request_id,
         session_id=uuid4(),
         bundle_name="test_bundle",
@@ -63,7 +66,8 @@ def test_empty(
 def test_basic(
     test_client: TestClient,
     db_session: Session,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test basic pagination with multiple logs."""
     # Create 5 logs with different timestamps (most recent first in the list)
@@ -75,6 +79,8 @@ def test_basic(
             db_session=db_session,
             request_id=f"req_{i}",
             started_at=base_time + timedelta(seconds=i),
+            organization_id=dummy_member.organization_memberships[0].organization_id,
+            user_id=dummy_member.id,
         )
         logs.append(log)
 
@@ -83,7 +89,7 @@ def test_basic(
     # Request first page with limit=2
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=2",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -96,7 +102,7 @@ def test_basic(
     # Request second page using cursor
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=2&cursor={data['next_cursor']}",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -109,7 +115,7 @@ def test_basic(
     # Request third page - should have 1 item and no next cursor
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=2&cursor={data['next_cursor']}",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -122,7 +128,8 @@ def test_basic(
 def test_same_timestamp(
     test_client: TestClient,
     db_session: Session,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test pagination with logs that have the same timestamp.
 
@@ -138,6 +145,8 @@ def test_same_timestamp(
             db_session=db_session,
             request_id=f"req_{i}",
             started_at=same_time,
+            organization_id=dummy_member.organization_memberships[0].organization_id,
+            user_id=dummy_member.id,
         )
         logs.append(log)
 
@@ -149,7 +158,7 @@ def test_same_timestamp(
     # Request first page with limit=2
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=2",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -164,7 +173,7 @@ def test_same_timestamp(
     # Request second page - should have the third log
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=2&cursor={data['next_cursor']}",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -180,7 +189,8 @@ def test_same_timestamp(
 def test_filter_by_tool_name(
     test_client: TestClient,
     db_session: Session,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test filtering logs by tool name."""
     same_time = datetime.now(UTC)
@@ -192,6 +202,8 @@ def test_filter_by_tool_name(
             request_id=f"req_{i}",
             mcp_tool_name=f"TOOL_{i}",
             started_at=same_time,
+            organization_id=dummy_member.organization_memberships[0].organization_id,
+            user_id=dummy_member.id,
         )
 
     db_session.commit()
@@ -199,7 +211,7 @@ def test_filter_by_tool_name(
     # Filter by TOOL_0
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?mcp_tool_name=TOOL_0",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -212,7 +224,8 @@ def test_filter_by_tool_name(
 def test_filter_with_pagination(
     test_client: TestClient,
     db_session: Session,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test filtering with pagination."""
     base_time = datetime.now(UTC)
@@ -224,6 +237,8 @@ def test_filter_with_pagination(
             request_id=f"req_a_{i}",
             mcp_tool_name="TOOL_A",
             started_at=base_time + timedelta(seconds=i),
+            organization_id=dummy_member.organization_memberships[0].organization_id,
+            user_id=dummy_member.id,
         )
 
     # Create 2 logs with TOOL_B
@@ -233,6 +248,8 @@ def test_filter_with_pagination(
             request_id=f"req_b_{i}",
             mcp_tool_name="TOOL_B",
             started_at=base_time + timedelta(seconds=i),
+            organization_id=dummy_member.organization_memberships[0].organization_id,
+            user_id=dummy_member.id,
         )
 
     db_session.commit()
@@ -240,7 +257,7 @@ def test_filter_with_pagination(
     # Filter by TOOL_A with pagination
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?mcp_tool_name=TOOL_A&limit=2",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -252,7 +269,7 @@ def test_filter_with_pagination(
     # Get remaining page
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?mcp_tool_name=TOOL_A&limit=3&cursor={data['next_cursor']}",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -264,12 +281,13 @@ def test_filter_with_pagination(
 
 def test_invalid_cursor(
     test_client: TestClient,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test that invalid cursor returns 400."""
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?cursor=invalid_cursor",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 400
     assert "Invalid cursor" in response.json()["detail"]
@@ -278,7 +296,8 @@ def test_invalid_cursor(
 def test_response_structure(
     test_client: TestClient,
     db_session: Session,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test the response structure contains all expected fields."""
     log = create_test_log(
@@ -286,12 +305,14 @@ def test_response_structure(
         request_id="test_req",
         started_at=datetime.now(UTC),
         mcp_tool_name="test_tool",
+        organization_id=dummy_member.organization_memberships[0].organization_id,
+        user_id=dummy_member.id,
     )
     db_session.commit()
 
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -308,7 +329,8 @@ def test_response_structure(
 def test_cursor_encoding_decoding(
     test_client: TestClient,
     db_session: Session,
-    dummy_access_token_admin: str,
+    dummy_member: User,
+    dummy_access_token_member: str,
 ) -> None:
     """Test that cursors are properly encoded and decoded."""
     base_time = datetime.now(UTC)
@@ -318,18 +340,22 @@ def test_cursor_encoding_decoding(
         db_session=db_session,
         request_id="req_1",
         started_at=base_time,
+        organization_id=dummy_member.organization_memberships[0].organization_id,
+        user_id=dummy_member.id,
     )
     log2 = create_test_log(
         db_session=db_session,
         request_id="req_2",
         started_at=base_time + timedelta(seconds=1),
+        organization_id=dummy_member.organization_memberships[0].organization_id,
+        user_id=dummy_member.id,
     )
     db_session.commit()
 
     # Get first page
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=1",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -343,7 +369,7 @@ def test_cursor_encoding_decoding(
     # Verify the cursor can be used to fetch next page
     response = test_client.get(
         f"{config.ROUTER_PREFIX_LOGS}/tool-calls?limit=1&cursor={cursor}",
-        headers={"Authorization": f"Bearer {dummy_access_token_admin}"},
+        headers={"Authorization": f"Bearer {dummy_access_token_member}"},
     )
     assert response.status_code == 200
     data = response.json()

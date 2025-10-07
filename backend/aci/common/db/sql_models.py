@@ -677,6 +677,7 @@ class MCPToolCallLog(Base):
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
+    organization_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
     request_id: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     # the session if of MCPSession table

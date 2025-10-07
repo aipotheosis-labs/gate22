@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -16,11 +18,33 @@ def create(db_session: Session, log_create: MCPToolCallLogCreate) -> MCPToolCall
     return log
 
 
-def get(
+def get_by_org(
+    db_session: Session,
+    organization_id: UUID,
+    limit: int,
+    cursor: MCPToolCallLogCursor | None = None,
+    mcp_tool_name: str | None = None,
+) -> tuple[list[MCPToolCallLog], MCPToolCallLog | None]:
+    return _get(db_session, limit, cursor, mcp_tool_name, organization_id=organization_id)
+
+
+def get_by_user(
+    db_session: Session,
+    user_id: UUID,
+    limit: int,
+    cursor: MCPToolCallLogCursor | None = None,
+    mcp_tool_name: str | None = None,
+) -> tuple[list[MCPToolCallLog], MCPToolCallLog | None]:
+    return _get(db_session, limit, cursor, mcp_tool_name, user_id=user_id)
+
+
+def _get(
     db_session: Session,
     limit: int,
     cursor: MCPToolCallLogCursor | None = None,
     mcp_tool_name: str | None = None,
+    organization_id: UUID | None = None,
+    user_id: UUID | None = None,
 ) -> tuple[list[MCPToolCallLog], MCPToolCallLog | None]:
     """
     Get paginated tool call logs with cursor-based pagination.
@@ -34,6 +58,10 @@ def get(
     statement = select(MCPToolCallLog)
 
     # Filters
+    if organization_id:
+        statement = statement.where(MCPToolCallLog.organization_id == organization_id)
+    if user_id:
+        statement = statement.where(MCPToolCallLog.user_id == user_id)
     if mcp_tool_name:
         statement = statement.where(MCPToolCallLog.mcp_tool_name == mcp_tool_name)
 
