@@ -1,24 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from pydantic import BaseModel
-
 from aci.common.enums import MCPToolCallStatus
-
-
-class MCPToolCallLogCreate(BaseModel):
-    request_id: str
-    session_id: UUID
-    bundle_name: str
-    mcp_server_name: str
-    mcp_tool_name: str
-    arguments: dict
-    result: dict
-    status: MCPToolCallStatus
-    via_execute_tool: bool
-    bundle_id: UUID
-    mcp_server_id: UUID
-    mcp_tool_id: UUID
 
 
 @dataclass
@@ -46,10 +29,3 @@ class MCPToolCallLogData:
     result: dict | None = None
     status: MCPToolCallStatus | None = None
     duration_ms: int | None = None
-
-    def to_log_dict(self) -> dict:
-        """
-        Convert context to dictionary suitable for MCPToolCallLogCreate.
-        Uses available data even if execution failed partway through.
-        """
-        return {}

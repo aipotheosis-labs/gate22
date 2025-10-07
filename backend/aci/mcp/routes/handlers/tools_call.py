@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerBundle, MCPSession
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.mcp_tool_call_log import MCPToolCallLogData
@@ -50,8 +51,8 @@ def _create_tool_call_log(
     tool_call_log_data: MCPToolCallLogData,
 ) -> None:
     pass
-    # try:
-    #     # crud.mcp_tool_call_logs.create_mcp_tool_call_log(db_session, tool_call_log_data)
-    # except Exception as e:
-    #     logger.exception(f"Error creating tool call log: {e}")
-    #     # don't raise error here because we don't want to fail the tool call
+    try:
+        crud.mcp_tool_call_logs.create_log(db_session, tool_call_log_data)
+    except Exception as e:
+        logger.exception(f"Error creating tool call log: {e}")
+        # don't raise error here because we don't want to fail the tool call
