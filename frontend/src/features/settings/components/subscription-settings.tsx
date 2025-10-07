@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useSubscriptionStatus } from "../hooks/use-subscription-status";
+import { usePlans } from "../hooks/use-plans";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChangeSubscriptionDialog } from "./change-subscription-dialog";
+import { PLAN_CODES } from "../types/subscription.types";
 
 const faqItems = [
   {
@@ -62,14 +66,21 @@ const faqItems = [
 
 export function SubscriptionSettings() {
   const { data: subscriptionStatus, isLoading, error } = useSubscriptionStatus();
+  const { data: plans, isLoading: plansLoading, error: plansError } = usePlans();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPlanType, setSelectedPlanType] = useState<"free" | "team">("team");
+
+  // Helper function to get plan by code
+  const getPlanByCode = (code: string) => {
+    return plans?.find((plan) => plan.plan_code === code);
+  };
 
   // Helper function to get plan display name
   const getPlanDisplayName = () => {
     if (!subscriptionStatus?.subscription) return "Free Tier";
     const planCode = subscriptionStatus.subscription.plan_code;
-    if (planCode === "team") return "Team";
-    if (planCode === "enterprise") return "Enterprise";
-    return planCode;
+    const plan = getPlanByCode(planCode);
+    return plan?.display_name || planCode;
   };
 
   // Helper function to format date
@@ -96,7 +107,11 @@ export function SubscriptionSettings() {
     }
   };
 
-  if (isLoading) {
+  // Get plans data
+  const freePlan = getPlanByCode(PLAN_CODES.FREE);
+  const teamPlan = getPlanByCode(PLAN_CODES.TEAM);
+
+  if (isLoading || plansLoading) {
     return (
       <div className="space-y-8">
         <div>
@@ -118,7 +133,7 @@ export function SubscriptionSettings() {
     );
   }
 
-  if (error) {
+  if (error || plansError) {
     return (
       <div className="space-y-8">
         <div>
@@ -164,7 +179,16 @@ export function SubscriptionSettings() {
                   : `You are subscribed to the ${planName} plan.`}
               </CardDescription>
             </div>
-            {isFreePlan && <Button>Upgrade Plan</Button>}
+            {isFreePlan && (
+              <Button
+                onClick={() => {
+                  setSelectedPlanType("team");
+                  setDialogOpen(true);
+                }}
+              >
+                Upgrade Plan
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -238,13 +262,14 @@ export function SubscriptionSettings() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
                   <div className="flex flex-col gap-3">
-                    <div className="w-fit rounded-full bg-blue-500/10 p-2">
-                      <Users className="h-5 w-5 text-blue-600" />
+                    <div className="w-fit rounded-full bg-gray-500/10 p-2">
+                      <Users className="h-5 w-5 text-gray-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Developer Seats</p>
+                      <p className="text-sm font-medium text-muted-foreground">Seats</p>
                       <p className="mt-1 text-2xl font-bold">
-                        {subscriptionStatus.entitlement.seat_count === 0
+                        {subscriptionStatus.entitlement.seat_count === null ||
+                        subscriptionStatus.entitlement.seat_count === 0
                           ? "Unlimited"
                           : subscriptionStatus.entitlement.seat_count}
                       </p>
@@ -254,15 +279,16 @@ export function SubscriptionSettings() {
 
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
                   <div className="flex flex-col gap-3">
-                    <div className="w-fit rounded-full bg-green-500/10 p-2">
-                      <Database className="h-5 w-5 text-green-600" />
+                    <div className="w-fit rounded-full bg-gray-500/10 p-2">
+                      <Database className="h-5 w-5 text-gray-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
                         Custom MCP Servers
                       </p>
                       <p className="mt-1 text-2xl font-bold">
-                        {subscriptionStatus.entitlement.max_custom_mcp_servers === 0
+                        {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
+                        subscriptionStatus.entitlement.max_custom_mcp_servers === 0
                           ? "Unlimited"
                           : subscriptionStatus.entitlement.max_custom_mcp_servers}
                       </p>
@@ -272,16 +298,15 @@ export function SubscriptionSettings() {
 
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
                   <div className="flex flex-col gap-3">
-                    <div className="w-fit rounded-full bg-purple-500/10 p-2">
-                      <Clock className="h-5 w-5 text-purple-600" />
+                    <div className="w-fit rounded-full bg-gray-500/10 p-2">
+                      <Clock className="h-5 w-5 text-gray-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Log Retention</p>
                       <p className="mt-1 text-2xl font-bold">
-                        {subscriptionStatus.entitlement.log_retention_days}{" "}
-                        <span className="text-base font-normal text-muted-foreground">
-                          {subscriptionStatus.entitlement.log_retention_days === 1 ? "day" : "days"}
-                        </span>
+                        {subscriptionStatus.entitlement.log_retention_days === null
+                          ? "Unlimited"
+                          : `${subscriptionStatus.entitlement.log_retention_days} ${subscriptionStatus.entitlement.log_retention_days === 1 ? "day" : "days"}`}
                       </p>
                     </div>
                   </div>
@@ -297,7 +322,7 @@ export function SubscriptionSettings() {
         <Card className="relative flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              Free Tier
+              {freePlan?.display_name || "Free Tier"}
               <Badge variant="secondary">Current</Badge>
             </CardTitle>
             <CardDescription>Perfect for getting started</CardDescription>
@@ -309,18 +334,36 @@ export function SubscriptionSettings() {
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
                 <span>1 Control Plane</span>
               </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>Max 1 Custom MCP</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>Max 2 Seats</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>3 days Log Retention</span>
-              </li>
+              {freePlan && (
+                <>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>
+                      {freePlan.max_custom_mcp_servers === null ||
+                      freePlan.max_custom_mcp_servers === 0
+                        ? "Unlimited"
+                        : `Max ${freePlan.max_custom_mcp_servers}`}{" "}
+                      Custom MCP
+                      {freePlan.max_custom_mcp_servers !== 1 &&
+                      freePlan.max_custom_mcp_servers !== null
+                        ? "s"
+                        : "s"}
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>{freePlan.max_seats_for_subscription || "Unlimited"} Seats</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>
+                      {freePlan.log_retention_days === null
+                        ? "Unlimited Log Retention"
+                        : `${freePlan.log_retention_days} day${freePlan.log_retention_days !== 1 ? "s" : ""} Log Retention`}
+                    </span>
+                  </li>
+                </>
+              )}
             </ul>
           </CardContent>
         </Card>
@@ -328,7 +371,7 @@ export function SubscriptionSettings() {
         <Card className="flex flex-col border-primary">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              Team
+              {teamPlan?.display_name || "Team"}
               <Badge>Popular</Badge>
             </CardTitle>
             <CardDescription>For growing teams</CardDescription>
@@ -343,20 +386,53 @@ export function SubscriptionSettings() {
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
                 <span>1 Control Plane</span>
               </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>Max 5 Custom MCPs</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>Unlimited Seats</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>1 week Log Retention</span>
-              </li>
+              {teamPlan && (
+                <>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>
+                      {teamPlan.max_custom_mcp_servers === null ||
+                      teamPlan.max_custom_mcp_servers === 0
+                        ? "Unlimited"
+                        : `Max ${teamPlan.max_custom_mcp_servers}`}{" "}
+                      Custom MCP
+                      {teamPlan.max_custom_mcp_servers !== 1 &&
+                      teamPlan.max_custom_mcp_servers !== null
+                        ? "s"
+                        : "s"}
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>
+                      {teamPlan.min_seats_for_subscription === teamPlan.max_seats_for_subscription
+                        ? `${teamPlan.min_seats_for_subscription} Seat${teamPlan.min_seats_for_subscription !== 1 ? "s" : ""}`
+                        : teamPlan.max_seats_for_subscription === null ||
+                            teamPlan.max_seats_for_subscription === 0
+                          ? `${teamPlan.min_seats_for_subscription} to Unlimited Seats`
+                          : `${teamPlan.min_seats_for_subscription} to ${teamPlan.max_seats_for_subscription} Seats`}
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>
+                      {teamPlan.log_retention_days === null
+                        ? "Unlimited Log Retention"
+                        : `${teamPlan.log_retention_days} day${teamPlan.log_retention_days !== 1 ? "s" : ""} Log Retention`}
+                    </span>
+                  </li>
+                </>
+              )}
             </ul>
-            <Button className="w-full">Upgrade to Team</Button>
+            <Button
+              className="w-full"
+              onClick={() => {
+                setSelectedPlanType("team");
+                setDialogOpen(true);
+              }}
+            >
+              Upgrade to Team
+            </Button>
           </CardContent>
         </Card>
 
@@ -378,14 +454,21 @@ export function SubscriptionSettings() {
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span>Custom Developer Seats</span>
+                <span>Custom Seats</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
                 <span>Custom Log Retention</span>
               </li>
             </ul>
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                window.location.href =
+                  "mailto:support@aipolabs.xyz?subject=Gate22 Enterprise Plan Inquiry";
+              }}
+            >
               Contact Sales
             </Button>
           </CardContent>
@@ -408,6 +491,14 @@ export function SubscriptionSettings() {
           </Accordion>
         </CardContent>
       </Card>
+
+      {/* Change Subscription Dialog */}
+      <ChangeSubscriptionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        planType={selectedPlanType}
+        currentPlanCode={subscriptionStatus?.subscription?.plan_code}
+      />
     </div>
   );
 }
