@@ -100,6 +100,7 @@ async def handle_execute_tool(
 ) -> tuple[JSONRPCSuccessResponse | JSONRPCErrorResponse, MCPToolCallLogCreate]:
     # TODO: a better way to populate the tool_call_log_data
     tool_call_log_data = MCPToolCallLogCreate.model_construct()
+    tool_call_log_data.organization_id = mcp_server_bundle.organization_id
     tool_call_log_data.user_id = mcp_server_bundle.user_id
     tool_call_log_data.request_id = request_id_ctx_var.get()
     tool_call_log_data.session_id = mcp_session.id

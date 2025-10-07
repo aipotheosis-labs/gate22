@@ -4,9 +4,14 @@ from uuid import UUID, uuid4
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from aci.common.db import crud
 from aci.common.db.sql_models import MCPToolCallLog, User
 from aci.common.enums import MCPToolCallStatus
-from aci.common.schemas.mcp_tool_call_log import MCPToolCallLogCursor, MCPToolCallLogResponse
+from aci.common.schemas.mcp_tool_call_log import (
+    MCPToolCallLogCreate,
+    MCPToolCallLogCursor,
+    MCPToolCallLogResponse,
+)
 from aci.control_plane import config
 
 
@@ -19,7 +24,7 @@ def create_test_log(
     mcp_tool_name: str | None = None,
 ) -> MCPToolCallLog:
     """Helper to create a test log directly in the database."""
-    log = MCPToolCallLog(
+    log_create = MCPToolCallLogCreate(
         organization_id=organization_id,
         user_id=user_id,
         request_id=request_id,
@@ -41,11 +46,7 @@ def create_test_log(
         ended_at=started_at + timedelta(seconds=1),
         duration_ms=1000,
     )
-    db_session.add(log)
-    db_session.flush()
-    db_session.refresh(log)
-
-    return log
+    return crud.mcp_tool_call_logs.create(db_session, log_create)
 
 
 def test_empty(

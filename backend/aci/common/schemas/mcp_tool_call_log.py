@@ -9,6 +9,7 @@ from aci.common.enums import MCPToolCallStatus
 
 
 class MCPToolCallLogCreate(BaseModel):
+    organization_id: UUID
     user_id: UUID
     request_id: str
     session_id: UUID
@@ -35,6 +36,7 @@ class MCPToolCallLogCreate(BaseModel):
 
 class MCPToolCallLogResponse(BaseModel):
     id: UUID
+    organization_id: UUID
     user_id: UUID
     request_id: str
     session_id: UUID

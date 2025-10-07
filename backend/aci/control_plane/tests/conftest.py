@@ -128,6 +128,23 @@ def dummy_access_token_member(dummy_member: User) -> str:
 
 
 @pytest.fixture(scope="function")
+def dummy_access_token_member_2(dummy_member_2: User) -> str:
+    """
+    Access token of `dummy_user` with `member` role in `dummy_organization`
+    """
+    org_membership = dummy_member_2.organization_memberships[0]
+    return utils.sign_token(
+        user=dummy_member_2,
+        act_as=ActAsInfo(
+            organization_id=org_membership.organization_id, role=OrganizationRole.MEMBER
+        ),
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
+    )
+
+
+@pytest.fixture(scope="function")
 def dummy_access_token_no_orgs(dummy_user_without_org: User) -> str:
     """
     Access token of a user without any organization

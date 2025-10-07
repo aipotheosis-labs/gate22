@@ -29,6 +29,8 @@ MOCK_MCP_SERVER_UUID = uuid4()
 MOCK_MCP_SERVER_CONFIGURATION_UUID = uuid4()
 MOCK_MCP_SESSION_UUID = uuid4()
 MOCK_MCP_SERVER_BUNDLE_UUID = uuid4()
+MOCK_USER_UUID = uuid4()
+MOCK_ORGANIZATION_UUID = uuid4()
 
 
 # Fixtures
@@ -76,6 +78,8 @@ def mock_mcp_server_bundle() -> MagicMock:
     """Fixture for mock MCP server bundle."""
     bundle = MagicMock(spec=MCPServerBundle)
     bundle.id = MOCK_MCP_SERVER_BUNDLE_UUID
+    bundle.organization_id = MOCK_ORGANIZATION_UUID
+    bundle.user_id = MOCK_USER_UUID
     bundle.name = "mock_mcp_server_bundle"
     bundle.mcp_server_configuration_ids = [MOCK_MCP_SERVER_CONFIGURATION_UUID]
     return bundle
@@ -178,6 +182,8 @@ async def test_tool_call_log_data(
     except Exception as e:
         pytest.fail(f"Error validating tool call log create: {e}")
 
+    assert tool_call_log_create.organization_id == MOCK_ORGANIZATION_UUID
+    assert tool_call_log_create.user_id == MOCK_USER_UUID
     assert tool_call_log_create.request_id == "test-request-id"
     assert tool_call_log_create.session_id == MOCK_MCP_SESSION_UUID
     assert tool_call_log_create.bundle_name == "mock_mcp_server_bundle"
