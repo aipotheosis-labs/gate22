@@ -24,3 +24,26 @@ export interface SubscriptionStatus {
   subscription: Subscription | null;
   entitlement: Entitlement;
 }
+
+export interface ChangeSubscriptionRequest {
+  plan_code: string;
+  seat_count?: number;
+}
+
+export interface ChangeSubscriptionResponse {
+  url?: string;
+}
+
+export const PLAN_CODES = {
+  FREE: "GATE22_FREE_PLAN",
+  TEAM: "GATE22_TEAM_PLAN",
+} as const;
+
+export interface Plan {
+  plan_code: string;
+  display_name: string;
+  min_seats_for_subscription?: number;
+  max_seats_for_subscription?: number;
+  max_custom_mcp_servers?: number;
+  log_retention_days?: number;
+}
