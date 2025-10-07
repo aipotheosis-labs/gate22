@@ -21,7 +21,7 @@ async def get_tool_call_logs(
 ) -> CursorPaginationResponse[MCPToolCallLogResponse]:
     """
     Get paginated tool call logs with cursor-based pagination.
-    Results are ordered by created_at DESC (most recent first).
+    Results are ordered by started_at DESC (most recent first).
     """
     cursor = None
     if pagination.cursor is not None:

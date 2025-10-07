@@ -122,12 +122,12 @@ async def handle_execute_tool(
         # try to parse the tool name from the arguments even if it's malformed
         tool_name_raw = jsonrpc_tools_call_request.params.arguments.get("tool_name")
         if tool_name_raw is not None:
-            tool_call_log_data.mcp_tool_name = json.dumps(tool_name_raw)
-            tool_name = json.dumps(tool_name_raw)
+            tool_call_log_data.mcp_tool_name = (
+                tool_name_raw if isinstance(tool_name_raw, str) else json.dumps(tool_name_raw)
+            )
         tool_arguments_raw = jsonrpc_tools_call_request.params.arguments.get("tool_arguments")
-        if tool_arguments_raw is not None and isinstance(tool_arguments_raw, dict):
+        if tool_arguments_raw is not None:
             tool_call_log_data.arguments = json.dumps(tool_arguments_raw)
-            tool_arguments = tool_arguments_raw
 
         errorData = JSONRPCErrorResponse.ErrorData(
             code=JSONRPCErrorCode.INVALID_METHOD_PARAMS,

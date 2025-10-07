@@ -96,5 +96,5 @@ class Environment(StrEnum):
 
 
 class MCPToolCallStatus(StrEnum):
-    SUCCESS = "success"
-    ERROR = "error"
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"
