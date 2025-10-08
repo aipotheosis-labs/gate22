@@ -1,8 +1,8 @@
 """adding subscription tables
 
-Revision ID: 164837712922
+Revision ID: c5478aa084be
 Revises: d84f9f8eabb2
-Create Date: 2025-10-08 15:55:59.516216+00:00
+Create Date: 2025-10-08 16:19:28.556768+00:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '164837712922'
+revision: str = 'c5478aa084be'
 down_revision: Union[str, None] = 'd84f9f8eabb2'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -35,7 +35,8 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('plan_code')
+    sa.UniqueConstraint('plan_code'),
+    sa.UniqueConstraint('stripe_price_id')
     )
     op.create_table('subscription_stripe_event_logs',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -61,7 +62,8 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['organization_id'], ['organizations.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('organization_id')
     )
     op.create_table('organization_subscription_metadata',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -69,7 +71,8 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['id'], ['organizations.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('stripe_customer_id')
     )
     op.create_table('organization_subscriptions',
     sa.Column('id', sa.UUID(), nullable=False),

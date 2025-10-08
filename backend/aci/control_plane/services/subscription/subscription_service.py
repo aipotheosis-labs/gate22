@@ -90,14 +90,16 @@ def compute_effective_entitlement(
             log_retention_days=plan.log_retention_days,
         )
     return Entitlement(
-        seat_count=(override.seat_count if override.seat_count else seat_count),
+        seat_count=(override.seat_count if override.seat_count is not None else seat_count),
         max_custom_mcp_servers=(
             override.max_custom_mcp_servers
-            if override.max_custom_mcp_servers
+            if override.max_custom_mcp_servers is not None
             else plan.max_custom_mcp_servers
         ),
         log_retention_days=(
-            override.log_retention_days if override.log_retention_days else plan.log_retention_days
+            override.log_retention_days
+            if override.log_retention_days is not None
+            else plan.log_retention_days
         ),
     )
 
