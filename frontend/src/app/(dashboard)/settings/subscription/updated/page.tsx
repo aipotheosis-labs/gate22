@@ -1,22 +1,33 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, CreditCard, Users } from "lucide-react";
+import { CheckCircle2, CreditCard, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useMetaInfo } from "@/components/context/metainfo";
+import { QUERY_KEYS } from "@/features/settings/constants";
 
-export default function SubscriptionSuccessPage() {
-  const searchParams = useSearchParams();
-
-  // Get session_id from URL params (Stripe provides this)
-  const sessionId = searchParams.get("session_id");
+export default function SubscriptionUpdatedPage() {
+  const queryClient = useQueryClient();
+  const { activeOrg } = useMetaInfo();
 
   useEffect(() => {
-    // Optional: You could validate the session_id with your backend here
-    // or trigger a refresh of subscription status
-  }, [sessionId]);
+    if (activeOrg?.orgId) {
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.SUBSCRIPTION_STATUS(activeOrg.orgId),
+      });
+    }
+  }, [queryClient, activeOrg?.orgId]);
+
+  const getTitle = () => {
+    return "Subscription Updated Successfully!";
+  };
+
+  const getDescription = () => {
+    return "Your subscription changes have been applied";
+  };
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
@@ -26,10 +37,8 @@ export default function SubscriptionSuccessPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle2 className="h-8 w-8 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-green-600">Payment Successful!</h1>
-          <p className="mt-2 text-lg text-muted-foreground">
-            Thank you for upgrading your subscription
-          </p>
+          <h1 className="text-3xl font-bold text-green-600">{getTitle()}</h1>
+          <p className="mt-2 text-lg text-muted-foreground">{getDescription()}</p>
         </div>
 
         {/* Success Details Card */}
@@ -37,24 +46,31 @@ export default function SubscriptionSuccessPage() {
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Subscription Activated
+              Changes Applied
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* What's Next Section */}
+            {/* What's Changed Section */}
             <div className="rounded-lg bg-muted/50 p-4">
               <h3 className="mb-3 flex items-center gap-2 font-semibold">
-                <Users className="h-4 w-4" />
-                What&apos;s Next?
+                <TrendingUp className="h-4 w-4" />
+                What&apos;s Changed?
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-600" />
-                  <span>Your new subscription details are now effective and ready to use</span>
+                  <span>Your subscription changes are now effective</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-600" />
-                  <span>You can manage your subscription anytime in settings</span>
+                  <span>
+                    Price differences will be charged pro-rated by Stripe. Credit balances will be
+                    applied to your next invoice if any.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-600" />
+                  <span>Your next billing date remains unchanged.</span>
                 </li>
               </ul>
             </div>
@@ -65,7 +81,7 @@ export default function SubscriptionSuccessPage() {
                 <Link href="/settings/subscription">View Subscription Details</Link>
               </Button>
               <Button variant="outline" asChild className="flex-1">
-                <Link href="/mcp-servers">Explore MCP Servers</Link>
+                <Link href="/settings/members">Manage Organization Members</Link>
               </Button>
             </div>
           </CardContent>

@@ -1,13 +1,13 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { subscriptionApi } from "../api/subscription";
 import { ChangeSubscriptionRequest } from "../types/subscription.types";
-import { QUERY_KEYS } from "../constants";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function useChangeSubscription() {
-  const queryClient = useQueryClient();
   const { activeOrg, accessToken } = useMetaInfo();
+  const router = useRouter();
 
   const changeSubscriptionMutation = useMutation({
     mutationFn: (data: ChangeSubscriptionRequest) => {
@@ -21,11 +21,9 @@ export function useChangeSubscription() {
         // Redirect to Stripe checkout
         window.location.href = response.url;
       } else {
-        // Refresh subscription status
-        queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.SUBSCRIPTION_STATUS(activeOrg?.orgId || ""),
-        });
-        toast.success("Subscription updated successfully");
+        // Redirect to subscription updated page
+        // Note: Data invalidation is handled by the updated page itself
+        router.push("/settings/subscription/updated");
       }
     },
     onError: (error) => {
