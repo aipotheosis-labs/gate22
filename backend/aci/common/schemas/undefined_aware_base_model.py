@@ -54,7 +54,7 @@ class UndefinedAwareBaseModel(BaseModel):
                         "accidentally include unset fields."
                     )
                 case BehaviorOnDumpWithoutExcludeUnset.ERROR:
-                    raise ValueError(
+                    raise SyntaxError(
                         "model_dump is called without providing `exclude_unset` args. This may "
                         "accidentally include unset fields."
                     )
