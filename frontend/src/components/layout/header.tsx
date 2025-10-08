@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 // import { GoBell } from "react-icons/go";
-import { BsQuestionCircle, BsDiscord } from "react-icons/bs";
+import { BsQuestionCircle, BsDiscord, BsBook } from "react-icons/bs";
 import { Separator } from "@/components/ui/separator";
 import { BreadcrumbLinks } from "./BreadcrumbLinks";
 import { usePathname } from "next/navigation";
@@ -55,6 +55,17 @@ export const Header = () => {
             <Button variant="outline" className="h-9 px-2">
               <BsDiscord />
               <span>Discord</span>
+            </Button>
+          </a>
+
+          <a
+            href="https://gate22-docs.aci.dev/introduction/overview"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" className="h-9 px-2">
+              <BsBook />
+              <span>Docs</span>
             </Button>
           </a>
 
