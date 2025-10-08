@@ -1,8 +1,8 @@
 """adding subscription tables
 
-Revision ID: a654db265f82
+Revision ID: 164837712922
 Revises: d84f9f8eabb2
-Create Date: 2025-10-08 15:48:31.335256+00:00
+Create Date: 2025-10-08 15:55:59.516216+00:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'a654db265f82'
+revision: str = '164837712922'
 down_revision: Union[str, None] = 'd84f9f8eabb2'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -88,9 +88,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['organization_id'], ['organizations.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['plan_code'], ['subscription_plans.plan_code'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('organization_id', name='uc_org_plan'),
-    sa.UniqueConstraint('stripe_subscription_id'),
-    sa.UniqueConstraint('stripe_subscription_id', name='uc_stripe_subscription_id')
+    sa.UniqueConstraint('organization_id'),
+    sa.UniqueConstraint('stripe_subscription_id')
     )
     # ### end Alembic commands ###
 

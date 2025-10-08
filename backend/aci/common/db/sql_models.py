@@ -883,7 +883,10 @@ class OrganizationSubscription(Base):
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
     organization_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,  # One organization can have only one active subscription
     )
     plan_code: Mapped[str] = mapped_column(
         String(MAX_STRING_LENGTH),
@@ -895,7 +898,9 @@ class OrganizationSubscription(Base):
         String(MAX_STRING_LENGTH), nullable=False
     )
     stripe_subscription_id: Mapped[str] = mapped_column(
-        String(MAX_STRING_LENGTH), unique=True, nullable=False
+        String(MAX_STRING_LENGTH),
+        unique=True,
+        nullable=False,  # One stripe subscription id can only be used by one organization
     )
     stripe_subscription_item_id: Mapped[str] = mapped_column(
         String(MAX_STRING_LENGTH), nullable=False
@@ -919,12 +924,6 @@ class OrganizationSubscription(Base):
 
     organization: Mapped[Organization] = relationship(back_populates="subscription", init=False)
     plan: Mapped[SubscriptionPlan] = relationship(back_populates="subscriptions", init=False)
-
-    # One organization can have only one subscription
-    __table_args__ = (
-        UniqueConstraint("organization_id", name="uc_org_plan"),
-        UniqueConstraint("stripe_subscription_id", name="uc_stripe_subscription_id"),
-    )
 
 
 class OrganizationEntitlementOverride(Base):
