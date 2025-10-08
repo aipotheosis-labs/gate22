@@ -14,7 +14,7 @@ def setup_logging(
         filters = []
 
     if formatter is None:
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s [%(name)s] %(message)s")
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Set the root logger level to WARNING to reduce noise
     root_logger = logging.getLogger()
