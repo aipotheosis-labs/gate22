@@ -7,7 +7,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/settings/organization");
+    router.replace("/organization-settings");
   }, [router]);
 
   return null;

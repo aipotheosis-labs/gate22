@@ -356,7 +356,7 @@ export default function MCPConfigurationDetailPage() {
                           size="sm"
                           variant="outline"
                           className="h-7 px-2 text-xs"
-                          onClick={() => router.push(`/settings/teams/${team.team_id}`)}
+                          onClick={() => router.push(`/teams/${team.team_id}`)}
                         >
                           View
                         </Button>

@@ -20,7 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line } from "react-icons/ri";
-import { Link2, Settings2, Package } from "lucide-react";
+import { Link2, Settings2, Package, Network, Users2 } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
@@ -58,8 +58,20 @@ export const sidebarItems = [
     icon: Package,
   },
   {
-    title: "Settings",
-    url: "/settings/organization",
+    title: "Members",
+    url: "/members",
+    icon: Users2,
+    adminOnly: true,
+  },
+  {
+    title: "Teams",
+    url: "/teams",
+    icon: Network,
+    adminOnly: true,
+  },
+  {
+    title: "Organization Settings",
+    url: "/organization-settings",
     icon: RiSettings3Line,
     adminOnly: true,
   },
@@ -68,7 +80,7 @@ export const sidebarItems = [
 // Add settings routes to be accessible in header
 export const settingsItem = {
   title: "Settings",
-  url: "/settings/organization",
+  url: "/organization-settings",
   icon: RiSettings3Line,
 };
 
