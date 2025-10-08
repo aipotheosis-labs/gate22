@@ -1,9 +1,9 @@
 import base64
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from aci.common.enums import MCPToolCallStatus
 
@@ -87,3 +87,25 @@ class MCPToolCallLogCursor(BaseModel):
             started_at=datetime.fromisoformat(data["started_at"]),
             id=UUID(data["id"]),
         )
+
+
+class MCPToolCallLogFilters(BaseModel):
+    start_time: datetime | None = Field(
+        default=None, description="Start time to filter by.", examples=["2025-06-14T14:53:40.693Z"]
+    )
+    end_time: datetime | None = Field(
+        default=None, description="End time to filter by.", examples=["2025-06-14T14:53:50.693Z"]
+    )
+    mcp_tool_name: str | None = Field(
+        default=None,
+        description="Search for tool names (case-insensitive partial match)",
+        examples=["TOOL_A"],
+    )
+
+    @field_validator("start_time", "end_time", mode="after")
+    @classmethod
+    def normalize_timezone(cls, value: datetime | None) -> datetime | None:
+        """make sure it's timezone aware if provided value is not"""
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=UTC)
+        return value

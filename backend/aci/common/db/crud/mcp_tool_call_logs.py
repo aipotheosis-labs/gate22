@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import desc, select
@@ -22,20 +23,32 @@ def get_by_org(
     db_session: Session,
     organization_id: UUID,
     limit: int,
+    start_time: datetime,
+    end_time: datetime,
     cursor: MCPToolCallLogCursor | None = None,
     mcp_tool_name: str | None = None,
 ) -> tuple[list[MCPToolCallLog], MCPToolCallLog | None]:
-    return _get(db_session, limit, cursor, mcp_tool_name, organization_id=organization_id)
+    return _get(
+        db_session,
+        limit,
+        cursor,
+        mcp_tool_name,
+        start_time,
+        end_time,
+        organization_id=organization_id,
+    )
 
 
 def get_by_user(
     db_session: Session,
     user_id: UUID,
     limit: int,
+    start_time: datetime,
+    end_time: datetime,
     cursor: MCPToolCallLogCursor | None = None,
     mcp_tool_name: str | None = None,
 ) -> tuple[list[MCPToolCallLog], MCPToolCallLog | None]:
-    return _get(db_session, limit, cursor, mcp_tool_name, user_id=user_id)
+    return _get(db_session, limit, cursor, mcp_tool_name, start_time, end_time, user_id=user_id)
 
 
 def _get(
@@ -43,6 +56,8 @@ def _get(
     limit: int,
     cursor: MCPToolCallLogCursor | None = None,
     mcp_tool_name: str | None = None,
+    start_time: datetime | None = None,
+    end_time: datetime | None = None,
     organization_id: UUID | None = None,
     user_id: UUID | None = None,
 ) -> tuple[list[MCPToolCallLog], MCPToolCallLog | None]:
@@ -54,6 +69,7 @@ def _get(
      - (results, None) if there are no more results
     NOTE: we use started_at instead of created_at because the latter is auto generated
     during insert. Plus we want to sort by the time the tool call arrives not when it's done.
+    NOTE: mcp_tool_name is case insensitive partial match.
     """
     statement = select(MCPToolCallLog)
 
@@ -63,7 +79,13 @@ def _get(
     if user_id:
         statement = statement.where(MCPToolCallLog.user_id == user_id)
     if mcp_tool_name:
-        statement = statement.where(MCPToolCallLog.mcp_tool_name == mcp_tool_name)
+        # Escape LIKE wildcards to treat them as literal characters
+        escaped = mcp_tool_name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        statement = statement.where(MCPToolCallLog.mcp_tool_name.ilike(f"%{escaped}%", escape="\\"))
+    if start_time:
+        statement = statement.where(MCPToolCallLog.started_at >= start_time)
+    if end_time:
+        statement = statement.where(MCPToolCallLog.started_at <= end_time)
 
     # Handle cursor pagination
     if cursor:
