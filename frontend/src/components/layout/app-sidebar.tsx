@@ -20,7 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line } from "react-icons/ri";
-import { Link2, Settings2, Package } from "lucide-react";
+import { Link2, Settings2, Package, ScrollText } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
@@ -56,6 +56,11 @@ export const sidebarItems = [
     title: "MCP Bundles",
     url: `/bundle-mcp`,
     icon: Package,
+  },
+  {
+    title: "Logs",
+    url: `/logs`,
+    icon: ScrollText,
   },
   {
     title: "Settings",
