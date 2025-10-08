@@ -204,8 +204,8 @@ async def change_organization_subscription(
             "cannot change subscription to free plan. Use cancel subscription instead."
         )
 
-    # Perform the subscription change
-    result: SubscriptionCheckout | SubscriptionCancellation | SubscriptionResult
+    # Execute the subscription change
+    result: SubscriptionCheckout | SubscriptionResult
 
     # Existing: free, Requested: paid (Upgrade from free plan to paid plan)
     if organization.subscription is None:
