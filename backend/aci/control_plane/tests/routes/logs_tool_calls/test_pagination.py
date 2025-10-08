@@ -17,7 +17,6 @@ from aci.control_plane import config
 
 def create_test_log(
     db_session: Session,
-    request_id: str,
     started_at: datetime,
     organization_id: UUID,
     user_id: UUID,
@@ -27,7 +26,7 @@ def create_test_log(
     log_create = MCPToolCallLogCreate(
         organization_id=organization_id,
         user_id=user_id,
-        request_id=request_id,
+        request_id=str(uuid4()),
         session_id=uuid4(),
         bundle_name="test_bundle",
         bundle_id=uuid4(),
@@ -74,12 +73,11 @@ def test_basic(
     # Create 5 logs with different timestamps (most recent first in the list)
     base_time = datetime.now(UTC)
 
-    logs = []
+    logs: list[MCPToolCallLog] = []
     for i in range(5):
         log = create_test_log(
             db_session=db_session,
-            request_id=f"req_{i}",
-            started_at=base_time + timedelta(seconds=i),
+            started_at=base_time - timedelta(seconds=i),
             organization_id=dummy_member.organization_memberships[0].organization_id,
             user_id=dummy_member.id,
         )
@@ -96,8 +94,8 @@ def test_basic(
     data = response.json()
 
     assert len(data["data"]) == 2
-    assert data["data"][0]["request_id"] == "req_4"  # Most recent
-    assert data["data"][1]["request_id"] == "req_3"
+    assert data["data"][0]["id"] == str(logs[0].id)  # Most recent
+    assert data["data"][1]["id"] == str(logs[1].id)
     assert data["next_cursor"] is not None
 
     # Request second page using cursor
@@ -109,8 +107,8 @@ def test_basic(
     data = response.json()
 
     assert len(data["data"]) == 2
-    assert data["data"][0]["request_id"] == "req_2"
-    assert data["data"][1]["request_id"] == "req_1"
+    assert data["data"][0]["id"] == str(logs[2].id)
+    assert data["data"][1]["id"] == str(logs[3].id)
     assert data["next_cursor"] is not None
 
     # Request third page - should have 1 item and no next cursor
@@ -122,7 +120,7 @@ def test_basic(
     data = response.json()
 
     assert len(data["data"]) == 1
-    assert data["data"][0]["request_id"] == "req_0"
+    assert data["data"][0]["id"] == str(logs[4].id)
     assert data["next_cursor"] is None
 
 
@@ -141,10 +139,9 @@ def test_same_timestamp(
     same_time = datetime.now(UTC)
 
     logs: list[MCPToolCallLog] = []
-    for i in range(3):
+    for _ in range(3):
         log = create_test_log(
             db_session=db_session,
-            request_id=f"req_{i}",
             started_at=same_time,
             organization_id=dummy_member.organization_memberships[0].organization_id,
             user_id=dummy_member.id,
@@ -200,7 +197,6 @@ def test_filter_by_tool_name(
     for i in range(3):
         create_test_log(
             db_session=db_session,
-            request_id=f"req_{i}",
             mcp_tool_name=f"TOOL_{i}",
             started_at=same_time,
             organization_id=dummy_member.organization_memberships[0].organization_id,
@@ -235,9 +231,8 @@ def test_filter_with_pagination(
     for i in range(5):
         create_test_log(
             db_session=db_session,
-            request_id=f"req_a_{i}",
             mcp_tool_name="TOOL_A",
-            started_at=base_time + timedelta(seconds=i),
+            started_at=base_time - timedelta(seconds=i),
             organization_id=dummy_member.organization_memberships[0].organization_id,
             user_id=dummy_member.id,
         )
@@ -246,9 +241,8 @@ def test_filter_with_pagination(
     for i in range(2):
         create_test_log(
             db_session=db_session,
-            request_id=f"req_b_{i}",
             mcp_tool_name="TOOL_B",
-            started_at=base_time + timedelta(seconds=i),
+            started_at=base_time - timedelta(seconds=i),
             organization_id=dummy_member.organization_memberships[0].organization_id,
             user_id=dummy_member.id,
         )
@@ -303,7 +297,6 @@ def test_response_structure(
     """Test the response structure contains all expected fields."""
     log = create_test_log(
         db_session=db_session,
-        request_id="test_req",
         started_at=datetime.now(UTC),
         mcp_tool_name="test_tool",
         organization_id=dummy_member.organization_memberships[0].organization_id,
@@ -337,17 +330,15 @@ def test_cursor_encoding_decoding(
     base_time = datetime.now(UTC)
 
     # Create 2 logs
-    _ = create_test_log(
+    log_new = create_test_log(
         db_session=db_session,
-        request_id="req_1",
         started_at=base_time,
         organization_id=dummy_member.organization_memberships[0].organization_id,
         user_id=dummy_member.id,
     )
-    log2 = create_test_log(
+    log_old = create_test_log(
         db_session=db_session,
-        request_id="req_2",
-        started_at=base_time + timedelta(seconds=1),
+        started_at=base_time - timedelta(seconds=1),
         organization_id=dummy_member.organization_memberships[0].organization_id,
         user_id=dummy_member.id,
     )
@@ -364,8 +355,8 @@ def test_cursor_encoding_decoding(
     # Decode and verify cursor
     cursor = data["next_cursor"]
     decoded_cursor = MCPToolCallLogCursor.decode(cursor)
-    assert decoded_cursor.started_at == log2.started_at
-    assert decoded_cursor.id == log2.id
+    assert decoded_cursor.started_at == log_new.started_at
+    assert decoded_cursor.id == log_new.id
 
     # Verify the cursor can be used to fetch next page
     response = test_client.get(
@@ -375,5 +366,5 @@ def test_cursor_encoding_decoding(
     assert response.status_code == 200
     data = response.json()
     assert len(data["data"]) == 1
-    assert data["data"][0]["request_id"] == "req_1"
+    assert data["data"][0]["id"] == str(log_old.id), "The old log should be returned in second page"
     assert data["next_cursor"] is None
