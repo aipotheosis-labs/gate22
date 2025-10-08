@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator, model_validator
 
 
 class SubscriptionPlanPublic(BaseModel):
@@ -23,6 +23,28 @@ class SubscriptionPlanCreate(BaseModel):
     max_seats_for_subscription: int | None
     max_custom_mcp_servers: int | None
     log_retention_days: int | None
+
+    @field_validator(
+        "min_seats_for_subscription",
+        "max_seats_for_subscription",
+        "max_custom_mcp_servers",
+        "log_retention_days",
+    )
+    @classmethod
+    def validate_positive_integers(cls, v: int | None, info: ValidationInfo) -> int | None:
+        if v is not None and v < 1:
+            raise ValueError(f"{info.field_name} must be greater than 0")
+        return v
+
+    @model_validator(mode="after")
+    def validate_min_max_seats(self) -> "SubscriptionPlanCreate":
+        min_seats = self.min_seats_for_subscription
+        max_seats = self.max_seats_for_subscription
+
+        if min_seats is not None and max_seats is not None and min_seats > max_seats:
+            raise ValueError("min_seats_for_subscription must be <= max_seats_for_subscription")
+
+        return self
 
 
 class Entitlement(BaseModel):
