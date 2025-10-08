@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
@@ -82,7 +82,7 @@ def compute_effective_entitlement(
             raise ValueError("seat count must be provided for paid plan")
 
     if override is None or (
-        override.expires_at is not None and override.expires_at > datetime.now()
+        override.expires_at is not None and datetime.now(UTC) > override.expires_at
     ):
         return Entitlement(
             seat_count=seat_count,

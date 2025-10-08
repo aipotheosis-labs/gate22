@@ -174,14 +174,16 @@ def _upsert_customer_subscription(
             plan_code=plan.plan_code,
             seat_count=subscription_item.quantity if subscription_item.quantity is not None else 0,
             stripe_subscription_status=subscription.status,
-            current_period_start=datetime.fromtimestamp(subscription_item.current_period_start)
+            current_period_start=datetime.fromtimestamp(
+                subscription_item.current_period_start, tz=UTC
+            )
             if subscription_item.current_period_start is not None
             else None,
-            current_period_end=datetime.fromtimestamp(subscription_item.current_period_end)
+            current_period_end=datetime.fromtimestamp(subscription_item.current_period_end, tz=UTC)
             if subscription_item.current_period_end is not None
             else None,
             cancel_at_period_end=subscription.cancel_at_period_end,
-            subscription_start_date=datetime.fromtimestamp(subscription.start_date)
+            subscription_start_date=datetime.fromtimestamp(subscription.start_date, tz=UTC)
             if subscription.start_date is not None
             else None,
         ),
