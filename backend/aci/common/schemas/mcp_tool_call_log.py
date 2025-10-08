@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from aci.common.enums import MCPToolCallStatus
 
@@ -87,3 +87,17 @@ class MCPToolCallLogCursor(BaseModel):
             started_at=datetime.fromisoformat(data["started_at"]),
             id=UUID(data["id"]),
         )
+
+
+class MCPToolCallLogFilters(BaseModel):
+    start_time: datetime | None = Field(
+        default=None, description="Start time to filter by.", examples=["2025-06-14T14:53:40.693Z"]
+    )
+    end_time: datetime | None = Field(
+        default=None, description="End time to filter by.", examples=["2025-06-14T14:53:50.693Z"]
+    )
+    mcp_tool_name: str | None = Field(
+        default=None,
+        description="Search for tool names (case-insensitive partial match)",
+        examples=["TOOL_A"],
+    )
