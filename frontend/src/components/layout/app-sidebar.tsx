@@ -140,10 +140,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredSidebarItems.map((item) => {
-                const isActive =
-                  item.title === "Settings"
-                    ? pathname.startsWith("/settings")
-                    : pathname === item.url || pathname.startsWith(item.url);
+                const isActive = pathname === item.url || pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <Tooltip>
