@@ -255,7 +255,6 @@ function LogRow({
   };
 
   const formatResult = (result: Record<string, unknown>) => {
-    if (!result) return "-";
     const resultStr = JSON.stringify(result);
     return truncateText(resultStr, 80);
   };

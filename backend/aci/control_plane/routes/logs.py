@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from aci.common.db.crud import mcp_tool_call_logs
 from aci.common.enums import OrganizationRole
@@ -22,7 +22,7 @@ router = APIRouter()
 async def get_tool_call_logs(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     pagination: Annotated[CursorPaginationParams, Depends()],
-    filters: Annotated[MCPToolCallLogFilters, Query()],
+    filters: Annotated[MCPToolCallLogFilters, Depends()],
 ) -> CursorPaginationResponse[MCPToolCallLogResponse]:
     """
     Get paginated tool call logs with cursor-based pagination.
