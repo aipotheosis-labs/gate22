@@ -1,7 +1,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+import stripe
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 from stripe import StripeClient
 
@@ -24,6 +25,7 @@ from aci.control_plane.exceptions import (
     OrganizationNotFound,
     OrganizationSubscriptionNotFound,
     RequestedSubscriptionInvalid,
+    StripeOperationError,
 )
 from aci.control_plane.services.subscription import stripe_event_handler, subscription_service
 
@@ -234,8 +236,22 @@ async def change_organization_subscription(
     description="Stripe webhook for `customer.subscription` events.",
 )
 async def stripe_webhook(
-    db_session: Annotated[Session, Depends(deps.yield_db_session)], body: StripeWebhookEvent
+    request: Request,
+    db_session: Annotated[Session, Depends(deps.yield_db_session)],
+    body: StripeWebhookEvent,
 ) -> None:
+    # Verify webhook signature
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        stripe.Webhook.construct_event(
+            payload, sig_header, config.SUBSCRIPTION_STRIPE_WEBHOOK_SECRET
+        )  # type: ignore[no-untyped-call]
+    except stripe.SignatureVerificationError as e:
+        logger.error("Invalid signature")
+        raise StripeOperationError("Invalid signature") from e
+
     if not body.type.startswith("customer.subscription."):
         logger.info(f"Unsupported Stripe event type {body.type}. Ignore.")
         return None
