@@ -7,9 +7,9 @@ import type { CursorPaginationResponse, MCPToolCallLog } from "../types/logs.typ
 import { InfiniteData } from "@tanstack/react-query";
 type LogsPage = CursorPaginationResponse<MCPToolCallLog>;
 type LogsFilters = Omit<LogsFilterParams, "cursor">;
-type LogsQueryKey = ["logs", "tool-calls", LogsFilters | undefined];
+type LogsQueryKey = ["logs", "tool-calls", LogsFilters | undefined, number | undefined];
 
-export const useLogs = (filters?: LogsFilters) => {
+export const useLogs = (filters?: LogsFilters, refreshKey?: number) => {
   return useInfiniteQuery<
     LogsPage, // TQueryFnData
     Error, // TError
@@ -17,11 +17,14 @@ export const useLogs = (filters?: LogsFilters) => {
     LogsQueryKey, // TQueryKey
     string | undefined // TPageParam
   >({
-    queryKey: ["logs", "tool-calls", filters],
+    queryKey: ["logs", "tool-calls", filters, refreshKey],
     initialPageParam: undefined,
     queryFn: async ({ pageParam }: QueryFunctionContext<LogsQueryKey, string | undefined>) => {
       const token = await tokenManager.getAccessToken();
       if (!token) throw new Error("No authentication token available");
+
+      // Add some delay to provide a better UX
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       return logsService.getToolCallLogs(token, {
         ...filters,

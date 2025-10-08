@@ -19,6 +19,78 @@ interface DateRangePickerProps {
   placeholder?: string;
 }
 
+interface PresetRange {
+  label: string;
+  getValue: () => DateRange;
+}
+
+const PRESET_RANGES: PresetRange[] = [
+  {
+    label: "Past 1 min",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 1 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 30 min",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 30 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 1 hour",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 60 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 6 hours",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 12 hours",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 1 day",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 3 days",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+  {
+    label: "Past 7 days",
+    getValue: () => {
+      const now = new Date();
+      const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return { from, to: now };
+    },
+  },
+];
+
 export function DateRangePicker({
   date,
   onDateChange,
@@ -28,6 +100,27 @@ export function DateRangePicker({
   const [open, setOpen] = React.useState(false);
   const [fromTime, setFromTime] = React.useState("00:00:00");
   const [toTime, setToTime] = React.useState("23:59:59");
+
+  const handlePresetClick = (preset: PresetRange) => {
+    const range = preset.getValue();
+
+    // Extract times from the preset dates
+    if (range.from) {
+      const hours = range.from.getHours().toString().padStart(2, "0");
+      const minutes = range.from.getMinutes().toString().padStart(2, "0");
+      const seconds = range.from.getSeconds().toString().padStart(2, "0");
+      setFromTime(`${hours}:${minutes}:${seconds}`);
+    }
+
+    if (range.to) {
+      const hours = range.to.getHours().toString().padStart(2, "0");
+      const minutes = range.to.getMinutes().toString().padStart(2, "0");
+      const seconds = range.to.getSeconds().toString().padStart(2, "0");
+      setToTime(`${hours}:${minutes}:${seconds}`);
+    }
+
+    onDateChange?.(range);
+  };
 
   const getTimezone = () => {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -105,38 +198,64 @@ export function DateRangePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-        <Calendar
-          mode="range"
-          defaultMonth={date?.from}
-          selected={date}
-          captionLayout="dropdown"
-          onSelect={handleDateSelect}
-          numberOfMonths={2}
-        />
-        <div className="border-t p-3">
-          <div className="flex justify-between gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs text-muted-foreground">From time</Label>
-              <Input
-                type="time"
-                step="1"
-                value={fromTime}
-                onChange={(e) => handleTimeChange("from", e.target.value)}
-                className="h-8 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs text-muted-foreground">To time</Label>
-              <Input
-                type="time"
-                step="1"
-                value={toTime}
-                onChange={(e) => handleTimeChange("to", e.target.value)}
-                className="h-8  appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-              />
+        <div className="flex">
+          {/* Preset options sidebar - Section 1 */}
+          <div className="flex w-[140px] flex-col border-r">
+            <div className="border-b p-3 text-sm font-semibold">Quick select</div>
+            <div className="flex flex-col gap-1 p-2">
+              {PRESET_RANGES.map((preset) => (
+                <Button
+                  key={preset.label}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePresetClick(preset)}
+                  className="h-8 justify-start px-2 text-xs font-normal hover:bg-accent"
+                >
+                  {preset.label}
+                </Button>
+              ))}
             </div>
           </div>
-          <div className="mb-2 text-center text-xs text-muted-foreground">{getTimezone()}</div>
+
+          {/* Right side - Section 2 & 3 */}
+          <div className="flex flex-col">
+            {/* Calendar - Section 2 */}
+            <Calendar
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              captionLayout="dropdown"
+              onSelect={handleDateSelect}
+              numberOfMonths={2}
+            />
+
+            {/* Time inputs - Section 3 */}
+            <div className="border-t p-3">
+              <div className="flex justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs text-muted-foreground">From time</Label>
+                  <Input
+                    type="time"
+                    step="1"
+                    value={fromTime}
+                    onChange={(e) => handleTimeChange("from", e.target.value)}
+                    className="h-8 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-xs text-muted-foreground">To time</Label>
+                  <Input
+                    type="time"
+                    step="1"
+                    value={toTime}
+                    onChange={(e) => handleTimeChange("to", e.target.value)}
+                    className="h-8  appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  />
+                </div>
+              </div>
+              <div className="mb-2 text-center text-xs text-muted-foreground">{getTimezone()}</div>
+            </div>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

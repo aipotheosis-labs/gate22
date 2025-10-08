@@ -16,17 +16,21 @@ import ReactJson from "@microlink/react-json-view";
 export default function LogsPage() {
   const [mcpToolNameFilter, setMcpToolNameFilter] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [refreshKey, setRefreshKey] = useState(0);
   const [appliedFilters, setAppliedFilters] = useState<{
     mcp_tool_name?: string;
     start_timestamp?: string;
     end_timestamp?: string;
   }>({});
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error } = useLogs({
-    mcp_tool_name: appliedFilters.mcp_tool_name,
-    start_timestamp: appliedFilters.start_timestamp,
-    end_timestamp: appliedFilters.end_timestamp,
-  });
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isFetching, error } =
+    useLogs(
+      {
+        mcp_tool_name: appliedFilters.mcp_tool_name,
+        start_timestamp: appliedFilters.start_timestamp,
+        end_timestamp: appliedFilters.end_timestamp,
+      },
+      refreshKey,
+    );
 
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -58,18 +62,38 @@ export default function LogsPage() {
     return data?.pages.flatMap((page) => page.data) ?? [];
   }, [data]);
 
-  const handleApplyFilters = () => {
-    setAppliedFilters({
+  const handleRefresh = () => {
+    const newFilters = {
       mcp_tool_name: mcpToolNameFilter || undefined,
       start_timestamp: dateRange?.from?.toISOString() || undefined,
       end_timestamp: dateRange?.to?.toISOString() || undefined,
-    });
+    };
+
+    setAppliedFilters(newFilters);
+    // to trigger a new fetch even if the filters haven't changed
+    setRefreshKey((prev) => prev + 1);
   };
 
+  // Auto-apply filters when inputs change (without forcing refresh)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const newFilters = {
+        mcp_tool_name: mcpToolNameFilter || undefined,
+        start_timestamp: dateRange?.from?.toISOString() || undefined,
+        end_timestamp: dateRange?.to?.toISOString() || undefined,
+      };
+      setAppliedFilters(newFilters);
+    }, 800); // debounce delay
+
+    return () => clearTimeout(timeoutId);
+  }, [mcpToolNameFilter, dateRange]);
+
   const handleResetFilters = () => {
+    const newFilters = {};
+
     setMcpToolNameFilter("");
     setDateRange(undefined);
-    setAppliedFilters({});
+    setAppliedFilters(newFilters);
   };
 
   const getStatusColor = (status: MCPToolCallStatus) => {
@@ -97,15 +121,10 @@ export default function LogsPage() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-b px-6 py-4">
-        <h2 className="text-2xl font-bold">Logs</h2>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {/* Filters - Horizontal Layout */}
-        <div className="mb-4 flex flex-wrap items-end gap-2">
+    <div>
+      <div className="sticky top-0 z-10 border-b bg-background px-4 pt-3 pb-0">
+        <h1 className="text-2xl font-bold">Logs</h1>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
           <div className="w-[250px]">
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -125,11 +144,16 @@ export default function LogsPage() {
           />
 
           <div className="ml-auto flex gap-2">
-            <Button variant="outline" onClick={handleResetFilters} size="sm" className="h-9">
-              Reset
+            <Button
+              variant="outline"
+              onClick={handleResetFilters}
+              size="sm"
+              className="h-9 cursor-pointer"
+            >
+              Reset Filters
             </Button>
-            <Button onClick={handleApplyFilters} size="sm" className="h-9">
-              Apply
+            <Button onClick={handleRefresh} size="sm" className="h-9 cursor-pointer">
+              Refresh
             </Button>
           </div>
 
@@ -140,8 +164,21 @@ export default function LogsPage() {
           )} */}
         </div>
 
-        {/* Loading state */}
-        {isLoading && (
+        {/* Column Headers */}
+        <div className="mt-3 grid grid-cols-[100px_minmax(200px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)_50px_150px_40px] gap-6 bg-muted/50 px-2 py-2 text-xs font-medium text-muted-foreground">
+          <div>Status</div>
+          <div>Tool</div>
+          <div>Arguments</div>
+          <div>Result</div>
+          <div>Duration</div>
+          <div>Timestamp</div>
+          <div></div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pt-0 pb-3">
+        {/* Initial Loading state */}
+        {isFetching && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
@@ -156,19 +193,8 @@ export default function LogsPage() {
 
         {/* Logs List */}
         {!isLoading && !error && (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <div className="min-w-[900px] space-y-0">
-              {/* Column Headers */}
-              <div className="grid grid-cols-[100px_minmax(200px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)_50px_150px_40px] gap-6 border-b bg-muted/50 px-2 py-2 text-xs font-medium text-muted-foreground">
-                <div>Status</div>
-                <div>Tool</div>
-                <div>Arguments</div>
-                <div>Result</div>
-                <div>Duration</div>
-                <div>Timestamp</div>
-                <div></div>
-              </div>
-
               {allLogs.map((log) => (
                 <LogRow
                   key={log.id}
@@ -237,7 +263,7 @@ function LogRow({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="border-b transition-colors hover:bg-muted/50">
-        <CollapsibleTrigger className="w-full text-left">
+        <CollapsibleTrigger className="w-full cursor-pointer text-left">
           <div className="grid grid-cols-[100px_minmax(200px,1fr)_minmax(100px,1fr)_minmax(100px,1fr)_50px_150px_40px] items-center gap-6 px-2 py-3">
             {/* Status Column */}
             <div>
