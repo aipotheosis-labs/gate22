@@ -27,13 +27,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChangeSubscriptionDialog } from "./change-subscription-dialog";
 import { CancelSubscriptionDialog } from "./cancel-subscription-dialog";
 import { PLAN_CODES } from "../types/subscription.types";
+import Link from "next/link";
 
 const faqItems = [
-  {
-    question: "Can I upgrade my plan at any time?",
-    answer:
-      "Yes, you can upgrade your plan at any time. Stripe will automatically charge for pro-rata pricing differences during upgrades.",
-  },
   {
     question: "What are Control Planes?",
     answer:
@@ -51,7 +47,17 @@ const faqItems = [
   {
     question: "Can I cancel my subscription?",
     answer:
-      "Yes, you can cancel your subscription at any time. The cancellation will take effect at the end of your current billing cycle.",
+      "Yes, you can cancel your subscription at any time. The cancellation will take effect at the end of your current billing cycle, and your plan remains active until then. On the cancellation date, your plan will be downgraded to the Free Tier. No further action needed.",
+  },
+  {
+    question: "Can I upgrade my plan or add more seats at any time?",
+    answer:
+      "Yes, you can upgrade your plan or add more seats at any time. The changes takes effect immediately. Stripe will automatically charge for pro-rata pricing differences during upgrades. Your billing renewal date will remain the same.",
+  },
+  {
+    question: "Can I downgrade my plan or remove seats?",
+    answer:
+      "Yes, you can downgrade your plan or remove seats at any time. The changes takes effect immediately. Stripe calculates a credit for the pro-rated price difference, and the credit is automatically applied to your next invoice (it reduces what you owe on your next renewal).",
   },
   {
     question:
@@ -183,16 +189,7 @@ export function SubscriptionSettings() {
                   : `You are currently subscribed to the ${planName} plan.`}
               </CardDescription>
             </div>
-            {isFreePlan ? (
-              <Button
-                onClick={() => {
-                  setSelectedPlanType("team");
-                  setDialogOpen(true);
-                }}
-              >
-                Upgrade Plan
-              </Button>
-            ) : (
+            {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
               <Button
                 variant="outline"
                 onClick={() => {
@@ -219,7 +216,8 @@ export function SubscriptionSettings() {
                     className="border-orange-500 px-3 py-1 text-sm text-orange-700"
                   >
                     <AlertCircle className="mr-1 h-3 w-3" />
-                    Cancels at period end
+                    Cancels at period end on{" "}
+                    {formatDate(subscriptionStatus.subscription.current_period_end)}
                   </Badge>
                 )}
               </>
@@ -227,14 +225,15 @@ export function SubscriptionSettings() {
           </div>
 
           {/* Subscription Details */}
-          {subscriptionStatus?.subscription && (
-            <div className="mt-4 flex-1">
-              <p className="text-sm font-medium text-muted-foreground">Next Billing Date</p>
-              <p className="text-lg font-semibold">
-                {formatDate(subscriptionStatus.subscription.current_period_end)}
-              </p>
-            </div>
-          )}
+          {subscriptionStatus?.subscription &&
+            !subscriptionStatus.subscription.cancel_at_period_end && (
+              <div className="mt-4 flex-1">
+                <p className="text-sm font-medium text-muted-foreground">Next Billing Date</p>
+                <p className="text-lg font-semibold">
+                  {formatDate(subscriptionStatus.subscription.current_period_end)}
+                </p>
+              </div>
+            )}
           {/* Entitlement Details */}
           {subscriptionStatus?.entitlement && (
             <div>
@@ -483,9 +482,25 @@ export function SubscriptionSettings() {
         planType={selectedPlanType}
         currentPlanCode={subscriptionStatus?.subscription?.plan_code}
       />
-
+      {/* Support Section */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <h3 className="mb-2 font-semibold">Need Help?</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              If you have any questions about your subscription or need assistance, we are here to
+              help.
+            </p>
+            <Button variant="outline" asChild>
+              <Link href="mailto:support@aipolabs.xyz?subject=Billing and Subscription Support">
+                Contact Support
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       {/* Cancel Subscription Section - Only show for team plan */}
-      {!isFreePlan && (
+      {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
         <Card className="border-muted">
           <CardContent className="pt-6">
             <div className="text-center">
