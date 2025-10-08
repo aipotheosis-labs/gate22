@@ -1,12 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { subscriptionApi } from "../api/subscription";
-import { QUERY_KEYS } from "../constants";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function useCancelSubscription() {
-  const queryClient = useQueryClient();
   const { activeOrg, accessToken } = useMetaInfo();
+  const router = useRouter();
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: () => {
@@ -16,13 +16,9 @@ export function useCancelSubscription() {
       return subscriptionApi.cancelSubscription(activeOrg.orgId, accessToken);
     },
     onSuccess: () => {
-      // Refresh subscription status
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.SUBSCRIPTION_STATUS(activeOrg?.orgId || ""),
-      });
-      toast.success(
-        "Subscription cancelled successfully. It will remain active until the end of your billing period.",
-      );
+      // Redirect to cancellation success page
+      // Note: Data invalidation is handled by the cancellation page itself
+      router.push("/settings/subscription/cancelled");
     },
     onError: (error) => {
       console.error("Error cancelling subscription:", error);
