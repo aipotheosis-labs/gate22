@@ -826,7 +826,9 @@ class OrganizationSubscriptionMetadata(Base):
         default_factory=uuid4,
         init=False,
     )
-    stripe_customer_id: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    stripe_customer_id: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=True, unique=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
     )
@@ -853,7 +855,11 @@ class SubscriptionPlan(Base):
     display_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     is_free: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    stripe_price_id: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    stripe_price_id: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH),
+        nullable=True,
+        unique=True,
+    )
     min_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
     max_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
     max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -899,8 +905,8 @@ class OrganizationSubscription(Base):
     )
     stripe_subscription_id: Mapped[str] = mapped_column(
         String(MAX_STRING_LENGTH),
-        unique=True,
-        nullable=False,  # One stripe subscription id can only be used by one organization
+        nullable=False,
+        unique=True,  # One stripe subscription id can only be used by one organization
     )
     stripe_subscription_item_id: Mapped[str] = mapped_column(
         String(MAX_STRING_LENGTH), nullable=False
@@ -933,7 +939,10 @@ class OrganizationEntitlementOverride(Base):
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
     organization_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+        PGUUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
     seat_count: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
     max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
