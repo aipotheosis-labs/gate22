@@ -1,8 +1,8 @@
 """adding subscription tables
 
-Revision ID: 00044e0610b0
-Revises: 2416fc891646
-Create Date: 2025-10-07 16:06:58.516784+00:00
+Revision ID: a654db265f82
+Revises: d84f9f8eabb2
+Create Date: 2025-10-08 15:48:31.335256+00:00
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '00044e0610b0'
-down_revision: Union[str, None] = '2416fc891646'
+revision: str = 'a654db265f82'
+down_revision: Union[str, None] = 'd84f9f8eabb2'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
