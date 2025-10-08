@@ -181,7 +181,7 @@ def insert_stripe_event_log(
     stripe_event_log = SubscriptionStripeEventLogs(
         stripe_event_id=stripe_event.id,
         type=stripe_event.type,
-        payload=stripe_event.data.object.model_dump(),
+        payload=stripe_event.model_dump(),
         received_at=datetime.now(UTC),
         process_attempts=0,
         processed_at=None,
