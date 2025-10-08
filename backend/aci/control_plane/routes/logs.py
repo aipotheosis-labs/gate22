@@ -28,6 +28,7 @@ async def get_tool_call_logs(
     Get paginated tool call logs with cursor-based pagination.
     Results are ordered by started_at DESC (most recent first).
     """
+    logger.info(f"Getting tool call logs with filters: {filters}")
     cursor = None
     if pagination.cursor is not None:
         try:

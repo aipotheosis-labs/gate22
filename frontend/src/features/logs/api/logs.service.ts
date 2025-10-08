@@ -11,8 +11,8 @@ export const logsService = {
 
     if (params?.cursor) queryParams.cursor = params.cursor;
     if (params?.mcp_tool_name) queryParams.mcp_tool_name = params.mcp_tool_name;
-    // TODO: Backend doesn't support timestamp filtering yet based on the route we saw
-    // These would need to be added to the backend API
+    if (params?.start_timestamp) queryParams.start_time = params.start_timestamp;
+    if (params?.end_timestamp) queryParams.end_time = params.end_timestamp;
 
     return fetcherWithAuth<CursorPaginationResponse<MCPToolCallLog>>(token)(
       `${CONTROL_PLANE_PATH}/logs/tool-calls`,
