@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Search, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { useLogs } from "@/features/logs/hooks/use-logs";
 import { MCPToolCallLog, MCPToolCallStatus } from "@/features/logs/types/logs.types";
 import { cn } from "@/lib/utils";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ReactJson from "@microlink/react-json-view";
 
 export default function LogsPage() {
   const [mcpToolNameFilter, setMcpToolNameFilter] = useState("");
@@ -283,17 +284,48 @@ function LogRow({
                 {/* Section 1: Arguments */}
                 <div className="flex h-[250px] flex-col rounded-lg border bg-background p-4">
                   <h3 className="mb-3 text-sm font-semibold">Arguments</h3>
-                  <pre className="flex-1 overflow-auto rounded bg-muted/50 p-3 font-mono text-xs">
-                    {log.arguments || "N/A"}
-                  </pre>
+                  <div className="flex-1 overflow-auto rounded bg-muted/50 p-3">
+                    {log.arguments ? (
+                      (() => {
+                        try {
+                          const parsed = JSON.parse(log.arguments);
+                          return (
+                            <ReactJson
+                              src={parsed}
+                              collapsed={1}
+                              displayDataTypes={false}
+                              displayObjectSize={false}
+                              enableClipboard={false}
+                              collapseStringsAfterLength={300}
+                              name={false}
+                              style={{ fontSize: "12px" }}
+                            />
+                          );
+                        } catch {
+                          return <span className="font-mono text-xs">{log.arguments}</span>;
+                        }
+                      })()
+                    ) : (
+                      <span className="text-xs text-muted-foreground">N/A</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Section 2: Result */}
                 <div className="flex h-[250px] flex-col rounded-lg border bg-background p-4">
                   <h3 className="mb-3 text-sm font-semibold">Result</h3>
-                  <pre className="flex-1 overflow-auto rounded bg-muted/50 p-3 font-mono text-xs">
-                    {JSON.stringify(log.result, null, 2)}
-                  </pre>
+                  <div className="flex-1 overflow-auto rounded bg-muted/50 p-3">
+                    <ReactJson
+                      src={log.result}
+                      collapsed={1}
+                      displayDataTypes={false}
+                      displayObjectSize={false}
+                      enableClipboard={false}
+                      collapseStringsAfterLength={300}
+                      name={false}
+                      style={{ fontSize: "12px" }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -329,10 +361,13 @@ function LogRow({
                     {log.mcp_server_configuration_name && log.mcp_server_configuration_id ? (
                       <a
                         href={`/mcp-configuration/${log.mcp_server_configuration_id}`}
-                        className="truncate font-mono text-xs text-blue-500 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 truncate font-mono text-xs text-blue-500 hover:underline"
                         title={log.mcp_server_configuration_name}
                       >
-                        {log.mcp_server_configuration_name}
+                        <span className="truncate">{log.mcp_server_configuration_name}</span>
+                        <ExternalLink className="h-3 w-3 shrink-0" />
                       </a>
                     ) : (
                       <p className="font-mono text-xs">N/A</p>
@@ -343,10 +378,13 @@ function LogRow({
                     <span className="shrink-0 font-medium text-muted-foreground">Bundle:</span>
                     <a
                       href={`/bundle-mcp/${log.bundle_id}`}
-                      className="truncate font-mono text-xs text-blue-500 hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 truncate font-mono text-xs text-blue-500 hover:underline"
                       title={log.bundle_name}
                     >
-                      {log.bundle_name}
+                      <span className="truncate">{log.bundle_name}</span>
+                      <ExternalLink className="h-3 w-3 shrink-0" />
                     </a>
                   </div>
 
