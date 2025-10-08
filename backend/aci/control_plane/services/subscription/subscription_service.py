@@ -123,7 +123,7 @@ def create_stripe_subscription(
         organization.organization_metadata is None
         or organization.organization_metadata.stripe_customer_id is None
     ):
-        stripe_customer = stripe_client.customers.create()
+        stripe_customer = stripe_client.customers.create({"name": organization.name})
         logger.info(f"Stripe customer created: {stripe_customer.id}")
         # TODO: put email / org name as the customer metadata for easier retrieval
         crud.subscriptions.upsert_organization_stripe_customer_id(
@@ -206,6 +206,11 @@ def update_stripe_subscription(
         logger.error(f"Subscription plan {plan.plan_code} has no stripe price id")
         raise StripeOperationError(f"Subscription plan {plan.plan_code} has no stripe price id")
 
+    # If the price difference is positive, stripe will create a proration and charge the price
+    # difference.
+    # If the price difference is negative, stripe will issue credit to the customer and the price
+    # difference will be deducted from the next period.
+    # See https://docs.stripe.com/billing/subscriptions/prorations for details
     subscription = stripe_client.subscriptions.update(
         existing_subscription.stripe_subscription_id,
         {
@@ -216,6 +221,7 @@ def update_stripe_subscription(
                     "quantity": seat_count,
                 }
             ],
+            "proration_behavior": "always_invoice",
         },
     )
     logger.info(f"Stripe subscription updated: {existing_subscription.stripe_subscription_id}")
@@ -234,6 +240,9 @@ def cancel_stripe_subscription(
     asynchronously from Stripe webhook and handled by the stripe_event_handler.
     """
     # stripe_client.subscriptions.cancel(subscription.stripe_subscription_id)
+
+    # Set the cancellation at the end of the current period. Stripe will emit an event about
+    # cancellation scheduled, and then another cancellation event during the period end.
     stripe_client.subscriptions.update(
         subscription.stripe_subscription_id,
         {
