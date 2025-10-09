@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PermissionGuard } from "@/components/rbac/permission-guard";
 import { Permission, PERMISSIONS } from "@/lib/rbac/permissions";
+import { isSubscriptionEnabled } from "@/lib/feature-flags";
 
 interface SettingsNavItem {
   title: string;
@@ -25,11 +26,15 @@ const settingsNavItems: SettingsNavItem[] = [
     title: "Members",
     href: "/settings/members",
   },
-  {
-    title: "Subscription",
-    href: "/settings/subscription",
-    permission: PERMISSIONS.SUBSCRIPTION_PAGE_VIEW,
-  },
+  ...(isSubscriptionEnabled()
+    ? [
+        {
+          title: "Subscription",
+          href: "/settings/subscription",
+          permission: PERMISSIONS.SUBSCRIPTION_PAGE_VIEW,
+        },
+      ]
+    : []),
 ];
 
 export function SettingsNavigation() {

@@ -41,3 +41,8 @@ SENTRY_DSN = check_and_get_env_variable("MCP_SENTRY_DSN")
 
 # mcp
 MCP_SESSION_ID_HEADER = "mcp-session-id"
+
+# SUBSCRIPTION
+SUBSCRIPTION_ENABLED = bool(
+    int(check_and_get_env_variable("MCP_SUBSCRIPTION_ENABLED", default="0"))
+)
