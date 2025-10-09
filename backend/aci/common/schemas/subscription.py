@@ -13,6 +13,11 @@ class SubscriptionPlanPublic(BaseModel):
     log_retention_days: int | None
 
 
+class OrganizationUsage(BaseModel):
+    seat_count: int
+    custom_mcp_servers_count: int
+
+
 class SubscriptionPlanCreate(BaseModel):
     plan_code: str
     display_name: str
