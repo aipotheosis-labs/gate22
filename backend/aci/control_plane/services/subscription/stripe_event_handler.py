@@ -5,12 +5,13 @@ from stripe import Subscription, SubscriptionItem
 
 from aci.common.db import crud
 from aci.common.db.sql_models import Organization
+from aci.common.exceptions import OrganizationNotFoundError
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
     OrganizationSubscriptionUpsert,
     StripeWebhookEvent,
 )
-from aci.control_plane.exceptions import OrganizationNotFound, StripeOperationError
+from aci.control_plane.exceptions import StripeOperationError
 from aci.control_plane.services.subscription.stripe_client import get_stripe_client
 
 logger = get_logger(__name__)
@@ -91,7 +92,7 @@ def _process_subscription_event(db_session: Session, subscription_id: str) -> No
         logger.error(
             f"Failed to map organization by stripe customer id {subscription_data.customer}"
         )
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
     items: list[SubscriptionItem] = subscription_data.get("items", {}).get("data", [])
 
