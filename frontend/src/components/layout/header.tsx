@@ -10,16 +10,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 // import { GoBell } from "react-icons/go";
-import { BsQuestionCircle, BsDiscord, BsBook } from "react-icons/bs";
+import { BsQuestionCircle, BsDiscord, BsBook, BsExclamationTriangle } from "react-icons/bs";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BreadcrumbLinks } from "./BreadcrumbLinks";
 import { usePathname } from "next/navigation";
 import { OrgSelector } from "./org-selector";
 import { RoleSelector } from "./role-selector";
 import { UserProfileDropdown } from "./user-profile-dropdown";
+import { useSubscriptionStatus } from "@/features/settings/hooks/use-subscription-status";
+import { PermissionGuard } from "@/components/rbac/permission-guard";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { isSubscriptionEnabled } from "@/lib/feature-flags";
+import Link from "next/link";
 
 export const Header = () => {
   const pathname = usePathname();
+  const { data: subscriptionStatus } = useSubscriptionStatus();
 
   return (
     <header className="sticky top-0 z-50 flex-shrink-0 bg-background">
@@ -36,6 +43,35 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Usage Exceeded Warning */}
+          {isSubscriptionEnabled() && (
+            <PermissionGuard permission={PERMISSIONS.SUBSCRIPTION_PAGE_VIEW}>
+              {subscriptionStatus?.is_usage_exceeded && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex h-9 cursor-default items-center rounded-md bg-yellow-500 px-3 text-black">
+                        <BsExclamationTriangle className="mr-1 h-4 w-4" />
+                        <span className="text-xs font-medium">Alert</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-sm">
+                      <p className="text-sm">
+                        Your organization&apos;s current usage has exceeded the limit of its
+                        subscription. MCP access will be affected until the usage is reduced. Please
+                        see the{" "}
+                        <Link href="/settings/subscription" className="font-medium underline">
+                          subscription
+                        </Link>{" "}
+                        page for details.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </PermissionGuard>
+          )}
+
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-9 px-2">

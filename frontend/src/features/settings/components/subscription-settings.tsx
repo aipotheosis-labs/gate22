@@ -259,8 +259,7 @@ export function SubscriptionSettings() {
                         {subscriptionStatus.usage.seat_count}
                         <span className="text-sm font-normal text-muted-foreground">
                           {" / "}
-                          {subscriptionStatus.entitlement.seat_count === null ||
-                          subscriptionStatus.entitlement.seat_count === 0
+                          {subscriptionStatus.entitlement.seat_count === null
                             ? "Unlimited"
                             : subscriptionStatus.entitlement.seat_count}
                         </span>
@@ -282,8 +281,7 @@ export function SubscriptionSettings() {
                         {subscriptionStatus.usage.custom_mcp_servers_count}
                         <span className="text-sm font-normal text-muted-foreground">
                           {" / "}
-                          {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
-                          subscriptionStatus.entitlement.max_custom_mcp_servers === 0
+                          {subscriptionStatus.entitlement.max_custom_mcp_servers === null
                             ? "∞"
                             : subscriptionStatus.entitlement.max_custom_mcp_servers}
                         </span>
