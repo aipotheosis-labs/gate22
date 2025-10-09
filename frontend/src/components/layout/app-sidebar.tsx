@@ -77,6 +77,59 @@ export const sidebarItems = [
   },
 ];
 
+export const mcpNavigationItems = [
+  {
+    title: "MCP Servers",
+    url: "/mcp-servers",
+    icon: HiOutlineServerStack,
+    adminOnly: true,
+  },
+  {
+    title: "Available MCP Servers",
+    url: "/available-mcp-servers",
+    icon: HiOutlineServerStack,
+    memberOnly: true,
+  },
+
+  {
+    title: "Configured MCP Servers",
+    url: "/mcp-configuration",
+    icon: Settings2,
+  },
+  {
+    title: "Connected Accounts",
+    url: "/connected-accounts",
+    icon: Link2,
+  },
+
+  {
+    title: "MCP Bundles",
+    url: "/bundle-mcp",
+    icon: Package,
+  },
+];
+
+export const organizationNavigationItems = [
+  {
+    title: "Members",
+    url: "/members",
+    icon: Users2,
+    adminOnly: true,
+  },
+  {
+    title: "Teams",
+    url: "/teams",
+    icon: Network,
+    adminOnly: true,
+  },
+  {
+    title: "Organization Settings",
+    url: "/organization-settings",
+    icon: RiSettings3Line,
+    adminOnly: true,
+  },
+];
+
 // Add settings routes to be accessible in header
 export const settingsItem = {
   title: "Settings",
@@ -92,22 +145,28 @@ export function AppSidebar() {
   const canViewMCPConfiguration = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
   const isAdmin = usePermission(PERMISSIONS.MCP_CONFIGURATION_CREATE);
 
-  // Filter sidebar items based on permissions
-  const filteredSidebarItems = sidebarItems.filter((item) => {
-    // Hide Configured MCP Servers for users without permission
-    if (item.title === "Configured MCP Servers" && !canViewMCPConfiguration) {
-      return false;
-    }
-    // Hide admin-only items from members
-    if (item.adminOnly && !isAdmin) {
-      return false;
-    }
-    // Hide member-only items from admins
-    if (item.memberOnly && isAdmin) {
-      return false;
-    }
-    return true;
-  });
+  // Common filter for nav items based on permissions
+  const filterNavItems = (items: typeof sidebarItems) =>
+    items.filter((item) => {
+      // Hide Configured MCP Servers for users without permission
+      if (item.title === "Configured MCP Servers" && !canViewMCPConfiguration) {
+        return false;
+      }
+      // Hide admin-only items from members
+      if ("adminOnly" in item && item.adminOnly && !isAdmin) {
+        return false;
+      }
+      // Hide member-only items from admins
+      if ("memberOnly" in item && item.memberOnly && isAdmin) {
+        return false;
+      }
+      return true;
+    });
+
+  const filteredMcpItems = filterNavItems(mcpNavigationItems as unknown as typeof sidebarItems);
+  const filteredOrganizationItems = filterNavItems(
+    organizationNavigationItems as unknown as typeof sidebarItems,
+  );
 
   return (
     <Sidebar collapsible="icon" className="flex flex-col">
@@ -139,7 +198,39 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredSidebarItems.map((item) => {
+              {filteredMcpItems.map((item) => {
+                const isActive = pathname === item.url || pathname.startsWith(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton asChild>
+                          <Link
+                            href={item.url}
+                            className={cn(
+                              "flex h-9 items-center gap-3 px-4 transition-colors",
+                              isCollapsed && "justify-center",
+                              isActive && "bg-primary/10 font-medium text-primary",
+                            )}
+                          >
+                            <item.icon
+                              className={cn("h-5 w-5 shrink-0", isActive && "text-primary")}
+                            />
+                            {!isCollapsed && <span>{item.title}</span>}
+                          </Link>
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      {isCollapsed && <TooltipContent side="right">{item.title}</TooltipContent>}
+                    </Tooltip>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+
+            <Separator className="my-4" />
+
+            <SidebarMenu>
+              {filteredOrganizationItems.map((item) => {
                 const isActive = pathname === item.url || pathname.startsWith(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
