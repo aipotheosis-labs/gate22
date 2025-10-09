@@ -42,7 +42,7 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
   }, [fetchTeams, refreshKey]);
 
   const handleViewTeam = (teamId: string) => {
-    router.push(`/settings/teams/${teamId}`);
+    router.push(`/teams/${teamId}`);
   };
 
   const filteredTeams = useMemo(() => {
@@ -80,7 +80,7 @@ export function TeamsTable({ refreshKey = 0 }: TeamsTableProps) {
           <p className="mb-4 text-sm text-muted-foreground">
             Create your first team to get started
           </p>
-          <Button onClick={() => router.push("/settings/teams/new")}>
+          <Button onClick={() => router.push("/teams/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Create Team
           </Button>

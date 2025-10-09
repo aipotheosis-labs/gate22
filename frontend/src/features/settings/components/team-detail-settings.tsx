@@ -79,7 +79,7 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
   };
 
   const renderLoadingState = () => (
-    <div className="container max-w-6xl py-8">
+    <div>
       <div className="mb-8">
         <Skeleton className="mb-4 h-8 w-32" />
         <Skeleton className="mb-2 h-10 w-64" />
@@ -155,14 +155,9 @@ export function TeamDetailSettings({ teamId }: TeamDetailSettingsProps) {
   );
 
   return (
-    <div className="container max-w-6xl py-8">
+    <div>
       <div className="mb-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-4"
-          onClick={() => router.push("/settings/teams")}
-        >
+        <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push("/teams")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Teams
         </Button>

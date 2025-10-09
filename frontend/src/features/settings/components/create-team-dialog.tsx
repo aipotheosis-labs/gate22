@@ -94,7 +94,7 @@ export function CreateTeamDialog({ open, onOpenChange, onSuccess }: CreateTeamDi
       onSuccess?.();
 
       // Navigate to the new team page
-      router.push(`/settings/teams/${newTeam.team_id}`);
+      router.push(`/teams/${newTeam.team_id}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to create team";
       toast.error(errorMessage);
