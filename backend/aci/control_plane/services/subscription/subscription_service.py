@@ -28,23 +28,23 @@ logger = get_logger(__name__)
 stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
-def is_new_entitlement_fulfilling_existing_usage(
-    db_session: Session, organization_id: UUID, new_entitlement: Entitlement
+def is_entitlement_fulfilling_existing_usage(
+    db_session: Session, organization_id: UUID, entitlement: Entitlement
 ) -> bool:
     """
     Check existing usage of the organization.
     This will check
-        1. If the new seat count >= existing seat in use
-        2. If the new max custom mcp servers >= existing number of custom mcp servers
+        1. If the entitled seat count >= existing seat in use
+        2. If the entitled max custom mcp servers >= existing number of custom mcp servers
     Return True if all conditions are met, False otherwise.
     """
     seat_in_use = crud.organizations.count_organization_members(
         db_session=db_session,
         organization_id=organization_id,
     )
-    if new_entitlement.seat_count is not None and new_entitlement.seat_count < seat_in_use:
+    if entitlement.seat_count is not None and entitlement.seat_count < seat_in_use:
         logger.info(
-            f"Requested seat ({new_entitlement.seat_count}) less than existing seat in "
+            f"Entitled seat ({entitlement.seat_count}) less than existing seat in "
             f"use ({seat_in_use})"
         )
         return False
@@ -53,12 +53,11 @@ def is_new_entitlement_fulfilling_existing_usage(
         db_session=db_session,
         organization_id=organization_id,
     )
-    if (
-        new_entitlement.max_custom_mcp_servers is not None
-        and new_entitlement.max_custom_mcp_servers < len(custom_mcp_servers_in_use)
+    if entitlement.max_custom_mcp_servers is not None and entitlement.max_custom_mcp_servers < len(
+        custom_mcp_servers_in_use
     ):
         logger.info(
-            f"Requested max custom mcp servers ({new_entitlement.max_custom_mcp_servers}) less "
+            f"Entitled max custom mcp servers ({entitlement.max_custom_mcp_servers}) less "
             f"than existing max custom mcp servers ({len(custom_mcp_servers_in_use)})"
         )
         return False

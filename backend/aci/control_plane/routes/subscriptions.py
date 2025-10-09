@@ -180,10 +180,10 @@ async def change_organization_subscription(
         plan=requested_plan,
         override=organization.entitlement_override,
     )
-    if not subscription_service.is_new_entitlement_fulfilling_existing_usage(
+    if not subscription_service.is_entitlement_fulfilling_existing_usage(
         db_session=context.db_session,
         organization_id=organization_id,
-        new_entitlement=effective_entitlement_after_change,
+        entitlement=effective_entitlement_after_change,
     ):
         raise RequestedSubscriptionInvalid(
             "new entitlement does not meet existing usage. Must reduce current usage."
