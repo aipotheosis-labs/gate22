@@ -51,6 +51,7 @@ export default function MCPServersPage() {
   });
 
   const servers = useMemo(() => {
+    console.log(serversResponse?.data);
     return serversResponse?.data || [];
   }, [serversResponse?.data]);
 
@@ -183,9 +184,11 @@ export default function MCPServersPage() {
                     </div>
 
                     {/* Transport type */}
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {server.transport_type === "sse" ? "SSE" : "HTTP"}
-                    </span>
+                    {server.transport_type && (
+                      <Badge variant="outline" className="text-xs text-muted-foreground">
+                        {server.transport_type === "sse" ? "SSE" : "HTTP"}
+                      </Badge>
+                    )}
                   </div>
                   <CardDescription className="line-clamp-2 flex-1 text-sm">
                     {server.description}
