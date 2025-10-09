@@ -73,21 +73,26 @@ async def get_organization_subscription_status(
         db_session=context.db_session, organization_id=organization_id
     )
 
-    subscription = organization.subscription
-    if subscription is None:
-        subscription_public = None
-    else:
-        subscription_public = SubscriptionPublic(
-            plan_code=subscription.subscription_plan.plan_code,
-            seat_count=subscription.seat_count,
-            current_period_start=subscription.current_period_start,
-            current_period_end=subscription.current_period_end,
-            cancel_at_period_end=subscription.cancel_at_period_end,
-        )
+    usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
+    is_entitlement_fulfilling_usage = entitlement_utils.is_entitlement_fulfilling_usage(
+        db_session=context.db_session,
+        organization_id=organization_id,
+        entitlement=entitlement,
+        usage=usage,
+    )
+
+    # Construct the output
+    subscription_public = (
+        SubscriptionPublic.model_validate(organization.subscription, from_attributes=True)
+        if organization.subscription is not None
+        else None
+    )
 
     subscription_status_public = SubscriptionStatusPublic(
         subscription=subscription_public,
         entitlement=entitlement,
+        usage=usage,
+        is_usage_exceeded=not is_entitlement_fulfilling_usage,
     )
 
     return subscription_status_public
@@ -285,9 +290,11 @@ def _validate_subscription_change_request(
         max_custom_mcp_servers=requested_plan.max_custom_mcp_servers,
         log_retention_days=requested_plan.log_retention_days,
     )
-    if not entitlement_utils.is_entitlement_fulfilling_existing_usage(
+    usage = entitlement_utils.get_organization_usage(db_session, organization.id)
+    if not entitlement_utils.is_entitlement_fulfilling_usage(
         db_session=db_session,
         organization_id=organization.id,
+        usage=usage,
         entitlement=entitlement_after_change,
     ):
         raise RequestedSubscriptionInvalid(
