@@ -20,7 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line } from "react-icons/ri";
-import { Link2, Settings2, Package, Network, Users2 } from "lucide-react";
+import { Link2, Settings2, Package, ScrollText, Network, Users2 } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
@@ -121,6 +121,11 @@ export const organizationNavigationItems = [
     url: "/teams",
     icon: Network,
     adminOnly: true,
+  },
+  {
+    title: "Logs",
+    url: `/logs`,
+    icon: ScrollText,
   },
   {
     title: "Organization Settings",

@@ -47,6 +47,7 @@ adhoc_group.add_command(adhoc.convert_integrations_to_mcp, name="convert-integra
 # TODO: group these commands
 cli.add_command(mock_data.create_mock_org_teams_users, name="create-mock-org-teams-users")
 cli.add_command(mock_data.create_mock_mcp_configuration, name="create-mock-mcp-configuration")
+cli.add_command(mock_data.create_dummy_tool_call_logs, name="create-dummy-tool-call-logs")
 
 # Initialize the OpenAI client at the startup
 init_openai_client(config.OPENAI_API_KEY)
