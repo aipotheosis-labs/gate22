@@ -83,7 +83,6 @@ export const mcpNavigationItems = [
     url: "/mcp-servers",
     icon: HiOutlineServerStack,
     adminOnly: true,
-    permission: PERMISSIONS.MCP_SERVER_PAGE_VIEW,
   },
   {
     title: "Available MCP Servers",
@@ -96,7 +95,6 @@ export const mcpNavigationItems = [
     title: "Configured MCP Servers",
     url: "/mcp-configuration",
     icon: Settings2,
-    permission: PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW,
   },
   {
     title: "Connected Accounts",
