@@ -50,7 +50,9 @@ export default function MCPServersPage() {
     limit: pageSize,
   });
 
-  const servers = useMemo(() => serversResponse?.data || [], [serversResponse?.data]);
+  const servers = useMemo(() => {
+    return serversResponse?.data || [];
+  }, [serversResponse?.data]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -165,18 +167,25 @@ export default function MCPServersPage() {
                 onClick={() => router.push(`/mcp-servers/${server.id}`)}
               >
                 <CardHeader className="flex flex-1 flex-col pb-2">
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className="flex size-8 shrink-0 items-center justify-center">
-                      <Image
-                        src={server.logo}
-                        alt={`${server.name} logo`}
-                        width={32}
-                        height={32}
-                        className="object-contain"
-                        unoptimized
-                      />
+                  <div className="mb-2 flex w-full items-center justify-between">
+                    <div className="flex flex-row items-center gap-2">
+                      <div className="flex size-8 shrink-0 items-center justify-center">
+                        <Image
+                          src={server.logo}
+                          alt={`${server.name} logo`}
+                          width={32}
+                          height={32}
+                          className="object-contain"
+                          unoptimized
+                        />
+                      </div>
+                      <CardTitle className="text-lg">{server.name}</CardTitle>
                     </div>
-                    <CardTitle className="text-lg">{server.name}</CardTitle>
+
+                    {/* Transport type */}
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {server.transport_type === "sse" ? "SSE" : "HTTP"}
+                    </span>
                   </div>
                   <CardDescription className="line-clamp-2 flex-1 text-sm">
                     {server.description}
