@@ -245,7 +245,7 @@ export function SubscriptionSettings() {
             <div>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                Your Entitlements
+                Usage and Entitlements
               </h3>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">

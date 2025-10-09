@@ -57,3 +57,8 @@ export interface Plan {
   max_custom_mcp_servers?: number;
   log_retention_days?: number;
 }
+
+export interface OrganizationUsage {
+  seat_count: number;
+  custom_mcp_servers_count: number;
+}
