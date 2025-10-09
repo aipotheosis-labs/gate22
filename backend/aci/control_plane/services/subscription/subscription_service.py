@@ -1,18 +1,15 @@
-from datetime import UTC, datetime
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from aci.common.db import crud
 from aci.common.db.sql_models import (
     Organization,
-    OrganizationEntitlementOverride,
     OrganizationSubscription,
     SubscriptionPlan,
 )
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
-    Entitlement,
     SubscriptionCancellation,
     SubscriptionCheckout,
     SubscriptionResult,
@@ -24,81 +21,6 @@ from aci.control_plane.exceptions import (
 from aci.control_plane.services.subscription.stripe_client import get_stripe_client
 
 logger = get_logger(__name__)
-
-
-def is_entitlement_fulfilling_existing_usage(
-    db_session: Session, organization_id: UUID, entitlement: Entitlement
-) -> bool:
-    """
-    Check existing usage of the organization.
-    This will check
-        1. If the entitled seat count >= existing seat in use
-        2. If the entitled max custom mcp servers >= existing number of custom mcp servers
-    Return True if all conditions are met, False otherwise.
-    """
-    seat_in_use = crud.organizations.count_organization_members(
-        db_session=db_session,
-        organization_id=organization_id,
-    )
-    if entitlement.seat_count is not None and entitlement.seat_count < seat_in_use:
-        logger.info(
-            f"Entitled seat ({entitlement.seat_count}) less than existing seat in "
-            f"use ({seat_in_use})"
-        )
-        return False
-
-    custom_mcp_servers_in_use = crud.mcp_servers.list_mcp_servers(
-        db_session=db_session,
-        organization_id=organization_id,
-    )
-    if entitlement.max_custom_mcp_servers is not None and entitlement.max_custom_mcp_servers < len(
-        custom_mcp_servers_in_use
-    ):
-        logger.info(
-            f"Entitled max custom mcp servers ({entitlement.max_custom_mcp_servers}) less "
-            f"than existing max custom mcp servers ({len(custom_mcp_servers_in_use)})"
-        )
-        return False
-
-    return True
-
-
-def compute_effective_entitlement(
-    plan: SubscriptionPlan,
-    seat_count: int | None,
-    override: OrganizationEntitlementOverride | None,
-) -> Entitlement:
-    """
-    Compute the effective entitlement based on the subscription and the override.
-    """
-    if seat_count is None:
-        if plan.is_free:
-            seat_count = plan.max_seats_for_subscription
-        else:
-            logger.error("seat count must be provided for paid plan")
-            raise ValueError("seat count must be provided for paid plan")
-
-    if override is None or (
-        override.expires_at is not None and datetime.now(UTC) > override.expires_at
-    ):
-        return Entitlement(
-            seat_count=seat_count,
-            max_custom_mcp_servers=plan.max_custom_mcp_servers,
-            log_retention_days=plan.log_retention_days,
-        )
-    return Entitlement(
-        seat_count=(override.seat_count if override.seat_count is not None else seat_count),
-        max_custom_mcp_servers=(
-            override.max_custom_mcp_servers
-            if override.max_custom_mcp_servers is not None
-            else plan.max_custom_mcp_servers
-        ),
-        log_retention_days=(
-            override.log_retention_days
-            if override.log_retention_days is not None
-            else plan.log_retention_days
-        ),
-    )
 
 
 def create_stripe_subscription(

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from aci.common import utils
+from aci.common import entitlement_utils, utils
 from aci.common.db import crud
 from aci.common.db.sql_models import OrganizationInvitation, User
 from aci.common.enums import OrganizationInvitationStatus, OrganizationRole
@@ -23,6 +23,7 @@ from aci.control_plane.exceptions import (
     InvalidInvitationTokenError,
     InvitationExpiredError,
     InvitationNotPendingError,
+    UsageExceeded,
 )
 from aci.control_plane.services.email_service import EmailService
 
@@ -255,6 +256,20 @@ async def accept_invitation(
             status_code=status.HTTP_409_CONFLICT,
             detail="User is already a member of the organization",
         )
+
+    # Check if the usage exceeds the entitlement after inviting the new member
+    if config.SUBSCRIPTION_ENABLED:
+        entitlement = entitlement_utils.get_organization_entitlement(
+            context.db_session, organization_id
+        )
+        usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
+        usage.seat_count += 1
+        if not entitlement_utils.is_entitlement_fulfilling_usage(
+            entitlement=entitlement, usage=usage
+        ):
+            raise UsageExceeded(
+                message="organization has reached usage limit. Please ask your admin to upgrade the subscription to continue.",  # noqa: E501
+            )
 
     crud.organizations.add_user_to_organization(
         context.db_session,
