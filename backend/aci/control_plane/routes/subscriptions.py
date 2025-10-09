@@ -5,8 +5,10 @@ import stripe
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+import aci.common.entitlement_utils as entitlement_utils
 from aci.common.db import crud
 from aci.common.enums import OrganizationRole
+from aci.common.exceptions import OrganizationNotFoundError
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
     StripeWebhookEvent,
@@ -21,7 +23,6 @@ from aci.common.schemas.subscription import (
 from aci.control_plane import access_control, config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
-    OrganizationNotFound,
     OrganizationSubscriptionNotFound,
     RequestedSubscriptionInvalid,
     StripeOperationError,
@@ -47,7 +48,7 @@ async def get_plans(
     response_model=SubscriptionStatusPublic,
     status_code=status.HTTP_200_OK,
 )
-async def get_organization_entitlement(
+async def get_organization_subscription_status(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
 ) -> SubscriptionStatusPublic:
@@ -63,22 +64,16 @@ async def get_organization_entitlement(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
-    # Compute the effective entitlement
-    if organization.subscription is None:
-        plan = crud.subscriptions.get_free_plan(
-            db_session=context.db_session, throw_error_if_not_found=True
-        )
-    else:
-        plan = organization.subscription.plan
+    effective_entitlement = entitlement_utils.get_organization_entitlement(
+        db_session=context.db_session, organization_id=organization.id
+    )
 
-    effective_entitlement = subscription_service.compute_effective_entitlement(
-        plan=plan,
-        seat_count=organization.subscription.seat_count
-        if organization.subscription is not None
-        else None,
-        override=organization.entitlement_override,
+    usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
+    is_entitlement_fulfilling_usage = entitlement_utils.is_entitlement_fulfilling_usage(
+        entitlement=effective_entitlement,
+        usage=usage,
     )
 
     # Construct the output
@@ -91,6 +86,8 @@ async def get_organization_entitlement(
     subscription_status_public = SubscriptionStatusPublic(
         subscription=subscription_public,
         entitlement=effective_entitlement,
+        usage=usage,
+        is_usage_exceeded=not is_entitlement_fulfilling_usage,
     )
 
     return subscription_status_public
@@ -125,7 +122,7 @@ async def change_organization_subscription(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
     # Check if the plan is active and is available for subscription
     requested_plan = crud.subscriptions.get_active_plan_by_plan_code(
@@ -172,15 +169,15 @@ async def change_organization_subscription(
 
     # calculate and check effective entitlement after the change. We reject if the new entitlement
     # does not meet the existing usage.
-    effective_entitlement_after_change = subscription_service.compute_effective_entitlement(
+    effective_entitlement_after_change = entitlement_utils.compute_effective_entitlement(
         seat_count=requested_seat_count,
         plan=requested_plan,
         override=organization.entitlement_override,
     )
-    if not subscription_service.is_entitlement_fulfilling_existing_usage(
-        db_session=context.db_session,
-        organization_id=organization_id,
+    existing_usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
+    if not entitlement_utils.is_entitlement_fulfilling_usage(
         entitlement=effective_entitlement_after_change,
+        usage=existing_usage,
     ):
         raise RequestedSubscriptionInvalid(
             "new entitlement does not meet existing usage. Must reduce current usage."
@@ -281,7 +278,7 @@ async def cancel_organization_subscription(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
     if organization.subscription is None:
         logger.warning("organization does not have a subscription")

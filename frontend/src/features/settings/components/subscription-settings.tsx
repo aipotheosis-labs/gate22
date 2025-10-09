@@ -224,6 +224,16 @@ export function SubscriptionSettings() {
             )}
           </div>
 
+          {subscriptionStatus?.subscription?.cancel_at_period_end && (
+            <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-sm text-yellow-800 dark:text-yellow-200">
+                To avoid restrictions on access, please make sure your usage does not exceed the
+                Free tier&apos;s entitlements when the cancellation takes effect.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Subscription Details */}
           {subscriptionStatus?.subscription &&
             !subscriptionStatus.subscription.cancel_at_period_end && (
@@ -239,7 +249,7 @@ export function SubscriptionSettings() {
             <div>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                Your Entitlements
+                Usage and Entitlements
               </h3>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
@@ -250,10 +260,13 @@ export function SubscriptionSettings() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Seats</p>
                       <p className="text-2xl font-bold">
-                        {subscriptionStatus.entitlement.seat_count === null ||
-                        subscriptionStatus.entitlement.seat_count === 0
-                          ? "Unlimited"
-                          : subscriptionStatus.entitlement.seat_count}
+                        {subscriptionStatus.usage.seat_count}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" / "}
+                          {subscriptionStatus.entitlement.seat_count === null
+                            ? "Unlimited"
+                            : subscriptionStatus.entitlement.seat_count}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -269,10 +282,13 @@ export function SubscriptionSettings() {
                         Custom MCP Servers
                       </p>
                       <p className="text-2xl font-bold">
-                        {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
-                        subscriptionStatus.entitlement.max_custom_mcp_servers === 0
-                          ? "Unlimited"
-                          : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                        {subscriptionStatus.usage.custom_mcp_servers_count}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" / "}
+                          {subscriptionStatus.entitlement.max_custom_mcp_servers === null
+                            ? "∞"
+                            : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                        </span>
                       </p>
                     </div>
                   </div>
