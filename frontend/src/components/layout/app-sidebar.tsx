@@ -101,11 +101,15 @@ export const mcpNavigationItems = [
     url: "/connected-accounts",
     icon: Link2,
   },
-
   {
     title: "MCP Bundles",
     url: "/bundle-mcp",
     icon: Package,
+  },
+  {
+    title: "Logs",
+    url: "/logs",
+    icon: ScrollText,
   },
 ];
 
