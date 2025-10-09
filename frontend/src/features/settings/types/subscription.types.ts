@@ -23,6 +23,8 @@ export interface Entitlement {
 export interface SubscriptionStatus {
   subscription: Subscription | null;
   entitlement: Entitlement;
+  usage: OrganizationUsage;
+  is_usage_exceeded: boolean;
 }
 
 export interface ChangeSubscriptionRequest {

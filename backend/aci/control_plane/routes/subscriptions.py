@@ -48,7 +48,7 @@ async def get_plans(
     response_model=SubscriptionStatusPublic,
     status_code=status.HTTP_200_OK,
 )
-async def get_organization_entitlement(
+async def get_organization_subscription_status(
     context: Annotated[deps.RequestContext, Depends(deps.get_request_context)],
     organization_id: UUID,
 ) -> SubscriptionStatusPublic:
@@ -70,6 +70,12 @@ async def get_organization_entitlement(
         db_session=context.db_session, organization_id=organization.id
     )
 
+    usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
+    is_entitlement_fulfilling_usage = entitlement_utils.is_entitlement_fulfilling_usage(
+        entitlement=effective_entitlement,
+        usage=usage,
+    )
+
     # Construct the output
     subscription_public = (
         SubscriptionPublic.model_validate(organization.subscription, from_attributes=True)
@@ -80,6 +86,8 @@ async def get_organization_entitlement(
     subscription_status_public = SubscriptionStatusPublic(
         subscription=subscription_public,
         entitlement=effective_entitlement,
+        usage=usage,
+        is_usage_exceeded=not is_entitlement_fulfilling_usage,
     )
 
     return subscription_status_public

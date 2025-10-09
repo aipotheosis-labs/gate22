@@ -65,6 +65,8 @@ class SubscriptionPublic(BaseModel):
 class SubscriptionStatusPublic(BaseModel):
     subscription: SubscriptionPublic | None
     entitlement: Entitlement
+    usage: OrganizationUsage
+    is_usage_exceeded: bool
 
 
 class SubscriptionRequest(BaseModel):

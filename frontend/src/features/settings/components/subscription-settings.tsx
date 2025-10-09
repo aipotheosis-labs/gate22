@@ -250,10 +250,14 @@ export function SubscriptionSettings() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Seats</p>
                       <p className="text-2xl font-bold">
-                        {subscriptionStatus.entitlement.seat_count === null ||
-                        subscriptionStatus.entitlement.seat_count === 0
-                          ? "Unlimited"
-                          : subscriptionStatus.entitlement.seat_count}
+                        {subscriptionStatus.usage.seat_count}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" / "}
+                          {subscriptionStatus.entitlement.seat_count === null ||
+                          subscriptionStatus.entitlement.seat_count === 0
+                            ? "Unlimited"
+                            : subscriptionStatus.entitlement.seat_count}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -269,10 +273,14 @@ export function SubscriptionSettings() {
                         Custom MCP Servers
                       </p>
                       <p className="text-2xl font-bold">
-                        {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
-                        subscriptionStatus.entitlement.max_custom_mcp_servers === 0
-                          ? "Unlimited"
-                          : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                        {subscriptionStatus.usage.custom_mcp_servers_count}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" / "}
+                          {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
+                          subscriptionStatus.entitlement.max_custom_mcp_servers === 0
+                            ? "∞"
+                            : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                        </span>
                       </p>
                     </div>
                   </div>
