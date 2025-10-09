@@ -230,6 +230,16 @@ export function SubscriptionSettings() {
             )}
           </div>
 
+          {subscriptionStatus?.subscription?.cancel_at_period_end && (
+            <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-sm text-yellow-800 dark:text-yellow-200">
+                To avoid restrictions on access, please make sure your usage does not exceed the
+                Free tier&apos;s entitlements when the cancellation takes effect.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Subscription Details */}
           {subscriptionStatus?.subscription &&
             !subscriptionStatus.subscription.cancel_at_period_end && (
