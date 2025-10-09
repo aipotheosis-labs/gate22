@@ -5,13 +5,29 @@ from sqlalchemy.orm import Session
 from aci.common.db import crud
 from aci.common.exceptions import OrganizationNotFoundError
 from aci.common.logging_setup import get_logger
-from aci.common.schemas.subscription import Entitlement
+from aci.common.schemas.subscription import Entitlement, OrganizationUsage
 
 logger = get_logger(__name__)
 
 
-def is_entitlement_fulfilling_existing_usage(
-    db_session: Session, organization_id: UUID, entitlement: Entitlement
+def get_organization_usage(db_session: Session, organization_id: UUID) -> OrganizationUsage:
+    seat_in_use = crud.organizations.count_organization_members(
+        db_session=db_session,
+        organization_id=organization_id,
+    )
+    custom_mcp_servers_in_use = crud.mcp_servers.list_mcp_servers(
+        db_session=db_session,
+        organization_id=organization_id,
+    )
+    return OrganizationUsage(
+        seat_count=seat_in_use,
+        custom_mcp_servers_count=len(custom_mcp_servers_in_use),
+    )
+
+
+
+def is_entitlement_fulfilling_usage(
+    db_session: Session, organization_id: UUID, entitlement: Entitlement, usage: OrganizationUsage
 ) -> bool:
     """
     Check existing usage of the organization.
