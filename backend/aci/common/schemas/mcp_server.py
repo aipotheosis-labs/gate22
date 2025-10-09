@@ -149,6 +149,8 @@ class MCPServerPublic(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    transport_type: MCPServerTransportType
+
 
 class MCPServerOAuth2DiscoveryRequest(BaseModel):
     mcp_server_url: AnyHttpUrl

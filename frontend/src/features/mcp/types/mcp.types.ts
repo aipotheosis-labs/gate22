@@ -46,6 +46,7 @@ export interface MCPServerPublic extends MCPServerPublicBasic {
   updated_at: string;
   last_synced_at: string | null;
   organization_id: string | null;
+  transport_type: string | null;
 }
 
 export interface TeamInfo {
