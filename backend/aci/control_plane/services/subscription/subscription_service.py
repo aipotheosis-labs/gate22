@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
-from stripe import StripeClient
 
 from aci.common.db import crud
 from aci.common.db.sql_models import (
@@ -22,10 +21,9 @@ from aci.control_plane import config
 from aci.control_plane.exceptions import (
     StripeOperationError,
 )
+from aci.control_plane.services.subscription.stripe_client import get_stripe_client
 
 logger = get_logger(__name__)
-
-stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
 def is_entitlement_fulfilling_existing_usage(
@@ -124,7 +122,7 @@ def create_stripe_subscription(
         organization.organization_metadata is None
         or organization.organization_metadata.stripe_customer_id is None
     ):
-        stripe_customer = stripe_client.customers.create({"name": organization.name})
+        stripe_customer = get_stripe_client().customers.create({"name": organization.name})
         logger.info(f"Stripe customer created: {stripe_customer.id}")
         # TODO: put email / org name as the customer metadata for easier retrieval
         crud.subscriptions.upsert_organization_stripe_customer_id(
@@ -146,7 +144,7 @@ def create_stripe_subscription(
 
     # Checkout session will created the subscription with `collection_method=automatic_collection`
     # by default.
-    stripe_checkout_session = stripe_client.checkout.sessions.create(
+    stripe_checkout_session = get_stripe_client().checkout.sessions.create(
         {
             "customer": stripe_customer_id,
             "mode": "subscription",
@@ -212,7 +210,7 @@ def update_stripe_subscription(
     # If the price difference is negative, stripe will issue credit to the customer and the price
     # difference will be deducted from the next period.
     # See https://docs.stripe.com/billing/subscriptions/prorations for details
-    subscription = stripe_client.subscriptions.update(
+    subscription = get_stripe_client().subscriptions.update(
         existing_subscription.stripe_subscription_id,
         {
             "items": [
@@ -244,7 +242,7 @@ def cancel_stripe_subscription(
 
     # Set the cancellation at the end of the current period. Stripe will emit an event about
     # cancellation scheduled, and then another cancellation event during the period end.
-    stripe_client.subscriptions.update(
+    get_stripe_client().subscriptions.update(
         subscription.stripe_subscription_id,
         {
             "cancel_at_period_end": True,
