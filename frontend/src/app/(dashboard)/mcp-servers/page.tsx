@@ -27,6 +27,7 @@ export default function MCPServersPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
   const [page, setPage] = useState(0);
   const pageSize = 100;
   const canView = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
@@ -74,7 +75,37 @@ export default function MCPServersPage() {
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory, servers]);
+  }, [searchQuery, selectedCategory, servers, sortBy]);
+
+  const sortedServers = useMemo(() => {
+    return [...filteredServers].sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "type":
+          return (a.transport_type ?? "").localeCompare(b.transport_type ?? "");
+        case "last_synced":
+          // Assuming a `last_synced_at` property which is a date string.
+          // Sorting descending to show most recently synced first.
+          if (a.last_synced_at && b.last_synced_at) {
+            return new Date(b.last_synced_at).getTime() - new Date(a.last_synced_at).getTime();
+          }
+          return b.last_synced_at ? 1 : a.last_synced_at ? -1 : 0;
+        case "created_at":
+          if (a.created_at && b.created_at) {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+          return b.created_at ? 1 : a.created_at ? -1 : 0;
+        case "updated_at":
+          if (a.updated_at && b.updated_at) {
+            return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+          }
+          return b.updated_at ? 1 : a.updated_at ? -1 : 0;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredServers, sortBy]);
 
   // Show access denied for non-admins only after org context is loaded
   if (activeOrg && !canView) {
@@ -115,28 +146,42 @@ export default function MCPServersPage() {
 
       <div className="space-y-4 p-4">
         {/* Search and Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative max-w-md flex-1">
+        <div className="flex w-full flex-col gap-4 sm:flex-row">
+          <div className="relative w-full max-w-md flex-1">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder="Search MCP servers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 sm:w-fit"
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category === "all" ? "All Categories" : category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-between">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category === "all" ? "All Categories" : category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="last_synced">Last Synced</SelectItem>
+                <SelectItem value="type">Type</SelectItem>
+                <SelectItem value="created_at">Created At</SelectItem>
+                <SelectItem value="updated_at">Updated At</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Results count */}
@@ -161,7 +206,7 @@ export default function MCPServersPage() {
         {/* Integration Grid */}
         {!isLoading && !error && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredServers.map((server) => (
+            {sortedServers.map((server) => (
               <Card
                 key={server.id}
                 className="flex min-h-[180px] cursor-pointer flex-col transition-shadow hover:shadow-md"
