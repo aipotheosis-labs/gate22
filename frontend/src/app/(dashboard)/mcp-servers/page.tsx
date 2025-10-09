@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { usePermission } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
 import { useMetaInfo } from "@/components/context/metainfo";
@@ -28,6 +30,7 @@ export default function MCPServersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("name");
+  const [customOnly, setCustomOnly] = useState(false);
   const [page, setPage] = useState(0);
   const pageSize = 100;
   const canView = usePermission(PERMISSIONS.MCP_CONFIGURATION_PAGE_VIEW);
@@ -52,7 +55,6 @@ export default function MCPServersPage() {
   });
 
   const servers = useMemo(() => {
-    console.log(serversResponse?.data);
     return serversResponse?.data || [];
   }, [serversResponse?.data]);
 
@@ -73,9 +75,9 @@ export default function MCPServersPage() {
       const matchesCategory =
         selectedCategory === "all" || server.categories.includes(selectedCategory);
 
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && (!customOnly || server.organization_id !== null); // if the server's organization_id is null, it is NOT a custom server.
     });
-  }, [searchQuery, selectedCategory, servers, sortBy]);
+  }, [searchQuery, selectedCategory, servers, customOnly]);
 
   const sortedServers = useMemo(() => {
     return [...filteredServers].sort((a, b) => {
@@ -147,7 +149,7 @@ export default function MCPServersPage() {
       <div className="space-y-4 p-4">
         {/* Search and Filters */}
         <div className="flex w-full flex-col gap-4 sm:flex-row">
-          <div className="relative w-full max-w-md flex-1">
+          <div className="relative max-w-md flex-1">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder="Search MCP servers..."
@@ -156,19 +158,29 @@ export default function MCPServersPage() {
               className="pl-10 sm:w-fit"
             />
           </div>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-between">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category === "all" ? "All Categories" : category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex w-full flex-col items-center justify-between gap-2 sm:flex-row">
+            <div className="flex w-full flex-col items-center gap-2 sm:flex-row">
+              <div className="flex flex-row items-center gap-2">
+                <Checkbox
+                  id="custom-only"
+                  checked={customOnly}
+                  onCheckedChange={(checked) => setCustomOnly(checked === true)}
+                />
+                <Label htmlFor="custom-only">Custom Only</Label>
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === "all" ? "All Categories" : category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Sort by" />
@@ -227,14 +239,13 @@ export default function MCPServersPage() {
                       </div>
                       <CardTitle className="text-lg">{server.name}</CardTitle>
                     </div>
-
-                    {/* Transport type */}
-                    {server.transport_type && (
-                      <Badge variant="outline" className="text-xs text-muted-foreground">
-                        {server.transport_type === "sse" ? "SSE" : "HTTP"}
-                      </Badge>
-                    )}
                   </div>
+                  {/* Transport type */}
+                  {server.transport_type && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      {server.transport_type === "sse" ? "SSE" : "HTTP"}
+                    </Badge>
+                  )}
                   <CardDescription className="line-clamp-2 flex-1 text-sm">
                     {server.description}
                   </CardDescription>
