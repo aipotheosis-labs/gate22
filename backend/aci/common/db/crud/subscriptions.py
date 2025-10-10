@@ -6,13 +6,12 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import (
-    Organization,
     OrganizationSubscription,
-    OrganizationSubscriptionMetadata,
     SubscriptionPlan,
     SubscriptionStripeEventLogs,
 )
 from aci.common.schemas.subscription import (
+    DEFAULT_FREE_PLAN_CODE,
     OrganizationSubscriptionUpsert,
     StripeWebhookEvent,
     SubscriptionPlanCreate,
@@ -47,7 +46,7 @@ def get_free_plan(
     throw_error_if_not_found: bool,
 ) -> SubscriptionPlan | None:
     statement = select(SubscriptionPlan).where(
-        SubscriptionPlan.is_free.is_(True),
+        SubscriptionPlan.plan_code == DEFAULT_FREE_PLAN_CODE,
         SubscriptionPlan.archived_at.is_(None),
     )
     plan: SubscriptionPlan | None = db_session.execute(statement).scalar_one_or_none()
@@ -76,11 +75,11 @@ def get_active_plan_by_plan_code(
     return db_session.execute(statement).scalar_one_or_none()
 
 
-def get_plan_by_stripe_price_id(
+def get_plan_by_id(
     db_session: Session,
-    stripe_price_id: str,
+    plan_id: UUID,
 ) -> SubscriptionPlan | None:
-    statement = select(SubscriptionPlan).where(SubscriptionPlan.stripe_price_id == stripe_price_id)
+    statement = select(SubscriptionPlan).where(SubscriptionPlan.id == plan_id)
     return db_session.execute(statement).scalar_one_or_none()
 
 
@@ -92,37 +91,6 @@ def insert_subscription_plan(
     db_session.flush()
     db_session.refresh(plan)
     return plan
-
-
-########################################
-# Organization Billing Metadata
-########################################
-def get_organization_by_stripe_customer_id(
-    db_session: Session,
-    stripe_customer_id: str,
-) -> Organization | None:
-    statement = select(Organization).where(
-        Organization.organization_metadata.has(
-            OrganizationSubscriptionMetadata.stripe_customer_id == stripe_customer_id
-        )
-    )
-    return db_session.execute(statement).scalar_one_or_none()
-
-
-def upsert_organization_stripe_customer_id(
-    db_session: Session,
-    organization: Organization,
-    stripe_customer_id: str,
-) -> None:
-    if organization.organization_metadata is None:
-        organization.organization_metadata = OrganizationSubscriptionMetadata(
-            stripe_customer_id=stripe_customer_id
-        )
-        db_session.add(organization.organization_metadata)
-    else:
-        organization.organization_metadata.stripe_customer_id = stripe_customer_id
-    db_session.flush()
-    db_session.refresh(organization)
 
 
 ########################################

@@ -85,7 +85,7 @@ def _process_subscription_event(db_session: Session, subscription_id: str) -> No
     logger.info(f"Subscription id: {subscription_data.id}, status: {subscription_data.status}")
 
     # Get the organization from the customer id
-    organization = crud.subscriptions.get_organization_by_stripe_customer_id(
+    organization = crud.organizations.get_organization_by_stripe_customer_id(
         db_session=db_session,
         stripe_customer_id=subscription_data.customer
         if isinstance(subscription_data.customer, str)
@@ -119,8 +119,8 @@ def _process_subscription_event(db_session: Session, subscription_id: str) -> No
             _upsert_customer_subscription(
                 db_session=db_session,
                 organization=organization,
-                subscription=subscription_data,
-                subscription_item=subscription_item,
+                stripe_subscription=subscription_data,
+                stripe_subscription_item=subscription_item,
             )
 
         # "canceled": Stripe canceled the subscription.
@@ -150,41 +150,48 @@ def _process_subscription_event(db_session: Session, subscription_id: str) -> No
 def _upsert_customer_subscription(
     db_session: Session,
     organization: Organization,
-    subscription: Subscription,
-    subscription_item: SubscriptionItem,
+    stripe_subscription: Subscription,
+    stripe_subscription_item: SubscriptionItem,
 ) -> None:
-    plan = crud.subscriptions.get_plan_by_stripe_price_id(
+    plan = crud.subscriptions.get_active_plan_by_plan_code(
         db_session=db_session,
-        stripe_price_id=subscription_item.price.id,
+        plan_code=stripe_subscription.metadata["plan_code"],
     )
     if plan is None:
-        logger.error(f"Failed to map plan by stripe price id {subscription_item.price.id}")
+        logger.error(f"Failed to map plan by stripe price id {stripe_subscription_item.price.id}")
         raise StripeOperationError(
-            f"Failed to map plan by stripe price id {subscription_item.price.id}"
+            f"Failed to map plan by stripe price id {stripe_subscription_item.price.id}"
         )
 
     logger.info(f"Upserting organization subscription for {organization.id}...")
+
+    if stripe_subscription_item.quantity is None:
+        # Unexpected, the quantity should be returned by STripe
+        logger.error("Missing quantity in subscription item")
+        raise StripeOperationError("Missing quantity in subscription item")
 
     crud.subscriptions.upsert_organization_subscription(
         db_session=db_session,
         organization_id=organization.id,
         upsert_data=OrganizationSubscriptionUpsert(
-            stripe_subscription_id=subscription.id,
-            stripe_subscription_item_id=subscription_item.id,
-            plan_code=plan.plan_code,
-            seat_count=subscription_item.quantity if subscription_item.quantity is not None else 0,
-            stripe_subscription_status=subscription.status,
+            subscription_plan_id=plan.id,
+            stripe_subscription_id=stripe_subscription.id,
+            stripe_subscription_item_id=stripe_subscription_item.id,
+            seat_count=stripe_subscription_item.quantity,
+            stripe_subscription_status=stripe_subscription.status,
             current_period_start=datetime.fromtimestamp(
-                subscription_item.current_period_start, tz=UTC
+                stripe_subscription_item.current_period_start, tz=UTC
             )
-            if subscription_item.current_period_start is not None
+            if stripe_subscription_item.current_period_start is not None
             else None,
-            current_period_end=datetime.fromtimestamp(subscription_item.current_period_end, tz=UTC)
-            if subscription_item.current_period_end is not None
+            current_period_end=datetime.fromtimestamp(
+                stripe_subscription_item.current_period_end, tz=UTC
+            )
+            if stripe_subscription_item.current_period_end is not None
             else None,
-            cancel_at_period_end=subscription.cancel_at_period_end,
-            subscription_start_date=datetime.fromtimestamp(subscription.start_date, tz=UTC)
-            if subscription.start_date is not None
+            cancel_at_period_end=stripe_subscription.cancel_at_period_end,
+            subscription_start_date=datetime.fromtimestamp(stripe_subscription.start_date, tz=UTC)
+            if stripe_subscription.start_date is not None
             else None,
         ),
     )

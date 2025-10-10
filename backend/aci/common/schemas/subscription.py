@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator, model_validator
+
+DEFAULT_FREE_PLAN_CODE = "GATE22_FREE_PLAN"
 
 
 class SubscriptionPlanPublic(BaseModel):
@@ -16,7 +19,6 @@ class SubscriptionPlanPublic(BaseModel):
 class SubscriptionPlanCreate(BaseModel):
     plan_code: str
     display_name: str
-    is_free: bool
     is_public: bool
     stripe_price_id: str | None
     min_seats_for_subscription: int | None
@@ -69,7 +71,7 @@ class SubscriptionStatusPublic(BaseModel):
 
 class SubscriptionRequest(BaseModel):
     plan_code: str
-    seat_count: int | None = None
+    seat_count: int
 
 
 class SubscriptionCheckout(BaseModel):
@@ -85,7 +87,7 @@ class SubscriptionCancellation(BaseModel):
 
 
 class OrganizationSubscriptionUpsert(BaseModel):
-    plan_code: str
+    subscription_plan_id: UUID
     seat_count: int
     # See https://docs.stripe.com/billing/subscriptions/overview?locale=en-GB
     stripe_subscription_status: Literal[
@@ -114,6 +116,7 @@ class StripeEventData(BaseModel):
 
     id: str  # subscription id
     status: str
+    metadata: dict[str, str]
 
 
 class StripeEventDataObject(BaseModel):

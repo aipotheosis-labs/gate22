@@ -177,17 +177,15 @@ class Organization(Base):
     invitations: Mapped[list[OrganizationInvitation]] = relationship(
         back_populates="organization", cascade="all, delete-orphan", single_parent=True, init=False
     )
-
+    stripe_customer_id: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=True, server_default=None, init=False
+    )
     # One organization has maximum one subscription
     subscription: Mapped[OrganizationSubscription | None] = relationship(
         back_populates="organization", init=False
     )
-    entitlement_override: Mapped[OrganizationEntitlementOverride | None] = relationship(
-        back_populates="organization", init=False
-    )
-    organization_metadata: Mapped[OrganizationSubscriptionMetadata | None] = relationship(
-        back_populates="organization", init=False
-    )
+
+    __table_args__ = (UniqueConstraint("stripe_customer_id", name="uc_org_stripe_customer_id"),)
 
 
 class OrganizationMembership(Base):
@@ -812,39 +810,8 @@ class VirtualMCPTool(Base):
 
 
 ###################################################################################################
-# Below tables are used only by the "subscription" service.
-# Note: They are all in the `subscription` schema.
-# https://www.notion.so/Billing-Payment-27d8378d6a478049bcbcdc1e494942e9?source=copy_link
+# Below tables are used related to "subscription"
 ###################################################################################################
-class OrganizationSubscriptionMetadata(Base):
-    __tablename__ = "organization_subscription_metadata"
-
-    id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
-        ForeignKey("organizations.id"),
-        primary_key=True,
-        default_factory=uuid4,
-        init=False,
-    )
-    stripe_customer_id: Mapped[str | None] = mapped_column(
-        String(MAX_STRING_LENGTH), nullable=True, unique=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-        init=False,
-    )
-
-    organization: Mapped[Organization] = relationship(
-        back_populates="organization_metadata", init=False
-    )
-
-
 class SubscriptionPlan(Base):
     __tablename__ = "subscription_plans"
 
@@ -853,14 +820,11 @@ class SubscriptionPlan(Base):
     )
     plan_code: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
-    is_free: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False)
     stripe_price_id: Mapped[str | None] = mapped_column(
         String(MAX_STRING_LENGTH),
         nullable=True,
-        unique=True,
     )
-    min_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
     max_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
     max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True)
     log_retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -878,7 +842,7 @@ class SubscriptionPlan(Base):
         init=False,
     )
     subscriptions: Mapped[list[OrganizationSubscription]] = relationship(
-        back_populates="plan", init=False
+        back_populates="subscription_plan", init=False
     )
 
 
@@ -894,9 +858,9 @@ class OrganizationSubscription(Base):
         nullable=False,
         unique=True,  # One organization can have only one active subscription
     )
-    plan_code: Mapped[str] = mapped_column(
-        String(MAX_STRING_LENGTH),
-        ForeignKey("subscription_plans.plan_code"),
+    subscription_plan_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("subscription_plans.id"),
         nullable=False,
     )
     seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -929,40 +893,8 @@ class OrganizationSubscription(Base):
     )
 
     organization: Mapped[Organization] = relationship(back_populates="subscription", init=False)
-    plan: Mapped[SubscriptionPlan] = relationship(back_populates="subscriptions", init=False)
-
-
-class OrganizationEntitlementOverride(Base):
-    __tablename__ = "organization_entitlement_overrides"
-
-    id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
-    )
-    organization_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
-        ForeignKey("organizations.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-    )
-    seat_count: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
-    max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
-    log_retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, default=None
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-        nullable=False,
-        init=False,
-    )
-    organization: Mapped[Organization] = relationship(
-        back_populates="entitlement_override", init=False
+    subscription_plan: Mapped[SubscriptionPlan] = relationship(
+        back_populates="subscriptions", init=False
     )
 
 
