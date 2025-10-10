@@ -10,6 +10,8 @@ from aci.common.db import crud
 from aci.common.enums import OrganizationRole
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
+    DEFAULT_FREE_PLAN_CODE,
+    Entitlement,
     StripeWebhookEvent,
     SubscriptionCancellation,
     SubscriptionCheckout,
@@ -68,20 +70,8 @@ async def get_organization_entitlement(
         logger.error(f"Organization {organization_id} not found")
         raise OrganizationNotFound()
 
-    # Compute the effective entitlement
-    if organization.subscription is None:
-        plan = crud.subscriptions.get_free_plan(
-            db_session=context.db_session, throw_error_if_not_found=True
-        )
-    else:
-        plan = organization.subscription.plan
-
-    effective_entitlement = subscription_service.compute_effective_entitlement(
-        plan=plan,
-        seat_count=organization.subscription.seat_count
-        if organization.subscription is not None
-        else None,
-        override=organization.entitlement_override,
+    entitlement = subscription_service.get_organization_entitlement(
+        db_session=context.db_session, organization_id=organization_id
     )
 
     # Construct the output
@@ -93,14 +83,14 @@ async def get_organization_entitlement(
 
     subscription_status_public = SubscriptionStatusPublic(
         subscription=subscription_public,
-        entitlement=effective_entitlement,
+        entitlement=entitlement,
     )
 
     return subscription_status_public
 
 
 @router.post(
-    "/organizations/{organization_id}/change-subscription",
+    "/organizations/{organization_id}/subscription-plan-change",
     response_model=SubscriptionCheckout | SubscriptionResult,
     status_code=status.HTTP_200_OK,
 )
@@ -130,6 +120,12 @@ async def change_organization_subscription(
         logger.error(f"Organization {organization_id} not found")
         raise OrganizationNotFound()
 
+    if input.plan_code == DEFAULT_FREE_PLAN_CODE:
+        logger.warning("cannot change subscription to free plan. Use cancel subscription instead.")
+        raise RequestedSubscriptionInvalid(
+            "cannot change subscription to free plan. Use cancel subscription instead."
+        )
+
     # Check if the plan is active and is available for subscription
     requested_plan = crud.subscriptions.get_active_plan_by_plan_code(
         db_session=context.db_session,
@@ -141,49 +137,35 @@ async def change_organization_subscription(
             f"subscription plan {input.plan_code} not available for subscription"
         )
 
-    # This is a special case for the free plan, where we auto treat the requested seat count as the
-    # max available seats for Free Plan.
-    if requested_plan.is_free:
-        requested_seat_count = requested_plan.max_seats_for_subscription or 1
-    else:
-        # For paid plans, we require the seat count, and success_url and cancel_url must be provided
-        if input.seat_count is None:
-            logger.warning("seat count must be provided")
-            raise RequestedSubscriptionInvalid("seat count must be provided")
-        if requested_plan.stripe_price_id is None:
-            logger.warning("subscription plan not available for self-served subscription")
-            raise RequestedSubscriptionInvalid(
-                "subscription plan not available for self-served subscription"
-            )
-        requested_seat_count = input.seat_count
+    # For paid plans, we require the seat count, and success_url and cancel_url must be provided
+    if requested_plan.stripe_price_id is None:
+        logger.warning("subscription plan not available for self-served subscription")
+        raise RequestedSubscriptionInvalid(
+            "subscription plan not available for self-served subscription"
+        )
 
     # Check if the seat_requested matches the plan's requirement
     # plan.min_seat_for_subscription <= requested_seat <= plan.max_seat_for_subscription
     if (
-        requested_plan.min_seats_for_subscription is not None
-        and requested_seat_count < requested_plan.min_seats_for_subscription
-    ) or (
         requested_plan.max_seats_for_subscription is not None
-        and requested_seat_count > requested_plan.max_seats_for_subscription
+        and input.seat_count > requested_plan.max_seats_for_subscription
     ):
-        logger.info(
-            f"requested seat count {requested_seat_count} invalid for plan {input.plan_code}"
-        )
+        logger.info(f"requested seat count {input.seat_count} invalid for plan {input.plan_code}")
         raise RequestedSubscriptionInvalid(
-            f"requested seat count {requested_seat_count} invalid for plan {input.plan_code}"
+            f"requested seat count {input.seat_count} invalid for plan {input.plan_code}"
         )
 
-    # calculate and check effective entitlement after the change. We reject if the new entitlement
+    # calculate and check entitlement after the change. We reject if the new entitlement
     # does not meet the existing usage.
-    effective_entitlement_after_change = subscription_service.compute_effective_entitlement(
-        seat_count=requested_seat_count,
-        plan=requested_plan,
-        override=organization.entitlement_override,
+    entitlement_after_change = Entitlement(
+        seat_count=input.seat_count,
+        max_custom_mcp_servers=requested_plan.max_custom_mcp_servers,
+        log_retention_days=requested_plan.log_retention_days,
     )
     if not subscription_service.is_entitlement_fulfilling_existing_usage(
         db_session=context.db_session,
         organization_id=organization_id,
-        entitlement=effective_entitlement_after_change,
+        entitlement=entitlement_after_change,
     ):
         raise RequestedSubscriptionInvalid(
             "new entitlement does not meet existing usage. Must reduce current usage."
@@ -192,13 +174,13 @@ async def change_organization_subscription(
     # Check if the requested subscription is same as the existing one
     if (
         organization.subscription is not None
-        and organization.subscription.plan_code == requested_plan.plan_code
-        and organization.subscription.seat_count == requested_seat_count
+        and organization.subscription.subscription_plan_id == requested_plan.id
+        and organization.subscription.seat_count == input.seat_count
     ):
         logger.warning("the requested subscription is same as the existing one")
         raise RequestedSubscriptionInvalid("the requested subscription is same as the existing one")
 
-    if requested_plan.is_free:
+    if requested_plan.plan_code == DEFAULT_FREE_PLAN_CODE:
         logger.warning("cannot change subscription to free plan. Use cancel subscription instead.")
         raise RequestedSubscriptionInvalid(
             "cannot change subscription to free plan. Use cancel subscription instead."
@@ -213,7 +195,7 @@ async def change_organization_subscription(
             db_session=context.db_session,
             organization=organization,
             plan=requested_plan,
-            seat_count=requested_seat_count,
+            seat_count=input.seat_count,
         )
     # Existing: paid, Requested: paid (Change from one paid plan to another, or change seat count)
     else:
@@ -221,7 +203,7 @@ async def change_organization_subscription(
             db_session=context.db_session,
             organization=organization,
             plan=requested_plan,
-            seat_count=requested_seat_count,
+            seat_count=input.seat_count,
             existing_subscription=organization.subscription,
         )
 
