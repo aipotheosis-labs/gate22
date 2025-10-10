@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 DEFAULT_FREE_PLAN_CODE = "GATE22_FREE_PLAN"
 
@@ -10,7 +10,6 @@ DEFAULT_FREE_PLAN_CODE = "GATE22_FREE_PLAN"
 class SubscriptionPlanPublic(BaseModel):
     plan_code: str
     display_name: str
-    min_seats_for_subscription: int | None
     max_seats_for_subscription: int | None
     max_custom_mcp_servers: int | None
     log_retention_days: int | None
@@ -21,13 +20,11 @@ class SubscriptionPlanCreate(BaseModel):
     display_name: str
     is_public: bool
     stripe_price_id: str | None
-    min_seats_for_subscription: int | None
     max_seats_for_subscription: int | None
     max_custom_mcp_servers: int | None
     log_retention_days: int | None
 
     @field_validator(
-        "min_seats_for_subscription",
         "max_seats_for_subscription",
         "max_custom_mcp_servers",
         "log_retention_days",
@@ -37,16 +34,6 @@ class SubscriptionPlanCreate(BaseModel):
         if v is not None and v < 1:
             raise ValueError(f"{info.field_name} must be greater than 0")
         return v
-
-    @model_validator(mode="after")
-    def validate_min_max_seats(self) -> "SubscriptionPlanCreate":
-        min_seats = self.min_seats_for_subscription
-        max_seats = self.max_seats_for_subscription
-
-        if min_seats is not None and max_seats is not None and min_seats > max_seats:
-            raise ValueError("min_seats_for_subscription must be <= max_seats_for_subscription")
-
-        return self
 
 
 class Entitlement(BaseModel):
@@ -58,7 +45,6 @@ class Entitlement(BaseModel):
 class SubscriptionPublic(BaseModel):
     plan_code: str
     seat_count: int
-    stripe_subscription_status: Literal["active", "trialing", "past_due"]
     current_period_start: datetime
     current_period_end: datetime
     cancel_at_period_end: bool
