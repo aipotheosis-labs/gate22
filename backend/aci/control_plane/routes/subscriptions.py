@@ -74,12 +74,17 @@ async def get_organization_entitlement(
         db_session=context.db_session, organization_id=organization_id
     )
 
-    # Construct the output
-    subscription_public = (
-        SubscriptionPublic.model_validate(organization.subscription, from_attributes=True)
-        if organization.subscription is not None
-        else None
-    )
+    subscription = organization.subscription
+    if subscription is None:
+        subscription_public = None
+    else:
+        subscription_public = SubscriptionPublic(
+            plan_code=subscription.subscription_plan.plan_code,
+            seat_count=subscription.seat_count,
+            current_period_start=subscription.current_period_start,
+            current_period_end=subscription.current_period_end,
+            cancel_at_period_end=subscription.cancel_at_period_end,
+        )
 
     subscription_status_public = SubscriptionStatusPublic(
         subscription=subscription_public,
@@ -90,7 +95,7 @@ async def get_organization_entitlement(
 
 
 @router.post(
-    "/organizations/{organization_id}/subscription-plan-change",
+    "/organizations/{organization_id}/change-subscription",
     response_model=SubscriptionCheckout | SubscriptionResult,
     status_code=status.HTTP_200_OK,
 )
