@@ -212,6 +212,10 @@ def update_stripe_subscription(
                 }
             ],
             "proration_behavior": "always_invoice",
+            "metadata": {
+                "organization_id": str(organization.id),
+                "plan_code": plan.plan_code,
+            },
         },
     )
     logger.info(f"Stripe subscription updated: {existing_subscription.stripe_subscription_id}")

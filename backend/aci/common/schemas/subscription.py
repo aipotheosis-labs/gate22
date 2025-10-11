@@ -55,7 +55,11 @@ class SubscriptionStatusPublic(BaseModel):
     entitlement: Entitlement
 
 
-class SubscriptionRequest(BaseModel):
+class SubscriptionSeatChangeRequest(BaseModel):
+    seat_count: int
+
+
+class SubscriptionPlanChangeRequest(BaseModel):
     plan_code: str
     seat_count: int
 
