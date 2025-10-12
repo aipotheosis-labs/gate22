@@ -20,7 +20,7 @@ stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 def handle_stripe_event(db_session: Session, event_id: str) -> None:
     """
-    The entry function to handle any stripe events. This function MUST be INDEMPOTENT and can be
+    The entry function to handle any stripe events. This function MUST be IDEMPOTENT and can be
     called multiple times for a same event.
     """
     event_data = stripe_client.events.retrieve(event_id)
@@ -70,7 +70,7 @@ def handle_stripe_event(db_session: Session, event_id: str) -> None:
 
 def _process_subscription_event(db_session: Session, subscription_id: str) -> None:
     """
-    The entry function to handle any stripe events. This function MUST be INDEMPOTENT and can be
+    Process a subscription event from Stripe. This function MUST be IDEMPOTENT and can be
     called multiple times for a same event.
     """
     subscription_data = stripe_client.subscriptions.retrieve(subscription_id)
@@ -146,9 +146,14 @@ def _upsert_customer_subscription(
     stripe_subscription: Subscription,
     stripe_subscription_item: SubscriptionItem,
 ) -> None:
+    plan_code = stripe_subscription.metadata.get("plan_code")
+    if plan_code is None:
+        logger.error("Missing plan code in subscription metadata")
+        raise StripeOperationError("Missing plan code in subscription metadata")
+
     plan = crud.subscriptions.get_active_plan_by_plan_code(
         db_session=db_session,
-        plan_code=stripe_subscription.metadata["plan_code"],
+        plan_code=plan_code,
     )
     if plan is None:
         logger.error(f"Failed to map plan by stripe price id {stripe_subscription_item.price.id}")
@@ -159,7 +164,7 @@ def _upsert_customer_subscription(
     logger.info(f"Upserting organization subscription for {organization.id}...")
 
     if stripe_subscription_item.quantity is None:
-        # Unexpected, the quantity should be returned by STripe
+        # Unexpected, the quantity should be returned by Stripe
         logger.error("Missing quantity in subscription item")
         raise StripeOperationError("Missing quantity in subscription item")
 
