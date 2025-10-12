@@ -13,51 +13,54 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import { useChangeSubscription } from "../hooks/use-change-subscription";
+import { useChangeSeatCount, useChangePlan } from "../hooks/use-change-subscription";
 import { usePlans } from "../hooks/use-plans";
-import { PLAN_CODES } from "../types/subscription.types";
 
 interface ChangeSubscriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  planType: "free" | "team";
-  currentPlanCode?: string;
+  requestedPlanCode: string;
+  changeType: "seat-change" | "plan-change";
 }
 
 export function ChangeSubscriptionDialog({
   open,
   onOpenChange,
-  planType,
+  requestedPlanCode,
+  changeType,
 }: ChangeSubscriptionDialogProps) {
   const [seatCount, setSeatCount] = useState<number | "">(1);
-  const { changeSubscription, isChanging } = useChangeSubscription();
+  const { changeSeatCount, isChanging: isChangingSeatCount } = useChangeSeatCount();
+  const { changePlan, isChanging: isChangingPlan } = useChangePlan();
   const { data: plans } = usePlans();
 
-  // Get the team plan to access min/max seat limits
-  const teamPlan = plans?.find((plan) => plan.plan_code === PLAN_CODES.TEAM);
-  const minSeats = teamPlan?.min_seats_for_subscription || 1;
-  const maxSeats = teamPlan?.max_seats_for_subscription;
+  const requestedPlan = plans?.find((plan) => plan.plan_code === requestedPlanCode);
+  const maxSeats = requestedPlan?.max_seats_for_subscription;
+
+  // Determine which loading state to show
+  const isChanging = isChangingSeatCount || isChangingPlan;
 
   // Validation
   const isValidSeatCount = () => {
-    if (typeof seatCount !== "number" || seatCount < minSeats) return false;
+    if (typeof seatCount !== "number" || seatCount < 1) return false;
     if (maxSeats && seatCount > maxSeats) return false;
     return true;
   };
 
-  const isUpgrade = planType === "team";
-
   const handleConfirm = () => {
-    if (planType === "team") {
-      if (!isValidSeatCount()) return;
-      const seats = typeof seatCount === "number" ? seatCount : minSeats;
-      changeSubscription({
-        plan_code: PLAN_CODES.TEAM,
-        seat_count: seats,
+    if (!isValidSeatCount()) return;
+    if (typeof seatCount !== "number") {
+      return;
+    }
+
+    if (changeType === "seat-change") {
+      changeSeatCount({
+        seat_count: seatCount,
       });
-    } else {
-      changeSubscription({
-        plan_code: PLAN_CODES.FREE,
+    } else if (changeType === "plan-change") {
+      changePlan({
+        plan_code: requestedPlanCode,
+        seat_count: seatCount,
       });
     }
   };
@@ -66,35 +69,37 @@ export function ChangeSubscriptionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isUpgrade ? "Upgrade to Team Plan" : "Downgrade to Free Tier"}</DialogTitle>
+          <DialogTitle>
+            {changeType === "seat-change"
+              ? "Change Seat Count"
+              : "Change Plan to " + requestedPlan?.display_name}
+          </DialogTitle>
           <DialogDescription>
-            {isUpgrade
-              ? "Enter the number of seats you need for your team."
-              : "Are you sure you want to downgrade to the Free Tier? Your features will be limited."}
+            Enter the number of seats you need for your organization.
           </DialogDescription>
         </DialogHeader>
 
-        {isUpgrade && (
+        {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="seat-count">Number of Seats</Label>
               <Input
                 id="seat-count"
                 type="number"
-                min={minSeats}
+                min={1}
                 max={maxSeats || undefined}
                 value={seatCount}
                 onChange={(e) => {
                   const value = e.target.value;
                   setSeatCount(value === "" ? "" : parseInt(value));
                 }}
-                placeholder={`Enter number of seats (${minSeats}${maxSeats ? `-${maxSeats}` : "+"})`}
+                placeholder={`Enter number of seats ${maxSeats ? `(Max ${maxSeats})` : ""}`}
                 className={!isValidSeatCount() && seatCount !== "" ? "border-destructive" : ""}
               />
               {!isValidSeatCount() && seatCount !== "" && (
                 <p className="text-sm text-destructive">
-                  {typeof seatCount === "number" && seatCount < minSeats
-                    ? `Minimum ${minSeats} seat${minSeats !== 1 ? "s" : ""} required`
+                  {typeof seatCount === "number" && seatCount < 1
+                    ? `Minimum 1 seat required`
                     : maxSeats && typeof seatCount === "number" && seatCount > maxSeats
                       ? `Maximum ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} allowed`
                       : "Invalid seat count"}
@@ -105,28 +110,13 @@ export function ChangeSubscriptionDialog({
               </p>
             </div>
           </div>
-        )}
-
-        {!isUpgrade && (
-          <div className="my-4 space-y-2 rounded-lg bg-muted p-4">
-            <h4 className="text-sm font-semibold">Free Tier Includes:</h4>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              <li>• 1 Control Plane</li>
-              <li>• Max 1 Custom MCP</li>
-              <li>• Max 2 Seats</li>
-              <li>• 3 days Log Retention</li>
-            </ul>
-          </div>
-        )}
+        }
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isChanging}>
             Cancel
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={isChanging || (isUpgrade && !isValidSeatCount())}
-          >
+          <Button onClick={handleConfirm} disabled={isChanging || !isValidSeatCount()}>
             {isChanging && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Continue
           </Button>
