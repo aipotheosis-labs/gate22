@@ -75,8 +75,6 @@ async def get_organization_subscription_status(
 
     usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
     is_entitlement_fulfilling_usage = entitlement_utils.is_entitlement_fulfilling_usage(
-        db_session=context.db_session,
-        organization_id=organization_id,
         entitlement=entitlement,
         usage=usage,
     )
@@ -292,8 +290,6 @@ def _validate_subscription_change_request(
     )
     usage = entitlement_utils.get_organization_usage(db_session, organization.id)
     if not entitlement_utils.is_entitlement_fulfilling_usage(
-        db_session=db_session,
-        organization_id=organization.id,
         usage=usage,
         entitlement=entitlement_after_change,
     ):
