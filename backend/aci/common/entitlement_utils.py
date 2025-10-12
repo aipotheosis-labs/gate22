@@ -25,38 +25,28 @@ def get_organization_usage(db_session: Session, organization_id: UUID) -> Organi
     )
 
 
-
-def is_entitlement_fulfilling_usage(
-    db_session: Session, organization_id: UUID, entitlement: Entitlement, usage: OrganizationUsage
-) -> bool:
+def is_entitlement_fulfilling_usage(entitlement: Entitlement, usage: OrganizationUsage) -> bool:
     """
     Check existing usage of the organization.
     This will check
-        1. If the entitled seat count >= existing seat in use
-        2. If the entitled max custom mcp servers >= existing number of custom mcp servers
+        1. If the entitled seat count >= seat in usage
+        2. If the entitled max custom mcp servers >= number of custom mcp servers in usage
     Return True if all conditions are met, False otherwise.
     """
-    seat_in_use = crud.organizations.count_organization_members(
-        db_session=db_session,
-        organization_id=organization_id,
-    )
-    if entitlement.seat_count is not None and entitlement.seat_count < seat_in_use:
+    if entitlement.seat_count is not None and entitlement.seat_count < usage.seat_count:
         logger.info(
             f"Entitled seat ({entitlement.seat_count}) less than existing seat in "
-            f"use ({seat_in_use})"
+            f"use ({usage.seat_count})"
         )
         return False
 
-    custom_mcp_servers_in_use = crud.mcp_servers.list_mcp_servers(
-        db_session=db_session,
-        organization_id=organization_id,
-    )
-    if entitlement.max_custom_mcp_servers is not None and entitlement.max_custom_mcp_servers < len(
-        custom_mcp_servers_in_use
+    if (
+        entitlement.max_custom_mcp_servers is not None
+        and entitlement.max_custom_mcp_servers < usage.custom_mcp_servers_count
     ):
         logger.info(
             f"Entitled max custom mcp servers ({entitlement.max_custom_mcp_servers}) less "
-            f"than existing max custom mcp servers ({len(custom_mcp_servers_in_use)})"
+            f"than existing max custom mcp servers ({usage.custom_mcp_servers_count})"
         )
         return False
 
