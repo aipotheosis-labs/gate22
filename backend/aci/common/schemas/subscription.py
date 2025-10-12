@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 DEFAULT_FREE_PLAN_CODE = "GATE22_FREE_PLAN"
 
@@ -56,12 +56,12 @@ class SubscriptionStatusPublic(BaseModel):
 
 
 class SubscriptionSeatChangeRequest(BaseModel):
-    seat_count: int
+    seat_count: int = Field(..., gt=0)
 
 
 class SubscriptionPlanChangeRequest(BaseModel):
     plan_code: str
-    seat_count: int
+    seat_count: int = Field(..., gt=0)
 
 
 class SubscriptionCheckout(BaseModel):
