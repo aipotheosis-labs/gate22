@@ -69,6 +69,18 @@ async def get_organization_subscription_status(
         logger.error(f"Organization {organization_id} not found")
         raise OrganizationNotFoundError()
 
+    subscription = organization.subscription
+    if subscription is None:
+        subscription_public = None
+    else:
+        subscription_public = SubscriptionPublic(
+            plan_code=subscription.subscription_plan.plan_code,
+            seat_count=subscription.seat_count,
+            current_period_start=subscription.current_period_start,
+            current_period_end=subscription.current_period_end,
+            cancel_at_period_end=subscription.cancel_at_period_end,
+        )
+
     entitlement = entitlement_utils.get_organization_entitlement(
         db_session=context.db_session, organization_id=organization_id
     )
@@ -77,13 +89,6 @@ async def get_organization_subscription_status(
     is_entitlement_fulfilling_usage = entitlement_utils.is_entitlement_fulfilling_usage(
         entitlement=entitlement,
         usage=usage,
-    )
-
-    # Construct the output
-    subscription_public = (
-        SubscriptionPublic.model_validate(organization.subscription, from_attributes=True)
-        if organization.subscription is not None
-        else None
     )
 
     subscription_status_public = SubscriptionStatusPublic(
