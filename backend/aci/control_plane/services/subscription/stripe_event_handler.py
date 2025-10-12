@@ -26,6 +26,11 @@ def handle_stripe_event(db_session: Session, event_id: str) -> None:
     event_data = stripe_client.events.retrieve(event_id)
     event = StripeWebhookEvent.model_validate(event_data)
 
+    # Only handle subscription events
+    if not event.type.startswith("customer.subscription."):
+        logger.warning(f"Unsupported Stripe event type {event.type}. Ignore.")
+        return
+
     subscription = event.data.object
     logger.info(
         f"Stripe webhook received for event {event.type}, event id {event.id}, status {subscription.status}"  # noqa: E501
