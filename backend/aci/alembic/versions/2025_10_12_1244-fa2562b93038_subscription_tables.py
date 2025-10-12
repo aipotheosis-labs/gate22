@@ -1,8 +1,8 @@
 """subscription tables
 
-Revision ID: 400005da35e7
+Revision ID: fa2562b93038
 Revises: d84f9f8eabb2
-Create Date: 2025-10-10 16:39:24.967154+00:00
+Create Date: 2025-10-12 12:44:03.917709+00:00
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '400005da35e7'
+revision: str = 'fa2562b93038'
 down_revision: Union[str, None] = 'd84f9f8eabb2'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('plan_code', sa.String(length=512), nullable=False),
     sa.Column('display_name', sa.String(length=512), nullable=False),
     sa.Column('is_public', sa.Boolean(), nullable=False),
-    sa.Column('stripe_price_id', sa.String(length=512), nullable=True),
+    sa.Column('stripe_price_id', sa.TEXT(), nullable=True),
     sa.Column('max_seats_for_subscription', sa.Integer(), nullable=True),
     sa.Column('max_custom_mcp_servers', sa.Integer(), nullable=True),
     sa.Column('log_retention_days', sa.Integer(), nullable=True),
@@ -37,7 +37,7 @@ def upgrade() -> None:
     )
     op.create_table('subscription_stripe_event_logs',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('stripe_event_id', sa.String(length=512), nullable=False),
+    sa.Column('stripe_event_id', sa.TEXT(), nullable=False),
     sa.Column('type', sa.String(length=512), nullable=False),
     sa.Column('payload', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('received_at', sa.DateTime(timezone=True), nullable=False),
@@ -55,8 +55,8 @@ def upgrade() -> None:
     sa.Column('subscription_plan_id', sa.UUID(), nullable=False),
     sa.Column('seat_count', sa.Integer(), nullable=False),
     sa.Column('stripe_subscription_status', sa.String(length=512), nullable=False),
-    sa.Column('stripe_subscription_id', sa.String(length=512), nullable=False),
-    sa.Column('stripe_subscription_item_id', sa.String(length=512), nullable=False),
+    sa.Column('stripe_subscription_id', sa.TEXT(), nullable=False),
+    sa.Column('stripe_subscription_item_id', sa.TEXT(), nullable=False),
     sa.Column('current_period_start', sa.DateTime(timezone=True), nullable=False),
     sa.Column('current_period_end', sa.DateTime(timezone=True), nullable=False),
     sa.Column('cancel_at_period_end', sa.Boolean(), nullable=False),
