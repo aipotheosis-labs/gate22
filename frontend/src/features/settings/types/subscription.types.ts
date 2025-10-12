@@ -30,6 +30,15 @@ export interface ChangeSubscriptionRequest {
   seat_count?: number;
 }
 
+export interface ChangeSeatCountRequest {
+  seat_count: number;
+}
+
+export interface ChangePlanRequest {
+  plan_code: string;
+  seat_count: number;
+}
+
 export interface ChangeSubscriptionResponse {
   url?: string;
 }
@@ -42,7 +51,6 @@ export const PLAN_CODES = {
 export interface Plan {
   plan_code: string;
   display_name: string;
-  min_seats_for_subscription?: number;
   max_seats_for_subscription?: number;
   max_custom_mcp_servers?: number;
   log_retention_days?: number;

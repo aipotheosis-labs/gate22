@@ -78,7 +78,8 @@ export function SubscriptionSettings() {
   const { cancelSubscription, isCancelling } = useCancelSubscription();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [selectedPlanType, setSelectedPlanType] = useState<"free" | "team">("team");
+  const [requestedPlanCode, setRequestedPlanCode] = useState<string>(PLAN_CODES.TEAM);
+  const [changeType, setChangeType] = useState<"seat-change" | "plan-change">("seat-change");
 
   // Helper function to get plan by code
   const getPlanByCode = (code: string) => {
@@ -189,17 +190,22 @@ export function SubscriptionSettings() {
                   : `You are currently subscribed to the ${planName} plan.`}
               </CardDescription>
             </div>
-            {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedPlanType("team");
-                  setDialogOpen(true);
-                }}
-              >
-                Change Seats
-              </Button>
-            )}
+            {!isFreePlan &&
+              subscriptionStatus.subscription &&
+              !subscriptionStatus.subscription.cancel_at_period_end && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setRequestedPlanCode(
+                      subscriptionStatus.subscription?.plan_code || PLAN_CODES.TEAM,
+                    );
+                    setChangeType("seat-change");
+                    setDialogOpen(true);
+                  }}
+                >
+                  Change Seats
+                </Button>
+              )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -387,12 +393,9 @@ export function SubscriptionSettings() {
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
                     <span>
-                      {teamPlan.min_seats_for_subscription === teamPlan.max_seats_for_subscription
-                        ? `${teamPlan.min_seats_for_subscription} Seat${teamPlan.min_seats_for_subscription !== 1 ? "s" : ""}`
-                        : teamPlan.max_seats_for_subscription === null ||
-                            teamPlan.max_seats_for_subscription === 0
-                          ? `${teamPlan.min_seats_for_subscription} to Unlimited Seats`
-                          : `${teamPlan.min_seats_for_subscription} to ${teamPlan.max_seats_for_subscription} Seats`}
+                      {teamPlan.max_seats_for_subscription === null
+                        ? `Unlimited Seats`
+                        : `Max ${teamPlan.max_seats_for_subscription} Seats`}
                     </span>
                   </li>
                   <li className="flex items-center gap-2">
@@ -409,7 +412,8 @@ export function SubscriptionSettings() {
             <Button
               className="w-full"
               onClick={() => {
-                setSelectedPlanType("team");
+                setRequestedPlanCode(PLAN_CODES.TEAM);
+                setChangeType("plan-change");
                 setDialogOpen(true);
               }}
               disabled={!isFreePlan}
@@ -479,8 +483,8 @@ export function SubscriptionSettings() {
       <ChangeSubscriptionDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        planType={selectedPlanType}
-        currentPlanCode={subscriptionStatus?.subscription?.plan_code}
+        requestedPlanCode={requestedPlanCode}
+        changeType={changeType}
       />
       {/* Support Section */}
       <Card>

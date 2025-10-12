@@ -2,6 +2,8 @@ import { createAuthenticatedRequest } from "@/lib/api-client";
 import {
   SubscriptionStatus,
   ChangeSubscriptionRequest,
+  ChangeSeatCountRequest,
+  ChangePlanRequest,
   ChangeSubscriptionResponse,
   Plan,
 } from "../types/subscription.types";
@@ -25,6 +27,30 @@ export const subscriptionApi = {
     const api = createAuthenticatedRequest(token);
     return api.post<ChangeSubscriptionResponse>(
       `/subscriptions/organizations/${organizationId}/change-subscription`,
+      data,
+    );
+  },
+
+  changeSeatCount: async (
+    organizationId: string,
+    data: ChangeSeatCountRequest,
+    token?: string,
+  ): Promise<ChangeSubscriptionResponse> => {
+    const api = createAuthenticatedRequest(token);
+    return api.post<ChangeSubscriptionResponse>(
+      `/subscriptions/organizations/${organizationId}/subscription-seat-change`,
+      data,
+    );
+  },
+
+  changePlan: async (
+    organizationId: string,
+    data: ChangePlanRequest,
+    token?: string,
+  ): Promise<ChangeSubscriptionResponse> => {
+    const api = createAuthenticatedRequest(token);
+    return api.post<ChangeSubscriptionResponse>(
+      `/subscriptions/organizations/${organizationId}/subscription-plan-change`,
       data,
     );
   },
