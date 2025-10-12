@@ -21,6 +21,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
+from sqlalchemy.types import TEXT
 
 from aci.common.enums import (
     AuthType,
@@ -821,10 +822,9 @@ class SubscriptionPlan(Base):
     plan_code: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    stripe_price_id: Mapped[str | None] = mapped_column(
-        String(MAX_STRING_LENGTH),
-        nullable=True,
-    )
+    # This may be null when the plan is not available for self-served subscription. For example,
+    # Free plan or custom offline deals.
+    stripe_price_id: Mapped[str | None] = mapped_column(TEXT, nullable=True)
     max_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
     max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True)
     log_retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -868,13 +868,11 @@ class OrganizationSubscription(Base):
         String(MAX_STRING_LENGTH), nullable=False
     )
     stripe_subscription_id: Mapped[str] = mapped_column(
-        String(MAX_STRING_LENGTH),
+        TEXT,
         nullable=False,
         unique=True,  # One stripe subscription id can only be used by one organization
     )
-    stripe_subscription_item_id: Mapped[str] = mapped_column(
-        String(MAX_STRING_LENGTH), nullable=False
-    )
+    stripe_subscription_item_id: Mapped[str] = mapped_column(TEXT, nullable=False)
     current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False)
@@ -904,9 +902,7 @@ class SubscriptionStripeEventLogs(Base):
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
     )
-    stripe_event_id: Mapped[str] = mapped_column(
-        String(MAX_STRING_LENGTH), nullable=False, unique=True
-    )
+    stripe_event_id: Mapped[str] = mapped_column(TEXT, nullable=False, unique=True)
     type: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
