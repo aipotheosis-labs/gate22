@@ -18,9 +18,6 @@ logger = get_logger(__name__)
 stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
-STRIPE_EVENT_MAX_PROCESS_ATTEMPTS = 3
-
-
 def handle_stripe_event(db_session: Session, event_id: str) -> None:
     """
     The entry function to handle any stripe events. This function MUST be INDEMPOTENT and can be
@@ -49,10 +46,6 @@ def handle_stripe_event(db_session: Session, event_id: str) -> None:
     if stripe_event_log.processed_at is not None:
         logger.info(f"Stripe event {event.id} already processed")
         return
-
-    if stripe_event_log.process_attempts >= STRIPE_EVENT_MAX_PROCESS_ATTEMPTS:
-        logger.error(f"Stripe event {event.id} failed to process after max attempts")
-        raise StripeOperationError(f"Stripe event {event.id} failed to process after max attempts")
 
     # Process the stripe event
     try:
