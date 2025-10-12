@@ -860,7 +860,9 @@ class OrganizationSubscription(Base):
     )
     subscription_plan_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
-        ForeignKey("subscription_plans.id"),
+        # Deleting Subscription plan should be restricted if used by any organization.
+        # We should rather mark as archived instead.
+        ForeignKey("subscription_plans.id", ondelete="RESTRICT"),
         nullable=False,
     )
     seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
