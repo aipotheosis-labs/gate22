@@ -28,7 +28,7 @@ from aci.control_plane.exceptions import (
     OrganizationNotFound,
     OrganizationSubscriptionNotFound,
     RequestedSubscriptionInvalid,
-    StripeOperationError,
+    StripeWebhookInputError,
 )
 from aci.control_plane.services.subscription import stripe_event_handler, subscription_service
 
@@ -318,7 +318,10 @@ async def stripe_webhook(
         )  # type: ignore[no-untyped-call]
     except stripe.SignatureVerificationError as e:
         logger.error("Invalid signature")
-        raise StripeOperationError("Invalid signature") from e
+        raise StripeWebhookInputError("Invalid signature") from e
+    except ValueError as e:
+        logger.error("Invalid payload")
+        raise StripeWebhookInputError("Invalid payload") from e
 
     if not body.type.startswith("customer.subscription."):
         logger.info(f"Unsupported Stripe event type {body.type}. Ignore.")

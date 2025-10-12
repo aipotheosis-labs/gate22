@@ -380,3 +380,16 @@ class StripeOperationError(SubscriptionException):
             message=message,
             error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+class StripeWebhookInputError(SubscriptionException):
+    """
+    Exception raised when a stripe webhook input error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Stripe webhook input error",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
