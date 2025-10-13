@@ -96,8 +96,6 @@ def update_mcp_server(
     if embedding:
         mcp_server.embedding = embedding
 
-    db_session.flush()
-    db_session.refresh(mcp_server)
     return mcp_server
 
 

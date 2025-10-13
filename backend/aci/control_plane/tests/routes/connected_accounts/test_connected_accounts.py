@@ -326,7 +326,7 @@ def test_delete_connected_account(
 
         # Check if the connected account is deleted
         connected_account = crud.connected_accounts.get_connected_account_by_id(
-            db_session, target_connected_account.id
+            db_session, target_connected_account.id, throw_error_if_not_found=False
         )
         assert connected_account is None
         return
@@ -341,7 +341,7 @@ def test_delete_connected_account(
 
             # Check if the connected account is deleted
             connected_account = crud.connected_accounts.get_connected_account_by_id(
-                db_session, target_connected_account.id
+                db_session, target_connected_account.id, throw_error_if_not_found=False
             )
             assert connected_account is None
 
@@ -349,7 +349,7 @@ def test_delete_connected_account(
             assert response.status_code == 403
             # Check if the connected account is deleted
             connected_account = crud.connected_accounts.get_connected_account_by_id(
-                db_session, target_connected_account.id
+                db_session, target_connected_account.id, throw_error_if_not_found=False
             )
             assert connected_account is not None
 

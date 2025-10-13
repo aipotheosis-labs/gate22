@@ -53,6 +53,5 @@ def update_server(
     vms_data = vms_upsert.model_dump(mode="json", exclude_none=True)
     for field, value in vms_data.items():
         setattr(vms, field, value)
-    db_session.flush()
-    db_session.refresh(vms)
+
     return vms

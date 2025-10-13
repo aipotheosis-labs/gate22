@@ -89,7 +89,6 @@ def remove_organization_member(
     db_session.query(OrganizationMembership).filter(
         OrganizationMembership.organization_id == organization_id
     ).filter(OrganizationMembership.user_id == user_id).delete()
-    db_session.flush()
 
 
 def update_organization_member_role(
@@ -102,4 +101,3 @@ def update_organization_member_role(
         OrganizationMembership.organization_id == organization_id,
         OrganizationMembership.user_id == user_id,
     ).update({"role": role})
-    db_session.flush()

@@ -90,7 +90,6 @@ def remove_team_member(
         TeamMembership.organization_id == organization_id,
         TeamMembership.user_id == user_id,
     ).delete()
-    db_session.flush()
 
 
 def get_team_members(
