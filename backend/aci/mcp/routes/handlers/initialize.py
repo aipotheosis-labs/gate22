@@ -116,8 +116,6 @@ async def _initialize_external_mcp_session(
 
     try:
         auth_config = acm.get_auth_config(mcp_server, mcp_server_configuration)
-        # TODO: ideally we should commit here because get_auth_credentials might update the
-        # auth credentials
         auth_credentials = await acm.get_auth_credentials(
             db_session,
             mcp_server_configuration.id,

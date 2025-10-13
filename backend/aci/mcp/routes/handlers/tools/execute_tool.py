@@ -258,9 +258,6 @@ async def handle_execute_tool(
             mcp_server_configuration.connected_account_ownership,
             user_id=mcp_server_bundle.user_id,
         )
-        # TODO: need to commit because get_auth_credentials might update the auth credentials
-        # consider making the logic here more explicit?
-        db_session.commit()
     except Exception as e:
         logger.exception(f"Error getting auth config and credentials: {e}")
         errorData = JSONRPCErrorResponse.ErrorData(

@@ -75,6 +75,7 @@ def _assert_connected_accounts_removal(
             crud.connected_accounts.get_connected_account_by_id(
                 db_session=db_session,
                 connected_account_id=connected_account_id,
+                throw_error_if_not_found=False,
             )
             is None
         )
@@ -84,6 +85,7 @@ def _assert_connected_accounts_removal(
             crud.connected_accounts.get_connected_account_by_id(
                 db_session=db_session,
                 connected_account_id=connected_account_id,
+                throw_error_if_not_found=False,
             )
             is not None
         )
@@ -480,6 +482,7 @@ def test_on_mcp_server_configuration_deleted(
             crud.connected_accounts.get_connected_account_by_id(
                 db_session=db_session,
                 connected_account_id=connected_account_id,
+                throw_error_if_not_found=False,
             )
             is None
         )
@@ -707,6 +710,7 @@ def test_on_mcp_server_deleted(
             crud.connected_accounts.get_connected_account_by_id(
                 db_session=db_session,
                 connected_account_id=connected_account_id,
+                throw_error_if_not_found=False,
             )
             is None
         )

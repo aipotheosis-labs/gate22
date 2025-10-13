@@ -52,7 +52,6 @@ class MCPToolsManager:
             ConnectedAccountOwnership.OPERATIONAL,
             user_id=None,
         )
-
         # Fetch the tools
         fetcher = MCPToolsFetcher(timeout_seconds=30)
         tools = await fetcher.fetch_tools(self.mcp_server, auth_config, auth_credentials)

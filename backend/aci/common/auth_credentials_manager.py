@@ -1,3 +1,4 @@
+import asyncio
 import time
 from uuid import UUID
 
@@ -270,6 +271,40 @@ async def get_auth_credentials(
             f"mcp_server_configuration_id={mcp_server_configuration_id}, "
             f"mcp_server_name={connected_account.mcp_server_configuration.mcp_server.name}"
         )
+        # grab connected account for updating:
+        # it will NOT block if the account is already locked by another process. in which case we
+        # sleep and re-check if it needs to be refreshed again
+        logger.info("grabbing connected account with lock for refresh")
+        connected_account_id = connected_account.id
+        connected_account = crud.connected_accounts.get_connected_account_by_id(
+            db_session,
+            connected_account_id,
+            throw_error_if_not_found=False,
+            with_for_update=True,
+        )
+        if connected_account is None:
+            logger.warning(
+                "Connected account is already locked by another process, sleeping and re-checking"
+            )
+            # TODO: a more robust way to handle multiple concurrent requests for token refresh?
+            await asyncio.sleep(3)
+            # try getting the latest connected account without locking
+            connected_account = crud.connected_accounts.get_connected_account_by_id(
+                db_session,
+                connected_account_id,
+                throw_error_if_not_found=True,
+            )
+            auth_credentials = AuthCredentials.model_validate(connected_account.auth_credentials)
+            if _need_refresh(auth_credentials):
+                logger.warning("Auth credentials still need to be refreshed")
+                raise AuthCredentialsManagerError("failed to refresh auth credentials")
+            else:
+                logger.info(
+                    "Auth credentials is refreshed by another request, no need to refresh again"
+                )
+                return auth_credentials
+
+        logger.info("grabbed connected account with lock for refresh")
         # TODO: consider auth_config as parameters?
         auth_credentials = await _refresh_auth_credentials(
             connected_account.mcp_server_configuration.mcp_server.name,
@@ -285,6 +320,9 @@ async def get_auth_credentials(
             connected_account,
             auth_credentials.model_dump(mode="json", exclude_none=True),
         )
+        # TODO: better place to unify commit
+        db_session.commit()
+
     return auth_credentials
 
 
