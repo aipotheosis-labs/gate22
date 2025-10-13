@@ -40,6 +40,7 @@ dependencies = [
     "elevenlabs>=2.16.0",
     "favicon>=0.7.0",
     "tldextract>=5.3.0",
+    "tenacity>=9.1.2",
 ]
 
 [dependency-groups]

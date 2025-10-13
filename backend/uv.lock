@@ -1257,6 +1257,7 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "stripe" },
     { name = "svix" },
+    { name = "tenacity" },
     { name = "tldextract" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1313,6 +1314,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2.0.40" },
     { name = "stripe", specifier = ">=12.1.0" },
     { name = "svix", specifier = ">=1.65.0" },
+    { name = "tenacity", specifier = ">=9.1.2" },
     { name = "tldextract", specifier = ">=5.3.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.31.1" },
 ]
@@ -2557,6 +2559,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/48/e2/6f19fae0a8c72bb7f8293537ef466ffc809a6260df8673a711021a79a9cd/svix-1.73.0.tar.gz", hash = "sha256:6ecee7a8c6358c8771fe5c7c5397430171c3d02e84eb75f7a29b3273327becdf", size = 47279, upload-time = "2025-08-14T17:42:01.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/44/31baa93b810059b0f6efb02380093af3c79a60e0ea5d8e02553661f38a4b/svix-1.73.0-py3-none-any.whl", hash = "sha256:e1772f9c42a860c60e94223d8537b3b554062e7012cb89f72d7873f89afd0b38", size = 98306, upload-time = "2025-08-14T17:41:59.99Z" },
+]
+
+[[package]]
+name = "tenacity"
+version = "9.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/d4/2b0cd0fe285e14b36db076e78c93766ff1d529d70408bd1d2a5a84f1d929/tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb", size = 48036, upload-time = "2025-04-02T08:25:09.966Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/30/643397144bfbfec6f6ef821f36f33e57d35946c44a2352d3c9f0ae847619/tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138", size = 28248, upload-time = "2025-04-02T08:25:07.678Z" },
 ]
 
 [[package]]

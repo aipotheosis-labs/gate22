@@ -1,8 +1,13 @@
-import asyncio
 import time
 from uuid import UUID
 
 from sqlalchemy.orm import Session
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from aci.common.db import crud
 from aci.common.db.sql_models import (
@@ -282,48 +287,74 @@ async def get_auth_credentials(
             throw_error_if_not_found=False,
             with_for_update=True,
         )
+        # TODO: other account updates can also block the lock acquisition. Might need to move
+        # lock acquisition to _wait_for_connected_account_refresh
         if connected_account is None:
-            logger.warning(
-                "Connected account is already locked by another process, sleeping and re-checking"
-            )
-            # TODO: a more robust way to handle multiple concurrent requests for token refresh?
-            await asyncio.sleep(3)
-            # try getting the latest connected account without locking
-            connected_account = crud.connected_accounts.get_connected_account_by_id(
-                db_session,
-                connected_account_id,
-                throw_error_if_not_found=True,
-            )
-            auth_credentials = AuthCredentials.model_validate(connected_account.auth_credentials)
-            if _need_refresh(auth_credentials):
-                logger.warning("Auth credentials still need to be refreshed")
-                raise AuthCredentialsManagerError("failed to refresh auth credentials")
-            else:
-                logger.info(
-                    "Auth credentials is refreshed by another request, no need to refresh again"
-                )
-                return auth_credentials
+            return await _wait_for_connected_account_refresh(db_session, connected_account_id)
 
-        logger.info("grabbed connected account with lock for refresh")
-        # TODO: consider auth_config as parameters?
-        auth_credentials = await _refresh_auth_credentials(
-            connected_account.mcp_server_configuration.mcp_server.name,
-            get_auth_config(
-                connected_account.mcp_server_configuration.mcp_server,
-                connected_account.mcp_server_configuration,
-            ),
-            auth_credentials,
-        )
-        # update back to the connected account
-        crud.connected_accounts.update_connected_account_auth_credentials(
-            db_session,
-            connected_account,
-            auth_credentials.model_dump(mode="json", exclude_none=True),
-        )
-        # TODO: better place to unify commit
-        db_session.commit()
+        else:
+            logger.info("grabbed connected account with lock for refresh")
+            # TODO: consider auth_config as parameters?
+            auth_credentials = await _refresh_auth_credentials(
+                connected_account.mcp_server_configuration.mcp_server.name,
+                get_auth_config(
+                    connected_account.mcp_server_configuration.mcp_server,
+                    connected_account.mcp_server_configuration,
+                ),
+                auth_credentials,
+            )
+            # update back to the connected account
+            crud.connected_accounts.update_connected_account_auth_credentials(
+                db_session,
+                connected_account,
+                auth_credentials.model_dump(mode="json", exclude_none=True),
+            )
+            # TODO: better place to unify commit
+            db_session.commit()
 
     return auth_credentials
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=1, max=4),
+    retry=retry_if_exception_type(AuthCredentialsManagerError),
+    reraise=True,
+)
+async def _wait_for_connected_account_refresh(
+    db_session: Session, connected_account_id: UUID
+) -> AuthCredentials:
+    """
+    Wait for another process to complete the token refresh.
+    Uses tenacity to retry with exponential backoff if credentials are not yet refreshed.
+    NOTE: need to use async for asyncio.sleep
+    """
+    logger.info(
+        f"Connected account locked by another process, checking if refresh completed "
+        f"(connected_account_id={connected_account_id})"
+    )
+    # Try getting the latest connected account without locking
+    connected_account = crud.connected_accounts.get_connected_account_by_id(
+        db_session,
+        connected_account_id,
+        throw_error_if_not_found=True,
+    )
+    auth_credentials = AuthCredentials.model_validate(connected_account.auth_credentials)
+
+    if _need_refresh(auth_credentials):
+        logger.warning(
+            f"Auth credentials still need refresh, will retry "
+            f"(connected_account_id={connected_account_id})"
+        )
+        raise AuthCredentialsManagerError(
+            "Auth credentials not yet refreshed by other process, retrying..."
+        )
+    else:
+        logger.info(
+            f"Auth credentials successfully refreshed by another process "
+            f"(connected_account_id={connected_account_id})"
+        )
+        return auth_credentials
 
 
 def _need_refresh(auth_credentials: AuthCredentials, leeway_seconds: int = 60) -> bool:
