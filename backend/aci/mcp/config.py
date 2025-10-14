@@ -41,3 +41,10 @@ SENTRY_DSN = check_and_get_env_variable("MCP_SENTRY_DSN")
 
 # mcp
 MCP_SESSION_ID_HEADER = "mcp-session-id"
+
+# OpenTelemetry
+# Single endpoint for all signals (traces, metrics, logs) - gRPC will route automatically
+OTEL_EXPORTER_OTLP_ENDPOINT = check_and_get_env_variable(
+    "MCP_OTEL_EXPORTER_OTLP_ENDPOINT", default=None
+)
+OTEL_SERVICE_NAME = check_and_get_env_variable("MCP_OTEL_SERVICE_NAME", default="mcp-gateway")

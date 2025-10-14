@@ -15,6 +15,7 @@ from aci.mcp.middleware.interceptor import (
     InterceptorMiddleware,
     RequestContextFilter,
 )
+from aci.mcp.observability import setup_telemetry
 from aci.mcp.routes import (
     health,
     mcp,
@@ -83,4 +84,17 @@ app.include_router(
     mcp.router,
     prefix=config.ROUTER_PREFIX_MCP,
     tags=[config.ROUTER_PREFIX_MCP.split("/")[-1]],
+)
+
+
+# Setup OpenTelemetry instrumentation (traces, metrics, logs)
+# gRPC automatically routes to /v1/traces, /v1/metrics, /v1/logs
+setup_telemetry(
+    app=app,
+    service_name=config.OTEL_SERVICE_NAME,
+    environment=config.ENVIRONMENT,
+    otlp_traces_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
+    otlp_metrics_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
+    otlp_logs_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
+    enable_console_export=False,  # Set to True if you want console output in local dev
 )
