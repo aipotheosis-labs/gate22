@@ -7,5 +7,9 @@ export default function TeamDetailPage() {
   const params = useParams();
   const teamId = params.teamId as string;
 
-  return <TeamDetailSettings teamId={teamId} />;
+  return (
+    <div className="container mx-auto max-w-7xl px-6 py-8">
+      <TeamDetailSettings teamId={teamId} />
+    </div>
+  );
 }

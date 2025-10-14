@@ -1,9 +1,9 @@
 export const SETTINGS_ROUTES = {
-  ORGANIZATION: "/settings/organization",
-  TEAMS: "/settings/teams",
-  NEW_TEAM: "/settings/teams/new",
-  TEAM_DETAIL: (teamId: string) => `/settings/teams/${teamId}`,
-  MEMBERS: "/settings/members",
+  ORGANIZATION: "/organization-settings",
+  TEAMS: "/teams",
+  NEW_TEAM: "/teams/new",
+  TEAM_DETAIL: (teamId: string) => `/teams/${teamId}`,
+  MEMBERS: "/members",
 } as const;
 
 export const QUERY_KEYS = {
