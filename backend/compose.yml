@@ -1,5 +1,19 @@
 name: mcp-gateway
 services:
+  # OpenTelemetry Collector - receives telemetry from services and forwards to Dash0
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.136.0
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+    env_file:
+      - .env.local
+    restart: no
+    profiles: ["otel"]
+
   db:
     # Note: we need to use the pgvector/pgvector:pg17 image to use the pgvector extension, instead of the official postgres image
     image: pgvector/pgvector:pg17
