@@ -86,8 +86,10 @@ def setup_telemetry(
     # ==================== INSTRUMENTATION ====================
     logger.info("Instrumenting libraries with OpenTelemetry")
 
-    # FastAPI instrumentation
-    FastAPIInstrumentor.instrument_app(app)
+    # FastAPI instrumentation (exclude health checks and docs endpoints using regex)
+    FastAPIInstrumentor.instrument_app(
+        app, excluded_urls=".*/health$|.*/docs.*|.*/redoc.*|.*/openapi.json$"
+    )
 
     # HTTPX instrumentation (for outgoing HTTP requests)
     HTTPXClientInstrumentor().instrument()
