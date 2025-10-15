@@ -8,6 +8,7 @@ from starlette.responses import JSONResponse
 from aci.common.enums import Environment
 from aci.common.logging_setup import setup_logging
 from aci.common.openai_client import init_openai_client
+from aci.common.otel import setup_telemetry
 from aci.common.sentry import setup_sentry
 from aci.mcp import config
 from aci.mcp.exceptions import RemoteMCPException
@@ -15,7 +16,6 @@ from aci.mcp.middleware.interceptor import (
     InterceptorMiddleware,
     RequestContextFilter,
 )
-from aci.mcp.observability import setup_telemetry
 from aci.mcp.routes import (
     health,
     mcp,
