@@ -36,11 +36,11 @@ def setup_telemetry(
 
     Args:
         app: FastAPI application instance
-        service_name: Name of the service for tracing
         environment: Current environment (LOCAL, DEV, PROD, etc.)
         otlp_endpoint: OTLP collector endpoint for traces, metrics, and logs
         (share the same endpoint for all signals)
     """
+
     logger.info(
         f"Setting up OpenTelemetry for "
         f"service={app.title}, "
