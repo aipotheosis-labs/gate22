@@ -21,14 +21,15 @@ from aci.mcp.routes import (
     mcp,
 )
 
-if config.ENVIRONMENT == Environment.LOCAL:
-    formatter = None
-else:
-    formatter = JsonFormatter(
+formatter = (
+    JsonFormatter(
         "{levelname} {asctime} {name} {message}",
         style="{",
         rename_fields={"asctime": "timestamp", "name": "file", "levelname": "level"},
     )
+    if config.LOG_STRUCTURED
+    else None
+)
 
 if config.ENVIRONMENT != Environment.LOCAL:
     setup_sentry(config.SENTRY_DSN, config.ENVIRONMENT)
@@ -88,13 +89,9 @@ app.include_router(
 
 
 # Setup OpenTelemetry instrumentation (traces, metrics, logs)
-# gRPC automatically routes to /v1/traces, /v1/metrics, /v1/logs
-setup_telemetry(
-    app=app,
-    service_name=config.OTEL_SERVICE_NAME,
-    environment=config.ENVIRONMENT,
-    otlp_traces_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
-    otlp_metrics_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
-    otlp_logs_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
-    enable_console_export=False,  # Set to True if you want console output in local dev
-)
+if config.OTEL_ENABLED:
+    setup_telemetry(
+        app=app,
+        environment=config.ENVIRONMENT,
+        otlp_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
+    )

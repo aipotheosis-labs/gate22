@@ -14,12 +14,12 @@ from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
 from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor, ConsoleLogExporter
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import ConsoleMetricExporter, PeriodicExportingMetricReader
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from aci.common.enums import Environment
 
@@ -28,12 +28,8 @@ logger = logging.getLogger(__name__)
 
 def setup_telemetry(
     app: FastAPI,
-    service_name: str,
     environment: Environment,
-    otlp_traces_endpoint: str | None = None,
-    otlp_metrics_endpoint: str | None = None,
-    otlp_logs_endpoint: str | None = None,
-    enable_console_export: bool = False,
+    otlp_endpoint: str,
 ) -> None:
     """
     Setup OpenTelemetry instrumentation for traces, metrics, and logs.
@@ -42,92 +38,52 @@ def setup_telemetry(
         app: FastAPI application instance
         service_name: Name of the service for tracing
         environment: Current environment (LOCAL, DEV, PROD, etc.)
-        otlp_traces_endpoint: OTLP collector endpoint for traces (optional)
-        otlp_metrics_endpoint: OTLP collector endpoint for metrics (optional)
-        otlp_logs_endpoint: OTLP collector endpoint for logs (optional)
-        enable_console_export: If True, export spans to console (useful for local dev)
+        otlp_endpoint: OTLP collector endpoint for traces, metrics, and logs
+        (share the same endpoint for all signals)
     """
-    logger.info(f"Setting up OpenTelemetry for service: {service_name}")
-
-    # Create shared resource with service name and environment
+    logger.info(
+        f"Setting up OpenTelemetry for "
+        f"service={app.title}, "
+        f"environment={environment}, "
+        f"otlp_endpoint={otlp_endpoint}"
+    )
+    # ==================== RESOURCE SETUP ====================
     resource = Resource(
         attributes={
-            SERVICE_NAME: service_name,
-            "environment": environment.value,
+            SERVICE_NAME: app.title,
+            "environment": environment,
         }
     )
 
+    # NOTE: we use sidecar collector in both local and production so "insecure" is always True
     # ==================== TRACES ====================
+    logger.info("Configuring OTLP trace")
     trace_provider = TracerProvider(resource=resource)
-
-    # Add OTLP trace exporter if endpoint is configured
-    if otlp_traces_endpoint:
-        logger.info(f"Configuring OTLP trace exporter with endpoint: {otlp_traces_endpoint}")
-        otlp_trace_exporter = OTLPSpanExporter(endpoint=otlp_traces_endpoint, insecure=False)
-        trace_provider.add_span_processor(BatchSpanProcessor(otlp_trace_exporter))
-    else:
-        logger.warning("No OTLP traces endpoint configured, spans will not be exported")
-
-    # Add console exporter if explicitly enabled
-    if enable_console_export:
-        logger.info("Enabling console span exporter")
-        console_exporter = ConsoleSpanExporter()
-        trace_provider.add_span_processor(BatchSpanProcessor(console_exporter))
-
-    # Set the global tracer provider
+    otlp_trace_exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
+    trace_provider.add_span_processor(BatchSpanProcessor(otlp_trace_exporter))
     trace.set_tracer_provider(trace_provider)
 
     # ==================== METRICS ====================
+    logger.info("Configuring OTLP metric")
     metric_readers = []
-
-    if otlp_metrics_endpoint:
-        logger.info(f"Configuring OTLP metric exporter with endpoint: {otlp_metrics_endpoint}")
-        otlp_metric_exporter = OTLPMetricExporter(endpoint=otlp_metrics_endpoint, insecure=False)
-        metric_readers.append(
-            PeriodicExportingMetricReader(otlp_metric_exporter, export_interval_millis=60000)
-        )
-    else:
-        logger.warning("No OTLP metrics endpoint configured, metrics will not be exported")
-
-    # Add console exporter if explicitly enabled
-    if enable_console_export:
-        logger.info("Enabling console metric exporter")
-        console_metric_exporter = ConsoleMetricExporter()
-        metric_readers.append(
-            PeriodicExportingMetricReader(console_metric_exporter, export_interval_millis=60000)
-        )
-
-    if metric_readers:
-        meter_provider = MeterProvider(resource=resource, metric_readers=metric_readers)
-        metrics.set_meter_provider(meter_provider)
-        logger.info("Metrics provider configured")
-    else:
-        logger.warning("No metric readers configured")
+    otlp_metric_exporter = OTLPMetricExporter(endpoint=otlp_endpoint, insecure=True)
+    metric_readers.append(
+        PeriodicExportingMetricReader(otlp_metric_exporter, export_interval_millis=60000)
+    )
+    meter_provider = MeterProvider(resource=resource, metric_readers=metric_readers)
+    metrics.set_meter_provider(meter_provider)
 
     # ==================== LOGS ====================
+    logger.info("Configuring OTLP log")
     log_provider = LoggerProvider(resource=resource)
-
-    if otlp_logs_endpoint:
-        logger.info(f"Configuring OTLP log exporter with endpoint: {otlp_logs_endpoint}")
-        otlp_log_exporter = OTLPLogExporter(endpoint=otlp_logs_endpoint, insecure=False)
-        log_provider.add_log_record_processor(BatchLogRecordProcessor(otlp_log_exporter))
-    else:
-        logger.warning("No OTLP logs endpoint configured, logs will not be exported to OTLP")
-
-    # Add console exporter if explicitly enabled
-    if enable_console_export:
-        logger.info("Enabling console log exporter")
-        console_log_exporter = ConsoleLogExporter()
-        log_provider.add_log_record_processor(BatchLogRecordProcessor(console_log_exporter))
-
+    otlp_log_exporter = OTLPLogExporter(endpoint=otlp_endpoint, insecure=True)
+    log_provider.add_log_record_processor(BatchLogRecordProcessor(otlp_log_exporter))
     set_logger_provider(log_provider)
-
     # Attach OTLP handler to root logger
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=log_provider)
     logging.getLogger().addHandler(handler)
-    logger.info("Logs provider configured")
 
-    # Instrument libraries
+    # ==================== INSTRUMENTATION ====================
     logger.info("Instrumenting libraries with OpenTelemetry")
 
     # FastAPI instrumentation

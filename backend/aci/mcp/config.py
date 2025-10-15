@@ -11,7 +11,11 @@ APP_OPENAPI_URL = "/openapi.json"
 
 ENVIRONMENT = Environment(check_and_get_env_variable("MCP_ENVIRONMENT"))
 LOG_LEVEL = check_and_get_env_variable("MCP_LOG_LEVEL", default="INFO")
-
+LOG_STRUCTURED = (
+    True
+    if check_and_get_env_variable("MCP_LOG_STRUCTURED", default="true").lower() == "true"
+    else False
+)
 # ROUTERS
 ROUTER_PREFIX_HEALTH = "/health"
 ROUTER_PREFIX_MCP = "/mcp"
@@ -43,8 +47,10 @@ SENTRY_DSN = check_and_get_env_variable("MCP_SENTRY_DSN")
 MCP_SESSION_ID_HEADER = "mcp-session-id"
 
 # OpenTelemetry
-# Single endpoint for all signals (traces, metrics, logs) - gRPC will route automatically
-OTEL_EXPORTER_OTLP_ENDPOINT = check_and_get_env_variable(
-    "MCP_OTEL_EXPORTER_OTLP_ENDPOINT", default=None
+OTEL_ENABLED = (
+    True
+    if check_and_get_env_variable("MCP_OTEL_ENABLED", default="true").lower() == "true"
+    else False
 )
-OTEL_SERVICE_NAME = check_and_get_env_variable("MCP_OTEL_SERVICE_NAME", default="mcp-gateway")
+# Single endpoint for all signals (traces, metrics, logs) - gRPC will route automatically
+OTEL_EXPORTER_OTLP_ENDPOINT = check_and_get_env_variable("MCP_OTEL_EXPORTER_OTLP_ENDPOINT")
