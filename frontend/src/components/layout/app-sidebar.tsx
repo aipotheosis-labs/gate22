@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useTheme } from "next-themes";
 import { usePermission } from "@/hooks/use-permissions";
 import { PERMISSIONS } from "@/lib/rbac/permissions";
+import { isSubscriptionEnabled } from "@/lib/feature-flags";
 
 // Export sidebar items so they can be used in header
 export const sidebarItems = [
@@ -132,12 +133,16 @@ export const organizationNavigationItems = [
     icon: RiSettings3Line,
     adminOnly: true,
   },
-  {
-    title: "Subscription",
-    url: "/subscription",
-    icon: CreditCard,
-    adminOnly: true,
-  },
+  ...(isSubscriptionEnabled()
+    ? [
+        {
+          title: "Subscription",
+          url: "/subscription",
+          icon: CreditCard,
+          adminOnly: true,
+        },
+      ]
+    : []),
 ];
 
 // Add settings routes to be accessible in header
