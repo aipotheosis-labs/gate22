@@ -20,7 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { HiOutlineServerStack } from "react-icons/hi2";
 import { RiSettings3Line } from "react-icons/ri";
-import { Link2, Settings2, Package, ScrollText, Network, Users2 } from "lucide-react";
+import { Link2, Settings2, Package, ScrollText, Network, Users2, CreditCard } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
@@ -130,6 +130,12 @@ export const organizationNavigationItems = [
     title: "Organization Settings",
     url: "/organization-settings",
     icon: RiSettings3Line,
+    adminOnly: true,
+  },
+  {
+    title: "Subscription",
+    url: "/subscription",
+    icon: CreditCard,
     adminOnly: true,
   },
 ];
