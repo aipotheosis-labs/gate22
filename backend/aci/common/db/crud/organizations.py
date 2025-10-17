@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from aci.common.db.sql_models import Organization, OrganizationMembership
@@ -68,6 +69,17 @@ def get_organization_members(
     )
 
 
+def count_organization_members(
+    db_session: Session,
+    organization_id: UUID,
+) -> int:
+    return (
+        db_session.query(OrganizationMembership)
+        .filter(OrganizationMembership.organization_id == organization_id)
+        .count()
+    )
+
+
 def get_organization_membership(
     db_session: Session,
     organization_id: UUID,
@@ -101,3 +113,26 @@ def update_organization_member_role(
         OrganizationMembership.organization_id == organization_id,
         OrganizationMembership.user_id == user_id,
     ).update({"role": role})
+
+
+########################################
+# Organization Stripe Customer ID
+########################################
+def get_organization_by_stripe_customer_id(
+    db_session: Session,
+    stripe_customer_id: str,
+) -> Organization | None:
+    statement = select(Organization).where(
+        Organization.stripe_customer_id == stripe_customer_id, Organization.deleted_at.is_(None)
+    )
+    return db_session.execute(statement).scalar_one_or_none()
+
+
+def update_organization_stripe_customer_id(
+    db_session: Session,
+    organization: Organization,
+    stripe_customer_id: str,
+) -> None:
+    organization.stripe_customer_id = stripe_customer_id
+    db_session.flush()
+    db_session.refresh(organization)
