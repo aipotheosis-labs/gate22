@@ -33,6 +33,8 @@ import { Badge } from "@/components/ui/badge";
 import { ConnectedAccountOwnership } from "@/features/mcp/types/mcp.types";
 import { getOwnershipLabel } from "@/utils/configuration-labels";
 import { useOperationalMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
+import { PermissionGuard } from "@/components/rbac/permission-guard";
+import { PERMISSIONS } from "@/lib/rbac/permissions";
 
 const columnHelper = createColumnHelper<ConnectedAccount>();
 
@@ -241,34 +243,50 @@ function ConnectedAccountsPageContent() {
         cell: (info) => {
           const account = info.getValue();
           const config = mcpConfigMap[account.mcp_server_configuration_id];
+          let permissionToCheck;
+          switch (config?.ownership) {
+            case ConnectedAccountOwnership.INDIVIDUAL:
+              permissionToCheck = PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN;
+              break;
+            case ConnectedAccountOwnership.SHARED:
+              permissionToCheck = PERMISSIONS.CONNECTED_ACCOUNT_DELETE_SHARED;
+              break;
+            case ConnectedAccountOwnership.OPERATIONAL:
+              permissionToCheck = PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OPERATIONAL;
+              break;
+          }
           return (
-            <div className="flex items-center justify-end">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Account?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the connected
-                      account for {config?.name || "this MCP server"}.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={() => handleDelete(account)}
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            permissionToCheck && (
+              <PermissionGuard permission={permissionToCheck}>
+                <div className="flex items-center justify-end">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Account?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the connected
+                          account for {config?.name || "this MCP server"}.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={() => handleDelete(account)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </PermissionGuard>
+            )
           );
         },
         enableGlobalFilter: false,
