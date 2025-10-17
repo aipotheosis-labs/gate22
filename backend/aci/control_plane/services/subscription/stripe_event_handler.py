@@ -184,18 +184,12 @@ def _upsert_customer_subscription(
             stripe_subscription_status=stripe_subscription.status,
             current_period_start=datetime.fromtimestamp(
                 stripe_subscription_item.current_period_start, tz=UTC
-            )
-            if stripe_subscription_item.current_period_start is not None
-            else None,
+            ),
             current_period_end=datetime.fromtimestamp(
                 stripe_subscription_item.current_period_end, tz=UTC
-            )
-            if stripe_subscription_item.current_period_end is not None
-            else None,
+            ),
             cancel_at_period_end=stripe_subscription.cancel_at_period_end,
-            subscription_start_date=datetime.fromtimestamp(stripe_subscription.start_date, tz=UTC)
-            if stripe_subscription.start_date is not None
-            else None,
+            subscription_start_date=datetime.fromtimestamp(stripe_subscription.start_date, tz=UTC),
         ),
     )
 
