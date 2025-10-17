@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
-from stripe import StripeClient, Subscription, SubscriptionItem
+from stripe import Subscription, SubscriptionItem
 
 from aci.common.db import crud
 from aci.common.db.sql_models import Organization
@@ -10,12 +10,10 @@ from aci.common.schemas.subscription import (
     OrganizationSubscriptionUpsert,
     StripeWebhookEvent,
 )
-from aci.control_plane import config
 from aci.control_plane.exceptions import OrganizationNotFound, StripeOperationError
+from aci.control_plane.services.subscription.stripe_client import get_stripe_client
 
 logger = get_logger(__name__)
-
-stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
 def handle_stripe_event(db_session: Session, event_id: str) -> None:
@@ -23,7 +21,7 @@ def handle_stripe_event(db_session: Session, event_id: str) -> None:
     The entry function to handle any stripe events. This function MUST be IDEMPOTENT and can be
     called multiple times for a same event.
     """
-    event_data = stripe_client.events.retrieve(event_id)
+    event_data = get_stripe_client().events.retrieve(event_id)
     event = StripeWebhookEvent.model_validate(event_data)
 
     # Only handle subscription events
@@ -78,7 +76,7 @@ def _process_subscription_event(db_session: Session, subscription_id: str) -> No
     Process a subscription event from Stripe. This function MUST be IDEMPOTENT and can be
     called multiple times for a same event.
     """
-    subscription_data = stripe_client.subscriptions.retrieve(subscription_id)
+    subscription_data = get_stripe_client().subscriptions.retrieve(subscription_id)
 
     logger.info(f"Subscription id: {subscription_data.id}, status: {subscription_data.status}")
 

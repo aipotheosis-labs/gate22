@@ -4,7 +4,6 @@ from uuid import UUID
 import stripe
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
-from stripe import StripeClient
 
 from aci.common.db import crud
 from aci.common.db.sql_models import Organization, SubscriptionPlan
@@ -34,8 +33,6 @@ from aci.control_plane.services.subscription import stripe_event_handler, subscr
 
 logger = get_logger(__name__)
 router = APIRouter()
-
-stripe_client = StripeClient(config.SUBSCRIPTION_STRIPE_SECRET_KEY)
 
 
 @router.get("/plans")
