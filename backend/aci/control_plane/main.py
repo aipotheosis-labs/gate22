@@ -161,8 +161,9 @@ app.include_router(
     tags=[config.ROUTER_PREFIX_LOGS.split("/")[-1]],
 )
 
-app.include_router(
-    subscriptions.router,
-    prefix=config.ROUTER_PREFIX_SUBSCRIPTIONS,
-    tags=[config.ROUTER_PREFIX_SUBSCRIPTIONS.split("/")[-1]],
-)
+if config.SUBSCRIPTION_ENABLED:
+    app.include_router(
+        subscriptions.router,
+        prefix=config.ROUTER_PREFIX_SUBSCRIPTIONS,
+        tags=[config.ROUTER_PREFIX_SUBSCRIPTIONS.split("/")[-1]],
+    )
