@@ -18,7 +18,7 @@ export function useCancelSubscription() {
     onSuccess: () => {
       // Redirect to cancellation success page
       // Note: Data invalidation is handled by the cancellation page itself
-      router.push("/settings/subscription/cancelled");
+      router.push("/subscription/cancelled");
     },
     onError: (error) => {
       console.error("Error cancelling subscription:", error);
