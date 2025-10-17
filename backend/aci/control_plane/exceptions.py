@@ -57,19 +57,6 @@ class NoImplementationFound(ControlPlaneException):
         )
 
 
-class OrganizationNotFound(ControlPlaneException):
-    """
-    Exception raised when an organization is not found
-    """
-
-    def __init__(self, message: str | None = None):
-        super().__init__(
-            title="Organization not found",
-            message=message,
-            error_code=status.HTTP_404_NOT_FOUND,
-        )
-
-
 class OrganizationSubscriptionNotFound(ControlPlaneException):
     """
     Exception raised when an organization subscription is not found
@@ -392,4 +379,17 @@ class StripeWebhookInputError(SubscriptionException):
             title="Stripe webhook input error",
             message=message,
             error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class UsageExceeded(SubscriptionException):
+    """
+    Exception raised when a usage exceeds the entitlement
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Usage exceeded",
+            message=message,
+            error_code=status.HTTP_429_TOO_MANY_REQUESTS,
         )

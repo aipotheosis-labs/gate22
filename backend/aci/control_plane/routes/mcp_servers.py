@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import AnyUrl, HttpUrl
 from sqlalchemy.orm import Session
 
-from aci.common import embeddings, utils
+from aci.common import embeddings, entitlement_utils, utils
 from aci.common.db import crud
 from aci.common.enums import ConnectedAccountOwnership, MCPServerTransportType, OrganizationRole
 from aci.common.logging_setup import get_logger
@@ -37,6 +37,7 @@ from aci.control_plane.exceptions import (
     MCPToolsRefreshTooFrequent,
     NotPermittedError,
     OAuth2MetadataDiscoveryError,
+    UsageExceeded,
 )
 from aci.control_plane.routes.connected_accounts import (
     CONNECTED_ACCOUNTS_OAUTH2_CALLBACK_ROUTE_NAME,
@@ -164,6 +165,22 @@ async def create_custom_mcp_server(
     access_control.check_act_as_organization_role(
         context.act_as, required_role=OrganizationRole.ADMIN
     )
+
+    # Check if the usage exceeds the entitlement after creating the new MCP server bundle
+    if config.SUBSCRIPTION_ENABLED:
+        entitlement = entitlement_utils.get_organization_entitlement(
+            context.db_session, context.act_as.organization_id
+        )
+        usage = entitlement_utils.get_organization_usage(
+            context.db_session, context.act_as.organization_id
+        )
+        usage.custom_mcp_servers_count += 1
+        if not entitlement_utils.is_entitlement_fulfilling_usage(
+            entitlement=entitlement, usage=usage
+        ):
+            raise UsageExceeded(
+                message="organization has reached usage limit. Please upgrade your subscription to continue.",  # noqa: E501
+            )
 
     mcp_server_embedding = embeddings.generate_mcp_server_embedding(
         get_openai_client(),
