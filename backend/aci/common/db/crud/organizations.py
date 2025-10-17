@@ -122,7 +122,9 @@ def get_organization_by_stripe_customer_id(
     db_session: Session,
     stripe_customer_id: str,
 ) -> Organization | None:
-    statement = select(Organization).where(Organization.stripe_customer_id == stripe_customer_id)
+    statement = select(Organization).where(
+        Organization.stripe_customer_id == stripe_customer_id, Organization.deleted_at.is_(None)
+    )
     return db_session.execute(statement).scalar_one_or_none()
 
 
