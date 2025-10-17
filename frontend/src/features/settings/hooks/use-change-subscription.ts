@@ -27,7 +27,7 @@ export function useChangeSubscription() {
       } else {
         // Redirect to subscription updated page
         // Note: Data invalidation is handled by the updated page itself
-        router.push("/settings/subscription/updated");
+        router.push("/subscription/updated");
       }
     },
     onError: (error) => {
@@ -62,7 +62,7 @@ export function useChangeSeatCount() {
       } else {
         // Redirect to subscription updated page
         // Note: Data invalidation is handled by the updated page itself
-        router.push("/settings/subscription/updated");
+        router.push("/subscription/updated");
       }
     },
     onError: (error) => {
@@ -97,7 +97,7 @@ export function useChangePlan() {
       } else {
         // Redirect to subscription updated page
         // Note: Data invalidation is handled by the updated page itself
-        router.push("/settings/subscription/updated");
+        router.push("/subscription/updated");
       }
     },
     onError: (error) => {

@@ -78,7 +78,7 @@ export default function SubscriptionUpdatedPage() {
             {/* Action Buttons */}
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button asChild className="flex-1">
-                <Link href="/settings/subscription">View Subscription Details</Link>
+                <Link href="/subscription">View Subscription Details</Link>
               </Button>
               <Button variant="outline" asChild className="flex-1">
                 <Link href="/settings/members">Manage Organization Members</Link>
