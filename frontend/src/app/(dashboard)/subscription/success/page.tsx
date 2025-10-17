@@ -6,8 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, CreditCard, Users } from "lucide-react";
 import Link from "next/link";
+import { isSubscriptionEnabled } from "@/lib/feature-flags";
+import { notFound } from "next/navigation";
 
 export default function SubscriptionSuccessPage() {
+  // Return 404 if subscription features are disabled
+  if (!isSubscriptionEnabled()) {
+    notFound();
+  }
+
   const searchParams = useSearchParams();
 
   // Get session_id from URL params (Stripe provides this)

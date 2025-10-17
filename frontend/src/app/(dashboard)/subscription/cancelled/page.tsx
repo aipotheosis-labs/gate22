@@ -9,8 +9,15 @@ import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMetaInfo } from "@/components/context/metainfo";
 import { QUERY_KEYS } from "@/features/settings/constants";
+import { isSubscriptionEnabled } from "@/lib/feature-flags";
+import { notFound } from "next/navigation";
 
 export default function SubscriptionCancelledPage() {
+  // Return 404 if subscription features are disabled
+  if (!isSubscriptionEnabled()) {
+    notFound();
+  }
+
   const queryClient = useQueryClient();
   const { activeOrg } = useMetaInfo();
 
