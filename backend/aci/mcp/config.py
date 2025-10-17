@@ -54,3 +54,10 @@ OTEL_ENABLED = (
 )
 # Single endpoint for all signals (traces, metrics, logs) - gRPC will route automatically
 OTEL_EXPORTER_OTLP_ENDPOINT = check_and_get_env_variable("MCP_OTEL_EXPORTER_OTLP_ENDPOINT")
+
+# SUBSCRIPTION
+SUBSCRIPTION_ENABLED = (
+    True
+    if check_and_get_env_variable("MCP_SUBSCRIPTION_ENABLED", default="false").lower() == "true"
+    else False
+)
