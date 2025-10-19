@@ -42,6 +42,7 @@ adhoc_group.add_command(
     adhoc.convert_integrations_to_virtual_mcp, name="convert-integrations-to-virtual-mcp"
 )
 adhoc_group.add_command(adhoc.convert_integrations_to_mcp, name="convert-integrations-to-mcp")
+adhoc_group.add_command(adhoc.insert_subscription_plan, name="insert-subscription-plan")
 
 # Other commands
 # TODO: group these commands
