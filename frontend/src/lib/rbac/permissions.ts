@@ -18,6 +18,8 @@ export const PERMISSIONS = {
   CONNECTED_ACCOUNT_CREATE_SHARED: "connected_account:create_shared",
   CONNECTED_ACCOUNT_CREATE_OPERATIONAL: "connected_account:create_operational",
   CONNECTED_ACCOUNT_DELETE_OWN: "connected_account:delete_own",
+  CONNECTED_ACCOUNT_DELETE_SHARED: "connected_account:delete_shared",
+  CONNECTED_ACCOUNT_DELETE_OPERATIONAL: "connected_account:delete_operational",
 
   // Bundle permissions
   BUNDLE_PAGE_VIEW: "bundle:page_view",
@@ -53,6 +55,8 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OPERATIONAL,
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OWN,
     PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN,
+    PERMISSIONS.CONNECTED_ACCOUNT_DELETE_SHARED,
+    PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OPERATIONAL,
 
     // Bundles - Admins can see all and delete any bundle
     PERMISSIONS.BUNDLE_PAGE_VIEW,
