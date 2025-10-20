@@ -139,6 +139,7 @@ def test_create_custom_mcp_server_with_invalid_operational_account_auth_type(
     ],
 )
 @pytest.mark.parametrize("is_usage_limit_reached", [True, False])
+@pytest.mark.parametrize("is_subscription_enabled", [True, False])
 @patch("aci.control_plane.routes.mcp_servers.entitlement_utils.get_organization_entitlement")
 def test_create_custom_mcp_server(
     mock_get_organization_entitlement: AsyncMock,
@@ -148,7 +149,13 @@ def test_create_custom_mcp_server(
     dummy_organization: Organization,
     access_token_fixture: str,
     is_usage_limit_reached: bool,
+    is_subscription_enabled: bool,
 ) -> None:
+    if is_subscription_enabled:
+        config.SUBSCRIPTION_ENABLED = True
+    else:
+        config.SUBSCRIPTION_ENABLED = False
+
     mock_get_organization_entitlement.return_value = Entitlement(
         seat_count=10,
         max_custom_mcp_servers=0 if is_usage_limit_reached else 10,
@@ -184,7 +191,7 @@ def test_create_custom_mcp_server(
         assert response.status_code == 403
         return
 
-    if is_usage_limit_reached:
+    if is_subscription_enabled and is_usage_limit_reached:
         assert response.status_code == 429
         return
 
