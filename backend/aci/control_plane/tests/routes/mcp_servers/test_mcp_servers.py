@@ -143,6 +143,7 @@ def test_create_custom_mcp_server_with_invalid_operational_account_auth_type(
 @patch("aci.control_plane.routes.mcp_servers.entitlement_utils.get_organization_entitlement")
 def test_create_custom_mcp_server(
     mock_get_organization_entitlement: AsyncMock,
+    monkeypatch: pytest.MonkeyPatch,
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
@@ -151,10 +152,7 @@ def test_create_custom_mcp_server(
     is_usage_limit_reached: bool,
     is_subscription_enabled: bool,
 ) -> None:
-    if is_subscription_enabled:
-        config.SUBSCRIPTION_ENABLED = True
-    else:
-        config.SUBSCRIPTION_ENABLED = False
+    monkeypatch.setattr(config, "SUBSCRIPTION_ENABLED", is_subscription_enabled)
 
     mock_get_organization_entitlement.return_value = Entitlement(
         seat_count=10,
