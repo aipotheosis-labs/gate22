@@ -89,21 +89,6 @@ async def mcp_post(
             ),
         )
 
-    # Check if the usage exceeds the entitlement. If so, reject the request
-    if config.SUBSCRIPTION_ENABLED:
-        entitlement = entitlement_utils.get_organization_entitlement(
-            db_session, mcp_server_bundle.organization_id
-        )
-        usage = entitlement_utils.get_organization_usage(
-            db_session, mcp_server_bundle.organization_id
-        )
-        if not entitlement_utils.is_entitlement_fulfilling_usage(
-            entitlement=entitlement, usage=usage
-        ):
-            raise UsageExceeded(
-                message="organization has reached usage limit. Please upgrade your subscription to continue.",  # noqa: E501
-            )
-
     # validate mcp session: session id is required except for initialize request
     validation_response = _validate_or_create_mcp_session(
         db_session, request, response, mcp_server_bundle, payload
@@ -131,6 +116,22 @@ async def mcp_post(
 
         case JSONRPCToolsCallRequest():
             logger.info(f"Received tools/call request={payload.model_dump()}")
+
+            # Check if the usage exceeds the entitlement. If so, reject the request
+            if config.SUBSCRIPTION_ENABLED:
+                entitlement = entitlement_utils.get_organization_entitlement(
+                    db_session, mcp_server_bundle.organization_id
+                )
+                usage = entitlement_utils.get_organization_usage(
+                    db_session, mcp_server_bundle.organization_id
+                )
+                if not entitlement_utils.is_entitlement_fulfilling_usage(
+                    entitlement=entitlement, usage=usage
+                ):
+                    raise UsageExceeded(
+                        message="organization has reached usage limit. Please upgrade your subscription to continue.",  # noqa: E501
+                    )
+
             return await handlers.handle_tools_call(
                 db_session, mcp_session, payload, mcp_server_bundle
             )
