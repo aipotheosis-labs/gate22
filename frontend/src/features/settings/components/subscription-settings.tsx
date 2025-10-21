@@ -235,7 +235,7 @@ export function SubscriptionSettings() {
               <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
               <AlertDescription className="text-sm text-yellow-800 dark:text-yellow-200">
                 To avoid restrictions on access, please make sure your usage does not exceed the
-                Free tier&apos;s entitlements when the cancellation takes effect.
+                Free tier&apos;s limits when the cancellation takes effect.
               </AlertDescription>
             </Alert>
           )}
@@ -255,7 +255,7 @@ export function SubscriptionSettings() {
             <div>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                Usage and Entitlements
+                Usage and limits
               </h3>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
@@ -369,6 +369,25 @@ export function SubscriptionSettings() {
                 </>
               )}
             </ul>
+
+            {/* Cancel Subscription Section - Only show for team plan */}
+            {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
+              <Button
+                variant="ghost"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={isCancelling}
+                className="w-full text-muted-foreground hover:text-destructive"
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Switching to free tier...
+                  </>
+                ) : (
+                  "Switch to Free Tier"
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -519,35 +538,6 @@ export function SubscriptionSettings() {
           </div>
         </CardContent>
       </Card>
-      {/* Cancel Subscription Section - Only show for team plan */}
-      {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
-        <Card className="border-muted">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Need to cancel?</h3>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Your subscription will remain active until the end of your billing period.
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={isCancelling}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                {isCancelling ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Cancelling...
-                  </>
-                ) : (
-                  "Cancel Subscription"
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Cancel Subscription Dialog */}
       <CancelSubscriptionDialog
