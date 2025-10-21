@@ -125,7 +125,6 @@ services:
       - ./mcp_servers/:/workdir/mcp_servers
       - ./virtual_mcp_servers/:/workdir/virtual_mcp_servers
       - ./alembic.ini:/workdir/alembic.ini
-      - ./adhoc_cli_data/:/workdir/adhoc_cli_data
     command: >
       /bin/sh -c "alembic upgrade head && tail -f /dev/null"
     depends_on:
