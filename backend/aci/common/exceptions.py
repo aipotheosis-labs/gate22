@@ -42,3 +42,12 @@ class MCPToolSanitizationError(ACICommonError):
 
     def __init__(self, message: str | None = None):
         super().__init__(title="MCP tool sanitization error", message=message)
+
+
+class OrganizationNotFoundError(ACICommonError):
+    """
+    Exception raised when an organization is not found
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(title="Organization not found error", message=message)

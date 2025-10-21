@@ -6,13 +6,17 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from aci.common import utils
+from aci.common import entitlement_utils, utils
 from aci.common.db import crud
 from aci.common.db.sql_models import MCPServerBundle, MCPSession
 from aci.common.logging_setup import get_logger
 from aci.mcp import config
 from aci.mcp import dependencies as deps
-from aci.mcp.exceptions import InvalidJSONRPCPayloadError, UnsupportedJSONRPCMethodError
+from aci.mcp.exceptions import (
+    InvalidJSONRPCPayloadError,
+    UnsupportedJSONRPCMethodError,
+    UsageExceeded,
+)
 from aci.mcp.routes import handlers
 from aci.mcp.routes.jsonrpc import (
     JSONRPCErrorCode,
@@ -112,6 +116,22 @@ async def mcp_post(
 
         case JSONRPCToolsCallRequest():
             logger.info(f"Received tools/call request={payload.model_dump()}")
+
+            # Check if the usage exceeds the entitlement. If so, reject the request
+            if config.SUBSCRIPTION_ENABLED:
+                entitlement = entitlement_utils.get_organization_entitlement(
+                    db_session, mcp_server_bundle.organization_id
+                )
+                usage = entitlement_utils.get_organization_usage(
+                    db_session, mcp_server_bundle.organization_id
+                )
+                if not entitlement_utils.is_entitlement_fulfilling_usage(
+                    entitlement=entitlement, usage=usage
+                ):
+                    raise UsageExceeded(
+                        message="organization has reached usage limit. Please upgrade your subscription to continue.",  # noqa: E501
+                    )
+
             return await handlers.handle_tools_call(
                 db_session, mcp_session, payload, mcp_server_bundle
             )

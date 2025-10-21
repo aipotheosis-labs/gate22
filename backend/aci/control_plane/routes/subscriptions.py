@@ -5,9 +5,11 @@ import stripe
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+import aci.common.entitlement_utils as entitlement_utils
 from aci.common.db import crud
 from aci.common.db.sql_models import Organization, SubscriptionPlan
 from aci.common.enums import OrganizationRole
+from aci.common.exceptions import OrganizationNotFoundError
 from aci.common.logging_setup import get_logger
 from aci.common.schemas.subscription import (
     Entitlement,
@@ -24,7 +26,6 @@ from aci.common.schemas.subscription import (
 from aci.control_plane import access_control, config
 from aci.control_plane import dependencies as deps
 from aci.control_plane.exceptions import (
-    OrganizationNotFound,
     OrganizationSubscriptionNotFound,
     RequestedSubscriptionInvalid,
     StripeWebhookInputError,
@@ -66,11 +67,7 @@ async def get_organization_subscription_status(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
-
-    entitlement = subscription_service.get_organization_entitlement(
-        db_session=context.db_session, organization_id=organization_id
-    )
+        raise OrganizationNotFoundError()
 
     subscription = organization.subscription
     if subscription is None:
@@ -84,9 +81,21 @@ async def get_organization_subscription_status(
             cancel_at_period_end=subscription.cancel_at_period_end,
         )
 
+    entitlement = entitlement_utils.get_organization_entitlement(
+        db_session=context.db_session, organization_id=organization_id
+    )
+
+    usage = entitlement_utils.get_organization_usage(context.db_session, organization_id)
+    is_entitlement_fulfilling_usage = entitlement_utils.is_entitlement_fulfilling_usage(
+        entitlement=entitlement,
+        usage=usage,
+    )
+
     subscription_status_public = SubscriptionStatusPublic(
         subscription=subscription_public,
         entitlement=entitlement,
+        usage=usage,
+        is_usage_exceeded=not is_entitlement_fulfilling_usage,
     )
 
     return subscription_status_public
@@ -123,7 +132,7 @@ async def change_organization_subscription_seat(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
     if organization.subscription is None:
         logger.error(f"Organization {organization_id} does not have a current subscription")
@@ -186,7 +195,7 @@ async def change_organization_subscription_plan(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
     # Check if the plan is active and is publicly available for subscription
     # Note: we don't check is_public for seat changes requests, because an org may be engaged
@@ -284,9 +293,9 @@ def _validate_subscription_change_request(
         max_custom_mcp_servers=requested_plan.max_custom_mcp_servers,
         log_retention_days=requested_plan.log_retention_days,
     )
-    if not subscription_service.is_entitlement_fulfilling_existing_usage(
-        db_session=db_session,
-        organization_id=organization.id,
+    usage = entitlement_utils.get_organization_usage(db_session, organization.id)
+    if not entitlement_utils.is_entitlement_fulfilling_usage(
+        usage=usage,
         entitlement=entitlement_after_change,
     ):
         raise RequestedSubscriptionInvalid(
@@ -352,7 +361,7 @@ async def cancel_organization_subscription(
     )
     if organization is None:
         logger.error(f"Organization {organization_id} not found")
-        raise OrganizationNotFound()
+        raise OrganizationNotFoundError()
 
     if organization.subscription is None:
         logger.warning("organization does not have a subscription")

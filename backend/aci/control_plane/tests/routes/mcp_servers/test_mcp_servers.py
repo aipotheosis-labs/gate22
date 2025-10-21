@@ -25,6 +25,7 @@ from aci.common.schemas.mcp_server import (
     MCPServerPublic,
 )
 from aci.common.schemas.pagination import PaginationResponse
+from aci.common.schemas.subscription import Entitlement
 from aci.control_plane import config
 from aci.control_plane.services.mcp_tools.mcp_tools_manager import MCPToolsDiff
 from aci.control_plane.services.orphan_records_remover import OrphanRecordsRemoval
@@ -137,13 +138,27 @@ def test_create_custom_mcp_server_with_invalid_operational_account_auth_type(
         "dummy_access_token_admin_act_as_member",
     ],
 )
+@pytest.mark.parametrize("is_usage_limit_reached", [True, False])
+@pytest.mark.parametrize("is_subscription_enabled", [True, False])
+@patch("aci.control_plane.routes.mcp_servers.entitlement_utils.get_organization_entitlement")
 def test_create_custom_mcp_server(
+    mock_get_organization_entitlement: AsyncMock,
+    monkeypatch: pytest.MonkeyPatch,
     test_client: TestClient,
     db_session: Session,
     request: pytest.FixtureRequest,
     dummy_organization: Organization,
     access_token_fixture: str,
+    is_usage_limit_reached: bool,
+    is_subscription_enabled: bool,
 ) -> None:
+    monkeypatch.setattr(config, "SUBSCRIPTION_ENABLED", is_subscription_enabled)
+
+    mock_get_organization_entitlement.return_value = Entitlement(
+        seat_count=10,
+        max_custom_mcp_servers=0 if is_usage_limit_reached else 10,
+        log_retention_days=30,
+    )
     access_token = request.getfixturevalue(access_token_fixture)
 
     input_mcp_server_data = CustomMCPServerCreateRequest(
@@ -172,6 +187,10 @@ def test_create_custom_mcp_server(
     # Only admin can create custom MCP server
     if access_token_fixture != "dummy_access_token_admin":
         assert response.status_code == 403
+        return
+
+    if is_subscription_enabled and is_usage_limit_reached:
+        assert response.status_code == 429
         return
 
     assert response.status_code == 200

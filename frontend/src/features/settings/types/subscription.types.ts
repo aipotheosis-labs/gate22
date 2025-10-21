@@ -23,6 +23,8 @@ export interface Entitlement {
 export interface SubscriptionStatus {
   subscription: Subscription | null;
   entitlement: Entitlement;
+  usage: OrganizationUsage;
+  is_usage_exceeded: boolean;
 }
 
 export interface ChangeSubscriptionRequest {
@@ -54,4 +56,9 @@ export interface Plan {
   max_seats_for_subscription?: number;
   max_custom_mcp_servers?: number;
   log_retention_days?: number;
+}
+
+export interface OrganizationUsage {
+  seat_count: number;
+  custom_mcp_servers_count: number;
 }

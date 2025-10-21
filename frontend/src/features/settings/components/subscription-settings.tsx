@@ -230,6 +230,16 @@ export function SubscriptionSettings() {
             )}
           </div>
 
+          {subscriptionStatus?.subscription?.cancel_at_period_end && (
+            <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-sm text-yellow-800 dark:text-yellow-200">
+                To avoid restrictions on access, please make sure your usage does not exceed the
+                Free tier&apos;s limits when the cancellation takes effect.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Subscription Details */}
           {subscriptionStatus?.subscription &&
             !subscriptionStatus.subscription.cancel_at_period_end && (
@@ -245,7 +255,7 @@ export function SubscriptionSettings() {
             <div>
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
-                Your Entitlements
+                Usage and limits
               </h3>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
@@ -256,10 +266,13 @@ export function SubscriptionSettings() {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Seats</p>
                       <p className="text-2xl font-bold">
-                        {subscriptionStatus.entitlement.seat_count === null ||
-                        subscriptionStatus.entitlement.seat_count === 0
-                          ? "Unlimited"
-                          : subscriptionStatus.entitlement.seat_count}
+                        {subscriptionStatus.usage.seat_count}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" / "}
+                          {subscriptionStatus.entitlement.seat_count === null
+                            ? "Unlimited"
+                            : subscriptionStatus.entitlement.seat_count}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -275,10 +288,13 @@ export function SubscriptionSettings() {
                         Custom MCP Servers
                       </p>
                       <p className="text-2xl font-bold">
-                        {subscriptionStatus.entitlement.max_custom_mcp_servers === null ||
-                        subscriptionStatus.entitlement.max_custom_mcp_servers === 0
-                          ? "Unlimited"
-                          : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                        {subscriptionStatus.usage.custom_mcp_servers_count}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {" / "}
+                          {subscriptionStatus.entitlement.max_custom_mcp_servers === null
+                            ? "∞"
+                            : subscriptionStatus.entitlement.max_custom_mcp_servers}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -353,6 +369,25 @@ export function SubscriptionSettings() {
                 </>
               )}
             </ul>
+
+            {/* Cancel Subscription Section - Only show for team plan */}
+            {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
+              <Button
+                variant="ghost"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={isCancelling}
+                className="w-full text-muted-foreground hover:text-destructive"
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Switching to free tier...
+                  </>
+                ) : (
+                  "Switch to Free Tier"
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -503,35 +538,6 @@ export function SubscriptionSettings() {
           </div>
         </CardContent>
       </Card>
-      {/* Cancel Subscription Section - Only show for team plan */}
-      {!isFreePlan && !subscriptionStatus?.subscription?.cancel_at_period_end && (
-        <Card className="border-muted">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">Need to cancel?</h3>
-              <p className="mb-4 text-xs text-muted-foreground">
-                Your subscription will remain active until the end of your billing period.
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={isCancelling}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                {isCancelling ? (
-                  <>
-                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                    Cancelling...
-                  </>
-                ) : (
-                  "Cancel Subscription"
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Cancel Subscription Dialog */}
       <CancelSubscriptionDialog

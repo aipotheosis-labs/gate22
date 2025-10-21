@@ -137,3 +137,16 @@ class InvalidJSONRPCPayloadError(RemoteMCPException):
     def __init__(self, message: str | None = None, id: int | str | None = None):
         super().__init__(title="Invalid jsonrpc payload", message=message)
         self.id = id
+
+
+class UsageExceeded(RemoteMCPException):
+    """
+    Exception raised when a usage exceeds the entitlement
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Usage exceeded",
+            message=message,
+            error_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
