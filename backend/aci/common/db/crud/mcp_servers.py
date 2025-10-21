@@ -148,3 +148,10 @@ def list_mcp_servers(
 
     servers = list(db_session.execute(statement).scalars().all())
     return servers
+
+
+def count_mcp_servers_by_organization_id(
+    db_session: Session,
+    organization_id: UUID,
+) -> int:
+    return db_session.query(MCPServer).filter(MCPServer.organization_id == organization_id).count()

@@ -15,13 +15,13 @@ def get_organization_usage(db_session: Session, organization_id: UUID) -> Organi
         db_session=db_session,
         organization_id=organization_id,
     )
-    custom_mcp_servers_in_use = crud.mcp_servers.list_mcp_servers(
+    custom_mcp_servers_in_use = crud.mcp_servers.count_mcp_servers_by_organization_id(
         db_session=db_session,
         organization_id=organization_id,
     )
     return OrganizationUsage(
         seat_count=seat_in_use,
-        custom_mcp_servers_count=len(custom_mcp_servers_in_use),
+        custom_mcp_servers_count=custom_mcp_servers_in_use,
     )
 
 
