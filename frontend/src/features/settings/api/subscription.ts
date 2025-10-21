@@ -7,6 +7,7 @@ import {
   ChangeSubscriptionResponse,
   Plan,
 } from "../types/subscription.types";
+import { CONTROL_PLANE_PATH } from "@/config/api.constants";
 
 export const subscriptionApi = {
   getSubscriptionStatus: async (
@@ -15,7 +16,7 @@ export const subscriptionApi = {
   ): Promise<SubscriptionStatus> => {
     const api = createAuthenticatedRequest(token);
     return api.get<SubscriptionStatus>(
-      `/subscriptions/organizations/${organizationId}/subscription-status`,
+      `${CONTROL_PLANE_PATH}/subscriptions/organizations/${organizationId}/subscription-status`,
     );
   },
 
@@ -26,7 +27,7 @@ export const subscriptionApi = {
   ): Promise<ChangeSubscriptionResponse> => {
     const api = createAuthenticatedRequest(token);
     return api.post<ChangeSubscriptionResponse>(
-      `/subscriptions/organizations/${organizationId}/change-subscription`,
+      `${CONTROL_PLANE_PATH}/subscriptions/organizations/${organizationId}/change-subscription`,
       data,
     );
   },
@@ -38,7 +39,7 @@ export const subscriptionApi = {
   ): Promise<ChangeSubscriptionResponse> => {
     const api = createAuthenticatedRequest(token);
     return api.post<ChangeSubscriptionResponse>(
-      `/subscriptions/organizations/${organizationId}/subscription-seat-change`,
+      `${CONTROL_PLANE_PATH}/subscriptions/organizations/${organizationId}/subscription-seat-change`,
       data,
     );
   },
@@ -50,18 +51,20 @@ export const subscriptionApi = {
   ): Promise<ChangeSubscriptionResponse> => {
     const api = createAuthenticatedRequest(token);
     return api.post<ChangeSubscriptionResponse>(
-      `/subscriptions/organizations/${organizationId}/subscription-plan-change`,
+      `${CONTROL_PLANE_PATH}/subscriptions/organizations/${organizationId}/subscription-plan-change`,
       data,
     );
   },
 
   getPlans: async (token?: string): Promise<Plan[]> => {
     const api = createAuthenticatedRequest(token);
-    return api.get<Plan[]>("/subscriptions/plans");
+    return api.get<Plan[]>(`${CONTROL_PLANE_PATH}/subscriptions/plans`);
   },
 
   cancelSubscription: async (organizationId: string, token?: string): Promise<void> => {
     const api = createAuthenticatedRequest(token);
-    return api.post<void>(`/subscriptions/organizations/${organizationId}/cancel-subscription`);
+    return api.post<void>(
+      `${CONTROL_PLANE_PATH}/subscriptions/organizations/${organizationId}/cancel-subscription`,
+    );
   },
 };
