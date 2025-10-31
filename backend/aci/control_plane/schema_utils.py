@@ -42,6 +42,7 @@ def construct_mcp_server_public(mcp_server: MCPServer) -> MCPServerPublic:
         ],
         created_at=mcp_server.created_at,
         updated_at=mcp_server.updated_at,
+        transport_type=mcp_server.transport_type,
     )
 
 
