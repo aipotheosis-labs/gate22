@@ -87,7 +87,15 @@ export default function BundleMCPPage() {
     return [
       columnHelper.accessor("name", {
         id: "name",
-        header: () => "NAME",
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
+          >
+            <span>NAME</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
         cell: (info) => {
           const name = info.getValue();
           return (
@@ -158,7 +166,15 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("mcp_server_configurations", {
         id: "configurations",
-        header: () => "CONFIGURATIONS",
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
+          >
+            <span>CONFIGURATIONS</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
         cell: (info) => {
           const configurations = info.getValue();
           const count = configurations?.length || 0;
@@ -169,6 +185,11 @@ export default function BundleMCPPage() {
           );
         },
         enableGlobalFilter: false,
+        sortingFn: (a, b) => {
+          const countA = a.original.mcp_server_configurations?.length || 0;
+          const countB = b.original.mcp_server_configurations?.length || 0;
+          return countA - countB;
+        },
       }),
 
       columnHelper.accessor("created_at", {
