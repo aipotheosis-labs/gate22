@@ -13,10 +13,7 @@ import {
 } from "@/features/bundle-mcp/hooks/use-bundle-mcp";
 import { useMCPServerConfigurations } from "@/features/mcp/hooks/use-mcp-servers";
 import { useConnectedAccounts } from "@/features/connected-accounts/hooks/use-connected-account";
-import {
-  MCPServerBundle,
-  MCPServerConfiguration,
-} from "@/features/bundle-mcp/types/bundle-mcp.types";
+import { MCPServerBundle } from "@/features/bundle-mcp/types/bundle-mcp.types";
 import { formatToLocalTime } from "@/utils/time";
 import { EnhancedDataTable } from "@/components/ui-extensions/enhanced-data-table/data-table";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
