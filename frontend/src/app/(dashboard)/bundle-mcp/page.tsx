@@ -41,6 +41,15 @@ import { checkPermission } from "@/lib/rbac/rbac-service";
 
 const columnHelper = createColumnHelper<MCPServerBundle>();
 
+/**
+ * Renders the MCP Bundles management page.
+ *
+ * Shows a searchable, sortable table of MCP server bundles, provides UI to create and delete bundles,
+ * and allows copying bundle MCP URLs when permitted. Columns, actions, and dialogs are displayed
+ * conditionally based on user role and permissions.
+ *
+ * @returns The page JSX for viewing and managing MCP server bundles
+ */
 export default function BundleMCPPage() {
   const router = useRouter();
   const [copiedBundleUrl, setCopiedBundleUrl] = useState<string | null>(null);
@@ -87,7 +96,15 @@ export default function BundleMCPPage() {
     return [
       columnHelper.accessor("name", {
         id: "name",
-        header: () => "NAME",
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
+          >
+            <span>NAME</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
         cell: (info) => {
           const name = info.getValue();
           return (
@@ -158,7 +175,15 @@ export default function BundleMCPPage() {
 
       columnHelper.accessor("mcp_server_configurations", {
         id: "configurations",
-        header: () => "CONFIGURATIONS",
+        header: ({ column }) => (
+          <button
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="flex items-center gap-1 transition-colors hover:text-foreground/80"
+          >
+            <span>CONFIGURATIONS</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
         cell: (info) => {
           const configurations = info.getValue();
           const count = configurations?.length || 0;
@@ -169,6 +194,11 @@ export default function BundleMCPPage() {
           );
         },
         enableGlobalFilter: false,
+        sortingFn: (a, b) => {
+          const countA = a.original.mcp_server_configurations?.length || 0;
+          const countB = b.original.mcp_server_configurations?.length || 0;
+          return countA - countB;
+        },
       }),
 
       columnHelper.accessor("created_at", {
