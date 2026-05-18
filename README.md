@@ -86,7 +86,7 @@ An admin connects Notion, Supabase, and Render MCPs as read-only for everyone, a
 ## 🔭 Future (design RFCs)
 
 - Policy-as-code v2 (OPA/Cedar-style ABAC, approvals integration).
-- Quotas & budgets (per user/team/app/function).
+- Quotas & Budgets (per user/team/app/function).
 - Compliance (SIEM export, immutable audit logs).
 - Templates (“golden bundles”) for common stacks (Data/BI, SDLC, On-call).
 
