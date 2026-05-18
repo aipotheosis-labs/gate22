@@ -8,6 +8,7 @@ from starlette.responses import JSONResponse
 from aci.common.enums import Environment
 from aci.common.logging_setup import setup_logging
 from aci.common.openai_client import init_openai_client
+from aci.common.otel import setup_telemetry
 from aci.common.sentry import setup_sentry
 from aci.mcp import config
 from aci.mcp.exceptions import RemoteMCPException
@@ -20,14 +21,15 @@ from aci.mcp.routes import (
     mcp,
 )
 
-if config.ENVIRONMENT == Environment.LOCAL:
-    formatter = None
-else:
-    formatter = JsonFormatter(
+formatter = (
+    JsonFormatter(
         "{levelname} {asctime} {name} {message}",
         style="{",
         rename_fields={"asctime": "timestamp", "name": "file", "levelname": "level"},
     )
+    if config.LOG_STRUCTURED
+    else None
+)
 
 if config.ENVIRONMENT != Environment.LOCAL:
     setup_sentry(config.SENTRY_DSN, config.ENVIRONMENT)
@@ -84,3 +86,12 @@ app.include_router(
     prefix=config.ROUTER_PREFIX_MCP,
     tags=[config.ROUTER_PREFIX_MCP.split("/")[-1]],
 )
+
+
+# Setup OpenTelemetry instrumentation (traces, metrics, logs)
+if config.OTEL_ENABLED:
+    setup_telemetry(
+        app=app,
+        environment=config.ENVIRONMENT,
+        otlp_endpoint=config.OTEL_EXPORTER_OTLP_ENDPOINT,
+    )

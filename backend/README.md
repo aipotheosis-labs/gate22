@@ -96,6 +96,7 @@ For VS Code or VS Code compatible IDEs, use [`.vscode`](../.vscode) folder for c
 
    ```bash
    docker compose up --build
+   # or if you want to enable OpenTelemetry: docker compose --profile otel up --build
    ```
 
    This will start:

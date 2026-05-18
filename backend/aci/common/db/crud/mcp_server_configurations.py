@@ -168,6 +168,4 @@ def update_mcp_server_configuration(
     for field, value in mcp_server_configuration_update.model_dump(exclude_unset=True).items():
         setattr(mcp_server_configuration, field, value)
 
-    db_session.flush()
-    db_session.refresh(mcp_server_configuration)
     return mcp_server_configuration

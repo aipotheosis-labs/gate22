@@ -1,9 +1,9 @@
 export const SETTINGS_ROUTES = {
-  ORGANIZATION: "/settings/organization",
-  TEAMS: "/settings/teams",
-  NEW_TEAM: "/settings/teams/new",
-  TEAM_DETAIL: (teamId: string) => `/settings/teams/${teamId}`,
-  MEMBERS: "/settings/members",
+  ORGANIZATION: "/organization-settings",
+  TEAMS: "/teams",
+  NEW_TEAM: "/teams/new",
+  TEAM_DETAIL: (teamId: string) => `/teams/${teamId}`,
+  MEMBERS: "/members",
 } as const;
 
 export const QUERY_KEYS = {
@@ -14,6 +14,7 @@ export const QUERY_KEYS = {
   MEMBERS: (orgId: string) => ["members", orgId] as const,
   ORGANIZATION_INVITATIONS: (orgId: string, status: string = "all") =>
     ["org-invitations", orgId, status] as const,
+  SUBSCRIPTION_STATUS: (orgId: string) => ["subscription-status", orgId] as const,
 } as const;
 
 export const UI_TEXT = {

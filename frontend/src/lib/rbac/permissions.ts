@@ -18,6 +18,8 @@ export const PERMISSIONS = {
   CONNECTED_ACCOUNT_CREATE_SHARED: "connected_account:create_shared",
   CONNECTED_ACCOUNT_CREATE_OPERATIONAL: "connected_account:create_operational",
   CONNECTED_ACCOUNT_DELETE_OWN: "connected_account:delete_own",
+  CONNECTED_ACCOUNT_DELETE_SHARED: "connected_account:delete_shared",
+  CONNECTED_ACCOUNT_DELETE_OPERATIONAL: "connected_account:delete_operational",
 
   // Bundle permissions
   BUNDLE_PAGE_VIEW: "bundle:page_view",
@@ -25,6 +27,9 @@ export const PERMISSIONS = {
   BUNDLE_DELETE_OWN: "bundle:delete_own",
   BUNDLE_DELETE_ALL: "bundle:delete_all",
   BUNDLE_MCP_URL_VIEW: "bundle:mcp_url_view",
+
+  // Subscription permissions
+  SUBSCRIPTION_PAGE_VIEW: "subscription:page_view",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -50,12 +55,17 @@ export const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OPERATIONAL,
     PERMISSIONS.CONNECTED_ACCOUNT_CREATE_OWN,
     PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OWN,
+    PERMISSIONS.CONNECTED_ACCOUNT_DELETE_SHARED,
+    PERMISSIONS.CONNECTED_ACCOUNT_DELETE_OPERATIONAL,
 
     // Bundles - Admins can see all and delete any bundle
     PERMISSIONS.BUNDLE_PAGE_VIEW,
     PERMISSIONS.BUNDLE_DELETE_ALL,
     // Note: Admins cannot create bundles
     // Note: Admins cannot view MCP URLs of the members
+
+    // Subscription - Only admins can view subscription settings
+    PERMISSIONS.SUBSCRIPTION_PAGE_VIEW,
   ],
   member: [
     // MCP Server - Members can only view accessible servers

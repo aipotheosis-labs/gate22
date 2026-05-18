@@ -424,7 +424,7 @@ async def delete_connected_account(
     connected_account_id: UUID,
 ) -> None:
     connected_account = crud.connected_accounts.get_connected_account_by_id(
-        context.db_session, connected_account_id
+        context.db_session, connected_account_id, throw_error_if_not_found=False
     )
     if not connected_account:
         raise HTTPException(status_code=404, detail="Connected account not found")

@@ -94,7 +94,6 @@ def update_mcp_tools(
 
         mcp_tools.append(mcp_tool)
 
-    db_session.flush()
     return mcp_tools
 
 
@@ -133,7 +132,6 @@ def delete_mcp_tools_by_names(
 ) -> None:
     statement = delete(MCPTool).where(MCPTool.name.in_(mcp_tool_names))
     db_session.execute(statement)
-    db_session.flush()
     return
 
 

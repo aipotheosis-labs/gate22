@@ -108,6 +108,5 @@ def update_invitation(
     for field, value in invitation_update.model_dump(exclude_unset=True).items():
         setattr(invitation, field, value)
 
-    db_session.flush()
     db_session.refresh(invitation)
     return invitation

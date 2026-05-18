@@ -264,7 +264,7 @@ export default function AvailableMCPServersPage() {
                     </div>
 
                     {/* Header content */}
-                    <CardHeader className="pb-3">
+                    <CardHeader className="block pb-3">
                       <div className="mb-2 flex items-start gap-3">
                         {config.mcp_server?.logo && (
                           <div className="flex size-10 shrink-0 items-center justify-center">
@@ -278,7 +278,7 @@ export default function AvailableMCPServersPage() {
                             />
                           </div>
                         )}
-                        <div className="min-w-0 flex-1 pr-12">
+                        <div className="min-w-0 flex-1 pr-28">
                           <CardTitle className="truncate text-base font-semibold">
                             {config.name}
                           </CardTitle>

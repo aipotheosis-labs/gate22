@@ -62,13 +62,14 @@ def format_to_screaming_snake_case(name: str) -> str:
 # NOTE: it's important that you don't create a new engine for each session, which takes
 # up db resources and will lead up to errors pretty fast
 # TODO: fine tune the pool settings
+# TODO: use async
 @cache
 def get_db_engine(db_url: str) -> Engine:
     return create_engine(
         db_url,
         pool_size=10,
         max_overflow=20,
-        pool_timeout=30,
+        pool_timeout=1,  # Fail fast if pool exhausted (1s timeout)
         pool_recycle=3600,  # recycle connections after 1 hour
         pool_pre_ping=True,
     )

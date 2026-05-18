@@ -1,3 +1,4 @@
+from typing import Literal, overload
 from uuid import UUID
 
 from sqlalchemy import delete, or_, select
@@ -20,12 +21,40 @@ def get_connected_accounts_by_user_id(
     return list(connected_accounts)
 
 
+@overload
 def get_connected_account_by_id(
     db_session: Session,
     connected_account_id: UUID,
+    throw_error_if_not_found: Literal[True],
+    with_for_update: bool = False,
+) -> ConnectedAccount: ...
+
+
+@overload
+def get_connected_account_by_id(
+    db_session: Session,
+    connected_account_id: UUID,
+    throw_error_if_not_found: Literal[False],
+    with_for_update: bool = False,
+) -> ConnectedAccount | None: ...
+
+
+def get_connected_account_by_id(
+    db_session: Session,
+    connected_account_id: UUID,
+    throw_error_if_not_found: bool,
+    with_for_update: bool = False,
 ) -> ConnectedAccount | None:
     statement = select(ConnectedAccount).where(ConnectedAccount.id == connected_account_id)
-    connected_account = db_session.execute(statement).scalar_one_or_none()
+    if with_for_update:
+        statement = statement.with_for_update(skip_locked=True)
+
+    connected_account: ConnectedAccount | None = None
+    if throw_error_if_not_found:
+        connected_account = db_session.execute(statement).scalar_one()
+    else:
+        connected_account = db_session.execute(statement).scalar_one_or_none()
+
     return connected_account
 
 
@@ -85,8 +114,6 @@ def update_connected_account_auth_credentials(
     auth_credentials: dict,
 ) -> ConnectedAccount:
     connected_account.auth_credentials = auth_credentials
-    db_session.flush()
-    db_session.refresh(connected_account)
     return connected_account
 
 

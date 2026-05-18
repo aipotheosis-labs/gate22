@@ -31,8 +31,7 @@ def update_session_last_accessed_at(
     db_session: Session, mcp_session: MCPSession, last_accessed_at: datetime
 ) -> None:
     mcp_session.last_accessed_at = last_accessed_at
-    db_session.flush()
-    db_session.refresh(mcp_session)
+
     return None
 
 
@@ -40,8 +39,7 @@ def update_session_external_mcp_sessions(
     db_session: Session, mcp_session: MCPSession, external_mcp_sessions: dict[str, str]
 ) -> None:
     mcp_session.external_mcp_sessions = external_mcp_sessions
-    db_session.flush()
-    db_session.refresh(mcp_session)
+
     return None
 
 
@@ -59,12 +57,10 @@ def update_session_external_mcp_session(
     new_dict = dict(mcp_session.external_mcp_sessions)
     new_dict[str(mcp_server_id)] = mcp_session_id
     mcp_session.external_mcp_sessions = new_dict
-    db_session.flush()
 
     return None
 
 
 def delete_session(db_session: Session, mcp_session: MCPSession) -> None:
     mcp_session.deleted = True
-    db_session.flush()
     return None

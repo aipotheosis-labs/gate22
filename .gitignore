@@ -21,7 +21,6 @@ temp/
 
 # Logs
 *.log
-logs/
 
 # Secrets
 *.secrets.*

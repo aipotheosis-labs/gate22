@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -20,11 +21,13 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column, relationship
+from sqlalchemy.types import TEXT
 
 from aci.common.enums import (
     AuthType,
     ConnectedAccountOwnership,
     MCPServerTransportType,
+    MCPToolCallStatus,
     OrganizationInvitationStatus,
     OrganizationRole,
     TeamRole,
@@ -175,6 +178,15 @@ class Organization(Base):
     invitations: Mapped[list[OrganizationInvitation]] = relationship(
         back_populates="organization", cascade="all, delete-orphan", single_parent=True, init=False
     )
+    stripe_customer_id: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=True, server_default=None, init=False
+    )
+    # One organization has maximum one subscription
+    subscription: Mapped[OrganizationSubscription | None] = relationship(
+        back_populates="organization", init=False
+    )
+
+    __table_args__ = (UniqueConstraint("stripe_customer_id", name="uc_org_stripe_customer_id"),)
 
 
 class OrganizationMembership(Base):
@@ -654,6 +666,71 @@ class MCPSession(Base):
     )
 
 
+class MCPToolCallLog(Base):
+    """
+    Logs for tool calls handled by the "MCP" service.
+    NOTE: no foreign key constraints are added so that even if other tables' records are deleted,
+    we can still keep the logs for reference.
+    # we store the ids of the bundle, mcp server, and mcp tool for ambiguity avoidance since
+    # the names can change. But we still only display names stored here to user due to:
+    # 1. the records can be deleted, so we can't always get the latest names
+    # 2. slow to join each record to get latest names
+    # 3. for audit logs, we expect logs to reflect the state at the time of the action.
+    NOTE: mcp_server_id/name, mcp_tool_id/name and mcp_server_configuration_id/name are nullable
+    because user might send a tool call that doesn't have a valid value in the database.
+    NOTE: arguments are stored as string because they can be other types than dict due to
+    LLM tool call mistakes.
+    """
+
+    __tablename__ = "mcp_tool_call_logs"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    organization_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    request_id: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    # the session if of MCPSession table
+    session_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    bundle_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    bundle_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
+    mcp_server_name: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    mcp_server_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    mcp_tool_name: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    mcp_tool_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    mcp_server_configuration_name: Mapped[str | None] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=True
+    )
+    mcp_server_configuration_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), nullable=True
+    )
+    arguments: Mapped[str | None] = mapped_column(Text, nullable=True)
+    result: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    status: Mapped[MCPToolCallStatus] = mapped_column(
+        SQLEnum(MCPToolCallStatus, native_enum=False, length=MAX_ENUM_LENGTH), nullable=False
+    )
+    # whether the tool call is excecuted via the "EXECUTE_TOOL" tool
+    via_execute_tool: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # The full payload of the tool call: JSONRPCToolsCallRequest
+    jsonrpc_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    # TODO: add index for cursor based pagination
+
+
 ###################################################################################################
 # Below tables are used only by the "virtual MCP" service hosting virtual MCP Servers
 # see design doc:
@@ -730,4 +807,117 @@ class VirtualMCPTool(Base):
 
     server: Mapped[VirtualMCPServer] = relationship(
         "VirtualMCPServer", back_populates="tools", init=False
+    )
+
+
+###################################################################################################
+# Below tables are used related to "subscription"
+###################################################################################################
+class SubscriptionPlan(Base):
+    __tablename__ = "subscription_plans"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    plan_code: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), unique=True, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    is_public: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # This may be null when the plan is not available for self-served subscription. For example,
+    # Free plan or custom offline deals.
+    stripe_price_id: Mapped[str | None] = mapped_column(TEXT, nullable=True)
+    max_seats_for_subscription: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_custom_mcp_servers: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    log_retention_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, init=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+    subscriptions: Mapped[list[OrganizationSubscription]] = relationship(
+        back_populates="subscription_plan", init=False
+    )
+
+
+class OrganizationSubscription(Base):
+    __tablename__ = "organization_subscriptions"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    organization_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,  # One organization can have only one active subscription
+    )
+    subscription_plan_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        # Deleting Subscription plan should be restricted if used by any organization.
+        # We should rather mark as archived instead.
+        ForeignKey("subscription_plans.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    seat_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    stripe_subscription_status: Mapped[str] = mapped_column(
+        String(MAX_STRING_LENGTH), nullable=False
+    )
+    stripe_subscription_id: Mapped[str] = mapped_column(
+        TEXT,
+        nullable=False,
+        unique=True,  # One stripe subscription id can only be used by one organization
+    )
+    stripe_subscription_item_id: Mapped[str] = mapped_column(TEXT, nullable=False)
+    current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    subscription_start_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
+    )
+
+    organization: Mapped[Organization] = relationship(back_populates="subscription", init=False)
+    subscription_plan: Mapped[SubscriptionPlan] = relationship(
+        back_populates="subscriptions", init=False
+    )
+
+
+class SubscriptionStripeEventLogs(Base):
+    __tablename__ = "subscription_stripe_event_logs"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default_factory=uuid4, init=False
+    )
+    stripe_event_id: Mapped[str] = mapped_column(TEXT, nullable=False, unique=True)
+    type: Mapped[str] = mapped_column(String(MAX_STRING_LENGTH), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    process_error: Mapped[str | None] = mapped_column(String(MAX_STRING_LENGTH), nullable=True)
+    process_attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, init=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+        init=False,
     )

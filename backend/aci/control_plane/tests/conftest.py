@@ -128,6 +128,23 @@ def dummy_access_token_member(dummy_member: User) -> str:
 
 
 @pytest.fixture(scope="function")
+def dummy_access_token_member_2(dummy_member_2: User) -> str:
+    """
+    Access token of `dummy_user` with `member` role in `dummy_organization`
+    """
+    org_membership = dummy_member_2.organization_memberships[0]
+    return utils.sign_token(
+        user=dummy_member_2,
+        act_as=ActAsInfo(
+            organization_id=org_membership.organization_id, role=OrganizationRole.MEMBER
+        ),
+        jwt_signing_key=test_jwt_signing_key,
+        jwt_algorithm=test_jwt_algorithm,
+        jwt_access_token_expire_minutes=test_jwt_access_token_expire_minutes,
+    )
+
+
+@pytest.fixture(scope="function")
 def dummy_access_token_no_orgs(dummy_user_without_org: User) -> str:
     """
     Access token of a user without any organization
@@ -185,7 +202,6 @@ def dummy_access_token_another_org(db_session: Session) -> str:
 # - dummy_user
 # - dummy_admin (same as dummy_user, but is admin in the dummy_organization)
 # - dummy_member (same as dummy_user, but is member in the dummy_organization)
-# - dummy_user_2 (another user (different from dummy_user), member in the dummy_organization)
 # ------------------------------------------------------------
 
 
@@ -231,16 +247,25 @@ def dummy_user(dummy_organization: Organization) -> User:
     """
     `dummy_user` with in `dummy_organization`
     """
-    dummy_user = dummy_organization.memberships[0].user
-    return dummy_user
+    # Find the membership for "dummy@example.com"
+    membership = next(
+        m for m in dummy_organization.memberships if m.user.email == "dummy@example.com"
+    )
+    return membership.user
 
 
 @pytest.fixture(scope="function")
-def dummy_admin(dummy_organization: Organization) -> User:
+def dummy_admin(db_session: Session, dummy_organization: Organization) -> User:
     """
     `dummy_user` with `admin` role in `dummy_organization`
     """
-    return dummy_organization.memberships[0].user
+    # Find the membership for "dummy@example.com" and set it to ADMIN
+    membership = next(
+        m for m in dummy_organization.memberships if m.user.email == "dummy@example.com"
+    )
+    membership.role = OrganizationRole.ADMIN
+    db_session.commit()
+    return membership.user
 
 
 @pytest.fixture(scope="function")
@@ -248,21 +273,24 @@ def dummy_member(db_session: Session, dummy_organization: Organization) -> User:
     """
     `dummy_user` with `member` role in `dummy_organization`
     """
-    membership = dummy_organization.memberships[0]
+    # Find the membership for "dummy@example.com" and set it to MEMBER
+    membership = next(
+        m for m in dummy_organization.memberships if m.user.email == "dummy@example.com"
+    )
     membership.role = OrganizationRole.MEMBER
     db_session.commit()
     return membership.user
 
 
 @pytest.fixture(scope="function")
-def dummy_user_2(db_session: Session, dummy_organization: Organization) -> User:
+def dummy_member_2(db_session: Session, dummy_organization: Organization) -> User:
     """
     This will add another member into dummy_organization.
     """
     dummy_user_2 = crud.users.create_user(
         db_session=db_session,
-        name="Dummy Another User",
-        email="dummy_another@example.com",
+        name="Dummy User 2",
+        email="dummy_2@example.com",
         password_hash=None,
         identity_provider=UserIdentityProvider.EMAIL,
         email_verified=True,
@@ -273,7 +301,31 @@ def dummy_user_2(db_session: Session, dummy_organization: Organization) -> User:
         user_id=dummy_user_2.id,
         role=OrganizationRole.MEMBER,
     )
+    db_session.commit()
     return dummy_user_2
+
+
+@pytest.fixture(scope="function")
+def dummy_member_3(db_session: Session, dummy_organization: Organization) -> User:
+    """
+    This will add another member into dummy_organization.
+    """
+    dummy_user_3 = crud.users.create_user(
+        db_session=db_session,
+        name="Dummy User 3",
+        email="dummy_3@example.com",
+        password_hash=None,
+        identity_provider=UserIdentityProvider.EMAIL,
+        email_verified=True,
+    )
+    crud.organizations.add_user_to_organization(
+        db_session=db_session,
+        organization_id=dummy_organization.id,
+        user_id=dummy_user_3.id,
+        role=OrganizationRole.MEMBER,
+    )
+    db_session.commit()
+    return dummy_user_3
 
 
 @pytest.fixture(scope="function")
@@ -291,6 +343,7 @@ def dummy_user_without_org(db_session: Session) -> User:
         identity_provider=UserIdentityProvider.EMAIL,
         email_verified=True,
     )
+    db_session.commit()
     return user
 
 
@@ -496,8 +549,8 @@ def dummy_mcp_server_configuration_gmail_shared(
 @pytest.fixture(scope="function")
 def dummy_connected_accounts(
     db_session: Session,
-    dummy_user: User,
-    dummy_user_2: User,
+    dummy_member: User,
+    dummy_member_2: User,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration_notion: MCPServerConfiguration,
     dummy_mcp_server_configuration_gmail_shared: MCPServerConfiguration,
@@ -505,10 +558,10 @@ def dummy_connected_accounts(
     """
     Test connection graph:
 
-    dummy_user ──via individual account──> dummy_mcp_server_configuration_github
+    dummy_member ──via individual account──> dummy_mcp_server_configuration_github
                ──via individual account──> dummy_mcp_server_configuration_notion
 
-    dummy_user_2 ──via individual account──> dummy_mcp_server_configuration_github
+    dummy_member_2 ──via individual account──> dummy_mcp_server_configuration_github
                  ──via shared account───> dummy_mcp_server_configuration_gmail_shared
 
     Legend:
@@ -522,7 +575,7 @@ def dummy_connected_accounts(
     connected_accounts.append(
         crud.connected_accounts.create_connected_account(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
             auth_credentials={},
             ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -531,7 +584,7 @@ def dummy_connected_accounts(
     connected_accounts.append(
         crud.connected_accounts.create_connected_account(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_notion.id,
             auth_credentials={},
             ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -540,7 +593,7 @@ def dummy_connected_accounts(
     connected_accounts.append(
         crud.connected_accounts.create_connected_account(
             db_session=db_session,
-            user_id=dummy_user_2.id,
+            user_id=dummy_member_2.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_github.id,
             auth_credentials={},
             ownership=ConnectedAccountOwnership.INDIVIDUAL,
@@ -549,7 +602,7 @@ def dummy_connected_accounts(
     connected_accounts.append(
         crud.connected_accounts.create_connected_account(
             db_session=db_session,
-            user_id=dummy_user_2.id,
+            user_id=dummy_member_2.id,
             mcp_server_configuration_id=dummy_mcp_server_configuration_gmail_shared.id,
             auth_credentials={},
             ownership=ConnectedAccountOwnership.SHARED,
@@ -562,18 +615,18 @@ def dummy_connected_accounts(
 def dummy_mcp_server_bundles(
     dummy_organization: Organization,
     db_session: Session,
-    dummy_user: User,
-    dummy_user_2: User,
+    dummy_member: User,
+    dummy_member_2: User,
     dummy_mcp_server_configuration_github: MCPServerConfiguration,
     dummy_mcp_server_configuration_notion: MCPServerConfiguration,
 ) -> list[MCPServerBundle]:
     """
     Test bundle graph:
 
-    dummy_user ──owns──> Bundle #1 [github + notion]
+    dummy_member ──owns──> Bundle #1 [github + notion]
                ──owns──> Bundle #2 [github only]
 
-    dummy_user_2 ──owns──> Bundle #3 [github only]
+    dummy_member_2 ──owns──> Bundle #3 [github only]
 
     Legend:
     - Users own MCP server bundles
@@ -584,7 +637,7 @@ def dummy_mcp_server_bundles(
     mcp_server_bundles.append(
         crud.mcp_server_bundles.create_mcp_server_bundle(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             organization_id=dummy_organization.id,
             mcp_server_bundle_create=MCPServerBundleCreate(
                 mcp_server_configuration_ids=[
@@ -600,7 +653,7 @@ def dummy_mcp_server_bundles(
     mcp_server_bundles.append(
         crud.mcp_server_bundles.create_mcp_server_bundle(
             db_session=db_session,
-            user_id=dummy_user.id,
+            user_id=dummy_member.id,
             organization_id=dummy_organization.id,
             mcp_server_bundle_create=MCPServerBundleCreate(
                 mcp_server_configuration_ids=[dummy_mcp_server_configuration_github.id],
@@ -613,7 +666,7 @@ def dummy_mcp_server_bundles(
     mcp_server_bundles.append(
         crud.mcp_server_bundles.create_mcp_server_bundle(
             db_session=db_session,
-            user_id=dummy_user_2.id,
+            user_id=dummy_member_2.id,
             organization_id=dummy_organization.id,
             mcp_server_bundle_create=MCPServerBundleCreate(
                 mcp_server_configuration_ids=[dummy_mcp_server_configuration_github.id],

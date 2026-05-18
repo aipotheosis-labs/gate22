@@ -84,5 +84,4 @@ def update_tools(
 
         tools.append(tool)
 
-    db_session.flush()
     return tools

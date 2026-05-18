@@ -57,6 +57,19 @@ class NoImplementationFound(ControlPlaneException):
         )
 
 
+class OrganizationSubscriptionNotFound(ControlPlaneException):
+    """
+    Exception raised when an organization subscription is not found
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Organization subscription not found",
+            message=message,
+            error_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
 class MCPServerConfigurationNotFound(ControlPlaneException):
     """
     Exception raised when an mcp server configuration is not found
@@ -318,4 +331,65 @@ class MCPServerNotFoundError(ControlPlaneException):
             title="MCP server not found",
             message=message,
             error_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
+# --------------------------------------------
+#
+# Subscription exceptions
+#
+# -------------------------------------------
+class SubscriptionException(ControlPlaneException):
+    pass
+
+
+class RequestedSubscriptionInvalid(SubscriptionException):
+    """
+    Exception raised when a requested subscription is invalid
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Requested subscription invalid",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class StripeOperationError(SubscriptionException):
+    """
+    Exception raised when a stripe operation error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Stripe operation error",
+            message=message,
+            error_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+class StripeWebhookInputError(SubscriptionException):
+    """
+    Exception raised when a stripe webhook input error occurs
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Stripe webhook input error",
+            message=message,
+            error_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class UsageExceeded(SubscriptionException):
+    """
+    Exception raised when a usage exceeds the entitlement
+    """
+
+    def __init__(self, message: str | None = None):
+        super().__init__(
+            title="Usage exceeded",
+            message=message,
+            error_code=status.HTTP_429_TOO_MANY_REQUESTS,
         )
